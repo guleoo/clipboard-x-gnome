@@ -1,7 +1,7 @@
 # Clipboard X
 
 Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏图标或用户设置的
-快捷键打开统一面板，提供文本与图片历史、文本提取工具、外部设备同步集成、截图、
+快捷键打开统一面板，提供文本与图片历史、词元选择式分词、外部设备同步集成、截图、
 取色和调用外部图片编辑器等功能。
 
 同步能力只包含客户端协议。扩展不会建立网络连接；设备发现、配对、认证、加密、
@@ -9,11 +9,13 @@ Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏�
 
 ## 功能
 
-- 搜索、收藏、删除和重新复制文本或图片历史。
-- 按词、句、Unicode 字素、行和分隔符拆分文本，提取 URL、邮箱、数字及标识符片段，
-  并支持大小写和标题格式转换。
+- 搜索、Pin、删除和重新复制文本或图片历史；每个条目在右侧提供固定操作区。
+- 在当前小面板中把文本拆成可逐个选择的词元，并完整保留 URL、邮箱和结构化数字。
+- 顶部只保留截图、取色和同步三个紧凑按钮；暂停记录、清理和设置位于底部提示栏。
+- 多设备历史出现时显示用户配置的设备类型图标，鼠标悬停或键盘聚焦时在底部显示说明。
 - 小内容立即提供完整快照；大文本使用截断预览，大图片使用缩略图，并在使用时按需
   获取原文。
+- 上传与下载都使用可恢复的任务 ID，并在对应条目上显示精确字节进度环。
 - 使用 XDG Screenshot Portal 调用系统截图。
 - 使用 Shell 截图 API 取色，支持 HEX、RGB、HSL 和 OKLCH。
 - 从已安装图片应用中选择编辑器，或配置安全的 argv 命令模板。
@@ -85,6 +87,12 @@ meson test -C build --print-errorlogs
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/shell.smoke.js
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.smoke.js
 ```
+
+若嵌套 Mutter 能看到 `wl-copy` MIME 却无法完成 selection transfer，可在只验证 UI 与
+生命周期时设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1`；这只跳过外部 Wayland/XWayland
+来源用例，不跳过扩展内部的文本、图片、截图、分词、同步进度和生命周期测试。
+翻译加载可以使用 `LC_ALL=zh_CN.UTF-8 CLIPBOARD_X_EXPECT_CHINESE=1
+CLIPBOARD_X_TRANSLATION_ONLY=1` 运行同一个 Shell 冒烟脚本。
 
 项目不使用 ESLint；构建验收使用 Node 语法检查、GJS 测试、协议互操作测试和真实
 GNOME Shell 无头会话。

@@ -12,6 +12,8 @@ function assert(condition, message) {
 
 export async function run() {
   await Scripting.sleep(500);
+  if (Main.extensionManager._initializationPromise)
+    await Main.extensionManager._initializationPromise;
   const extension = Main.extensionManager.lookup(UUID);
   assert(extension?.stateObj, 'Clipboard X extension object is unavailable');
   extension.stateObj.openPreferences();

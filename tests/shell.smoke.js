@@ -48,6 +48,8 @@ export async function run() {
   if (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1') {
     assert(indicator._search.hint_text === '搜索剪切板历史…',
       `Clipboard X translation was not loaded (${indicator._search.hint_text})`);
+    if (GLib.getenv('CLIPBOARD_X_TRANSLATION_ONLY') === '1')
+      return;
   }
 
   indicator.menu.open();

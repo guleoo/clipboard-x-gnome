@@ -38,15 +38,18 @@
 
 ## 阶段 4：文本处理
 
-- `src/text-processors.js` 使用 `Intl.Segmenter` 实现词、句和 Unicode 字素分割，并提供
-  行、分隔符、URL、邮箱、数字、camelCase/snake_case 片段及大小写/标题转换。
-- `tests/core.test.js` 使用中英混合文本和 ZWJ Emoji 验证字符不破损，也验证处理器注册。
-- 主面板为每个结果提供单项复制和全部复制；超过交互上限或展示上限时给出明确状态。
+- `src/text-processors.js` 先识别 URL、邮箱和结构化数字，再使用 `Intl.Segmenter` 产生
+  自然词元，并根据源文本位置组合所选内容。
+- `tests/core.test.js` 使用中英混合文本、URL 和数字验证特殊词元不被拆散、选择顺序和
+  间隔保持正确。
+- `tests/shell.smoke.js` 验证点击条目分词按钮会在当前小面板切换视图、逐词选择会实时
+  更新结果，并能返回历史列表；超过交互大小上限时明确拒绝。
 
 ## 阶段 5–6：同步与按需物化
 
 - `tests/sync-client.integration.js` 覆盖 DeviceId 首次生成与稳定、Unicode Tag 更新但不
-  更换 ID、幂等发布/确认/取消、预览获取、完整内容物化和不支持 MIME。
+  更换 ID、设备图标注册、设备目录、状态获取、增量 cursor、幂等发布/确认/取消、
+  预览获取、完整内容物化和不支持 MIME。
 - `tests/sync-policy.integration.js` 让 Mock 声明更小的条目/预览上限和 MIME 集，验证
   实际交集与 Unicode 安全截断。
 - `tests/sync-large.integration.js` 真实传输 10 MiB 文本和 50 MiB 图片：首次只有截断
@@ -55,8 +58,9 @@
   `tests/sync-offline-transfer.integration.js` 验证传输中 Service 消失会立即失败而非卡住。
 - `tests/sync-malformed.integration.js` 验证非法信号、路径型 ID 和待处理列表不能越过
   客户端边界；重连压力测试连续完成五次 Service 退出/出现。
-- `tests/shell.smoke.js` 覆盖图片手动发送入口、收藏限定自动发送、敏感内容默认拒绝、
-  预览/失败/就绪状态、进度、等待、过期和取消 UI，以及下载内容的离线本地恢复。
+- `tests/shell.smoke.js` 覆盖图片手动发送入口、Pin 限定自动发送、敏感内容默认拒绝、
+  设备来源图标、预览/失败/就绪状态、按条目精确进度环、等待、过期和取消 UI，以及
+  下载内容的离线本地恢复。
 
 ## 阶段 7：截图与编辑器
 
@@ -103,10 +107,15 @@ meson test -C build --print-errorlogs
 meson install -C build
 gnome-shell-test-tool --headless --test-iters 3 \
   --extension build/clipboard-x.zip tests/shell.smoke.js
-LANG=zh_CN.UTF-8 LANGUAGE=zh_CN CLIPBOARD_X_EXPECT_CHINESE=1 \
+LC_ALL=zh_CN.UTF-8 LANGUAGE=zh_CN CLIPBOARD_X_EXPECT_CHINESE=1 \
+  CLIPBOARD_X_TRANSLATION_ONLY=1 \
   gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/shell.smoke.js
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.smoke.js
 ```
+
+在仅有虚拟显示器的环境中，如果 Mutter 能枚举 `wl-copy` MIME 却无法完成 selection
+transfer，可设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1` 运行 UI/生命周期回归，并在正常
+Wayland 会话单独保留外部来源用例；该开关不会跳过扩展内部的文本和图片剪切板管线。
 
 真实 Portal 的交互选择和用户实际选择的生产 Sync1 Service 涉及用户授权与外部实现，
 不能由仓库测试替用户确认；仓库分别验证 Portal 协议/扩展后续管线和两个独立 Mock 的
