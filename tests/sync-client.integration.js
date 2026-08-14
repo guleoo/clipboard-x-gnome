@@ -9,6 +9,16 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+async function assertRejects(promise, pattern, message) {
+  try {
+    await promise;
+  } catch (error) {
+    assert(pattern.test(error.message), `${message}: ${error.message}`);
+    return;
+  }
+  throw new Error(`${message}: promise resolved unexpectedly`);
+}
+
 class TestSettings {
   constructor() {
     this._values = new Map(Object.entries({
@@ -42,6 +52,14 @@ class TestSettings {
 
   set_string(key, value) {
     this._values.set(key, value);
+  }
+
+  changeString(key, value) {
+    this._values.set(key, value);
+    for (const signal of this._signals.values()) {
+      if (signal.name === `changed::${key}`)
+        signal.callback();
+    }
   }
 
   connect(name, callback) {
@@ -86,16 +104,32 @@ item.primary.path = file.get_path();
 try {
   const publishedId = await client.publish(item);
   assert(publishedId === item.id, 'SyncClient must preserve immutable item IDs');
+  assert(await client.publish(item) === item.id, 'repeated Publish must be idempotent');
+  const pending = await client.listPending();
+  assert(pending.filter(itemId => itemId === item.id).length === 1,
+    'repeated Publish must not create duplicate pending items');
 
   const remote = await client.getItem(item.id);
   assert(remote.remote && remote.availability === 'preview', 'GetItem must create a preview-only remote item');
   assert(remote.primary.bytes === null, 'GetItem must not eagerly read full content');
   assert(remote.preview.text === 'full synchronized content', 'GetItem must receive the text preview');
   assert(remote.originDeviceTag === 'Sync Client Integration', 'GetItem must resolve the friendly Device Tag');
+  const stableDeviceId = settings.get_string('device-id');
+  settings.changeString('device-tag', '工作设备 🐧');
+  let updatedTag = '';
+  for (let attempt = 0; attempt < 50; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+    updatedTag = (await client.getItem(item.id)).originDeviceTag;
+    if (updatedTag === '工作设备 🐧')
+      break;
+  }
+  assert(updatedTag === '工作设备 🐧', 'Device Tag change must update the Service registration');
+  assert(settings.get_string('device-id') === stableDeviceId, 'Device Tag change must not alter DeviceId');
 
   await client.materialize(remote);
   assert(remote.availability === 'ready', 'Materialization must update availability');
   assert(remote.text === 'full synchronized content', 'Materialization must return verified original bytes');
+  await client.acknowledge(remote.id, 'accepted');
   await client.acknowledge(remote.id, 'accepted');
 
   const cancelled = new Promise(resolve => {
@@ -107,6 +141,19 @@ try {
   const transferId = await client.requestContent(remote.id, [remote.primary.id]);
   await client.cancelTransfer(transferId);
   assert(await cancelled === transferId, 'CancelTransfer must report the cancelled state');
+  await client.cancelTransfer(transferId);
+
+  const unsupported = ClipboardItem.fromBytes(
+    'image/gif',
+    new GLib.Bytes(new Uint8Array([0x47, 0x49, 0x46])),
+  );
+  await assertRejects(client.publish(unsupported), /reject all representations/u,
+    'Service MIME capabilities must restrict publication');
+  await assertRejects(client.getItem('../../invalid'), /UUID/u, 'invalid item ID must be rejected locally');
+  await assertRejects(client.requestContent(item.id, ['bad\ncontent']), /request is invalid/u,
+    'invalid content ID must be rejected locally');
+  await assertRejects(client.cancelTransfer('not-a-transfer'), /transfer ID is invalid/u,
+    'invalid transfer ID must be rejected locally');
 } finally {
   client.destroy();
   file.delete(null);

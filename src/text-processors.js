@@ -17,6 +17,13 @@ const builtInProcessors = {
       .filter(Boolean);
   },
 
+  graphemes(text, locale = undefined) {
+    const segmenter = new Intl.Segmenter(locale, {granularity: 'grapheme'});
+    return [...segmenter.segment(text)]
+      .map(segment => segment.segment)
+      .filter(segment => segment.trim().length > 0);
+  },
+
   lines(text) {
     return text.split(/\r?\n/u).map(line => line.trim()).filter(Boolean);
   },
@@ -42,6 +49,25 @@ const builtInProcessors = {
       .replace(/([\p{Ll}\d])([\p{Lu}])/gu, '$1 $2')
       .split(/[_\-\s]+/u)
       .filter(Boolean);
+  },
+
+  uppercase(text, locale = undefined) {
+    return [text.toLocaleUpperCase(locale)];
+  },
+
+  lowercase(text, locale = undefined) {
+    return [text.toLocaleLowerCase(locale)];
+  },
+
+  'title-case'(text, locale = undefined) {
+    const graphemes = new Intl.Segmenter(locale, {granularity: 'grapheme'});
+    const words = new Intl.Segmenter(locale, {granularity: 'word'});
+    return [[...words.segment(text)].map(part => {
+      if (!part.isWordLike)
+        return part.segment;
+      const [first, ...rest] = [...graphemes.segment(part.segment)].map(value => value.segment);
+      return `${first?.toLocaleUpperCase(locale) ?? ''}${rest.join('').toLocaleLowerCase(locale)}`;
+    }).join('')];
   },
 };
 

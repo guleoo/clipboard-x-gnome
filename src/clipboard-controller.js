@@ -7,6 +7,7 @@ import St from 'gi://St';
 import {ClipboardItem} from './clipboard-item.js';
 import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
 import {HistoryStore} from './history-store.js';
+import {search as searchHistory} from './history-search.js';
 import {EventEmitter} from './event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
 import {diagnosticCode, loadFile, sha256, writeFile} from './core.js';
@@ -216,6 +217,14 @@ export class ClipboardController extends EventEmitter {
     item.favorite = !item.favorite;
     this._items.sort((left, right) => Number(right.favorite) - Number(left.favorite) || right.createdAt - left.createdAt);
     this._scheduleSave();
+    this.emit('favorite-changed', item, item.favorite);
+    this.emit('changed');
+  }
+
+  update(item) {
+    if (!this._items.includes(item) || this._destroyed)
+      return;
+    this._scheduleSave();
     this.emit('changed');
   }
 
@@ -239,22 +248,7 @@ export class ClipboardController extends EventEmitter {
   }
 
   search(query, limit = Infinity) {
-    const needle = query.trim().toLocaleLowerCase();
-    if (!needle)
-      return this._items.slice(0, limit);
-    const matches = [];
-    for (const item of this._items) {
-      let searchable = this._searchCache.get(item);
-      if (searchable === undefined) {
-        searchable = item.preview?.text?.toLocaleLowerCase() ?? '';
-        this._searchCache.set(item, searchable);
-      }
-      if (searchable.includes(needle))
-        matches.push(item);
-      if (matches.length >= limit)
-        break;
-    }
-    return matches;
+    return searchHistory(this._items, query, limit, this._searchCache);
   }
 
   async materialize(item) {
@@ -415,6 +409,8 @@ export class ClipboardController extends EventEmitter {
       clearTimeout(this._saveTimeout);
     if (this._selectionSignal)
       this._selection.disconnect(this._selectionSignal);
+    this._selectionSignal = 0;
+    this._selection = null;
     for (const signal of this._settingsSignals)
       this._settings.disconnect(signal);
     this._settingsSignals = [];

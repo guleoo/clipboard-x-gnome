@@ -100,6 +100,10 @@
       <default>false</default>
       <summary>Allow content marked sensitive to be synchronized</summary>
     </key>
+    <key name="sync-favorites-only" type="b">
+      <default>false</default>
+      <summary>Automatically send only content that the user has favorited</summary>
+    </key>
     <key name="text-full-threshold" type="u">
       <default>65536</default>
       <summary>Text eager synchronization threshold in bytes</summary>

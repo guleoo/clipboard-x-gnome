@@ -77,8 +77,8 @@ class FakePortalConnection {
   }
 
   _respond(_portalPath) {
-    const response = this.mode === 'success' ? 0 : this.mode === 'cancelled' ? 1 : 2;
-    const results = response === 0
+    const response = ['success', 'no-uri'].includes(this.mode) ? 0 : this.mode === 'cancelled' ? 1 : 2;
+    const results = response === 0 && this.mode !== 'no-uri'
       ? {uri: new GLib.Variant('s', 'file:///tmp/screenshot%20测试.png')}
       : {};
     for (const {path, callback} of this._subscriptions.values()) {
@@ -129,6 +129,20 @@ const timeoutPortal = new ScreenshotPortal({connection: timeoutConnection, timeo
 await assertRejects(timeoutPortal.capture('interactive'), /timed out/u, 'screenshot timeout');
 assert(timeoutConnection.closeCount === 1, 'timeout must close the Portal request');
 
+const missingUriPortal = new ScreenshotPortal({
+  connection: new FakePortalConnection({mode: 'no-uri'}),
+  timeoutMilliseconds: 100,
+});
+await assertRejects(missingUriPortal.capture('screen'), /no URI/u, 'missing screenshot URI');
+
+const concurrentConnection = new FakePortalConnection({mode: 'pending'});
+const concurrentPortal = new ScreenshotPortal({connection: concurrentConnection, timeoutMilliseconds: 100});
+const pendingCapture = concurrentPortal.capture('interactive');
+await assertRejects(concurrentPortal.capture('screen'), /already active/u, 'concurrent screenshot request');
+await new Promise(resolve => setTimeout(resolve, 10));
+concurrentPortal.cancel();
+await assertRejects(pendingCapture, /cancelled/u, 'concurrent request cleanup');
+
 const oldPortal = new ScreenshotPortal({
   connection: new FakePortalConnection({version: 2, targets: 0}),
   timeoutMilliseconds: 100,
@@ -150,3 +164,27 @@ await new Promise((resolve, reject) => {
     }
   });
 });
+
+let missingEditorRejected = false;
+try {
+  launchEditor({
+    appId: '',
+    command: '/definitely/missing/clipboard-x-editor %u',
+    uri: 'file:///tmp/image.png',
+  });
+} catch (error) {
+  missingEditorRejected = /No such file|not found|Failed to execute/iu.test(error.message);
+}
+assert(missingEditorRejected, 'missing custom editor executable must be reported');
+
+let missingApplicationRejected = false;
+try {
+  launchEditor({
+    appId: 'io.github.guleo.ClipboardX.Missing.desktop',
+    command: '',
+    uri: 'file:///tmp/image.png',
+  });
+} catch (error) {
+  missingApplicationRejected = /not installed/u.test(error.message);
+}
+assert(missingApplicationRejected, 'missing Desktop Application editor must be reported');

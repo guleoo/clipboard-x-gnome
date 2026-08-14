@@ -7,6 +7,15 @@ import GLib from 'gi://GLib';
 const BUS_NAME = 'io.github.guleo.ClipboardX.MockService';
 const OBJECT_PATH = '/io/github/guleo/ClipboardX/Sync';
 const INTERFACE = 'io.github.guleo.ClipboardX.Sync1';
+const SUPPORTED_MIME_TYPES = (GLib.getenv('CLIPBOARD_X_MOCK_MIME_TYPES')
+  ?? 'text/plain;charset=utf-8,text/html,image/png,image/jpeg,image/webp')
+  .split(',').map(value => value.trim()).filter(Boolean);
+const MAX_ITEM_BYTES = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_MAX_ITEM_BYTES'), 128 * 1024 * 1024);
+const MAX_PREVIEW_BYTES = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_MAX_PREVIEW_BYTES'), 512 * 1024);
+const TRANSFER_STATES = (GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE') ?? 'ready')
+  .split(',').map(value => value.trim()).filter(value => ['ready', 'expired', 'failed'].includes(value));
+const TRANSFER_DELAY_MS = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_DELAY_MS'), 60);
+const MALFORMED_SIGNALS = GLib.getenv('CLIPBOARD_X_MOCK_MALFORMED') === '1';
 
 const sourcePath = GLib.filename_from_uri(import.meta.url)[0];
 const protocolPath = GLib.build_filenamev([
@@ -26,6 +35,14 @@ const items = new Map();
 const transfers = new Map();
 let connection = null;
 let registrationId = 0;
+let transferRequestCount = 0;
+
+function parseLimit(value, fallback) {
+  if (value === null || value === '')
+    return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
 
 function emptyReply(invocation) {
   invocation.return_value(new GLib.Variant('()', []));
@@ -89,6 +106,15 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
     if (methodName === 'RegisterDevice') {
       devices.set(values[0], values[1]);
       emptyReply(invocation);
+      if (MALFORMED_SIGNALS) {
+        connection.emit_signal(
+          null,
+          OBJECT_PATH,
+          INTERFACE,
+          'ItemAvailable',
+          new GLib.Variant('(s)', ['../../invalid-preview-path']),
+        );
+      }
       return;
     }
 
@@ -108,7 +134,10 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
     }
 
     if (methodName === 'ListPending') {
-      invocation.return_value(new GLib.Variant('(as)', [[...items.keys()]]));
+      const pending = [...items.keys()];
+      if (MALFORMED_SIGNALS)
+        pending.push('not-a-uuid');
+      invocation.return_value(new GLib.Variant('(as)', [pending]));
       return;
     }
 
@@ -136,6 +165,8 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
         .filter(payload => values[2].includes(metadataString(payload.metadata, 'content-id')))
         .reduce((sum, payload) => sum + payload.bytes.get_size(), 0) ?? 0;
       transfers.set(transferId, {itemId: values[1], contentIds: values[2], state: 'queued', total});
+      const terminalState = TRANSFER_STATES[Math.min(transferRequestCount, TRANSFER_STATES.length - 1)] ?? 'ready';
+      transferRequestCount++;
       invocation.return_value(new GLib.Variant('(s)', [transferId]));
       connection.emit_signal(
         null,
@@ -144,7 +175,7 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
         'TransferChanged',
         new GLib.Variant('(sstts)', [transferId, 'queued', 0, total, '']),
       );
-      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, 30, () => {
+      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(1, Math.floor(TRANSFER_DELAY_MS / 2)), () => {
         const transfer = transfers.get(transferId);
         if (!transfer)
           return;
@@ -152,13 +183,19 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
         connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'TransferChanged',
           new GLib.Variant('(sstts)', [transferId, 'transferring', Math.floor(total / 2), total, '']));
       });
-      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, 60, () => {
+      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(2, TRANSFER_DELAY_MS), () => {
         const transfer = transfers.get(transferId);
         if (!transfer)
           return;
-        transfer.state = 'ready';
+        transfer.state = terminalState;
         connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'TransferChanged',
-          new GLib.Variant('(sstts)', [transferId, 'ready', total, total, '']));
+          new GLib.Variant('(sstts)', [
+            transferId,
+            terminalState,
+            terminalState === 'ready' ? total : 0,
+            total,
+            terminalState === 'ready' ? '' : `Mock transfer ${terminalState}`,
+          ]));
       });
       return;
     }
@@ -204,9 +241,9 @@ function getProperty(_connection, _sender, _path, _interface, propertyName) {
     ImplementationName: new GLib.Variant('s', 'Clipboard X Mock Service'),
     ImplementationVersion: new GLib.Variant('s', '0.1.0'),
     Status: new GLib.Variant('s', 'online'),
-    SupportedMimeTypes: new GLib.Variant('as', ['text/plain;charset=utf-8', 'text/html', 'image/png', 'image/jpeg', 'image/webp']),
-    MaxItemBytes: new GLib.Variant('t', 128 * 1024 * 1024),
-    MaxPreviewBytes: new GLib.Variant('t', 512 * 1024),
+    SupportedMimeTypes: new GLib.Variant('as', SUPPORTED_MIME_TYPES),
+    MaxItemBytes: new GLib.Variant('t', MAX_ITEM_BYTES),
+    MaxPreviewBytes: new GLib.Variant('t', MAX_PREVIEW_BYTES),
   };
   return properties[propertyName] ?? null;
 }

@@ -8,6 +8,7 @@ import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Ex
 import {ensureDeviceIdentity} from './core.js';
 import {buildEditorArgv} from './editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from './constants.js';
+import {effectiveCapabilities} from './sync-policy.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -85,12 +86,14 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         const capabilities = await inspectSyncService(settings);
         if (Number(capabilities.ApiVersion) !== SYNC_API_VERSION)
           throw new Error(`Sync${capabilities.ApiVersion} is not compatible with Sync${SYNC_API_VERSION}`);
+        const effective = effectiveCapabilities(settings, capabilities);
         statusRow.subtitle = [
           capabilities.ImplementationName,
           capabilities.ImplementationVersion,
           capabilities.Status,
-          `${capabilities.SupportedMimeTypes.length} MIME`,
-          `${capabilities.MaxItemBytes} bytes max`,
+          `${effective.mimeTypes.length} MIME`,
+          `${formatBytes(effective.itemBytes)} ${_('item limit')}`,
+          `${formatBytes(effective.previewBytes)} ${_('preview limit')}`,
         ].filter(Boolean).join(' · ');
       } catch (error) {
         statusRow.subtitle = error.message;
@@ -132,6 +135,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     policy.add(this._switch(settings, 'sync-html', _('HTML')));
     policy.add(this._switch(settings, 'sync-images', _('Images')));
     policy.add(this._switch(settings, 'sync-sensitive', _('Sensitive content'), _('Disabled by default')));
+    policy.add(this._switch(
+      settings,
+      'sync-favorites-only',
+      _('Favorites only'),
+      _('Only applies to automatic sending'),
+    ));
     policy.add(this._spin(settings, 'text-full-threshold', _('Text eager threshold'), 1024, 16 * 1024 * 1024, 1024, _('bytes')));
     policy.add(this._spin(settings, 'text-preview-limit', _('Text preview limit'), 256, 65536, 256, _('bytes')));
     policy.add(this._spin(settings, 'image-full-threshold', _('Image eager threshold'), 65536, 128 * 1024 * 1024, 65536, _('bytes')));
@@ -320,4 +329,12 @@ function unpackVariants(value) {
   if (value && typeof value === 'object')
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, unpackVariants(item)]));
   return value;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024)
+    return `${bytes} B`;
+  if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 }

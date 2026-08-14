@@ -134,7 +134,10 @@ export class ClipboardItem {
   }
 
   static fromJSON(value) {
-    return new ClipboardItem(value);
+    const availability = value.remote && value.availability === 'waiting-for-source'
+      ? 'failed'
+      : value.availability;
+    return new ClipboardItem({...value, availability});
   }
 }
 

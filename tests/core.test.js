@@ -6,6 +6,7 @@ import {buildEditorArgv} from '../src/editor-launcher.js';
 import {EventEmitter} from '../src/event-emitter.js';
 import {ensureDeviceIdentity, isUuid, truncateUtf8} from '../src/core.js';
 import {processText, TextProcessors} from '../src/text-processors.js';
+import {effectiveCapabilities} from '../src/sync-policy.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -26,6 +27,11 @@ function testClipboardItem() {
 
   const restored = ClipboardItem.fromJSON(item.toJSON());
   assertEqual(restored.toJSON(), item.toJSON(), 'clipboard item JSON roundtrip');
+  const interrupted = item.toJSON();
+  interrupted.remote = true;
+  interrupted.availability = 'waiting-for-source';
+  assert(ClipboardItem.fromJSON(interrupted).availability === 'failed',
+    'interrupted remote transfer must become retryable after restart');
 
   const richItem = ClipboardItem.fromRepresentations([
     {mimeType: 'text/html', bytes: new GLib.Bytes(new TextEncoder().encode('<b>Hello</b>'))},
@@ -45,6 +51,11 @@ function testTextProcessors() {
   const words = processText('words', '中文分词 works');
   assert(words.includes('works') && words.some(word => word !== 'works'),
     'word processor should segment mixed text without assuming a specific ICU dictionary');
+  assertEqual(processText('graphemes', 'A 👨‍👩‍👧‍👦 中'), ['A', '👨‍👩‍👧‍👦', '中'],
+    'grapheme processor must preserve joined emoji and omit whitespace');
+  assertEqual(processText('uppercase', 'Clipboard 中文'), ['CLIPBOARD 中文'], 'uppercase transformation');
+  assertEqual(processText('lowercase', 'Clipboard 中文'), ['clipboard 中文'], 'lowercase transformation');
+  assertEqual(processText('title-case', 'clipboard_x SYNC'), ['Clipboard_x Sync'], 'title-case transformation');
   TextProcessors.register('brackets', text => text.match(/\[[^\]]+\]/gu) ?? []);
   assertEqual(processText('brackets', 'a [one] [二]'), ['[one]', '[二]'],
     'custom text processor registration');
@@ -81,6 +92,10 @@ function testEditorArgv() {
     ['editor', '--label=100%', 'file:///tmp/a.png'], 'literal percent and implicit URI');
   assertEqual(buildEditorArgv("editor '$(not-a-shell)' %f", 'file:///tmp/a b.png', '/tmp/a b.png'),
     ['editor', '$(not-a-shell)', '/tmp/a b.png'], 'command arguments must never be evaluated by a shell');
+  assertEqual(buildEditorArgv('flatpak run be.alexandervanhee.gradia %u',
+    'file:///tmp/截图%20“quoted”.png', '/tmp/截图 “quoted”.png'),
+  ['flatpak', 'run', 'be.alexandervanhee.gradia', 'file:///tmp/截图%20“quoted”.png'],
+  'Flatpak editor command must preserve a Unicode URI as one argument');
   let rejected = false;
   try {
     buildEditorArgv('editor %x', 'file:///tmp/a.png', '/tmp/a.png');
@@ -88,6 +103,13 @@ function testEditorArgv() {
     rejected = true;
   }
   assert(rejected, 'unknown editor placeholders must be rejected');
+  rejected = false;
+  try {
+    buildEditorArgv('editor %f', 'https://example.test/remote.png', null);
+  } catch (_error) {
+    rejected = true;
+  }
+  assert(rejected, 'local-path placeholder must reject a non-local URI');
 }
 
 function testColorTools() {
@@ -114,6 +136,32 @@ function testEventEmitter() {
   assertEqual(value, 3, 'event emitter disconnect');
 }
 
+function testEffectiveSyncCapabilities() {
+  const values = new Map(Object.entries({
+    'capture-size-limit-mib': 128,
+    'text-preview-limit': 4096,
+    'thumbnail-byte-limit': 262144,
+    'sync-text': true,
+    'sync-html': false,
+    'sync-images': true,
+  }));
+  const settings = {
+    get_int: key => values.get(key),
+    get_uint: key => values.get(key),
+    get_boolean: key => values.get(key),
+  };
+  const effective = effectiveCapabilities(settings, {
+    MaxItemBytes: 64 * 1024 * 1024,
+    MaxPreviewBytes: 64 * 1024,
+    SupportedMimeTypes: ['text/plain;charset=utf-8', 'text/html', 'image/png'],
+  });
+  assertEqual(effective, {
+    itemBytes: 64 * 1024 * 1024,
+    previewBytes: 64 * 1024,
+    mimeTypes: ['text/plain;charset=utf-8', 'image/png'],
+  }, 'Service capability display must show effective policy intersections');
+}
+
 testClipboardItem();
 testTextProcessors();
 testTruncation();
@@ -121,3 +169,4 @@ testDeviceIdentity();
 testEditorArgv();
 testColorTools();
 testEventEmitter();
+testEffectiveSyncCapabilities();

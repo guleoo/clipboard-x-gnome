@@ -2,7 +2,12 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {ClipboardItem} from './clipboard-item.js';
-import {ABSOLUTE_ITEM_LIMIT_BYTES, MAX_ITEM_REPRESENTATIONS, UUID} from './constants.js';
+import {
+  ABSOLUTE_ITEM_LIMIT_BYTES,
+  ABSOLUTE_PREVIEW_LIMIT_BYTES,
+  MAX_ITEM_REPRESENTATIONS,
+  UUID,
+} from './constants.js';
 import {
   bytesFromString,
   diagnosticCode,
@@ -22,6 +27,7 @@ export class HistoryStore {
   constructor(rootPath = null) {
     this.rootPath = rootPath ?? GLib.build_filenamev([GLib.get_user_cache_dir(), UUID]);
     this.objectsPath = GLib.build_filenamev([this.rootPath, 'objects']);
+    this.previewsPath = GLib.build_filenamev([this.rootPath, 'remote-previews']);
     this.indexPath = GLib.build_filenamev([this.rootPath, 'history.json']);
     this._saveChain = Promise.resolve();
     this._saveGeneration = 0;
@@ -50,7 +56,8 @@ export class HistoryStore {
     const items = [];
     for (const value of values.slice(0, MAX_STORED_ITEMS)) {
       try {
-        validateStoredItem(value, this.rootPath, this.objectsPath);
+        validateStoredItem(value, this.objectsPath, this.previewsPath);
+        await validatePreviewFile(value.preview, cancellable);
         items.push(ClipboardItem.fromJSON(value));
       } catch (error) {
         console.warn(`Clipboard X: ignored invalid history entry (${diagnosticCode(error)})`);
@@ -97,7 +104,7 @@ export class HistoryStore {
       throw new Error(`Clipboard history index exceeds ${MAX_INDEX_BYTES} bytes`);
     await writeFile(Gio.File.new_for_path(this.indexPath), bytesFromString(body), cancellable);
     if (generation === this._saveGeneration)
-      await this._removeUnreferencedObjects(persistedItems, cancellable);
+      await this._removeUnreferencedCacheFiles(persistedItems, cancellable);
   }
 
   async materialize(item, cancellable = null) {
@@ -122,18 +129,24 @@ export class HistoryStore {
     return item;
   }
 
-  async _removeUnreferencedObjects(items, cancellable) {
+  async _removeUnreferencedCacheFiles(items, cancellable) {
     const referenced = new Set();
     for (const item of items) {
       for (const representation of item.representations) {
         if (isPathInside(this.objectsPath, representation.path))
           referenced.add(GLib.canonicalize_filename(representation.path, null));
       }
-      if (isPathInside(this.objectsPath, item.preview?.path))
+      if (isPathInside(this.objectsPath, item.preview?.path)
+          || isPathInside(this.previewsPath, item.preview?.path))
         referenced.add(GLib.canonicalize_filename(item.preview.path, null));
     }
 
-    const directory = Gio.File.new_for_path(this.objectsPath);
+    await this._pruneDirectory(this.objectsPath, referenced, cancellable);
+    await this._pruneDirectory(this.previewsPath, referenced, cancellable);
+  }
+
+  async _pruneDirectory(path, referenced, cancellable) {
+    const directory = Gio.File.new_for_path(path);
     let enumerator;
     try {
       enumerator = await enumerateChildren(directory, cancellable);
@@ -167,17 +180,23 @@ export class HistoryStore {
   }
 }
 
-function validateStoredItem(value, rootPath, objectsPath) {
+function validateStoredItem(value, objectsPath, previewsPath) {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('entry is not an object');
   if (!isUuid(value.id))
     throw new Error('entry ID is not a UUID v4');
   if (!Number.isSafeInteger(value.createdAt) || value.createdAt < 0)
     throw new Error('entry timestamp is invalid');
-  if (typeof value.originDeviceId !== 'string' || value.originDeviceId.length > 128)
+  if (typeof value.originDeviceId !== 'string'
+      || (value.originDeviceId !== '' && !isUuid(value.originDeviceId)))
     throw new Error('origin device ID is invalid');
   if (typeof value.originDeviceTag !== 'string' || value.originDeviceTag.length > 256)
     throw new Error('origin device tag is invalid');
+  if (typeof value.favorite !== 'boolean'
+      || typeof value.remote !== 'boolean'
+      || typeof value.sensitive !== 'boolean'
+      || !['ready', 'preview', 'waiting-for-source', 'failed'].includes(value.availability))
+    throw new Error('entry state is invalid');
   if (!Array.isArray(value.representations)
       || value.representations.length === 0
       || value.representations.length > MAX_ITEM_REPRESENTATIONS)
@@ -209,14 +228,32 @@ function validateStoredItem(value, rootPath, objectsPath) {
   if (value.preview !== null) {
     if (!value.preview || typeof value.preview !== 'object' || !isMimeType(value.preview.mimeType))
       throw new Error('preview is invalid');
+    if (!contentIds.has(value.preview.derivedFrom) || typeof value.preview.truncated !== 'boolean')
+      throw new Error('preview derivation is invalid');
     if (value.preview.text !== undefined
         && (typeof value.preview.text !== 'string' || value.preview.text.length > MAX_PREVIEW_TEXT_LENGTH))
       throw new Error('preview text is invalid');
-    if (value.preview.path !== undefined
-        && value.preview.path !== null
-        && !isPathInside(rootPath, value.preview.path))
-      throw new Error('preview path is outside the private cache');
+    if (value.preview.path !== undefined && value.preview.path !== null) {
+      if (!isPathInside(objectsPath, value.preview.path)
+          && !isPathInside(previewsPath, value.preview.path))
+        throw new Error('preview path is outside the private cache');
+      if (!Number.isSafeInteger(value.preview.size)
+          || value.preview.size < 0
+          || value.preview.size > ABSOLUTE_PREVIEW_LIMIT_BYTES
+          || !SHA256_PATTERN.test(value.preview.sha256 ?? ''))
+        throw new Error('preview file metadata is invalid');
+    }
   }
+}
+
+async function validatePreviewFile(preview, cancellable) {
+  if (!preview?.path)
+    return;
+  const info = await queryInfo(Gio.File.new_for_path(preview.path), cancellable);
+  if (info.get_file_type() !== Gio.FileType.REGULAR
+      || info.get_is_symlink()
+      || info.get_size() !== preview.size)
+    throw new Error('preview cache file is invalid');
 }
 
 function isMimeType(value) {

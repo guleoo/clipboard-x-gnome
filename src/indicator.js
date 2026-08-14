@@ -187,19 +187,31 @@ class Indicator extends PanelMenu.Button {
   _textItem(item) {
     const title = item.preview?.text?.replaceAll('\n', ' ') || _('Text');
     const source = item.originDeviceTag ? `${item.originDeviceTag} · ` : '';
-    const row = new PopupMenu.PopupSubMenuMenuItem(`${source}${title}`.slice(0, 120));
+    const availability = this._availabilityText(item);
+    const row = new PopupMenu.PopupSubMenuMenuItem(
+      `${source}${title}${availability ? ` · ${availability}` : ''}`.slice(0, 120),
+    );
     row.add_style_class_name('clipboard-x-entry');
-    row.menu.addAction(_('Copy original'), () => this._activate(item));
+    const activateLabel = item.availability === 'failed'
+      ? _('Retry and copy')
+      : item.remote && item.availability !== 'ready'
+        ? _('Download and copy')
+        : _('Copy original');
+    row.menu.addAction(activateLabel, () => this._activate(item));
 
     const processors = [
       ['words', _('Words')],
       ['sentences', _('Sentences')],
+      ['graphemes', _('Characters')],
       ['lines', _('Lines')],
       ['separators', _('Separators')],
       ['urls', _('URLs')],
       ['emails', _('Email addresses')],
       ['numbers', _('Numbers')],
       ['identifiers', _('Identifier parts')],
+      ['uppercase', _('Uppercase')],
+      ['lowercase', _('Lowercase')],
+      ['title-case', _('Title case')],
     ];
     for (const [processor, label] of processors)
       row.menu.addMenuItem(this._processorItem(item, processor, label));
@@ -255,12 +267,24 @@ class Indicator extends PanelMenu.Button {
     row.add_child(icon);
     const size = item.primary?.size ?? 0;
     row.add_child(new St.Label({
-      text: `${item.originDeviceTag ? `${item.originDeviceTag} · ` : ''}${item.primary?.mimeType ?? _('Image')} · ${formatBytes(size)}`,
+      text: [
+        item.originDeviceTag,
+        item.primary?.mimeType ?? _('Image'),
+        formatBytes(size),
+        this._availabilityText(item),
+      ].filter(Boolean).join(' · '),
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     }));
     row.connect('activate', () => this._activate(item));
     row.add_child(this._inlineButton('document-edit-symbolic', _('Edit'), () => this._actions.editItem(item)));
+    if (this._canManualSync()) {
+      row.add_child(this._inlineButton(
+        'folder-remote-symbolic',
+        _('Send to sync service'),
+        () => this._actions.publish(item),
+      ));
+    }
     row.add_child(this._inlineButton(
       item.favorite ? 'starred-symbolic' : 'non-starred-symbolic',
       _('Favorite'),
@@ -272,8 +296,11 @@ class Indicator extends PanelMenu.Button {
 
   _addCommonActions(menu, item) {
     menu.addAction(item.favorite ? _('Unfavorite') : _('Favorite'), () => this._controller.toggleFavorite(item.id));
-    if (this._settings.get_string('sync-send-mode') === 'manual')
-      menu.addAction(_('Send to sync service'), () => this._actions.publish(item));
+    if (this._canManualSync()) {
+      menu.addAction(_('Send to sync service'), () => {
+        Promise.resolve(this._actions.publish(item)).catch(error => this._actions.reportError(error));
+      });
+    }
     menu.addAction(_('Delete'), () => this._controller.remove(item.id));
   }
 
@@ -291,6 +318,23 @@ class Indicator extends PanelMenu.Button {
   _activate(item) {
     this.menu.close();
     this._actions.activateItem(item).catch(error => this._actions.reportError(error));
+  }
+
+  _canManualSync() {
+    return this._settings.get_boolean('sync-enabled')
+      && this._settings.get_string('sync-send-mode') === 'manual';
+  }
+
+  _availabilityText(item) {
+    if (!item.remote)
+      return '';
+    if (item.availability === 'preview')
+      return _('Preview only');
+    if (item.availability === 'waiting-for-source')
+      return _('Waiting for source');
+    if (item.availability === 'failed')
+      return _('Download failed');
+    return item.availability === 'ready' ? _('Original ready') : '';
   }
 
   destroy() {

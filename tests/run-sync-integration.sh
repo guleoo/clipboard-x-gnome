@@ -166,3 +166,90 @@ fi
 gjs -m "$project_dir/tests/sync.integration.js"
 CLIPBOARD_X_EXPECTED_IMPLEMENTATION='Clipboard X Python Mock Service' \
   gjs -m "$project_dir/tests/sync-client.integration.js"
+
+kill "$service_pid"
+wait "$service_pid" 2>/dev/null || true
+unset service_pid
+
+: >"$ready_file"
+CLIPBOARD_X_MOCK_MAX_ITEM_BYTES=16 \
+CLIPBOARD_X_MOCK_MAX_PREVIEW_BYTES=8 \
+CLIPBOARD_X_MOCK_MIME_TYPES='text/plain;charset=utf-8' \
+  gjs -m "$project_dir/mock-service/mock-service.js" >"$ready_file" 2>&1 &
+service_pid=$!
+for _attempt in {1..100}; do
+  grep -q READY "$ready_file" && break
+  sleep 0.05
+done
+if ! grep -q READY "$ready_file"; then
+  cat "$ready_file"
+  exit 1
+fi
+gjs -m "$project_dir/tests/sync-policy.integration.js"
+
+kill "$service_pid"
+wait "$service_pid" 2>/dev/null || true
+unset service_pid
+
+: >"$ready_file"
+CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE='expired,ready' \
+  gjs -m "$project_dir/mock-service/mock-service.js" >"$ready_file" 2>&1 &
+service_pid=$!
+for _attempt in {1..100}; do
+  grep -q READY "$ready_file" && break
+  sleep 0.05
+done
+if ! grep -q READY "$ready_file"; then
+  cat "$ready_file"
+  exit 1
+fi
+gjs -m "$project_dir/tests/sync-retry.integration.js"
+
+kill "$service_pid"
+wait "$service_pid" 2>/dev/null || true
+unset service_pid
+
+: >"$ready_file"
+CLIPBOARD_X_MOCK_TRANSFER_DELAY_MS=5000 \
+  gjs -m "$project_dir/mock-service/mock-service.js" >"$ready_file" 2>&1 &
+service_pid=$!
+for _attempt in {1..100}; do
+  grep -q READY "$ready_file" && break
+  sleep 0.05
+done
+if ! grep -q READY "$ready_file"; then
+  cat "$ready_file"
+  exit 1
+fi
+
+: >"$client_file"
+gjs -m "$project_dir/tests/sync-offline-transfer.integration.js" >"$client_file" 2>&1 &
+client_pid=$!
+for _attempt in {1..100}; do
+  grep -q TRANSFER_STARTED "$client_file" && break
+  sleep 0.05
+done
+if ! grep -q TRANSFER_STARTED "$client_file"; then
+  cat "$client_file"
+  exit 1
+fi
+kill "$service_pid"
+wait "$service_pid" 2>/dev/null || true
+unset service_pid
+wait "$client_pid"
+unset client_pid
+grep -q TRANSFER_OFFLINE "$client_file"
+
+: >"$ready_file"
+CLIPBOARD_X_MOCK_MALFORMED=1 \
+  gjs -m "$project_dir/mock-service/mock-service.js" >"$ready_file" 2>&1 &
+service_pid=$!
+for _attempt in {1..100}; do
+  grep -q READY "$ready_file" && break
+  sleep 0.05
+done
+if ! grep -q READY "$ready_file"; then
+  cat "$ready_file"
+  exit 1
+fi
+gjs -m "$project_dir/tests/sync-malformed.integration.js"

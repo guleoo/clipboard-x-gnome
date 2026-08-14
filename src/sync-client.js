@@ -17,6 +17,8 @@ import {
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/u;
 const TRANSFER_STATES = new Set(Object.values(TransferState));
+const MAX_PENDING_ITEMS = 10_000;
+const MAX_TRANSFER_STATES = 1024;
 
 export class SyncClient extends EventEmitter {
   constructor(settings) {
@@ -30,6 +32,7 @@ export class SyncClient extends EventEmitter {
     this._registeredTag = null;
     this._transferWaiters = new Map();
     this._transferStates = new Map();
+    this._knownTransfers = new Set();
     this._capabilities = null;
     this._connecting = false;
     this._connectIdleId = 0;
@@ -92,9 +95,11 @@ export class SyncClient extends EventEmitter {
       if (item.preview?.text) {
         const previewLimit = this._effectivePreviewLimit(false);
         const textPreview = truncateUtf8(item.preview.text, previewLimit);
-        const path = GLib.build_filenamev([GLib.get_tmp_dir(), `clipboard-x-${item.id}-preview.txt`]);
+        const [temporaryFile, temporaryStream] = Gio.File.new_tmp('clipboard-x-preview-XXXXXX');
+        temporaryStream.close(null);
+        const path = temporaryFile.get_path();
         await writeFile(
-          Gio.File.new_for_path(path),
+          temporaryFile,
           new GLib.Bytes(new TextEncoder().encode(textPreview.text)),
           this._cancellable,
         );
@@ -166,7 +171,10 @@ export class SyncClient extends EventEmitter {
       ]);
 
       const [reply] = await this._callWithFds('Publish', parameters, fdList);
-      return reply.deepUnpack()[0];
+      const publishedId = reply.deepUnpack()[0];
+      if (publishedId !== item.id)
+        throw new Error('Synchronization Service did not preserve the published item ID');
+      return publishedId;
     } finally {
       for (const stream of streams)
         stream.close(null);
@@ -185,19 +193,38 @@ export class SyncClient extends EventEmitter {
       return [];
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const reply = await this._call('ListPending', new GLib.Variant('(s)', [deviceId]));
-    return reply.deepUnpack()[0];
+    const itemIds = reply.deepUnpack()[0];
+    if (!Array.isArray(itemIds)
+        || itemIds.length > MAX_PENDING_ITEMS
+        || !itemIds.every(isUuid))
+      throw new Error('Synchronization Service returned invalid pending item IDs');
+    return [...new Set(itemIds)];
   }
 
   async requestContent(itemId, contentIds) {
+    validateItemId(itemId);
+    if (!Array.isArray(contentIds)
+        || contentIds.length === 0
+        || contentIds.length > MAX_ITEM_REPRESENTATIONS
+        || !contentIds.every(isContentId))
+      throw new Error('Synchronization content request is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const reply = await this._call(
       'RequestContent',
-      new GLib.Variant('(ssas)', [deviceId, itemId, contentIds]),
+      new GLib.Variant('(ssas)', [deviceId, itemId, [...new Set(contentIds)]]),
     );
-    return reply.deepUnpack()[0];
+    const transferId = reply.deepUnpack()[0];
+    if (!isUuid(transferId))
+      throw new Error('Synchronization Service returned an invalid transfer ID');
+    this._knownTransfers.add(transferId);
+    const current = this._transferStates.get(transferId);
+    if (current)
+      this.emit('transfer-changed', transferId, current.state, current.received, current.total, current.error);
+    return transferId;
   }
 
   async getItem(itemId) {
+    validateItemId(itemId);
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const [reply, fdList] = await this._callWithFds(
       'GetItem',
@@ -207,12 +234,13 @@ export class SyncClient extends EventEmitter {
     const [rawMetadata, rawPreviews] = reply.deepUnpack();
     const metadata = unpackDictionary(rawMetadata);
     const contentValues = metadata.contents ?? [];
-    if (!isUuid(metadata.id ?? itemId) || !isUuid(metadata['origin-device-id'] ?? ''))
+    if (!isUuid(metadata.id ?? itemId) || metadata.id !== itemId || !isUuid(metadata['origin-device-id'] ?? ''))
       throw new Error('Synchronization Service returned an invalid item or DeviceId');
     if (!Array.isArray(contentValues)
         || contentValues.length === 0
         || contentValues.length > MAX_ITEM_REPRESENTATIONS)
       throw new Error('Synchronization Service returned an invalid representation count');
+    const contentIds = new Set();
     const representations = contentValues.map(rawContent => {
       const content = unpackDictionary(rawContent);
       const representation = {
@@ -225,6 +253,9 @@ export class SyncClient extends EventEmitter {
         path: null,
       };
       validateRepresentation(representation);
+      if (contentIds.has(representation.id))
+        throw new Error('Synchronization Service returned duplicate content IDs');
+      contentIds.add(representation.id);
       return representation;
     });
     const declaredBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
@@ -234,13 +265,34 @@ export class SyncClient extends EventEmitter {
     const createdAt = Number(metadata['created-at']);
     if (!Number.isSafeInteger(createdAt) || createdAt < 0)
       throw new Error('Synchronization Service returned an invalid timestamp');
+    if (metadata.favorite !== undefined && typeof metadata.favorite !== 'boolean')
+      throw new Error('Synchronization Service returned an invalid favorite flag');
 
     let preview = null;
     if (!Array.isArray(rawPreviews) || rawPreviews.length > MAX_ITEM_REPRESENTATIONS)
       throw new Error('Synchronization Service returned an invalid preview count');
     if (rawPreviews.length > 0) {
-      const [mimeType, rawPreviewMetadata, fdIndex] = rawPreviews[0];
-      const previewMetadata = unpackDictionary(rawPreviewMetadata);
+      const validatedPreviews = rawPreviews.map(rawPreview => {
+        if (!Array.isArray(rawPreview) || rawPreview.length !== 3)
+          throw new Error('Synchronization Service returned invalid preview metadata');
+        const [mimeType, rawPreviewMetadata, fdIndex] = rawPreview;
+        const previewMetadata = unpackDictionary(rawPreviewMetadata);
+        if (!isMimeType(mimeType)
+            || !Number.isInteger(fdIndex)
+            || !isContentId(previewMetadata['content-id'])
+            || !representations.some(representation => representation.id === previewMetadata['content-id'])
+            || !Number.isSafeInteger(Number(previewMetadata.size))
+            || Number(previewMetadata.size) < 0
+            || !fdList
+            || fdIndex < 0
+            || fdIndex >= fdList.get_length()
+            || typeof previewMetadata.truncated !== 'boolean')
+          throw new Error('Synchronization Service returned invalid preview metadata');
+        return {mimeType, previewMetadata, fdIndex};
+      });
+      const selected = validatedPreviews.find(candidate => candidate.previewMetadata['content-id'] === representations[0].id)
+        ?? validatedPreviews[0];
+      const {mimeType, previewMetadata, fdIndex} = selected;
       const bytes = await readFdListBytes(
         fdList,
         fdIndex,
@@ -249,10 +301,6 @@ export class SyncClient extends EventEmitter {
       );
       if (Number(previewMetadata.size ?? bytes.get_size()) !== bytes.get_size())
         throw new Error('Synchronization preview size does not match its metadata');
-      if (!isMimeType(mimeType))
-        throw new Error('Synchronization preview MIME type is invalid');
-      if (!representations.some(representation => representation.id === previewMetadata['content-id']))
-        throw new Error('Synchronization preview has an invalid derived content ID');
       if (mimeType.startsWith('text/')) {
         preview = {
           mimeType,
@@ -263,12 +311,14 @@ export class SyncClient extends EventEmitter {
       } else {
         const previewRoot = GLib.build_filenamev([GLib.get_user_cache_dir(), UUID, 'remote-previews']);
         GLib.mkdir_with_parents(previewRoot, 0o700);
-        const path = GLib.build_filenamev([previewRoot, `${itemId}.png`]);
+        const previewHash = sha256(bytes);
+        const path = GLib.build_filenamev([previewRoot, `${metadata.id}-${previewHash}.preview`]);
         await writeFile(Gio.File.new_for_path(path), bytes, this._cancellable);
         preview = {
           mimeType,
           path,
           size: bytes.get_size(),
+          sha256: previewHash,
           truncated: true,
           derivedFrom: previewMetadata['content-id'],
         };
@@ -279,7 +329,7 @@ export class SyncClient extends EventEmitter {
       id: metadata.id ?? itemId,
       createdAt,
       originDeviceId: metadata['origin-device-id'] ?? '',
-      originDeviceTag: safeString(metadata['origin-device-tag'], 256),
+      originDeviceTag: safeString(metadata['origin-device-tag'] ?? '', 256),
       representations,
       preview,
       favorite: Boolean(metadata.favorite),
@@ -301,9 +351,9 @@ export class SyncClient extends EventEmitter {
         const {metadata, bytes} = await this.openContent(item.id, representation.id);
         const actualSize = bytes.get_size();
         const actualHash = sha256(bytes);
-        if (actualSize !== representation.size || (metadata.size && actualSize !== Number(metadata.size)))
+        if (actualSize !== representation.size || actualSize !== Number(metadata.size))
           throw new Error(`Synchronization size mismatch for ${representation.id}`);
-        if (actualHash !== representation.sha256 || (metadata.sha256 && actualHash !== metadata.sha256))
+        if (actualHash !== representation.sha256 || actualHash !== metadata.sha256)
           throw new Error(`Synchronization hash mismatch for ${representation.id}`);
         representation.bytes = bytes;
       }
@@ -316,6 +366,9 @@ export class SyncClient extends EventEmitter {
   }
 
   async openContent(itemId, contentId) {
+    validateItemId(itemId);
+    if (!isContentId(contentId))
+      throw new Error('Synchronization content ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const [reply, fdList] = await this._callWithFds(
       'OpenContent',
@@ -324,6 +377,12 @@ export class SyncClient extends EventEmitter {
     );
     const [rawMetadata, fdIndex] = reply.deepUnpack();
     const metadata = unpackDictionary(rawMetadata);
+    if (metadata['content-id'] !== contentId
+        || !Number.isSafeInteger(Number(metadata.size))
+        || Number(metadata.size) < 0
+        || !SHA256_PATTERN.test(metadata.sha256 ?? '')
+        || !['eager', 'on-demand'].includes(metadata.delivery))
+      throw new Error('Synchronization Service returned invalid content metadata');
     return {
       metadata,
       bytes: await readFdListBytes(
@@ -336,6 +395,10 @@ export class SyncClient extends EventEmitter {
   }
 
   async acknowledge(itemId, result, message = '') {
+    validateItemId(itemId);
+    if (typeof result !== 'string' || result.length === 0 || result.length > 64
+        || typeof message !== 'string' || message.length > 512)
+      throw new Error('Synchronization acknowledgement is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     await this._call(
       'Acknowledge',
@@ -344,6 +407,8 @@ export class SyncClient extends EventEmitter {
   }
 
   async cancelTransfer(transferId) {
+    if (!isUuid(transferId))
+      throw new Error('Synchronization transfer ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     await this._call('CancelTransfer', new GLib.Variant('(ss)', [deviceId, transferId]));
   }
@@ -418,10 +483,17 @@ export class SyncClient extends EventEmitter {
 
       this._proxySignal = this._proxy.connect('g-signal', (_proxy, _sender, name, parameters) => {
         const values = parameters.deepUnpack();
-        if (name === 'ItemAvailable')
-          this.emit('item-available', values[0]);
-        else if (name === 'ItemRemoved')
-          this.emit('item-removed', values[0], values[1]);
+        if (name === 'ItemAvailable') {
+          if (isUuid(values[0]))
+            this.emit('item-available', values[0]);
+          else
+            this._report(new Error('Service emitted an invalid item ID'));
+        } else if (name === 'ItemRemoved') {
+          if (isUuid(values[0]) && typeof values[1] === 'string')
+            this.emit('item-removed', values[0], safeString(values[1], 256));
+          else
+            this._report(new Error('Service emitted invalid removal metadata'));
+        }
         else if (name === 'TransferChanged')
           this._handleTransferChanged(...values);
       });
@@ -597,35 +669,49 @@ export class SyncClient extends EventEmitter {
         || !Number.isSafeInteger(received) || received < 0
         || !Number.isSafeInteger(total) || total < 0
         || received > ABSOLUTE_ITEM_LIMIT_BYTES || total > ABSOLUTE_ITEM_LIMIT_BYTES
-        || (total > 0 && received > total)) {
+        || (total > 0 && received > total)
+        || typeof error !== 'string') {
       this._report(new Error('Service emitted invalid transfer metadata'));
       return;
     }
     error = safeString(error, 512);
+    if (!this._transferStates.has(transferId) && this._transferStates.size >= MAX_TRANSFER_STATES)
+      this._transferStates.delete(this._transferStates.keys().next().value);
     this._transferStates.set(transferId, {state, received, total, error});
+    if (!this._knownTransfers.has(transferId))
+      return;
     const waiter = this._transferWaiters.get(transferId);
     if (waiter && state === 'ready') {
       clearTimeout(waiter.timeout);
       this._transferWaiters.delete(transferId);
+      this._knownTransfers.delete(transferId);
       waiter.resolve();
     } else if (waiter && ['cancelled', 'expired', 'failed'].includes(state)) {
       clearTimeout(waiter.timeout);
       this._transferWaiters.delete(transferId);
+      this._knownTransfers.delete(transferId);
       waiter.reject(new Error(error || `Transfer ${state}`));
     }
     this.emit('transfer-changed', transferId, state, received, total, error);
   }
 
   _waitForTransfer(transferId) {
+    if (!isUuid(transferId) || !this._knownTransfers.has(transferId))
+      return Promise.reject(new Error('Synchronization transfer ID is unknown'));
     const current = this._transferStates.get(transferId);
-    if (current?.state === 'ready')
+    if (current?.state === 'ready') {
+      this._knownTransfers.delete(transferId);
       return Promise.resolve();
-    if (current && ['cancelled', 'expired', 'failed'].includes(current.state))
+    }
+    if (current && ['cancelled', 'expired', 'failed'].includes(current.state)) {
+      this._knownTransfers.delete(transferId);
       return Promise.reject(new Error(current.error || `Transfer ${current.state}`));
+    }
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this._transferWaiters.delete(transferId);
+        this._knownTransfers.delete(transferId);
         this.cancelTransfer(transferId).catch(() => {});
         reject(new Error('Timed out waiting for synchronized content'));
       }, this._settings.get_uint('sync-transfer-timeout-seconds') * 1000);
@@ -662,6 +748,7 @@ export class SyncClient extends EventEmitter {
       waiter.reject(error);
     }
     this._transferWaiters.clear();
+    this._knownTransfers.clear();
   }
 
   destroy() {
@@ -676,6 +763,7 @@ export class SyncClient extends EventEmitter {
     this._disconnectProxy();
     this._rejectTransfers(new Error('Synchronization client was destroyed'));
     this._transferStates.clear();
+    this._knownTransfers.clear();
     this._cancellable.cancel();
     this.disconnectAll();
   }
@@ -733,7 +821,7 @@ async function readFdListBytes(fdList, index, cancellable, maxBytes = 0) {
 }
 
 function validateRepresentation(representation) {
-  if (typeof representation.id !== 'string' || representation.id.length === 0 || representation.id.length > 128)
+  if (!isContentId(representation.id))
     throw new Error('Synchronization content ID is invalid');
   if (!isMimeType(representation.mimeType))
     throw new Error('Synchronization MIME type is invalid');
@@ -745,6 +833,18 @@ function validateRepresentation(representation) {
     throw new Error('Synchronization content hash is invalid');
   if (!['eager', 'on-demand'].includes(representation.delivery))
     throw new Error('Synchronization delivery policy is invalid');
+}
+
+function validateItemId(itemId) {
+  if (!isUuid(itemId))
+    throw new Error('Synchronization item ID must be a UUID v4');
+}
+
+function isContentId(value) {
+  return typeof value === 'string'
+    && value.length > 0
+    && value.length <= 128
+    && !/[\r\n\0]/u.test(value);
 }
 
 function validateMimeTypes(value) {

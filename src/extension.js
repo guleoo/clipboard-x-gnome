@@ -49,13 +49,12 @@ export default class ClipboardXExtension extends Extension {
     this._bindShortcut();
 
     this._itemAddedSignal = this._controller.connect('item-added', (_controller, item, source) => {
-      if (source === 'remote' || !this._settings.get_boolean('sync-enabled'))
-        return;
-      if (item.sensitive && !this._settings.get_boolean('sync-sensitive'))
-        return;
-      if (this._settings.get_string('sync-send-mode') !== 'automatic')
-        return;
-      this._publish(item).catch(error => this._reportError(error));
+      if (source !== 'remote')
+        this._publishAutomatically(item);
+    });
+    this._favoriteSignal = this._controller.connect('favorite-changed', (_controller, item, favorite) => {
+      if (favorite && this._settings.get_boolean('sync-favorites-only'))
+        this._publishAutomatically(item);
     });
 
     this._syncItemSignal = this._sync.connect('item-available', (_sync, itemId) => {
@@ -89,6 +88,8 @@ export default class ClipboardXExtension extends Extension {
       this._controller.disconnect(this._itemAddedSignal);
     if (this._syncItemSignal)
       this._sync.disconnect(this._syncItemSignal);
+    if (this._favoriteSignal)
+      this._controller.disconnect(this._favoriteSignal);
     if (this._syncRemovedSignal)
       this._sync.disconnect(this._syncRemovedSignal);
     if (this._syncStatusSignal)
@@ -97,6 +98,7 @@ export default class ClipboardXExtension extends Extension {
       this._sync.disconnect(this._transferSignal);
     this._itemAddedSignal = 0;
     this._syncItemSignal = 0;
+    this._favoriteSignal = 0;
     this._syncRemovedSignal = 0;
     this._syncStatusSignal = 0;
     this._transferSignal = 0;
@@ -120,6 +122,15 @@ export default class ClipboardXExtension extends Extension {
       throw new Error('Synchronization is disabled');
     await this._controller.persist();
     return this._sync.publish(item);
+  }
+
+  _publishAutomatically(item) {
+    if (!this._settings.get_boolean('sync-enabled')
+        || this._settings.get_string('sync-send-mode') !== 'automatic'
+        || (item.sensitive && !this._settings.get_boolean('sync-sensitive'))
+        || (this._settings.get_boolean('sync-favorites-only') && !item.favorite))
+      return;
+    this._publish(item).catch(error => this._reportError(error));
   }
 
   async _takeScreenshot() {
@@ -148,6 +159,7 @@ export default class ClipboardXExtension extends Extension {
 
   async _editItem(item) {
     await this._ensureMaterialized(item);
+    await this._controller.persist();
     const path = item.primary?.path;
     if (!path)
       throw new Error('The original image is not available locally');
@@ -160,10 +172,23 @@ export default class ClipboardXExtension extends Extension {
   }
 
   async _ensureMaterialized(item) {
-    if (item.remote && !item.primary?.bytes) {
-      await this._sync.materialize(item);
-      await this._controller.persist();
-      await this._sync.acknowledge(item.id, 'accepted');
+    const requiresRemoteContent = item.remote
+      && item.representations.some(representation => !representation.bytes && !representation.path);
+    if (requiresRemoteContent) {
+      try {
+        await this._sync.materialize(item);
+        this._controller.update(item);
+        await this._controller.persist();
+        await this._sync.acknowledge(item.id, 'accepted');
+      } catch (error) {
+        this._controller.update(item);
+        try {
+          await this._sync.acknowledge(item.id, 'rejected');
+        } catch (_acknowledgeError) {
+          // Preserve the materialization error when the Service is also unavailable.
+        }
+        throw error;
+      }
     } else {
       await this._controller.materialize(item);
     }
@@ -174,6 +199,8 @@ export default class ClipboardXExtension extends Extension {
     if (this._settings.get_string('sync-receive-mode') === 'disabled')
       return;
     const item = await this._sync.getItem(itemId);
+    if (item.originDeviceId === ensureDeviceIdentity(this._settings).deviceId)
+      return;
     this._controller.add(item, 'remote');
     if (this._settings.get_string('sync-receive-mode') === 'activate')
       await this._activateItem(item);
