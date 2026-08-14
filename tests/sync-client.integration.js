@@ -111,3 +111,16 @@ try {
   client.destroy();
   file.delete(null);
 }
+
+const invalidSettings = new TestSettings();
+invalidSettings._values.set('service-bus-name', 'invalid bus name');
+const invalidClient = new SyncClient(invalidSettings);
+let invalidAddressRejected = false;
+try {
+  await invalidClient.start();
+} catch (error) {
+  invalidAddressRejected = /bus name is invalid/u.test(error.message);
+} finally {
+  invalidClient.destroy();
+}
+assert(invalidAddressRejected, 'SyncClient must reject an invalid configured D-Bus address');

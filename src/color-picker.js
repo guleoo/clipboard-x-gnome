@@ -7,6 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {formatColor, sampleRegion} from './color.js';
+import {diagnosticCode} from './core.js';
 
 const LENS_RADIUS = 5;
 const LENS_CELL_SIZE = 10;
@@ -123,7 +124,7 @@ class ColorPicker extends St.Widget {
     }
     this.grab_key_focus();
     this._initialize().catch(error => {
-      console.error(`Clipboard X color picker: ${error.message}`);
+      console.error(`Clipboard X color picker failed (${diagnosticCode(error)})`);
       this.close();
     });
   }
@@ -222,7 +223,7 @@ class ColorPicker extends St.Widget {
 
   vfunc_motion_event(event) {
     const [x, y] = event.get_coords();
-    this._sample(x, y).catch(error => console.error(`Clipboard X color sample: ${error.message}`));
+    this._sample(x, y).catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
     return Clutter.EVENT_STOP;
   }
 
@@ -262,7 +263,7 @@ class ColorPicker extends St.Widget {
       const multiplier = event.get_state() & Clutter.ModifierType.CONTROL_MASK ? 8 : 1;
       const [x, y] = this._coords;
       this._sample(x + dx * multiplier, y + dy * multiplier)
-        .catch(error => console.error(`Clipboard X color sample: ${error.message}`));
+        .catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
       return Clutter.EVENT_STOP;
     }
 

@@ -5,11 +5,11 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {ClipboardItem} from './clipboard-item.js';
-import {ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
+import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
 import {HistoryStore} from './history-store.js';
 import {EventEmitter} from './event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
-import {loadFile, sha256, writeFile} from './core.js';
+import {diagnosticCode, loadFile, sha256, writeFile} from './core.js';
 
 const CLIPBOARD = St.ClipboardType.CLIPBOARD;
 
@@ -28,6 +28,7 @@ export class ClipboardController extends EventEmitter {
     this._captureQueued = false;
     this._destroyed = false;
     this._suppressedHash = null;
+    this._searchCache = new WeakMap();
     this._cancellable = new Gio.Cancellable();
     this._loading = true;
     this._error = null;
@@ -52,7 +53,7 @@ export class ClipboardController extends EventEmitter {
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
         this._error = error;
-        console.error(`Clipboard X: unable to load history: ${error.message}`);
+        console.error(`Clipboard X: unable to load history (${diagnosticCode(error)})`);
       }
     } finally {
       this._loading = false;
@@ -71,7 +72,7 @@ export class ClipboardController extends EventEmitter {
             this._captureQueued = true;
             return;
           }
-          this.capture().catch(error => console.error(`Clipboard X: capture failed: ${error.message}`));
+          this.capture().catch(error => console.error(`Clipboard X: capture failed (${diagnosticCode(error)})`));
         }
       },
     );
@@ -112,7 +113,14 @@ export class ClipboardController extends EventEmitter {
           : mimeType;
         if (seenMimeTypes.has(normalizedMimeType) || (normalizedMimeType.startsWith('image/') && hasImage))
           continue;
-        const bytes = await this._readSelectionContent(mimeType);
+        let bytes;
+        try {
+          bytes = await this._readSelectionContent(mimeType, this._captureLimitBytes());
+        } catch (error) {
+          if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+            console.warn(`Clipboard X: rejected ${normalizedMimeType} representation (${diagnosticCode(error)})`);
+          continue;
+        }
         if (!bytes || bytes.get_size() === 0)
           continue;
         seenMimeTypes.add(normalizedMimeType);
@@ -127,18 +135,22 @@ export class ClipboardController extends EventEmitter {
         sensitive: sensitive && sensitiveMode !== 'store',
       });
 
-      if (item.primary.sha256 === this._suppressedHash) {
+      if (this._suppressedHash) {
+        const suppressed = this._suppressedHash;
         this._suppressedHash = null;
-        return null;
+        if (item.primary.sha256 === suppressed.hash && Date.now() <= suppressed.until)
+          return null;
       }
 
       await this._prepareItem(item);
+      if (this._destroyed)
+        return null;
       return this.add(item, 'local');
     } finally {
       this._captureInProgress = false;
       if (this._captureQueued && !this._destroyed) {
         this._captureQueued = false;
-        this.capture().catch(error => console.error(`Clipboard X: queued capture failed: ${error.message}`));
+        this.capture().catch(error => console.error(`Clipboard X: queued capture failed (${diagnosticCode(error)})`));
       }
     }
   }
@@ -151,10 +163,14 @@ export class ClipboardController extends EventEmitter {
 
   async createFromUri(uri) {
     const file = Gio.File.new_for_uri(uri);
-    const [bytes, info] = await Promise.all([
-      loadFile(file, this._cancellable),
-      this._queryInfo(file),
-    ]);
+    if (!file.is_native())
+      throw new Error('Screenshot Portal returned a non-local URI');
+    const info = await this._queryInfo(file);
+    if (info.get_file_type() !== Gio.FileType.REGULAR || info.get_is_symlink())
+      throw new Error('Screenshot Portal result is not a regular file');
+    if (info.get_size() > this._captureLimitBytes())
+      throw new Error('Screenshot exceeds the configured capture limit');
+    const bytes = await loadFile(file, this._cancellable);
     const mimeType = info.get_content_type() || 'image/png';
     const item = ClipboardItem.fromBytes(mimeType, bytes, {
       textPreviewLimit: this._settings.get_uint('text-preview-limit'),
@@ -164,6 +180,8 @@ export class ClipboardController extends EventEmitter {
   }
 
   add(item, source = 'remote') {
+    if (this._destroyed)
+      return item;
     const existingIndex = this._items.findIndex(existing => existing.equals(item));
     if (existingIndex >= 0) {
       const [existing] = this._items.splice(existingIndex, 1);
@@ -212,7 +230,7 @@ export class ClipboardController extends EventEmitter {
     if (!item.primary?.bytes)
       throw new Error('Clipboard content is not materialized');
 
-    this._suppressedHash = item.primary.sha256;
+    this._suppressedHash = {hash: item.primary.sha256, until: Date.now() + 2000};
     this._clipboard.set_content(CLIPBOARD, item.primary.mimeType, item.primary.bytes);
   }
 
@@ -220,11 +238,23 @@ export class ClipboardController extends EventEmitter {
     await this.activate(item);
   }
 
-  search(query) {
+  search(query, limit = Infinity) {
     const needle = query.trim().toLocaleLowerCase();
     if (!needle)
-      return this.items;
-    return this._items.filter(item => item.preview?.text?.toLocaleLowerCase().includes(needle));
+      return this._items.slice(0, limit);
+    const matches = [];
+    for (const item of this._items) {
+      let searchable = this._searchCache.get(item);
+      if (searchable === undefined) {
+        searchable = item.preview?.text?.toLocaleLowerCase() ?? '';
+        this._searchCache.set(item, searchable);
+      }
+      if (searchable.includes(needle))
+        matches.push(item);
+      if (matches.length >= limit)
+        break;
+    }
+    return matches;
   }
 
   async materialize(item) {
@@ -242,16 +272,17 @@ export class ClipboardController extends EventEmitter {
         : 'on-demand';
     }
 
-    if (!item.isImage || item.sensitive)
+    if (!item.isImage || item.sensitive || item.primary.mimeType === 'image/svg+xml')
       return;
 
     const representation = item.primary;
 
     try {
-      const thumbnail = createThumbnail(
+      const thumbnail = await createThumbnail(
         representation.bytes,
         this._settings.get_uint('thumbnail-size'),
         this._settings.get_uint('thumbnail-byte-limit'),
+        this._cancellable,
       );
       const digest = sha256(thumbnail.bytes);
       const previewPath = GLib.build_filenamev([this._store.objectsPath, `preview-${digest}.png`]);
@@ -263,14 +294,12 @@ export class ClipboardController extends EventEmitter {
         size: thumbnail.bytes.get_size(),
         width: thumbnail.width,
         height: thumbnail.height,
-        originalWidth: thumbnail.originalWidth,
-        originalHeight: thumbnail.originalHeight,
         sha256: digest,
         truncated: true,
         derivedFrom: representation.id,
       };
     } catch (error) {
-      console.warn(`Clipboard X: thumbnail unavailable: ${error.message}`);
+      console.warn(`Clipboard X: thumbnail unavailable (${diagnosticCode(error)})`);
     }
   }
 
@@ -280,13 +309,13 @@ export class ClipboardController extends EventEmitter {
     return this._settings.get_uint('text-full-threshold');
   }
 
-  _readSelectionContent(mimeType) {
+  _readSelectionContent(mimeType, maximumBytes) {
     return new Promise((resolve, reject) => {
       const output = Gio.MemoryOutputStream.new_resizable();
       this._selection.transfer_async(
         Meta.SelectionType.SELECTION_CLIPBOARD,
         mimeType,
-        -1,
+        maximumBytes + 1,
         output,
         this._cancellable,
         (selection, result) => {
@@ -294,8 +323,16 @@ export class ClipboardController extends EventEmitter {
             if (!selection.transfer_finish(result))
               throw new Error(`Unable to transfer clipboard MIME type ${mimeType}`);
             output.close(null);
-            resolve(output.steal_as_bytes());
+            const bytes = output.steal_as_bytes();
+            if (bytes.get_size() > maximumBytes)
+              throw new Error(`Clipboard content exceeds the ${maximumBytes} byte capture limit`);
+            resolve(bytes);
           } catch (error) {
+            try {
+              output.close(null);
+            } catch (_closeError) {
+              // The stream may already be closed after a successful transfer.
+            }
             reject(error);
           }
         },
@@ -309,11 +346,23 @@ export class ClipboardController extends EventEmitter {
       .some(value => value.trim().toLocaleLowerCase() === normalized);
   }
 
+  _captureLimitBytes() {
+    return Math.min(
+      ABSOLUTE_ITEM_LIMIT_BYTES,
+      this._settings.get_int('capture-size-limit-mib') * 1024 * 1024,
+    );
+  }
+
   _queryInfo(file) {
     return new Promise((resolve, reject) => {
       file.query_info_async(
-        Gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
-        Gio.FileQueryInfoFlags.NONE,
+        [
+          Gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
+          Gio.FILE_ATTRIBUTE_STANDARD_SIZE,
+          Gio.FILE_ATTRIBUTE_STANDARD_TYPE,
+          Gio.FILE_ATTRIBUTE_STANDARD_IS_SYMLINK,
+        ].join(','),
+        Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
         GLib.PRIORITY_DEFAULT,
         this._cancellable,
         (source, result) => {
@@ -349,12 +398,14 @@ export class ClipboardController extends EventEmitter {
   }
 
   _scheduleSave() {
+    if (this._destroyed)
+      return;
     if (this._saveTimeout)
       clearTimeout(this._saveTimeout);
     this._saveTimeout = setTimeout(() => {
       this._saveTimeout = 0;
       this._store.save(this._items, this._cancellable)
-        .catch(error => console.error(`Clipboard X: unable to save history: ${error.message}`));
+        .catch(error => console.error(`Clipboard X: unable to save history (${diagnosticCode(error)})`));
     }, 150);
   }
 
@@ -370,6 +421,7 @@ export class ClipboardController extends EventEmitter {
     this._cancellable.cancel();
     this.disconnectAll();
     this._items = [];
+    this._searchCache = new WeakMap();
   }
 }
 

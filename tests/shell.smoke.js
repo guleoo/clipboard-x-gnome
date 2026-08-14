@@ -1,5 +1,6 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
+import GLib from 'gi://GLib';
 import St from 'gi://St';
 
 const UUID = 'clipboard-x@guleo.github.io';
@@ -38,6 +39,24 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
     'Clipboard X did not capture a text clipboard change');
 
+  for (let index = 0; index < 50; index++)
+    St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, `rapid clipboard change ${index}`);
+  await Scripting.sleep(800);
+  assert(indicator._controller.items.some(item => item.text === 'rapid clipboard change 49'),
+    'Clipboard X lost the final value during rapid clipboard changes');
+
+  const png = GLib.base64_decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  );
+  St.Clipboard.get_default().set_content(
+    St.ClipboardType.CLIPBOARD,
+    'image/png',
+    new GLib.Bytes(png),
+  );
+  await Scripting.sleep(800);
+  assert(indicator._controller.items.some(item => item.isImage && item.preview?.path),
+    'Clipboard X did not asynchronously create an image thumbnail');
+
   const extensionObject = extension.stateObj;
   assert(extensionObject, 'Clipboard X extension object is unavailable');
   extensionObject._pickColor();
@@ -48,9 +67,14 @@ export async function run() {
   await Scripting.sleep(100);
   assert(!extensionObject._colorPicker, 'Color picker did not release its modal overlay');
 
+  extensionObject._pickColor();
+  await Scripting.sleep(300);
+  assert(extensionObject._colorPicker, 'Color picker did not reopen for lifecycle testing');
+
   Main.extensionManager.disableExtension(UUID);
   await Scripting.sleep(300);
   assert(!Main.panel.statusArea[STATUS_AREA_NAME], 'Indicator remained after disabling Clipboard X');
+  assert(!extensionObject._colorPicker, 'Disabling Clipboard X did not close the active color picker');
 
   Main.extensionManager.enableExtension(UUID);
   await Scripting.sleep(500);

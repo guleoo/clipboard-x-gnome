@@ -3,12 +3,14 @@ import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {processText} from './text-processors.js';
+
+const PANEL_ITEM_LIMIT = 200;
+const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 
 export const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
@@ -154,7 +156,7 @@ class Indicator extends PanelMenu.Button {
       this._addState(_('Clipboard history could not be loaded'), 'dialog-error-symbolic');
       return;
     }
-    const items = this._controller.search(this._query);
+    const items = this._controller.search(this._query, PANEL_ITEM_LIMIT + 1);
     if (items.length === 0) {
       const empty = new PopupMenu.PopupBaseMenuItem({reactive: false});
       empty.add_child(new St.Label({
@@ -165,8 +167,14 @@ class Indicator extends PanelMenu.Button {
       return;
     }
 
-    for (const item of items)
+    for (const item of items.slice(0, PANEL_ITEM_LIMIT))
       this._history.addMenuItem(item.isText ? this._textItem(item) : this._imageItem(item));
+    if (items.length > PANEL_ITEM_LIMIT) {
+      this._history.addMenuItem(new PopupMenu.PopupMenuItem(
+        _('Only the first 200 entries are shown; refine the search to see others'),
+        {reactive: false},
+      ));
+    }
   }
 
   _addState(text, iconName) {
@@ -208,6 +216,8 @@ class Indicator extends PanelMenu.Button {
       loaded = true;
       submenu.menu.removeAll();
       try {
+        if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
+          throw new Error(_('This text is too large for interactive processing'));
         await this._actions.materializeItem(item);
         const values = processText(processor, item.text);
         if (values.length === 0) {

@@ -6,6 +6,7 @@ import Gtk from 'gi://Gtk';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {ensureDeviceIdentity} from './core.js';
+import {buildEditorArgv} from './editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from './constants.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
@@ -31,6 +32,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     history.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
     history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
     history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
+    history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
     history.add(this._switch(settings, 'private-mode', _('Private mode'), _('Pause clipboard capture')));
     history.add(this._combo(settings, 'sensitive-content-mode', _('Sensitive content'), [
       ['discard', _('Do not record')],
@@ -60,8 +62,20 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const service = new Adw.PreferencesGroup({title: _('Service connection')});
     page.add(service);
     service.add(this._switch(settings, 'sync-enabled', _('Enable synchronization integration')));
-    service.add(this._entry(settings, 'service-bus-name', _('D-Bus name')));
-    service.add(this._entry(settings, 'service-object-path', _('Object path')));
+    service.add(this._entry(
+      settings,
+      'service-bus-name',
+      _('D-Bus name'),
+      '',
+      value => Gio.dbus_is_name(value),
+    ));
+    service.add(this._entry(
+      settings,
+      'service-object-path',
+      _('Object path'),
+      '',
+      value => GLib.Variant.is_object_path(value),
+    ));
     const statusRow = new Adw.ActionRow({title: _('Service status'), subtitle: _('Not tested')});
     const testButton = new Gtk.Button({label: _('Test connection'), valign: Gtk.Align.CENTER});
     testButton.connect('clicked', async () => {
@@ -150,6 +164,14 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       'editor-command',
       _('Advanced command'),
       _('%u is the URI, %f is a local path and %% is a percent sign'),
+      value => {
+        try {
+          buildEditorArgv(value, 'file:///tmp/clipboard-x.png', '/tmp/clipboard-x.png');
+          return true;
+        } catch (_error) {
+          return false;
+        }
+      },
     ));
 
     const color = new Adw.PreferencesGroup({title: _('Color picker')});
@@ -169,11 +191,17 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     return row;
   }
 
-  _entry(settings, key, title, subtitle = '') {
+  _entry(settings, key, title, subtitle = '', validate = null) {
     const row = new Adw.EntryRow({title, text: settings.get_string(key)});
     if (subtitle)
       row.set_tooltip_text(subtitle);
-    row.connect('changed', () => settings.set_string(key, row.get_text().trim()));
+    row.connect('changed', () => {
+      const value = row.get_text().trim();
+      const valid = !validate || validate(value);
+      row[valid ? 'remove_css_class' : 'add_css_class']('error');
+      if (valid)
+        settings.set_string(key, value);
+    });
     return row;
   }
 
@@ -203,7 +231,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const row = new Adw.EntryRow({title: _('Panel shortcut'), text: current});
     row.connect('changed', () => {
       const value = row.get_text().trim();
-      settings.set_strv('panel-shortcut', value ? [value] : []);
+      const [parsed, key, modifiers] = value ? Gtk.accelerator_parse(value) : [true, 0, 0];
+      const valid = !value || (parsed && Gtk.accelerator_valid(key, modifiers));
+      row[valid ? 'remove_css_class' : 'add_css_class']('error');
+      if (valid)
+        settings.set_strv('panel-shortcut', value ? [value] : []);
     });
     return row;
   }

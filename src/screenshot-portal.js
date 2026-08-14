@@ -157,6 +157,7 @@ export class ScreenshotPortal {
         },
       );
       request.timeoutId = setTimeout(() => {
+        request.cancellable.cancel();
         this._closeRequest(request.path);
         finish(reject, new Error('Screenshot request timed out'));
       }, this._timeoutMilliseconds);

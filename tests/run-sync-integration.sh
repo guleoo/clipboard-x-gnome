@@ -4,6 +4,7 @@ set -euo pipefail
 project_dir=$(cd "$(dirname "$0")/.." && pwd)
 ready_file=$(mktemp)
 client_file=$(mktemp)
+stress_file=$(mktemp)
 
 cleanup() {
   if [[ -n "${service_pid:-}" ]]; then
@@ -14,8 +15,13 @@ cleanup() {
     kill "$client_pid" 2>/dev/null || true
     wait "$client_pid" 2>/dev/null || true
   fi
+  if [[ -n "${stress_pid:-}" ]]; then
+    kill "$stress_pid" 2>/dev/null || true
+    wait "$stress_pid" 2>/dev/null || true
+  fi
   rm -f "$ready_file"
   rm -f "$client_file"
+  rm -f "$stress_file"
 }
 trap cleanup EXIT
 
@@ -26,6 +32,7 @@ for _attempt in {1..100}; do
   if grep -q READY "$ready_file"; then
     gjs -m "$project_dir/tests/sync.integration.js"
     gjs -m "$project_dir/tests/sync-client.integration.js"
+    gjs -m "$project_dir/tests/sync-large.integration.js"
     break
   fi
   if ! kill -0 "$service_pid" 2>/dev/null; then
@@ -100,6 +107,41 @@ if ! grep -q RECONNECTED "$client_file"; then
 fi
 wait "$client_pid"
 unset client_pid
+
+gjs -m "$project_dir/tests/sync-reconnect-stress.integration.js" >"$stress_file" 2>&1 &
+stress_pid=$!
+for _attempt in {1..100}; do
+  grep -q STRESS_ONLINE_1 "$stress_file" && break
+  sleep 0.05
+done
+grep -q STRESS_ONLINE_1 "$stress_file"
+
+for cycle in {1..5}; do
+  kill "$service_pid"
+  wait "$service_pid" 2>/dev/null || true
+  unset service_pid
+  for _attempt in {1..100}; do
+    grep -q "STRESS_OFFLINE_${cycle}" "$stress_file" && break
+    sleep 0.05
+  done
+  grep -q "STRESS_OFFLINE_${cycle}" "$stress_file"
+
+  : >"$ready_file"
+  gjs -m "$project_dir/mock-service/mock-service.js" >"$ready_file" 2>&1 &
+  service_pid=$!
+  next_online=$((cycle + 1))
+  for _attempt in {1..100}; do
+    grep -q "STRESS_ONLINE_${next_online}" "$stress_file" && break
+    sleep 0.05
+  done
+  if ! grep -q "STRESS_ONLINE_${next_online}" "$stress_file"; then
+    cat "$stress_file"
+    cat "$ready_file"
+    exit 1
+  fi
+done
+wait "$stress_pid"
+unset stress_pid
 
 kill "$service_pid"
 wait "$service_pid" 2>/dev/null || true

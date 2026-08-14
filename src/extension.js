@@ -70,8 +70,6 @@ export default class ClipboardXExtension extends Extension {
     this._transferSignal = this._sync.connect(
       'transfer-changed',
       (_sync, transferId, state, received, total, error) => {
-        if (state === 'failed')
-          console.error(`Clipboard X transfer ${transferId} failed: ${error}`);
         this._indicator?.setTransfer(transferId, state, received, total, error);
       },
     );
@@ -196,19 +194,24 @@ export default class ClipboardXExtension extends Extension {
 
   _bindShortcut() {
     this._unbindShortcut();
-    if (this._settings.get_strv('panel-shortcut').length === 0)
+    const shortcut = this._settings.get_strv('panel-shortcut')[0];
+    if (!shortcut)
       return;
-    Main.wm.addKeybinding(
-      'panel-shortcut',
-      this._settings,
-      Meta.KeyBindingFlags.NONE,
-      Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
-      () => {
-        ensureDeviceIdentity(this._settings);
-        this._indicator.menu.toggle();
-      },
-    );
-    this._shortcutBound = true;
+    try {
+      Main.wm.addKeybinding(
+        'panel-shortcut',
+        this._settings,
+        Meta.KeyBindingFlags.NONE,
+        Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
+        () => {
+          ensureDeviceIdentity(this._settings);
+          this._indicator.menu.toggle();
+        },
+      );
+      this._shortcutBound = true;
+    } catch (_error) {
+      console.error('Clipboard X: invalid panel shortcut was ignored');
+    }
   }
 
   _unbindShortcut() {
@@ -221,7 +224,7 @@ export default class ClipboardXExtension extends Extension {
   _reportError(error) {
     if (error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
       return;
-    console.error(`Clipboard X: ${error?.message ?? error}`);
+    console.error('Clipboard X: operation failed; details were shown in the desktop notification');
     Main.notifyError('Clipboard X', error?.message ?? String(error));
   }
 }

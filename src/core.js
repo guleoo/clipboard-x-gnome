@@ -107,6 +107,8 @@ export function writeFile(file, bytes, cancellable = null) {
   });
 }
 
-export function fileExists(path) {
-  return GLib.file_test(path, GLib.FileTest.EXISTS);
+export function diagnosticCode(error) {
+  const name = error?.constructor?.name ?? 'Error';
+  const code = Number.isInteger(error?.code) ? error.code : 'unknown';
+  return `${name}:${code}`;
 }

@@ -9,7 +9,7 @@ gnome = import('gnome')
 fs = import('fs')
 
 extension_uuid = 'clipboard-x@guleo.github.io'
-schema_id = 'io.github.guleo.clipboard-x'
+schema_id = 'org.gnome.shell.extensions.clipboard-x'
 target = get_option('target')
 
 if target == 'local'
@@ -42,7 +42,7 @@ configure_file(
 install_subdir('src', strip_directory: true, install_dir: extension_dir)
 install_data('data/stylesheet.css', install_dir: extension_dir)
 
-schema_source = files('schemas/io.github.guleo.clipboard-x.gschema.xml')
+schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml')
 install_data(schema_source, install_dir: schema_dir)
 
 if target != 'system'
@@ -68,6 +68,14 @@ test_runner = find_program('gjs')
 test('core', test_runner, args: ['-m', meson.current_source_dir() / 'tests/core.test.js'])
 test('protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/protocol.test.js'])
 test('tools', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tools.test.js'])
+test('storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/storage.test.js'])
+test(
+  'stress',
+  test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/stress.test.js'],
+  timeout: 30,
+  suite: 'stress',
+)
 test(
   'sync-integration',
   find_program('dbus-run-session'),
@@ -81,10 +89,10 @@ test(
 
 if target == 'package'
   meson.add_install_script(
-    find_program('7z'),
-    'a',
-    '-tzip',
+    find_program('bash'),
+    meson.project_source_root() / 'tools' / 'package.sh',
     meson.project_build_root() / 'clipboard-x.zip',
-    extension_dir / '*',
+    extension_dir,
+    'org.gnome.shell.extensions.clipboard-x.gschema.xml',
   )
 endif
