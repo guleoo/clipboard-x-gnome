@@ -1,0 +1,461 @@
+# Simplified Chinese translations for Clipboard X.
+# Copyright (C) 2026 Clipboard X contributors
+# This file is distributed under the same license as the clipboard-x package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: clipboard-x 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-14 13:31+0800\n"
+"PO-Revision-Date: 2026-08-14 13:30+0800\n"
+"Last-Translator: Clipboard X contributors\n"
+"Language-Team: Simplified Chinese\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/indicator.js:46
+msgid "Search clipboard history…"
+msgstr "搜索剪切板历史…"
+
+#: src/indicator.js:60
+msgid "Screenshot"
+msgstr "截图"
+
+#: src/indicator.js:61
+msgid "Pick color"
+msgstr "取色"
+
+#: src/indicator.js:62 src/prefs.js:36
+msgid "Private mode"
+msgstr "隐私模式"
+
+#: src/indicator.js:65
+msgid "Clear history"
+msgstr "清空历史"
+
+#: src/indicator.js:66
+msgid "Preferences"
+msgstr "设置"
+
+#: src/indicator.js:72 src/indicator.js:99
+msgid "Sync disabled"
+msgstr "同步已禁用"
+
+#: src/indicator.js:73
+msgid "Cancel transfer"
+msgstr "取消传输"
+
+#: src/indicator.js:104
+msgid "Sync Service offline"
+msgstr "同步服务离线"
+
+#: src/indicator.js:107
+msgid "Sync protocol error"
+msgstr "同步协议错误"
+
+#: src/indicator.js:113
+msgid "Sync Service online"
+msgstr "同步服务在线"
+
+#: src/indicator.js:123
+msgid "Transfer failed"
+msgstr "传输失败"
+
+#: src/indicator.js:125
+msgid "Synchronized content is ready"
+msgstr "同步内容已就绪"
+
+#: src/indicator.js:127
+msgid "Waiting for the source device…"
+msgstr "正在等待源设备…"
+
+#: src/indicator.js:152
+msgid "Loading clipboard history…"
+msgstr "正在加载剪切板历史…"
+
+#: src/indicator.js:156
+msgid "Clipboard history could not be loaded"
+msgstr "无法加载剪切板历史"
+
+#: src/indicator.js:163
+msgid "No matching entries"
+msgstr "没有匹配的条目"
+
+#: src/indicator.js:163
+msgid "Clipboard history is empty"
+msgstr "剪切板历史为空"
+
+#: src/indicator.js:174
+msgid "Only the first 200 entries are shown; refine the search to see others"
+msgstr "仅显示前 200 个条目；请缩小搜索范围以查看其他条目"
+
+#: src/indicator.js:188 src/prefs.js:131
+msgid "Text"
+msgstr "文本"
+
+#: src/indicator.js:192
+msgid "Copy original"
+msgstr "复制原文"
+
+#: src/indicator.js:195
+msgid "Words"
+msgstr "词语"
+
+#: src/indicator.js:196
+msgid "Sentences"
+msgstr "句子"
+
+#: src/indicator.js:197
+msgid "Lines"
+msgstr "行"
+
+#: src/indicator.js:198
+msgid "Separators"
+msgstr "分隔项"
+
+#: src/indicator.js:199
+msgid "URLs"
+msgstr "网址"
+
+#: src/indicator.js:200
+msgid "Email addresses"
+msgstr "电子邮箱地址"
+
+#: src/indicator.js:201
+msgid "Numbers"
+msgstr "数字"
+
+#: src/indicator.js:202
+msgid "Identifier parts"
+msgstr "标识符片段"
+
+#: src/indicator.js:220
+msgid "This text is too large for interactive processing"
+msgstr "此文本过大，无法进行交互式处理"
+
+#: src/indicator.js:224
+msgid "No results"
+msgstr "没有结果"
+
+#: src/indicator.js:229
+msgid "Copy all results"
+msgstr "复制全部结果"
+
+#: src/indicator.js:237
+msgid "Only the first 100 results are shown"
+msgstr "仅显示前 100 个结果"
+
+#: src/indicator.js:258
+msgid "Image"
+msgstr "图片"
+
+#: src/indicator.js:263
+msgid "Edit"
+msgstr "编辑"
+
+#: src/indicator.js:266 src/indicator.js:274
+msgid "Favorite"
+msgstr "收藏"
+
+#: src/indicator.js:269 src/indicator.js:277
+msgid "Delete"
+msgstr "删除"
+
+#: src/indicator.js:274
+msgid "Unfavorite"
+msgstr "取消收藏"
+
+#: src/indicator.js:276
+msgid "Send to sync service"
+msgstr "发送到同步服务"
+
+#: src/prefs.js:24
+msgid "General"
+msgstr "常规"
+
+#: src/prefs.js:25
+msgid "Panel"
+msgstr "面板"
+
+#: src/prefs.js:27
+msgid "Show panel indicator"
+msgstr "显示顶栏图标"
+
+#: src/prefs.js:30
+msgid "Clipboard history"
+msgstr "剪切板历史"
+
+#: src/prefs.js:32
+msgid "History entries"
+msgstr "历史条目数"
+
+#: src/prefs.js:33
+msgid "Cache size"
+msgstr "缓存大小"
+
+#: src/prefs.js:33 src/prefs.js:35
+msgid "MiB"
+msgstr "MiB"
+
+#: src/prefs.js:34
+msgid "Automatic cleanup"
+msgstr "自动清理"
+
+#: src/prefs.js:34
+msgid "days; 0 disables"
+msgstr "天；0 表示禁用"
+
+#: src/prefs.js:35
+msgid "Maximum item size"
+msgstr "单个条目大小上限"
+
+#: src/prefs.js:36
+msgid "Pause clipboard capture"
+msgstr "暂停捕获剪切板"
+
+#: src/prefs.js:37 src/prefs.js:134
+msgid "Sensitive content"
+msgstr "敏感内容"
+
+#: src/prefs.js:38
+msgid "Do not record"
+msgstr "不记录"
+
+#: src/prefs.js:39
+msgid "Keep until extension stops"
+msgstr "仅保留到扩展停止"
+
+#: src/prefs.js:40
+msgid "Store like other history"
+msgstr "按普通历史保存"
+
+#: src/prefs.js:45
+msgid "Excluded applications"
+msgstr "排除的应用"
+
+#: src/prefs.js:46
+msgid "Comma-separated window classes"
+msgstr "以逗号分隔窗口类名"
+
+#: src/prefs.js:52
+msgid "Synchronization"
+msgstr "同步"
+
+#: src/prefs.js:53
+msgid "Device"
+msgstr "设备"
+
+#: src/prefs.js:55
+msgid "Device ID"
+msgstr "设备 ID"
+
+#: src/prefs.js:60
+msgid "Device tag"
+msgstr "设备标签"
+
+#: src/prefs.js:60
+msgid "Friendly name shown during device discovery"
+msgstr "设备发现时显示的友好名称"
+
+#: src/prefs.js:62
+msgid "Service connection"
+msgstr "服务连接"
+
+#: src/prefs.js:64
+msgid "Enable synchronization integration"
+msgstr "启用同步服务集成"
+
+#: src/prefs.js:68
+msgid "D-Bus name"
+msgstr "D-Bus 名称"
+
+#: src/prefs.js:75
+msgid "Object path"
+msgstr "对象路径"
+
+#: src/prefs.js:79
+msgid "Service status"
+msgstr "服务状态"
+
+#: src/prefs.js:79
+msgid "Not tested"
+msgstr "尚未测试"
+
+#: src/prefs.js:80
+msgid "Test connection"
+msgstr "测试连接"
+
+#: src/prefs.js:83
+msgid "Connecting…"
+msgstr "正在连接…"
+
+#: src/prefs.js:105
+msgid "Service preferences"
+msgstr "服务设置"
+
+#: src/prefs.js:106
+msgid "Provided by the external synchronization Service"
+msgstr "由外部同步服务提供"
+
+#: src/prefs.js:108
+msgid "Open"
+msgstr "打开"
+
+#: src/prefs.js:119
+msgid "Transfer policy"
+msgstr "传输策略"
+
+#: src/prefs.js:121
+msgid "Send mode"
+msgstr "发送模式"
+
+#: src/prefs.js:122 src/prefs.js:127
+msgid "Disabled"
+msgstr "禁用"
+
+#: src/prefs.js:123
+msgid "Manual"
+msgstr "手动"
+
+#: src/prefs.js:124
+msgid "Automatic"
+msgstr "自动"
+
+#: src/prefs.js:126
+msgid "Receive mode"
+msgstr "接收模式"
+
+#: src/prefs.js:128
+msgid "History only"
+msgstr "仅加入历史"
+
+#: src/prefs.js:129
+msgid "Activate clipboard"
+msgstr "设为当前剪切板"
+
+#: src/prefs.js:132
+msgid "HTML"
+msgstr "HTML"
+
+#: src/prefs.js:133
+msgid "Images"
+msgstr "图片"
+
+#: src/prefs.js:134
+msgid "Disabled by default"
+msgstr "默认禁用"
+
+#: src/prefs.js:135
+msgid "Text eager threshold"
+msgstr "文本立即传输阈值"
+
+#: src/prefs.js:135 src/prefs.js:136 src/prefs.js:137 src/prefs.js:139
+msgid "bytes"
+msgstr "字节"
+
+#: src/prefs.js:136
+msgid "Text preview limit"
+msgstr "文本预览上限"
+
+#: src/prefs.js:137
+msgid "Image eager threshold"
+msgstr "图片立即传输阈值"
+
+#: src/prefs.js:138
+msgid "Thumbnail dimension"
+msgstr "缩略图尺寸"
+
+#: src/prefs.js:138
+msgid "px"
+msgstr "像素"
+
+#: src/prefs.js:139
+msgid "Thumbnail size limit"
+msgstr "缩略图大小上限"
+
+#: src/prefs.js:140
+msgid "On-demand timeout"
+msgstr "按需传输超时"
+
+#: src/prefs.js:140
+msgid "seconds"
+msgstr "秒"
+
+#: src/prefs.js:145
+msgid "Capture and editing"
+msgstr "截图与编辑"
+
+#: src/prefs.js:146
+msgid "Screenshot Portal"
+msgstr "截图门户"
+
+#: src/prefs.js:148
+msgid "Default target"
+msgstr "默认目标"
+
+#: src/prefs.js:149
+msgid "Interactive"
+msgstr "交互选择"
+
+#: src/prefs.js:150
+msgid "Full screen"
+msgstr "全屏"
+
+#: src/prefs.js:151
+msgid "Window"
+msgstr "窗口"
+
+#: src/prefs.js:152
+msgid "Area"
+msgstr "区域"
+
+#: src/prefs.js:153
+msgid "Active window"
+msgstr "活动窗口"
+
+#: src/prefs.js:155
+msgid "Add to history"
+msgstr "加入历史"
+
+#: src/prefs.js:156
+msgid "Copy screenshot"
+msgstr "复制截图"
+
+#: src/prefs.js:157
+msgid "Open image editor"
+msgstr "打开图片编辑器"
+
+#: src/prefs.js:159
+msgid "Image editor"
+msgstr "图片编辑器"
+
+#: src/prefs.js:165
+msgid "Advanced command"
+msgstr "高级命令"
+
+#: src/prefs.js:166
+msgid "%u is the URI, %f is a local path and %% is a percent sign"
+msgstr "%u 表示 URI，%f 表示本地路径，%% 表示百分号"
+
+#: src/prefs.js:177
+msgid "Color picker"
+msgstr "取色器"
+
+#: src/prefs.js:179
+msgid "Default format"
+msgstr "默认格式"
+
+#: src/prefs.js:231
+msgid "Panel shortcut"
+msgstr "面板快捷键"
+
+#: src/prefs.js:262
+msgid "Custom command"
+msgstr "自定义命令"
+
+#: src/prefs.js:265
+msgid "Application"
+msgstr "应用"

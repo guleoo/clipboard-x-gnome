@@ -22,6 +22,10 @@ export async function run() {
 
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
   assert(indicator, 'Clipboard X indicator was not added to the panel');
+  if (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1') {
+    assert(indicator._search.hint_text === '搜索剪切板历史…',
+      `Clipboard X translation was not loaded (${indicator._search.hint_text})`);
+  }
 
   indicator.menu.open();
   await Scripting.sleep(200);

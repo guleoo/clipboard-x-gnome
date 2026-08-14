@@ -7,6 +7,7 @@ project(
 
 gnome = import('gnome')
 fs = import('fs')
+i18n = import('i18n')
 
 extension_uuid = 'clipboard-x@guleo.github.io'
 schema_id = 'org.gnome.shell.extensions.clipboard-x'
@@ -41,6 +42,8 @@ configure_file(
 
 install_subdir('src', strip_directory: true, install_dir: extension_dir)
 install_data('data/stylesheet.css', install_dir: extension_dir)
+
+subdir('po')
 
 schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml')
 install_data(schema_source, install_dir: schema_dir)
