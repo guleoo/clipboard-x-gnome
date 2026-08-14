@@ -8,6 +8,7 @@ import {ClipboardItem} from './clipboard-item.js';
 import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
 import {HistoryStore} from './history-store.js';
 import {search as searchHistory} from './history-search.js';
+import {delivery} from './sync-policy.js';
 import {EventEmitter} from './event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
 import {diagnosticCode, loadFile, sha256, writeFile} from './core.js';
@@ -261,9 +262,7 @@ export class ClipboardController extends EventEmitter {
 
   async _prepareItem(item) {
     for (const representation of item.representations) {
-      representation.delivery = representation.size <= this._thresholdFor(representation.mimeType)
-        ? 'eager'
-        : 'on-demand';
+      representation.delivery = delivery(this._settings, representation.mimeType, representation.size);
     }
 
     if (!item.isImage || item.sensitive || item.primary.mimeType === 'image/svg+xml')
@@ -295,12 +294,6 @@ export class ClipboardController extends EventEmitter {
     } catch (error) {
       console.warn(`Clipboard X: thumbnail unavailable (${diagnosticCode(error)})`);
     }
-  }
-
-  _thresholdFor(mimeType) {
-    if (mimeType.startsWith('image/'))
-      return this._settings.get_uint('image-full-threshold');
-    return this._settings.get_uint('text-full-threshold');
   }
 
   _readSelectionContent(mimeType, maximumBytes) {

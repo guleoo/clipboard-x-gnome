@@ -1,7 +1,9 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 const UUID = 'clipboard-x@guleo.github.io';
@@ -23,6 +25,9 @@ export async function run() {
 
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
   assert(indicator, 'Clipboard X indicator was not added to the panel');
+  for (const item of indicator._controller.items)
+    indicator._controller.remove(item.id);
+  await Scripting.sleep(200);
   if (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1') {
     assert(indicator._search.hint_text === '搜索剪切板历史…',
       `Clipboard X translation was not loaded (${indicator._search.hint_text})`);
@@ -128,6 +133,7 @@ export async function run() {
   const imageItem = indicator._controller.items.find(item => item.isImage && item.preview?.path);
   assert(imageItem,
     'Clipboard X did not asynchronously create an image thumbnail');
+  assert(imageItem.primary.delivery === 'eager', 'small clipboard image did not use eager delivery');
   indicator._settings.set_string('editor-app-id', '');
   indicator._settings.set_string('editor-command', '/usr/bin/true %f');
   await extensionObject._editItem(imageItem);
@@ -145,6 +151,24 @@ export async function run() {
   assert(imageRow.get_children().filter(child => child instanceof St.Button).length === 4,
   'Image history row is missing its manual synchronization action');
   imageRow.destroy();
+  imageItem.remote = true;
+  imageItem.availability = 'preview';
+  assert(indicator._availabilityText(imageItem).length > 0,
+    'Remote image preview availability is not visible');
+  imageItem.availability = 'failed';
+  assert(indicator._availabilityText(imageItem).length > 0,
+    'Retryable remote image failure is not visible');
+  imageItem.remote = false;
+  imageItem.availability = 'ready';
+
+  const transferId = GLib.uuid_string_random();
+  indicator.setTransfer(transferId, 'waiting-for-source', 0, 100, '');
+  assert(indicator._activeTransferId === transferId && indicator._syncCancel.visible,
+    'Waiting transfer did not expose its cancel action');
+  indicator.setTransfer(transferId, 'transferring', 50, 100, '');
+  assert(indicator._syncLabel.text.includes('50%'), 'Transfer progress was not rendered');
+  indicator.setTransfer(transferId, 'expired', 0, 100, '');
+  assert(!indicator._syncCancel.visible, 'Expired transfer kept a stale cancel action');
 
   const publish = extensionObject._publish;
   let automaticPublishes = 0;
@@ -170,11 +194,54 @@ export async function run() {
   indicator._settings.set_string('sync-send-mode', 'manual');
   indicator._settings.set_boolean('sync-enabled', false);
 
+  indicator._controller.remove(imageItem.id);
+  const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-screenshot-pipeline-XXXXXX.png');
+  screenshotStream.get_output_stream().write_all(png, null);
+  screenshotStream.close(null);
+  const screenshotPortal = extensionObject._portal;
+  extensionObject._portal = {
+    capture: async target => {
+      assert(target === 'screen', 'Screenshot pipeline ignored the configured target');
+      return screenshotFile.get_uri();
+    },
+    cancel() {},
+  };
+  indicator._settings.set_string('screenshot-target', 'screen');
+  indicator._settings.set_boolean('screenshot-add-history', true);
+  indicator._settings.set_boolean('screenshot-write-clipboard', true);
+  indicator._settings.set_boolean('screenshot-open-editor', true);
+  await extensionObject._takeScreenshot();
+  await Scripting.sleep(300);
+  const screenshotItem = indicator._controller.items.find(item => item.isImage);
+  assert(screenshotItem?.primary.path,
+    'Screenshot pipeline did not add and persist the image history snapshot');
+  assert(indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
+    'Screenshot pipeline did not write the image to the clipboard');
+
+  indicator._settings.set_boolean('screenshot-add-history', false);
+  indicator._settings.set_boolean('screenshot-open-editor', false);
+  const historyCount = indicator._controller.items.length;
+  await extensionObject._takeScreenshot();
+  await Scripting.sleep(300);
+  assert(indicator._controller.items.length === historyCount,
+    'Screenshot configured without history was captured again through clipboard owner change');
+  extensionObject._portal = screenshotPortal;
+  screenshotFile.delete(null);
+
   extensionObject._pickColor();
   await Scripting.sleep(500);
   assert(extensionObject._colorPicker, 'Color picker did not acquire a modal overlay');
   assert(extensionObject._colorPicker._rgb?.length === 3, 'Color picker did not sample the stage texture');
   const pickedColor = extensionObject._colorPicker;
+  const [pickerX, pickerY] = pickedColor._coords;
+  const movementKey = pickerX < global.stage.width - 1 ? Clutter.KEY_Right : Clutter.KEY_Left;
+  pickedColor.vfunc_key_press_event({
+    get_key_symbol: () => movementKey,
+    get_state: () => 0,
+  });
+  await Scripting.sleep(100);
+  assert(Math.abs(pickedColor._coords[0] - pickerX) === 1 && pickedColor._coords[1] === pickerY,
+    'Color picker keyboard movement did not advance by one logical pixel');
   pickedColor._onPicked(pickedColor._rgb);
   pickedColor.close();
   await Scripting.sleep(300);
@@ -186,6 +253,16 @@ export async function run() {
   indicator._controller.clear();
   assert(indicator._controller.items.length === 1 && indicator._controller.items[0] === colorItem,
     'Clearing history did not preserve only favorited entries');
+
+  extensionObject._pickColor();
+  await Scripting.sleep(300);
+  const cancelledPicker = extensionObject._colorPicker;
+  cancelledPicker.vfunc_key_press_event({
+    get_key_symbol: () => Clutter.KEY_Escape,
+    get_state: () => 0,
+  });
+  await Scripting.sleep(100);
+  assert(!extensionObject._colorPicker, 'Escape did not cancel and release the color picker');
 
   extensionObject._pickColor();
   await Scripting.sleep(300);
@@ -224,4 +301,17 @@ export async function run() {
   assert(indicator, 'Clipboard X did not recover after the session left its lock mode');
   assert(indicator._settings.get_string('device-id') === deviceId,
     'DeviceId changed across the lock/unlock lifecycle');
+
+  Gio.Subprocess.new([
+    '/usr/bin/python3',
+    GLib.build_filenamev([GLib.get_current_dir(), 'tests', 'pause-process.py']),
+    `${GLib.get_pid()}`,
+  ], Gio.SubprocessFlags.NONE);
+  await Scripting.sleep(900);
+  assert(Main.panel.statusArea[STATUS_AREA_NAME],
+    'Clipboard X did not survive a nested Shell process suspend/resume cycle');
+  St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'clipboard after simulated resume');
+  await Scripting.sleep(400);
+  assert(indicator._controller.items.some(item => item.text === 'clipboard after simulated resume'),
+    'Clipboard capture did not recover after the simulated resume cycle');
 }

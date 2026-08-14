@@ -6,7 +6,7 @@ import {buildEditorArgv} from '../src/editor-launcher.js';
 import {EventEmitter} from '../src/event-emitter.js';
 import {ensureDeviceIdentity, isUuid, truncateUtf8} from '../src/core.js';
 import {processText, TextProcessors} from '../src/text-processors.js';
-import {effectiveCapabilities} from '../src/sync-policy.js';
+import {delivery, effectiveCapabilities} from '../src/sync-policy.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -160,6 +160,20 @@ function testEffectiveSyncCapabilities() {
     previewBytes: 64 * 1024,
     mimeTypes: ['text/plain;charset=utf-8', 'image/png'],
   }, 'Service capability display must show effective policy intersections');
+  const thresholds = {
+    get_uint: key => ({
+      'text-full-threshold': 64 * 1024,
+      'image-full-threshold': 1024 * 1024,
+    })[key],
+  };
+  assert(delivery(thresholds, 'text/plain;charset=utf-8', 64 * 1024) === 'eager',
+    'small text must use eager delivery');
+  assert(delivery(thresholds, 'text/plain;charset=utf-8', 64 * 1024 + 1) === 'on-demand',
+    'large text must use on-demand delivery');
+  assert(delivery(thresholds, 'image/png', 1024 * 1024) === 'eager',
+    'small image must use eager delivery');
+  assert(delivery(thresholds, 'image/png', 1024 * 1024 + 1) === 'on-demand',
+    'large image must use on-demand delivery');
 }
 
 testClipboardItem();

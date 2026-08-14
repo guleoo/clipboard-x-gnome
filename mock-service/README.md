@@ -23,7 +23,14 @@ dbus-run-session -- python3 mock-service/mock-service.py
 - Interface：`io.github.guleo.ClipboardX.Sync1`
 
 直接运行 `meson test -C build --print-errorlogs` 会依次验证两个实现，并覆盖 50 MiB
-FD 负载以及 Service 高频退出/重启。Mock 与协议文档不会进入扩展发布 ZIP。
+图片、10 MiB 文本、Service 高频退出/重启、传输中过期或离线、能力限制以及恶意
+元数据。Mock 与协议文档不会进入扩展发布 ZIP。
+
+测试脚本可通过 `CLIPBOARD_X_MOCK_MAX_ITEM_BYTES`、
+`CLIPBOARD_X_MOCK_MAX_PREVIEW_BYTES`、`CLIPBOARD_X_MOCK_MIME_TYPES`、
+`CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE`、`CLIPBOARD_X_MOCK_TRANSFER_DELAY_MS` 和
+`CLIPBOARD_X_MOCK_MALFORMED` 控制故障场景。这些环境变量不是 Sync1 ABI，也不得由
+生产 Service 仿效为公共配置接口。
 
 实现生产 Service 时应从
 [`protocol/io.github.guleo.ClipboardX.Sync1.xml`](../protocol/io.github.guleo.ClipboardX.Sync1.xml)

@@ -10,7 +10,8 @@ Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏�
 ## 功能
 
 - 搜索、收藏、删除和重新复制文本或图片历史。
-- 按词、句、行、分隔符提取文本，以及提取 URL、邮箱、数字和标识符片段。
+- 按词、句、Unicode 字素、行和分隔符拆分文本，提取 URL、邮箱、数字及标识符片段，
+  并支持大小写和标题格式转换。
 - 小内容立即提供完整快照；大文本使用截断预览，大图片使用缩略图，并在使用时按需
   获取原文。
 - 使用 XDG Screenshot Portal 调用系统截图。
@@ -68,6 +69,7 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 手动发送是默认策略。自动发送虽然适合自行安装场景，但会在没有逐条用户操作时把
 剪切板交给第三方进程，因此不应直接用于提交 GNOME Extensions 的审核版本。
+自动发送可进一步限制为只有用户收藏条目后才发送；敏感内容同步仍需单独启用。
 
 ## 隐私
 
@@ -86,6 +88,8 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.s
 
 项目不使用 ESLint；构建验收使用 Node 语法检查、GJS 测试、协议互操作测试和真实
 GNOME Shell 无头会话。
+
+完整的阶段要求与自动化证据对应关系见 [开发完成审计](docs/completion-audit.md)。
 
 ## 许可证
 
