@@ -25,6 +25,7 @@ export default class ClipboardXExtension extends Extension {
     this._settingsSignals = [];
 
     const actions = {
+      extensionObject: this,
       ensureIdentity: () => ensureDeviceIdentity(this._settings),
       screenshot: () => this._takeScreenshot(),
       pickColor: () => this._pickColor(),

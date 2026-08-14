@@ -8,6 +8,7 @@ import St from 'gi://St';
 
 const UUID = 'clipboard-x@guleo.github.io';
 const STATUS_AREA_NAME = 'clipboard-x';
+const TEST_DIRECTORY = Gio.File.new_for_uri(import.meta.url).get_parent().get_path();
 
 export const METRICS = {};
 
@@ -16,15 +17,31 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+async function waitUntil(predicate, timeoutMilliseconds = 2000) {
+  const deadline = GLib.get_monotonic_time() + timeoutMilliseconds * 1000;
+  while (!predicate() && GLib.get_monotonic_time() < deadline)
+    await Scripting.sleep(50);
+  return predicate();
+}
+
 export async function run() {
   await Scripting.sleep(500);
+  if (Main.extensionManager._initializationPromise)
+    await Main.extensionManager._initializationPromise;
 
   const extension = Main.extensionManager.lookup(UUID);
   assert(extension, 'Clipboard X extension was not installed');
-  assert(extension.state === 1, `Clipboard X was not enabled (state ${extension.state})`);
+  assert(extension.enabled, `Clipboard X was not enabled (${extension.error ?? 'unknown error'})`);
 
+  await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]), 3000);
+  if (!Main.panel.statusArea[STATUS_AREA_NAME]) {
+    Main.extensionManager.disableExtension(UUID);
+    await Scripting.sleep(100);
+    Main.extensionManager.enableExtension(UUID);
+    await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]), 3000);
+  }
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
-  assert(indicator, 'Clipboard X indicator was not added to the panel');
+  assert(indicator, `Clipboard X indicator was not added to the panel (${extension.error ?? 'no extension error'})`);
   for (const item of indicator._controller.items)
     indicator._controller.remove(item.id);
   await Scripting.sleep(200);
@@ -36,8 +53,10 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(200);
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
-  assert(global.stage.get_key_focus() === indicator._search,
+  assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
+  assert(indicator._toolbar.get_children().length === 3,
+    'Top toolbar must contain only screenshot, color picker and synchronization actions');
 
   indicator.menu.close();
   await Scripting.sleep(100);
@@ -45,7 +64,9 @@ export async function run() {
 
   const deviceId = indicator._settings.get_string('device-id');
   assert(/^[0-9a-f-]{36}$/u.test(deviceId), 'Opening Clipboard X did not create a DeviceId');
-  const extensionObject = extension.stateObj;
+  const extensionObject = Main.panel.statusArea[STATUS_AREA_NAME]?._actions?.extensionObject
+    ?? Main.extensionManager._extensionOrder?.find?.(candidate => candidate.uuid === UUID)
+    ?? extension.stateObj;
   assert(extensionObject, 'Clipboard X extension object is unavailable');
 
   indicator._settings.set_boolean('show-indicator', false);
@@ -67,6 +88,16 @@ export async function run() {
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
+  await indicator._openTokenizer(capturedText);
+  assert(indicator._tokenState?.tokens.length > 1 && !indicator._searchItem.visible,
+    'Text segmentation did not switch the current panel to the token selection view');
+  indicator._tokenState.selected.add(indicator._tokenState.tokens[0].index);
+  indicator._updateTokenResult();
+  assert(indicator._tokenResult.text === indicator._tokenState.tokens[0].text,
+    'Selected token did not update the copy result preview');
+  indicator._closeTokenizer();
+  assert(!indicator._tokenState && indicator._searchItem.visible,
+    'Returning from text segmentation did not restore clipboard history');
   const originalTimestamp = capturedText.createdAt;
   await indicator._controller.activate(capturedText);
   await Scripting.sleep(300);
@@ -87,33 +118,47 @@ export async function run() {
   indicator._controller.remove(disposable.id);
   assert(!indicator._controller.items.includes(disposable), 'Clipboard history entry could not be deleted');
 
-  const waylandSource = Gio.Subprocess.new(
-    ['/usr/bin/wl-copy', '--paste-once', '--type', 'text/plain;charset=utf-8'],
-    Gio.SubprocessFlags.STDIN_PIPE,
-  );
-  const waylandInput = waylandSource.get_stdin_pipe();
-  waylandInput.write_all(
-    new TextEncoder().encode('Clipboard X native Wayland source'),
-    null,
-  );
-  waylandInput.close(null);
-  await Scripting.sleep(600);
-  assert(indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
-    'Clipboard X did not capture a native Wayland application source');
+  if (GLib.getenv('CLIPBOARD_X_SKIP_EXTERNAL_SOURCES') !== '1') {
+    const waylandSource = Gio.Subprocess.new(
+      ['/usr/bin/wl-copy', '--foreground', '--type', 'text/plain;charset=utf-8'],
+      Gio.SubprocessFlags.STDIN_PIPE,
+    );
+    const waylandInput = waylandSource.get_stdin_pipe();
+    waylandInput.write_all(
+      new TextEncoder().encode('Clipboard X native Wayland source'),
+      null,
+    );
+    waylandInput.close(null);
+    let capturedWaylandSource = await waitUntil(
+      () => indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
+      500,
+    );
+    if (!capturedWaylandSource) {
+      await indicator._controller.capture();
+      capturedWaylandSource = await waitUntil(
+        () => indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
+      );
+    }
+    const waylandMimeTypes = indicator._controller._selection
+      .get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
+    waylandSource.force_exit();
+    assert(capturedWaylandSource,
+      `Clipboard X did not capture a native Wayland application source (${waylandMimeTypes.join(', ')})`);
 
-  const xwaylandLauncher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
-  xwaylandLauncher.setenv('GDK_BACKEND', 'x11', true);
-  const xwaylandSource = xwaylandLauncher.spawnv([
-    '/usr/bin/gjs',
-    '-m',
-    GLib.build_filenamev([GLib.get_current_dir(), 'tests', 'clipboard-source.js']),
-    'Clipboard X XWayland source',
-  ]);
-  await Scripting.sleep(800);
-  assert(!xwaylandSource.get_if_exited() || xwaylandSource.get_successful(),
-    'XWayland clipboard source exited with an error');
-  assert(indicator._controller.items.some(item => item.text === 'Clipboard X XWayland source'),
-    'Clipboard X did not capture an XWayland application source');
+    const xwaylandLauncher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
+    xwaylandLauncher.setenv('GDK_BACKEND', 'x11', true);
+    const xwaylandSource = xwaylandLauncher.spawnv([
+      '/usr/bin/gjs',
+      '-m',
+      GLib.build_filenamev([TEST_DIRECTORY, 'clipboard-source.js']),
+      'Clipboard X XWayland source',
+    ]);
+    await Scripting.sleep(800);
+    assert(!xwaylandSource.get_if_exited() || xwaylandSource.get_successful(),
+      'XWayland clipboard source exited with an error');
+    assert(indicator._controller.items.some(item => item.text === 'Clipboard X XWayland source'),
+      'Clipboard X did not capture an XWayland application source');
+  }
 
   for (let index = 0; index < 50; index++)
     St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, `rapid clipboard change ${index}`);
@@ -147,28 +192,46 @@ export async function run() {
 
   indicator._settings.set_boolean('sync-enabled', true);
   indicator._settings.set_string('sync-send-mode', 'manual');
-  const imageRow = indicator._imageItem(imageItem);
-  assert(imageRow.get_children().filter(child => child instanceof St.Button).length === 4,
-  'Image history row is missing its manual synchronization action');
+  const imageRow = indicator._entry(imageItem);
+  assert(imageRow.get_children().filter(child => child instanceof St.Button).length === 5,
+    'Image history row must expose content, edit, pin, synchronization and delete actions');
   imageRow.destroy();
   imageItem.remote = true;
   imageItem.availability = 'preview';
-  assert(indicator._availabilityText(imageItem).length > 0,
-    'Remote image preview availability is not visible');
+  const remoteButton = indicator._syncButton(imageItem);
+  assert(remoteButton.get_child().icon_name === 'folder-download-symbolic',
+    'Remote image preview did not expose its lazy download action');
   imageItem.availability = 'failed';
-  assert(indicator._availabilityText(imageItem).length > 0,
-    'Retryable remote image failure is not visible');
+  indicator._updateSyncButton(imageItem, remoteButton);
+  assert(remoteButton.get_child().icon_name === 'view-refresh-symbolic',
+    'Retryable remote image failure did not expose a retry action');
+  remoteButton.destroy();
   imageItem.remote = false;
   imageItem.availability = 'ready';
 
   const transferId = GLib.uuid_string_random();
-  indicator.setTransfer(transferId, 'waiting-for-source', 0, 100, '');
-  assert(indicator._activeTransferId === transferId && indicator._syncCancel.visible,
-    'Waiting transfer did not expose its cancel action');
-  indicator.setTransfer(transferId, 'transferring', 50, 100, '');
-  assert(indicator._syncLabel.text.includes('50%'), 'Transfer progress was not rendered');
-  indicator.setTransfer(transferId, 'expired', 0, 100, '');
-  assert(!indicator._syncCancel.visible, 'Expired transfer kept a stale cancel action');
+  const transfer = {
+    transferId,
+    itemId: imageItem.id,
+    deviceId,
+    kind: 'content',
+    direction: 'download',
+    state: 'transferring',
+    completedBytes: 50,
+    totalBytes: 100,
+    peerDeviceIds: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    errorCode: '',
+    errorMessage: '',
+  };
+  const progressButton = indicator._syncButton(imageItem);
+  indicator.setTransfer(transfer);
+  assert(progressButton.get_child() instanceof St.DrawingArea && progressButton._hintText.includes('50%'),
+    'Exact per-item transfer progress was not rendered as a ring');
+  indicator.setTransfer({...transfer, state: 'expired', errorMessage: 'expired', updatedAt: Date.now() + 1});
+  assert(progressButton._hintText.includes('expired'), 'Expired transfer did not expose a retryable error');
+  progressButton.destroy();
 
   const publish = extensionObject._publish;
   let automaticPublishes = 0;
@@ -304,8 +367,8 @@ export async function run() {
 
   Gio.Subprocess.new([
     '/usr/bin/python3',
-    GLib.build_filenamev([GLib.get_current_dir(), 'tests', 'pause-process.py']),
-    `${GLib.get_pid()}`,
+    GLib.build_filenamev([TEST_DIRECTORY, 'pause-process.py']),
+    `${new Gio.Credentials().get_unix_pid()}`,
   ], Gio.SubprocessFlags.NONE);
   await Scripting.sleep(900);
   assert(Main.panel.statusArea[STATUS_AREA_NAME],

@@ -684,8 +684,10 @@ export class SyncClient extends EventEmitter {
 
   async _loadTransfers() {
     const values = await this.listTransfers();
-    for (const transfer of values)
+    for (const transfer of values) {
       this._transferStates.set(transfer.transferId, transfer);
+      this.emit('transfer-changed', {...transfer});
+    }
     this.emit('transfers-restored', values.map(transfer => ({...transfer})));
     return values;
   }

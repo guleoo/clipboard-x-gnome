@@ -5,7 +5,7 @@ import {formatColor, sampleRegion} from '../src/color.js';
 import {buildEditorArgv} from '../src/editor-launcher.js';
 import {EventEmitter} from '../src/event-emitter.js';
 import {ensureDeviceIdentity, isUuid, truncateUtf8} from '../src/core.js';
-import {processText, TextProcessors} from '../src/text-processors.js';
+import {composeTokens, processText, TextProcessors, tokenizeText} from '../src/text-processors.js';
 import {delivery, effectiveCapabilities} from '../src/sync-policy.js';
 
 function assert(condition, message) {
@@ -59,6 +59,17 @@ function testTextProcessors() {
   TextProcessors.register('brackets', text => text.match(/\[[^\]]+\]/gu) ?? []);
   assertEqual(processText('brackets', 'a [one] [二]'), ['[one]', '[二]'],
     'custom text processor registration');
+
+  const source = '打开 https://example.com/a，订单号 123-456 works';
+  const tokens = tokenizeText(source);
+  assert(tokens.some(token => token.type === 'url' && token.text === 'https://example.com/a'),
+    'tokenizer must keep a URL as one token');
+  assert(tokens.some(token => token.type === 'number' && token.text === '123-456'),
+    'tokenizer must keep a structured number as one token');
+  const url = tokens.find(token => token.type === 'url');
+  const number = tokens.find(token => token.type === 'number');
+  assertEqual(composeTokens(source, tokens, [url.index, number.index]),
+    'https://example.com/a 123-456', 'non-adjacent selected tokens should compose predictably');
 }
 
 function testTruncation() {
@@ -71,6 +82,7 @@ function testDeviceIdentity() {
   const values = new Map([
     ['device-id', 'not-a-uuid'],
     ['device-tag', ' 工作电脑 '],
+    ['device-icon-kind', 'laptop'],
   ]);
   const settings = {
     get_string: key => values.get(key),
@@ -81,6 +93,7 @@ function testDeviceIdentity() {
   assert(isUuid(first.deviceId), 'invalid persisted DeviceId must be replaced with UUID v4');
   assertEqual(second.deviceId, first.deviceId, 'DeviceId must remain stable after generation');
   assertEqual(first.deviceTag, '工作电脑', 'Device Tag should be trimmed for registration');
+  assertEqual(first.deviceIconKind, 'laptop', 'portable device icon kind should be preserved');
 }
 
 function testEditorArgv() {

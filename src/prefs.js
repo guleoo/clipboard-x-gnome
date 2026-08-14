@@ -59,6 +59,14 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     idRow.add_suffix(copy);
     identity.add(idRow);
     identity.add(this._entry(settings, 'device-tag', _('Device tag'), _('Friendly name shown during device discovery')));
+    identity.add(this._combo(settings, 'device-icon-kind', _('Device icon'), [
+      ['desktop', _('Desktop')],
+      ['laptop', _('Laptop')],
+      ['phone', _('Phone')],
+      ['tablet', _('Tablet')],
+      ['server', _('Server')],
+      ['other', _('Other')],
+    ]));
 
     const service = new Adw.PreferencesGroup({title: _('Service connection')});
     page.add(service);
