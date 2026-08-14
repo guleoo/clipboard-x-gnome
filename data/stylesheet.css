@@ -1,0 +1,44 @@
+.clipboard-x-menu {
+  min-width: 420px;
+}
+.clipboard-x-toolbar {
+  spacing: 8px;
+  padding: 8px 12px;
+}
+
+.clipboard-x-toolbar-button {
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.clipboard-x-history {
+  max-height: 520px;
+}
+
+.clipboard-x-entry {
+  spacing: 8px;
+}
+
+.clipboard-x-entry-preview {
+  max-width: 310px;
+}
+
+.clipboard-x-entry-meta {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.85em;
+}
+
+.clipboard-x-empty {
+  padding: 28px 18px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.clipboard-x-color-overlay {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.clipboard-x-color-preview {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background-color: rgba(20, 20, 20, 0.92);
+}

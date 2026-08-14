@@ -1,0 +1,7 @@
+option(
+  'target',
+  type: 'combo',
+  choices: ['local', 'system', 'package'],
+  value: 'local',
+  description: 'installation target',
+)

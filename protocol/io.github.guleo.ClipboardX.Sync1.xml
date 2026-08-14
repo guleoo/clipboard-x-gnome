@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-Bus Object Introspection 1.0//EN"
+  "https://dbus.freedesktop.org/doc/introspect.dtd">
+<node>
+  <interface name="io.github.guleo.ClipboardX.Sync1">
+    <property name="ApiVersion" type="u" access="read"/>
+    <property name="ImplementationName" type="s" access="read"/>
+    <property name="ImplementationVersion" type="s" access="read"/>
+    <property name="Status" type="s" access="read"/>
+    <property name="SupportedMimeTypes" type="as" access="read"/>
+    <property name="MaxItemBytes" type="t" access="read"/>
+    <property name="MaxPreviewBytes" type="t" access="read"/>
+
+    <method name="RegisterDevice">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="deviceTag" type="s" direction="in"/>
+    </method>
+
+    <method name="Publish">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="item" type="a{sv}" direction="in"/>
+      <arg name="previews" type="a(sa{sv}h)" direction="in"/>
+      <arg name="contents" type="a(sa{sv}h)" direction="in"/>
+      <arg name="itemId" type="s" direction="out"/>
+    </method>
+
+    <method name="GetItem">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="itemId" type="s" direction="in"/>
+      <arg name="item" type="a{sv}" direction="out"/>
+      <arg name="previews" type="a(sa{sv}h)" direction="out"/>
+    </method>
+
+    <method name="RequestContent">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="itemId" type="s" direction="in"/>
+      <arg name="contentIds" type="as" direction="in"/>
+      <arg name="transferId" type="s" direction="out"/>
+    </method>
+
+    <method name="OpenContent">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="itemId" type="s" direction="in"/>
+      <arg name="contentId" type="s" direction="in"/>
+      <arg name="metadata" type="a{sv}" direction="out"/>
+      <arg name="content" type="h" direction="out"/>
+    </method>
+
+    <method name="CancelTransfer">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="transferId" type="s" direction="in"/>
+    </method>
+
+    <method name="Acknowledge">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="itemId" type="s" direction="in"/>
+      <arg name="result" type="s" direction="in"/>
+      <arg name="message" type="s" direction="in"/>
+    </method>
+
+    <method name="ListPending">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="itemIds" type="as" direction="out"/>
+    </method>
+
+    <method name="OpenPreferences"/>
+
+    <signal name="ItemAvailable">
+      <arg name="itemId" type="s"/>
+    </signal>
+    <signal name="ItemRemoved">
+      <arg name="itemId" type="s"/>
+      <arg name="reason" type="s"/>
+    </signal>
+    <signal name="TransferChanged">
+      <arg name="transferId" type="s"/>
+      <arg name="state" type="s"/>
+      <arg name="receivedBytes" type="t"/>
+      <arg name="totalBytes" type="t"/>
+      <arg name="error" type="s"/>
+    </signal>
+  </interface>
+</node>

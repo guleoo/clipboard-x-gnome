@@ -1,0 +1,382 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+
+import {ClipboardItem} from './clipboard-item.js';
+import {ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
+import {HistoryStore} from './history-store.js';
+import {EventEmitter} from './event-emitter.js';
+import {createThumbnail} from './thumbnail.js';
+import {loadFile, sha256, writeFile} from './core.js';
+
+const CLIPBOARD = St.ClipboardType.CLIPBOARD;
+
+export class ClipboardController extends EventEmitter {
+  constructor(settings) {
+    super();
+    this._settings = settings;
+    this._clipboard = St.Clipboard.get_default();
+    this._store = new HistoryStore();
+    this._items = [];
+    this._selection = null;
+    this._selectionSignal = 0;
+    this._settingsSignals = [];
+    this._saveTimeout = 0;
+    this._captureInProgress = false;
+    this._captureQueued = false;
+    this._destroyed = false;
+    this._suppressedHash = null;
+    this._cancellable = new Gio.Cancellable();
+    this._loading = true;
+    this._error = null;
+  }
+
+  get items() {
+    return [...this._items];
+  }
+
+  get loading() {
+    return this._loading;
+  }
+
+  get error() {
+    return this._error;
+  }
+
+  async start() {
+    try {
+      this._items = await this._store.load(this._cancellable);
+      this._trim();
+    } catch (error) {
+      if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
+        this._error = error;
+        console.error(`Clipboard X: unable to load history: ${error.message}`);
+      }
+    } finally {
+      this._loading = false;
+      this.emit('changed');
+    }
+
+    if (this._destroyed)
+      return;
+
+    this._selection = Shell.Global.get().display.get_selection();
+    this._selectionSignal = this._selection.connect(
+      'owner-changed',
+      (_selection, selectionType) => {
+        if (selectionType === Meta.SelectionType.SELECTION_CLIPBOARD) {
+          if (this._captureInProgress) {
+            this._captureQueued = true;
+            return;
+          }
+          this.capture().catch(error => console.error(`Clipboard X: capture failed: ${error.message}`));
+        }
+      },
+    );
+    for (const key of ['history-size', 'cache-size-mib', 'history-retention-days']) {
+      this._settingsSignals.push(this._settings.connect(`changed::${key}`, () => {
+        this._trim();
+        this._scheduleSave();
+        this.emit('changed');
+      }));
+    }
+  }
+
+  async capture() {
+    if (this._destroyed || this._captureInProgress || this._settings.get_boolean('private-mode'))
+      return null;
+
+    const focusedWindow = Shell.Global.get().display.focusWindow;
+    const appName = focusedWindow?.get_wm_class?.();
+    if (appName && this._isExcludedApp(appName))
+      return null;
+
+    this._captureInProgress = true;
+    try {
+      const availableMimeTypes = this._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
+      const sensitive = SensitiveClipboardMimeTypes.some(mimeType => availableMimeTypes.includes(mimeType));
+      const sensitiveMode = this._settings.get_string('sensitive-content-mode');
+      if (sensitive && sensitiveMode === 'discard')
+        return null;
+
+      const values = [];
+      const seenMimeTypes = new Set();
+      let hasImage = false;
+      for (const mimeType of ClipboardMimeTypes) {
+        if (!availableMimeTypes.includes(mimeType))
+          continue;
+        const normalizedMimeType = mimeType === 'UTF8_STRING' || mimeType === 'STRING' || mimeType === 'text/plain'
+          ? 'text/plain;charset=utf-8'
+          : mimeType;
+        if (seenMimeTypes.has(normalizedMimeType) || (normalizedMimeType.startsWith('image/') && hasImage))
+          continue;
+        const bytes = await this._readSelectionContent(mimeType);
+        if (!bytes || bytes.get_size() === 0)
+          continue;
+        seenMimeTypes.add(normalizedMimeType);
+        hasImage ||= normalizedMimeType.startsWith('image/');
+        values.push({mimeType, bytes});
+      }
+      if (values.length === 0)
+        return null;
+
+      const item = ClipboardItem.fromRepresentations(values, {
+        textPreviewLimit: this._settings.get_uint('text-preview-limit'),
+        sensitive: sensitive && sensitiveMode !== 'store',
+      });
+
+      if (item.primary.sha256 === this._suppressedHash) {
+        this._suppressedHash = null;
+        return null;
+      }
+
+      await this._prepareItem(item);
+      return this.add(item, 'local');
+    } finally {
+      this._captureInProgress = false;
+      if (this._captureQueued && !this._destroyed) {
+        this._captureQueued = false;
+        this.capture().catch(error => console.error(`Clipboard X: queued capture failed: ${error.message}`));
+      }
+    }
+  }
+
+  async addFromUri(uri, source = 'screenshot') {
+    const item = await this.createFromUri(uri);
+    this.add(item, source);
+    return item;
+  }
+
+  async createFromUri(uri) {
+    const file = Gio.File.new_for_uri(uri);
+    const [bytes, info] = await Promise.all([
+      loadFile(file, this._cancellable),
+      this._queryInfo(file),
+    ]);
+    const mimeType = info.get_content_type() || 'image/png';
+    const item = ClipboardItem.fromBytes(mimeType, bytes, {
+      textPreviewLimit: this._settings.get_uint('text-preview-limit'),
+    });
+    await this._prepareItem(item);
+    return item;
+  }
+
+  add(item, source = 'remote') {
+    const existingIndex = this._items.findIndex(existing => existing.equals(item));
+    if (existingIndex >= 0) {
+      const [existing] = this._items.splice(existingIndex, 1);
+      existing.createdAt = Date.now();
+      this._items.unshift(existing);
+      this._scheduleSave();
+      this.emit('changed');
+      return existing;
+    }
+
+    this._items.unshift(item);
+    this._trim();
+    this._scheduleSave();
+    this.emit('item-added', item, source);
+    this.emit('changed');
+    return item;
+  }
+
+  remove(itemId) {
+    const index = this._items.findIndex(item => item.id === itemId);
+    if (index < 0)
+      return;
+    this._items.splice(index, 1);
+    this._scheduleSave();
+    this.emit('changed');
+  }
+
+  toggleFavorite(itemId) {
+    const item = this._items.find(candidate => candidate.id === itemId);
+    if (!item)
+      return;
+    item.favorite = !item.favorite;
+    this._items.sort((left, right) => Number(right.favorite) - Number(left.favorite) || right.createdAt - left.createdAt);
+    this._scheduleSave();
+    this.emit('changed');
+  }
+
+  clear() {
+    this._items = this._items.filter(item => item.favorite);
+    this._scheduleSave();
+    this.emit('changed');
+  }
+
+  async activate(item) {
+    await this._store.materialize(item, this._cancellable);
+    if (!item.primary?.bytes)
+      throw new Error('Clipboard content is not materialized');
+
+    this._suppressedHash = item.primary.sha256;
+    this._clipboard.set_content(CLIPBOARD, item.primary.mimeType, item.primary.bytes);
+  }
+
+  async writeScreenshot(item) {
+    await this.activate(item);
+  }
+
+  search(query) {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle)
+      return this.items;
+    return this._items.filter(item => item.preview?.text?.toLocaleLowerCase().includes(needle));
+  }
+
+  async materialize(item) {
+    return this._store.materialize(item, this._cancellable);
+  }
+
+  async persist() {
+    await this._store.save(this._items, this._cancellable);
+  }
+
+  async _prepareItem(item) {
+    for (const representation of item.representations) {
+      representation.delivery = representation.size <= this._thresholdFor(representation.mimeType)
+        ? 'eager'
+        : 'on-demand';
+    }
+
+    if (!item.isImage || item.sensitive)
+      return;
+
+    const representation = item.primary;
+
+    try {
+      const thumbnail = createThumbnail(
+        representation.bytes,
+        this._settings.get_uint('thumbnail-size'),
+        this._settings.get_uint('thumbnail-byte-limit'),
+      );
+      const digest = sha256(thumbnail.bytes);
+      const previewPath = GLib.build_filenamev([this._store.objectsPath, `preview-${digest}.png`]);
+      GLib.mkdir_with_parents(this._store.objectsPath, 0o700);
+      await writeFile(Gio.File.new_for_path(previewPath), thumbnail.bytes, this._cancellable);
+      item.preview = {
+        mimeType: thumbnail.mimeType,
+        path: previewPath,
+        size: thumbnail.bytes.get_size(),
+        width: thumbnail.width,
+        height: thumbnail.height,
+        originalWidth: thumbnail.originalWidth,
+        originalHeight: thumbnail.originalHeight,
+        sha256: digest,
+        truncated: true,
+        derivedFrom: representation.id,
+      };
+    } catch (error) {
+      console.warn(`Clipboard X: thumbnail unavailable: ${error.message}`);
+    }
+  }
+
+  _thresholdFor(mimeType) {
+    if (mimeType.startsWith('image/'))
+      return this._settings.get_uint('image-full-threshold');
+    return this._settings.get_uint('text-full-threshold');
+  }
+
+  _readSelectionContent(mimeType) {
+    return new Promise((resolve, reject) => {
+      const output = Gio.MemoryOutputStream.new_resizable();
+      this._selection.transfer_async(
+        Meta.SelectionType.SELECTION_CLIPBOARD,
+        mimeType,
+        -1,
+        output,
+        this._cancellable,
+        (selection, result) => {
+          try {
+            if (!selection.transfer_finish(result))
+              throw new Error(`Unable to transfer clipboard MIME type ${mimeType}`);
+            output.close(null);
+            resolve(output.steal_as_bytes());
+          } catch (error) {
+            reject(error);
+          }
+        },
+      );
+    });
+  }
+
+  _isExcludedApp(appName) {
+    const normalized = appName.toLocaleLowerCase();
+    return this._settings.get_strv('excluded-apps')
+      .some(value => value.trim().toLocaleLowerCase() === normalized);
+  }
+
+  _queryInfo(file) {
+    return new Promise((resolve, reject) => {
+      file.query_info_async(
+        Gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
+        Gio.FileQueryInfoFlags.NONE,
+        GLib.PRIORITY_DEFAULT,
+        this._cancellable,
+        (source, result) => {
+          try {
+            resolve(source.query_info_finish(result));
+          } catch (error) {
+            reject(error);
+          }
+        },
+      );
+    });
+  }
+
+  _trim() {
+    const limit = this._settings.get_int('history-size');
+    const retentionDays = this._settings.get_int('history-retention-days');
+    const cutoff = retentionDays > 0 ? Date.now() - retentionDays * 86_400_000 : 0;
+    const favorites = this._items.filter(item => item.favorite);
+    const regular = this._items
+      .filter(item => !item.favorite && (!cutoff || item.createdAt >= cutoff))
+      .slice(0, limit);
+    this._items = [...favorites, ...regular];
+
+    const maxBytes = this._settings.get_int('cache-size-mib') * 1024 * 1024;
+    let currentBytes = this._items.reduce((sum, item) => sum + localItemSize(item), 0);
+    for (let index = this._items.length - 1; index >= 0 && currentBytes > maxBytes; index--) {
+      const item = this._items[index];
+      if (item.favorite)
+        continue;
+      currentBytes -= localItemSize(item);
+      this._items.splice(index, 1);
+    }
+  }
+
+  _scheduleSave() {
+    if (this._saveTimeout)
+      clearTimeout(this._saveTimeout);
+    this._saveTimeout = setTimeout(() => {
+      this._saveTimeout = 0;
+      this._store.save(this._items, this._cancellable)
+        .catch(error => console.error(`Clipboard X: unable to save history: ${error.message}`));
+    }, 150);
+  }
+
+  destroy() {
+    this._destroyed = true;
+    if (this._saveTimeout)
+      clearTimeout(this._saveTimeout);
+    if (this._selectionSignal)
+      this._selection.disconnect(this._selectionSignal);
+    for (const signal of this._settingsSignals)
+      this._settings.disconnect(signal);
+    this._settingsSignals = [];
+    this._cancellable.cancel();
+    this.disconnectAll();
+    this._items = [];
+  }
+}
+
+function localItemSize(item) {
+  const representationBytes = item.representations.reduce(
+    (sum, representation) => sum + (representation.path || representation.bytes ? representation.size : 0),
+    0,
+  );
+  return representationBytes + (item.preview?.path ? item.preview.size ?? 0 : 0);
+}

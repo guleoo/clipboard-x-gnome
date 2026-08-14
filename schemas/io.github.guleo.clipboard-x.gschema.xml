@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.github.guleo.clipboard-x" path="/io/github/guleo/clipboard-x/">
+    <key name="device-id" type="s">
+      <default>''</default>
+      <summary>Stable device UUID</summary>
+    </key>
+    <key name="device-tag" type="s">
+      <default>''</default>
+      <summary>Friendly device name</summary>
+    </key>
+    <key name="show-indicator" type="b">
+      <default>true</default>
+      <summary>Show the panel indicator</summary>
+    </key>
+    <key name="panel-shortcut" type="as">
+      <default>[]</default>
+      <summary>User-defined shortcut for the main panel</summary>
+    </key>
+    <key name="history-size" type="i">
+      <default>100</default>
+      <range min="1" max="10000"/>
+      <summary>Maximum history entries</summary>
+    </key>
+    <key name="cache-size-mib" type="i">
+      <default>256</default>
+      <range min="16" max="16384"/>
+      <summary>Maximum local cache size in MiB</summary>
+    </key>
+    <key name="history-retention-days" type="i">
+      <default>0</default>
+      <range min="0" max="3650"/>
+      <summary>Remove non-favorite history older than this many days; zero disables expiry</summary>
+    </key>
+    <key name="private-mode" type="b">
+      <default>false</default>
+      <summary>Pause clipboard capture</summary>
+    </key>
+    <key name="excluded-apps" type="as">
+      <default>[]</default>
+      <summary>Applications excluded from clipboard capture</summary>
+    </key>
+    <key name="sensitive-content-mode" type="s">
+      <choices>
+        <choice value="discard"/>
+        <choice value="memory"/>
+        <choice value="store"/>
+      </choices>
+      <default>'memory'</default>
+      <summary>Handling policy for clipboard content marked by password managers</summary>
+    </key>
+    <key name="sync-enabled" type="b">
+      <default>false</default>
+      <summary>Enable synchronization service integration</summary>
+    </key>
+    <key name="service-bus-name" type="s">
+      <default>'io.github.guleo.ClipboardX.MockService'</default>
+      <summary>Synchronization service D-Bus name</summary>
+    </key>
+    <key name="service-object-path" type="s">
+      <default>'/io/github/guleo/ClipboardX/Sync'</default>
+      <summary>Synchronization service D-Bus object path</summary>
+    </key>
+    <key name="sync-send-mode" type="s">
+      <choices>
+        <choice value="disabled"/>
+        <choice value="manual"/>
+        <choice value="automatic"/>
+      </choices>
+      <default>'manual'</default>
+      <summary>Outgoing synchronization policy</summary>
+    </key>
+    <key name="sync-receive-mode" type="s">
+      <choices>
+        <choice value="disabled"/>
+        <choice value="history"/>
+        <choice value="activate"/>
+      </choices>
+      <default>'history'</default>
+      <summary>Incoming synchronization policy</summary>
+    </key>
+    <key name="sync-text" type="b">
+      <default>true</default>
+      <summary>Synchronize text content</summary>
+    </key>
+    <key name="sync-html" type="b">
+      <default>false</default>
+      <summary>Synchronize HTML content</summary>
+    </key>
+    <key name="sync-images" type="b">
+      <default>true</default>
+      <summary>Synchronize image content</summary>
+    </key>
+    <key name="sync-sensitive" type="b">
+      <default>false</default>
+      <summary>Allow content marked sensitive to be synchronized</summary>
+    </key>
+    <key name="text-full-threshold" type="u">
+      <default>65536</default>
+      <summary>Text eager synchronization threshold in bytes</summary>
+    </key>
+    <key name="text-preview-limit" type="u">
+      <default>4096</default>
+      <summary>Text preview limit in bytes</summary>
+    </key>
+    <key name="image-full-threshold" type="u">
+      <default>1048576</default>
+      <summary>Image eager synchronization threshold in bytes</summary>
+    </key>
+    <key name="thumbnail-size" type="u">
+      <default>320</default>
+      <range min="64" max="1024"/>
+      <summary>Maximum thumbnail dimension</summary>
+    </key>
+    <key name="thumbnail-byte-limit" type="u">
+      <default>262144</default>
+      <summary>Maximum thumbnail size in bytes</summary>
+    </key>
+    <key name="sync-transfer-timeout-seconds" type="u">
+      <default>60</default>
+      <range min="5" max="3600"/>
+      <summary>Maximum time to wait for on-demand content</summary>
+    </key>
+    <key name="screenshot-target" type="s">
+      <choices>
+        <choice value="interactive"/>
+        <choice value="screen"/>
+        <choice value="window"/>
+        <choice value="area"/>
+        <choice value="active-window"/>
+      </choices>
+      <default>'interactive'</default>
+      <summary>Screenshot portal target</summary>
+    </key>
+    <key name="screenshot-add-history" type="b">
+      <default>true</default>
+      <summary>Add screenshots to history</summary>
+    </key>
+    <key name="screenshot-write-clipboard" type="b">
+      <default>true</default>
+      <summary>Write screenshots to the clipboard</summary>
+    </key>
+    <key name="screenshot-open-editor" type="b">
+      <default>false</default>
+      <summary>Open screenshots in the configured image editor</summary>
+    </key>
+    <key name="editor-app-id" type="s">
+      <default>''</default>
+      <summary>Desktop application ID of the image editor</summary>
+    </key>
+    <key name="editor-command" type="s">
+      <default>'gradia %u'</default>
+      <summary>Advanced image editor argv template</summary>
+    </key>
+    <key name="color-format" type="s">
+      <choices>
+        <choice value="hex"/>
+        <choice value="rgb"/>
+        <choice value="hsl"/>
+      </choices>
+      <default>'hex'</default>
+      <summary>Default color output format</summary>
+    </key>
+  </schema>
+</schemalist>
