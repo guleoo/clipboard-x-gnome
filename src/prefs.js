@@ -158,6 +158,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['hex', 'HEX'],
       ['rgb', 'RGB'],
       ['hsl', 'HSL'],
+      ['oklch', 'OKLCH'],
     ]));
     return page;
   }

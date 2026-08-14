@@ -1,6 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {ClipboardItem} from '../src/clipboard-item.js';
+import {formatColor, sampleRegion} from '../src/color.js';
 import {buildEditorArgv} from '../src/editor-launcher.js';
 import {EventEmitter} from '../src/event-emitter.js';
 import {ensureDeviceIdentity, isUuid, truncateUtf8} from '../src/core.js';
@@ -78,6 +79,28 @@ function testEditorArgv() {
     ['gimp', '/tmp/a.png'], 'file placeholder');
   assertEqual(buildEditorArgv('editor --label=100%%', 'file:///tmp/a.png', '/tmp/a.png'),
     ['editor', '--label=100%', 'file:///tmp/a.png'], 'literal percent and implicit URI');
+  assertEqual(buildEditorArgv("editor '$(not-a-shell)' %f", 'file:///tmp/a b.png', '/tmp/a b.png'),
+    ['editor', '$(not-a-shell)', '/tmp/a b.png'], 'command arguments must never be evaluated by a shell');
+  let rejected = false;
+  try {
+    buildEditorArgv('editor %x', 'file:///tmp/a.png', '/tmp/a.png');
+  } catch (_error) {
+    rejected = true;
+  }
+  assert(rejected, 'unknown editor placeholders must be rejected');
+}
+
+function testColorTools() {
+  assertEqual(formatColor([255, 0, 0], 'hex'), '#FF0000', 'HEX color format');
+  assertEqual(formatColor([255, 0, 0], 'rgb'), 'rgb(255, 0, 0)', 'RGB color format');
+  assertEqual(formatColor([255, 0, 0], 'hsl'), 'hsl(0 100% 50%)', 'HSL color format');
+  assertEqual(formatColor([255, 0, 0], 'oklch'), 'oklch(62.80% 0.2577 29.23)', 'OKLCH color format');
+  assertEqual(sampleRegion(0, 0, 2, 200, 100, 5),
+    {x: 0, y: 0, width: 6, height: 6, centerX: 0, centerY: 0},
+    'magnifier region must clamp at the top-left texture edge');
+  assertEqual(sampleRegion(49.5, 24.5, 2, 100, 50, 5),
+    {x: 94, y: 44, width: 6, height: 6, centerX: 5, centerY: 5},
+    'magnifier coordinates must scale and clamp at the bottom-right edge');
 }
 
 function testEventEmitter() {
@@ -96,4 +119,5 @@ testTextProcessors();
 testTruncation();
 testDeviceIdentity();
 testEditorArgv();
+testColorTools();
 testEventEmitter();

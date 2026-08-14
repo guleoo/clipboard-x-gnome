@@ -38,6 +38,16 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
     'Clipboard X did not capture a text clipboard change');
 
+  const extensionObject = extension.stateObj;
+  assert(extensionObject, 'Clipboard X extension object is unavailable');
+  extensionObject._pickColor();
+  await Scripting.sleep(500);
+  assert(extensionObject._colorPicker, 'Color picker did not acquire a modal overlay');
+  assert(extensionObject._colorPicker._rgb?.length === 3, 'Color picker did not sample the stage texture');
+  extensionObject._colorPicker.close();
+  await Scripting.sleep(100);
+  assert(!extensionObject._colorPicker, 'Color picker did not release its modal overlay');
+
   Main.extensionManager.disableExtension(UUID);
   await Scripting.sleep(300);
   assert(!Main.panel.statusArea[STATUS_AREA_NAME], 'Indicator remained after disabling Clipboard X');

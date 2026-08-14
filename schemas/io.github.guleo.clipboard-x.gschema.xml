@@ -157,6 +157,7 @@
         <choice value="hex"/>
         <choice value="rgb"/>
         <choice value="hsl"/>
+        <choice value="oklch"/>
       </choices>
       <default>'hex'</default>
       <summary>Default color output format</summary>

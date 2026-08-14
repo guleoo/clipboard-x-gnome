@@ -3,6 +3,10 @@ import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 
 export function buildEditorArgv(template, uri, localPath = null) {
+  if (!template?.trim())
+    throw new Error('The image editor command is empty');
+  validatePlaceholders(template);
+
   const [ok, parsed] = GLib.shell_parse_argv(template.trim());
   if (!ok || parsed.length === 0)
     throw new Error('The image editor command is empty or invalid');
@@ -38,4 +42,15 @@ export function launchEditor({appId, command, uri, launchContext = null}) {
   const argv = buildEditorArgv(command, uri, file.get_path());
   const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
   return launcher.spawnv(argv);
+}
+
+function validatePlaceholders(template) {
+  for (let index = 0; index < template.length; index++) {
+    if (template[index] !== '%')
+      continue;
+    const placeholder = template[index + 1];
+    if (!placeholder || !['%', 'u', 'f'].includes(placeholder))
+      throw new Error(`Unsupported image editor placeholder: %${placeholder ?? ''}`);
+    index++;
+  }
 }

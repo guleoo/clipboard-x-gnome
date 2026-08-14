@@ -67,6 +67,7 @@ endif
 test_runner = find_program('gjs')
 test('core', test_runner, args: ['-m', meson.current_source_dir() / 'tests/core.test.js'])
 test('protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/protocol.test.js'])
+test('tools', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tools.test.js'])
 test(
   'sync-integration',
   find_program('dbus-run-session'),

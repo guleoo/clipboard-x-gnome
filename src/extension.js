@@ -7,7 +7,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from './clipboard-controller.js';
-import {ColorPicker, formatColor} from './color-picker.js';
+import {formatColor} from './color.js';
+import {ColorPicker} from './color-picker.js';
 import {ensureDeviceIdentity} from './core.js';
 import {launchEditor} from './editor-launcher.js';
 import {Indicator} from './indicator.js';
@@ -141,7 +142,7 @@ export default class ClipboardXExtension extends Extension {
       const text = formatColor(rgb, this._settings.get_string('color-format'));
       St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
       this._colorPicker = null;
-    });
+    }, this._settings.get_string('color-format'));
     this._colorPicker.connect('destroy', () => {
       this._colorPicker = null;
     });
