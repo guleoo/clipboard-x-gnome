@@ -1,4 +1,5 @@
 import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
@@ -16,31 +17,32 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const {deviceId} = ensureDeviceIdentity(settings);
     window.set_default_size(720, 700);
 
-    window.add(this._generalPage(settings));
+    window.add(this._clipboardPage(settings));
     window.add(this._syncPage(settings, deviceId));
-    window.add(this._toolsPage(settings));
+    window.add(this._colorPage(settings));
+    window.add(this._screenshotPage(settings));
+    window.add(this._shortcutsPage(settings));
   }
 
-  _generalPage(settings) {
-    const page = new Adw.PreferencesPage({title: _('General'), icon_name: 'preferences-system-symbolic'});
-    const appearance = new Adw.PreferencesGroup({title: _('Panel')});
+  _clipboardPage(settings) {
+    const page = new Adw.PreferencesPage({title: _('Clipboard'), icon_name: 'edit-paste-symbolic'});
+    const appearance = new Adw.PreferencesGroup({title: _('Panel and history')});
     page.add(appearance);
     appearance.add(this._switch(settings, 'show-indicator', _('Show panel indicator')));
-    appearance.add(this._shortcut(settings));
+    appearance.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
+    appearance.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
+    appearance.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
+    appearance.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
 
-    const history = new Adw.PreferencesGroup({title: _('Clipboard history')});
-    page.add(history);
-    history.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
-    history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
-    history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
-    history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
-    history.add(this._switch(settings, 'private-mode', _('Private mode'), _('Pause clipboard capture')));
-    history.add(this._combo(settings, 'sensitive-content-mode', _('Sensitive content'), [
+    const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
+    page.add(privacy);
+    privacy.add(this._switch(settings, 'private-mode', _('Pause clipboard recording')));
+    privacy.add(this._combo(settings, 'sensitive-content-mode', _('Sensitive content'), [
       ['discard', _('Do not record')],
       ['memory', _('Keep until extension stops')],
       ['store', _('Store like other history')],
     ]));
-    history.add(this._stringListEntry(
+    privacy.add(this._stringListEntry(
       settings,
       'excluded-apps',
       _('Excluded applications'),
@@ -59,13 +61,13 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     idRow.add_suffix(copy);
     identity.add(idRow);
     identity.add(this._entry(settings, 'device-tag', _('Device tag'), _('Friendly name shown during device discovery')));
-    identity.add(this._combo(settings, 'device-icon-kind', _('Device icon'), [
-      ['desktop', _('Desktop')],
-      ['laptop', _('Laptop')],
-      ['phone', _('Phone')],
-      ['tablet', _('Tablet')],
-      ['server', _('Server')],
-      ['other', _('Other')],
+    identity.add(this._iconCombo(settings, 'device-icon-kind', _('Device icon'), [
+      ['desktop', _('Desktop'), 'video-display-symbolic'],
+      ['laptop', _('Laptop'), 'computer-symbolic'],
+      ['phone', _('Phone'), 'phone-symbolic'],
+      ['tablet', _('Tablet'), 'input-tablet-symbolic'],
+      ['server', _('Server'), 'network-server-symbolic'],
+      ['other', _('Other'), 'avatar-default-symbolic'],
     ]));
 
     const service = new Adw.PreferencesGroup({title: _('Service connection')});
@@ -149,17 +151,30 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Favorites only'),
       _('Only applies to automatic sending'),
     ));
-    policy.add(this._spin(settings, 'text-full-threshold', _('Text eager threshold'), 1024, 16 * 1024 * 1024, 1024, _('bytes')));
-    policy.add(this._spin(settings, 'text-preview-limit', _('Text preview limit'), 256, 65536, 256, _('bytes')));
-    policy.add(this._spin(settings, 'image-full-threshold', _('Image eager threshold'), 65536, 128 * 1024 * 1024, 65536, _('bytes')));
+    policy.add(this._sizeSpin(settings, 'text-full-threshold', _('Small text sent in full'), 1, 16384, 1, 1024, _('KiB')));
+    policy.add(this._sizeSpin(settings, 'text-preview-limit', _('Large text preview'), 0.25, 64, 0.25, 1024, _('KiB'), 2));
+    policy.add(this._sizeSpin(settings, 'image-full-threshold', _('Small images sent in full'), 0.25, 128, 0.25, 1024 * 1024, _('MiB'), 2));
     policy.add(this._spin(settings, 'thumbnail-size', _('Thumbnail dimension'), 64, 1024, 16, _('px')));
-    policy.add(this._spin(settings, 'thumbnail-byte-limit', _('Thumbnail size limit'), 16384, 4 * 1024 * 1024, 16384, _('bytes')));
+    policy.add(this._sizeSpin(settings, 'thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KiB')));
     policy.add(this._spin(settings, 'sync-transfer-timeout-seconds', _('On-demand timeout'), 5, 3600, 5, _('seconds')));
     return page;
   }
 
-  _toolsPage(settings) {
-    const page = new Adw.PreferencesPage({title: _('Capture and editing'), icon_name: 'camera-photo-symbolic'});
+  _colorPage(settings) {
+    const page = new Adw.PreferencesPage({title: _('Color picker'), icon_name: 'color-select-symbolic'});
+    const color = new Adw.PreferencesGroup({title: _('Color format')});
+    page.add(color);
+    color.add(this._combo(settings, 'color-format', _('Default format'), [
+      ['hex', 'HEX'],
+      ['rgb', 'RGB'],
+      ['hsl', 'HSL'],
+      ['oklch', 'OKLCH'],
+    ]));
+    return page;
+  }
+
+  _screenshotPage(settings) {
+    const page = new Adw.PreferencesPage({title: _('Screenshot'), icon_name: 'camera-photo-symbolic'});
     const screenshot = new Adw.PreferencesGroup({title: _('Screenshot Portal')});
     page.add(screenshot);
     screenshot.add(this._combo(settings, 'screenshot-target', _('Default target'), [
@@ -191,14 +206,27 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       },
     ));
 
-    const color = new Adw.PreferencesGroup({title: _('Color picker')});
-    page.add(color);
-    color.add(this._combo(settings, 'color-format', _('Default format'), [
-      ['hex', 'HEX'],
-      ['rgb', 'RGB'],
-      ['hsl', 'HSL'],
-      ['oklch', 'OKLCH'],
-    ]));
+    return page;
+  }
+
+  _shortcutsPage(settings) {
+    const page = new Adw.PreferencesPage({
+      title: _('Shortcuts'),
+      icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
+    });
+    const group = new Adw.PreferencesGroup({
+      title: _('Keyboard shortcuts'),
+      description: _('Click a shortcut, then press the new key combination. Backspace disables it.'),
+    });
+    page.add(group);
+    for (const [key, title] of [
+      ['panel-shortcut', _('Open clipboard panel')],
+      ['screenshot-shortcut', _('Take screenshot')],
+      ['color-picker-shortcut', _('Pick color')],
+      ['private-mode-shortcut', _('Pause or resume clipboard recording')],
+      ['clear-history-shortcut', _('Clear unpinned history')],
+    ])
+      group.add(this._shortcut(settings, key, title));
     return page;
   }
 
@@ -232,6 +260,18 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     return row;
   }
 
+  _sizeSpin(settings, key, title, lower, upper, step, factor, unit, digits = 0) {
+    const row = new Adw.SpinRow({
+      title,
+      subtitle: unit,
+      digits,
+      adjustment: new Gtk.Adjustment({lower, upper, step_increment: step, page_increment: step * 10}),
+      value: settings.get_uint(key) / factor,
+    });
+    row.connect('notify::value', () => settings.set_uint(key, Math.round(row.value * factor)));
+    return row;
+  }
+
   _combo(settings, key, title, choices) {
     const values = choices.map(([value]) => value);
     const row = new Adw.ComboRow({
@@ -243,17 +283,94 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     return row;
   }
 
-  _shortcut(settings) {
-    const current = settings.get_strv('panel-shortcut')[0] ?? '';
-    const row = new Adw.EntryRow({title: _('Panel shortcut'), text: current});
-    row.connect('changed', () => {
-      const value = row.get_text().trim();
-      const [parsed, key, modifiers] = value ? Gtk.accelerator_parse(value) : [true, 0, 0];
-      const valid = !value || (parsed && Gtk.accelerator_valid(key, modifiers));
-      row[valid ? 'remove_css_class' : 'add_css_class']('error');
-      if (valid)
-        settings.set_strv('panel-shortcut', value ? [value] : []);
+  _iconCombo(settings, key, title, choices) {
+    const values = choices.map(([value]) => value);
+    const createFactory = () => {
+      const factory = new Gtk.SignalListItemFactory();
+      factory.connect('setup', (_factory, listItem) => {
+        const box = new Gtk.Box({spacing: 10, valign: Gtk.Align.CENTER});
+        box._icon = new Gtk.Image({pixel_size: 20});
+        box._label = new Gtk.Label({xalign: 0});
+        box.append(box._icon);
+        box.append(box._label);
+        listItem.set_child(box);
+      });
+      factory.connect('bind', (_factory, listItem) => {
+        const choice = choices[listItem.get_position()] ?? choices[0];
+        const box = listItem.get_child();
+        box._icon.icon_name = choice[2];
+        box._label.label = choice[1];
+      });
+      return factory;
+    };
+    const row = new Adw.ComboRow({
+      title,
+      model: Gtk.StringList.new(choices.map(([, label]) => label)),
+      selected: Math.max(0, values.indexOf(settings.get_string(key))),
+      factory: createFactory(),
+      list_factory: createFactory(),
     });
+    row.connect('notify::selected', () => settings.set_string(key, values[row.selected]));
+    return row;
+  }
+
+  _shortcut(settings, key, title) {
+    const row = new Adw.ActionRow({title});
+    const shortcut = new Adw.ShortcutLabel({disabled_text: _('Disabled')});
+    const button = new Gtk.Button({
+      child: shortcut,
+      has_frame: false,
+      valign: Gtk.Align.CENTER,
+      tooltip_text: _('Click to set a shortcut'),
+    });
+    let controller = null;
+    const update = () => {
+      shortcut.accelerator = settings.get_strv(key)[0] ?? '';
+      shortcut.disabled_text = _('Disabled');
+      button.remove_css_class('error');
+    };
+    const stop = () => {
+      if (controller) {
+        button.remove_controller(controller);
+        controller = null;
+      }
+      update();
+    };
+    button.connect('clicked', () => {
+      if (controller) {
+        stop();
+        return;
+      }
+      shortcut.accelerator = '';
+      shortcut.disabled_text = _('Press shortcut…');
+      controller = new Gtk.EventControllerKey();
+      controller.connect('key-pressed', (_controller, keyval, keycode, state) => {
+        const modifiers = state & Gtk.accelerator_get_default_mod_mask() & ~Gdk.ModifierType.LOCK_MASK;
+        if (modifiers === 0 && keyval === Gdk.KEY_Escape) {
+          stop();
+          return Gdk.EVENT_STOP;
+        }
+        if (modifiers === 0 && keyval === Gdk.KEY_BackSpace) {
+          settings.set_strv(key, []);
+          stop();
+          return Gdk.EVENT_STOP;
+        }
+        const valid = Gtk.accelerator_valid(keyval, modifiers)
+          || (keyval === Gdk.KEY_Tab && modifiers !== 0);
+        if (!valid) {
+          button.add_css_class('error');
+          return Gdk.EVENT_STOP;
+        }
+        settings.set_strv(key, [Gtk.accelerator_name_with_keycode(null, keyval, keycode, modifiers)]);
+        stop();
+        return Gdk.EVENT_STOP;
+      });
+      button.add_controller(controller);
+      button.grab_focus();
+    });
+    update();
+    row.add_suffix(button);
+    row.activatable_widget = button;
     return row;
   }
 

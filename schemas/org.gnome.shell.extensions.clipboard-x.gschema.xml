@@ -29,6 +29,22 @@
       <default>[]</default>
       <summary>User-defined shortcut for the main panel</summary>
     </key>
+    <key name="screenshot-shortcut" type="as">
+      <default>[]</default>
+      <summary>User-defined shortcut for taking a screenshot</summary>
+    </key>
+    <key name="color-picker-shortcut" type="as">
+      <default>[]</default>
+      <summary>User-defined shortcut for picking a color</summary>
+    </key>
+    <key name="private-mode-shortcut" type="as">
+      <default>[]</default>
+      <summary>User-defined shortcut for toggling clipboard recording</summary>
+    </key>
+    <key name="clear-history-shortcut" type="as">
+      <default>[]</default>
+      <summary>User-defined shortcut for clearing unpinned history</summary>
+    </key>
     <key name="history-size" type="i">
       <default>100</default>
       <range min="1" max="10000"/>

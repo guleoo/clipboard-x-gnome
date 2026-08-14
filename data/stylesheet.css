@@ -1,16 +1,38 @@
 .clipboard-x-menu {
-  min-width: 420px;
+  min-width: 520px;
 }
-.clipboard-x-toolbar {
+
+.clipboard-x-search-toolbar {
   spacing: 8px;
-  padding: 2px 4px;
+  padding: 3px 4px;
+}
+
+.clipboard-x-search {
+  border-radius: 12px;
+  padding: 5px 9px;
+}
+
+.clipboard-x-toolbar {
+  spacing: 3px;
 }
 
 .clipboard-x-icon-button {
-  padding: 2px;
+  color: inherit;
+  padding: 4px;
   min-width: 28px;
   min-height: 28px;
-  border-radius: 6px;
+  border-radius: 8px;
+  transition-duration: 120ms;
+}
+
+.clipboard-x-icon-button:hover,
+.clipboard-x-icon-button:focus {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.clipboard-x-icon-button:active,
+.clipboard-x-icon-button:checked {
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 .clipboard-x-history {
@@ -18,18 +40,35 @@
 }
 
 .clipboard-x-entry {
-  spacing: 4px;
-  padding: 4px 8px;
+  color: inherit;
+  spacing: 3px;
+  padding: 3px 6px;
+  margin: 1px 4px;
+  border-radius: 8px;
+  transition-duration: 120ms;
+}
+
+.clipboard-x-entry:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .clipboard-x-entry-content {
-  padding: 3px 5px;
+  color: inherit;
+  padding: 5px 7px;
   border-radius: 6px;
   text-align: left;
 }
 
+.clipboard-x-entry-content:hover,
+.clipboard-x-entry-content:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 .clipboard-x-entry-preview {
-  max-width: 250px;
+  color: inherit;
+  font-size: 1em;
+  font-weight: normal;
+  max-width: 315px;
   text-align: left;
 }
 
@@ -44,8 +83,9 @@
 }
 
 .clipboard-x-device-icon {
-  color: rgba(255, 255, 255, 0.65);
-  margin-right: 2px;
+  color: inherit;
+  opacity: 0.72;
+  margin-right: 4px;
 }
 
 .clipboard-x-image-content {
@@ -57,10 +97,18 @@
   padding: 2px 4px;
 }
 
-.clipboard-x-hint {
-  max-width: 245px;
-  font-size: 0.82em;
-  color: rgba(255, 255, 255, 0.62);
+.clipboard-x-pinned {
+  color: #62a0ea;
+  background-color: rgba(53, 132, 228, 0.16);
+}
+
+.clipboard-x-tooltip {
+  color: white;
+  background-color: rgba(32, 32, 32, 0.96);
+  border-radius: 7px;
+  padding: 6px 9px;
+  max-width: 280px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .clipboard-x-progress-ring {

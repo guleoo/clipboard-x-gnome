@@ -7,6 +7,7 @@ import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {composeTokens, tokenizeText} from './text-processors.js';
@@ -82,6 +83,14 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
+    this._tooltipTimeoutId = 0;
+    this._tooltipSource = null;
+    this._tooltip = new St.Label({
+      style_class: 'clipboard-x-tooltip',
+      visible: false,
+      reactive: false,
+    });
+    Main.uiGroup.add_child(this._tooltip);
 
     this.add_child(new St.Icon({
       icon_name: 'edit-paste-symbolic',
@@ -92,6 +101,7 @@ class Indicator extends PanelMenu.Button {
 
     this._changedSignal = controller.connect('changed', () => this._refresh());
     this._privateSignal = settings.connect('changed::private-mode', () => this._updatePrivateButton());
+    this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
     this.menu.connect('open-state-changed', (_menu, open) => {
@@ -103,10 +113,10 @@ class Indicator extends PanelMenu.Button {
         }
       } else {
         this._cancelFocusSearch();
+        this._hideTooltip();
         const wasTokenizing = Boolean(this._tokenState);
         this._tokenState = null;
         this._searchItem.visible = true;
-        this._setHint(this._syncStatusText);
         if (wasTokenizing)
           this._refresh();
       }
@@ -117,8 +127,12 @@ class Indicator extends PanelMenu.Button {
   _buildMenu() {
     const searchItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this._searchItem = searchItem;
+    const searchToolbar = new St.BoxLayout({
+      style_class: 'clipboard-x-search-toolbar',
+      x_expand: true,
+    });
     this._search = new St.Entry({
-      style_class: 'search-entry',
+      style_class: 'search-entry clipboard-x-search',
       hint_text: _('Search clipboard history…'),
       can_focus: true,
       x_expand: true,
@@ -129,10 +143,7 @@ class Indicator extends PanelMenu.Button {
       if (!this._tokenState)
         this._refresh();
     });
-    searchItem.add_child(this._search);
-    this.menu.addMenuItem(searchItem);
-
-    const toolbarItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    searchToolbar.add_child(this._search);
     const toolbar = new St.BoxLayout({style_class: 'clipboard-x-toolbar'});
     this._toolbar = toolbar;
     toolbar.add_child(this._iconButton(
@@ -142,8 +153,9 @@ class Indicator extends PanelMenu.Button {
     this._syncToolButton = this._iconButton(
       'network-offline-symbolic', _('Synchronization settings'), () => this._runAndClose(() => this._actions.openPreferences()));
     toolbar.add_child(this._syncToolButton);
-    toolbarItem.add_child(toolbar);
-    this.menu.addMenuItem(toolbarItem);
+    searchToolbar.add_child(toolbar);
+    searchItem.add_child(searchToolbar);
+    this.menu.addMenuItem(searchItem);
 
     this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
     this._history = new PopupMenu.PopupMenuSection();
@@ -158,15 +170,9 @@ class Indicator extends PanelMenu.Button {
     this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
     const footerItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    const footer = new St.BoxLayout({style_class: 'clipboard-x-footer'});
+    const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this._footer = footer;
-    this._hintLabel = new St.Label({
-      text: this._syncStatusText,
-      style_class: 'clipboard-x-hint',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    });
-    footer.add_child(this._hintLabel);
+    footer.add_child(new St.Widget({x_expand: true}));
     this._privateButton = this._iconButton(
       'media-playback-pause-symbolic',
       _('Pause clipboard recording'),
@@ -202,8 +208,7 @@ class Indicator extends PanelMenu.Button {
         : _('Sync Service online');
     }
     this._setButtonIcon(this._syncToolButton, iconName);
-    this._syncToolButton._hintText = this._syncStatusText;
-    this._setHint(this._syncStatusText);
+    this._attachHint(this._syncToolButton, this._syncStatusText);
   }
 
   setTransfer(transfer) {
@@ -254,6 +259,7 @@ class Indicator extends PanelMenu.Button {
   _entry(item) {
     const row = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     row.add_style_class_name('clipboard-x-entry');
+    row.track_hover = true;
     if (this._multipleDevices) {
       const identity = this._displayIdentity(item);
       row.add_child(this._deviceIcon(identity.iconKind, identity.tag));
@@ -271,10 +277,16 @@ class Indicator extends PanelMenu.Button {
       content.set_child(new St.Label({
         text: title.slice(0, 240),
         style_class: 'clipboard-x-entry-preview',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
         y_align: Clutter.ActorAlign.CENTER,
       }));
     } else {
-      const box = new St.BoxLayout({style_class: 'clipboard-x-image-content'});
+      const box = new St.BoxLayout({
+        style_class: 'clipboard-x-image-content',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
+      });
       box.add_child(item.preview?.path
         ? new St.Icon({gicon: Gio.icon_new_for_string(item.preview.path), icon_size: 32})
         : new St.Icon({icon_name: 'image-x-generic-symbolic', icon_size: 24}));
@@ -292,20 +304,23 @@ class Indicator extends PanelMenu.Button {
 
     if (item.isText) {
       row.add_child(this._iconButton(
-        'edit-select-all-symbolic', _('Segment text'), () => this._openTokenizer(item)));
+        'format-text-plaintext-symbolic', _('Segment text'), () => this._openTokenizer(item)));
     } else {
       row.add_child(this._iconButton(
         'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item)));
     }
     const pinButton = this._iconButton(
-      'view-pin-symbolic',
+      item.favorite ? 'emblem-favorite-symbolic' : 'view-pin-symbolic',
       item.favorite ? _('Unpin') : _('Pin'),
       () => this._controller.toggleFavorite(item.id),
     );
     pinButton.toggle_mode = true;
     pinButton.checked = item.favorite;
+    if (item.favorite)
+      pinButton.add_style_class_name('clipboard-x-pinned');
     row.add_child(pinButton);
-    row.add_child(this._syncButton(item));
+    if (this._settings.get_boolean('sync-enabled'))
+      row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
       'edit-delete-symbolic', _('Delete from local history'), () => this._controller.remove(item.id)));
     return row;
@@ -531,7 +546,7 @@ class Indicator extends PanelMenu.Button {
     const button = new St.Button({
       can_focus: true,
       track_hover: true,
-      style_class: 'button clipboard-x-icon-button',
+      style_class: 'clipboard-x-icon-button',
       accessible_name: hintText,
     });
     this._setButtonIcon(button, iconName);
@@ -548,16 +563,68 @@ class Indicator extends PanelMenu.Button {
     actor._hintText = text;
     if (!actor._clipboardXHintConnected) {
       actor._clipboardXHintConnected = true;
-      actor.connect('notify::hover', () => this._setHint(actor.hover ? actor._hintText : this._syncStatusText));
-      actor.connect('key-focus-in', () => this._setHint(actor._hintText));
-      actor.connect('key-focus-out', () => this._setHint(this._syncStatusText));
+      actor.connect('notify::hover', () => {
+        if (actor.hover)
+          this._showTooltip(actor, false);
+        else if (!actor.has_key_focus?.())
+          this._hideTooltip(actor);
+      });
+      actor.connect('key-focus-in', () => this._showTooltip(actor, true));
+      actor.connect('key-focus-out', () => {
+        if (!actor.hover)
+          this._hideTooltip(actor);
+      });
     }
     actor.accessible_name = text;
+    if (this._tooltipSource === actor && this._tooltip.visible)
+      this._tooltip.text = text;
   }
 
-  _setHint(text) {
-    if (this._hintLabel)
-      this._hintLabel.text = text;
+  _showTooltip(actor, immediate) {
+    this._cancelTooltipTimeout();
+    const show = () => {
+      this._tooltipTimeoutId = 0;
+      if (!actor.mapped || (!actor.hover && !actor.has_key_focus?.()))
+        return GLib.SOURCE_REMOVE;
+      this._tooltipSource = actor;
+      this._tooltip.text = actor._hintText;
+      this._tooltip.show();
+      Main.uiGroup.set_child_above_sibling(this._tooltip, null);
+      const [actorX, actorY] = actor.get_transformed_position();
+      const [actorWidth, actorHeight] = actor.get_transformed_size();
+      const [, tooltipWidth] = this._tooltip.get_preferred_width(-1);
+      const [, tooltipHeight] = this._tooltip.get_preferred_height(tooltipWidth);
+      const x = Math.max(8, Math.min(
+        global.stage.width - tooltipWidth - 8,
+        actorX + (actorWidth - tooltipWidth) / 2,
+      ));
+      const below = actorY + actorHeight + 8;
+      const y = below + tooltipHeight <= global.stage.height - 8
+        ? below
+        : Math.max(8, actorY - tooltipHeight - 8);
+      this._tooltip.set_position(Math.round(x), Math.round(y));
+      return GLib.SOURCE_REMOVE;
+    };
+    if (immediate) {
+      show();
+      return;
+    }
+    this._tooltipTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 350, show);
+  }
+
+  _hideTooltip(actor = null) {
+    if (actor && this._tooltipSource && actor !== this._tooltipSource)
+      return;
+    this._cancelTooltipTimeout();
+    this._tooltipSource = null;
+    this._tooltip.hide();
+  }
+
+  _cancelTooltipTimeout() {
+    if (!this._tooltipTimeoutId)
+      return;
+    GLib.Source.remove(this._tooltipTimeoutId);
+    this._tooltipTimeoutId = 0;
   }
 
   _updatePrivateButton() {
@@ -587,16 +654,24 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelFocusSearch();
+    this._hideTooltip();
     if (this._changedSignal)
       this._controller.disconnect(this._changedSignal);
-    for (const signal of [this._privateSignal, this._deviceTagSignal, this._deviceIconSignal]) {
+    for (const signal of [
+      this._privateSignal,
+      this._syncEnabledSignal,
+      this._deviceTagSignal,
+      this._deviceIconSignal,
+    ]) {
       if (signal)
         this._settings.disconnect(signal);
     }
     this._changedSignal = 0;
     this._privateSignal = 0;
+    this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;
+    this._tooltip.destroy();
     super.destroy();
   }
 });

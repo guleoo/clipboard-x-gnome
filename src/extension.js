@@ -15,6 +15,14 @@ import {Indicator} from './indicator.js';
 import {ScreenshotPortal} from './screenshot-portal.js';
 import {SyncClient} from './sync-client.js';
 
+const SHORTCUT_KEYS = Object.freeze([
+  'panel-shortcut',
+  'screenshot-shortcut',
+  'color-picker-shortcut',
+  'private-mode-shortcut',
+  'clear-history-shortcut',
+]);
+
 export default class ClipboardXExtension extends Extension {
   enable() {
     this._settings = this.getSettings();
@@ -23,6 +31,7 @@ export default class ClipboardXExtension extends Extension {
     this._sync = new SyncClient(this._settings);
     this._colorPicker = null;
     this._settingsSignals = [];
+    this._boundShortcuts = [];
 
     const actions = {
       extensionObject: this,
@@ -43,11 +52,11 @@ export default class ClipboardXExtension extends Extension {
 
     this._settingsSignals.push(
       this._settings.connect('changed::show-indicator', () => this._updateIndicatorVisibility()),
-      this._settings.connect('changed::panel-shortcut', () => this._bindShortcut()),
+      ...SHORTCUT_KEYS.map(key => this._settings.connect(`changed::${key}`, () => this._bindShortcuts())),
       this._settings.connect('changed::sync-enabled', () => this._sync.restart().catch(error => this._reportError(error))),
     );
     this._updateIndicatorVisibility();
-    this._bindShortcut();
+    this._bindShortcuts();
 
     this._itemAddedSignal = this._controller.connect('item-added', (_controller, item, source) => {
       if (source !== 'remote')
@@ -80,7 +89,7 @@ export default class ClipboardXExtension extends Extension {
   }
 
   disable() {
-    this._unbindShortcut();
+    this._unbindShortcuts();
     this._portal?.cancel();
     this._colorPicker?.close();
     this._colorPicker = null;
@@ -220,32 +229,43 @@ export default class ClipboardXExtension extends Extension {
     this._indicator.visible = this._settings.get_boolean('show-indicator');
   }
 
-  _bindShortcut() {
-    this._unbindShortcut();
-    const shortcut = this._settings.get_strv('panel-shortcut')[0];
-    if (!shortcut)
-      return;
-    try {
-      Main.wm.addKeybinding(
-        'panel-shortcut',
-        this._settings,
-        Meta.KeyBindingFlags.NONE,
-        Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
-        () => {
-          ensureDeviceIdentity(this._settings);
-          this._indicator.menu.toggle();
-        },
-      );
-      this._shortcutBound = true;
-    } catch (_error) {
-      console.error('Clipboard X: invalid panel shortcut was ignored');
+  _bindShortcuts() {
+    this._unbindShortcuts();
+    const actions = {
+      'panel-shortcut': () => {
+        ensureDeviceIdentity(this._settings);
+        this._indicator.menu.toggle();
+      },
+      'screenshot-shortcut': () => this._takeScreenshot().catch(error => this._reportError(error)),
+      'color-picker-shortcut': () => this._pickColor(),
+      'private-mode-shortcut': () => {
+        this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
+      },
+      'clear-history-shortcut': () => this._controller.clear(),
+    };
+    for (const key of SHORTCUT_KEYS) {
+      if (!(this._settings.get_strv(key)[0] ?? ''))
+        continue;
+      try {
+        Main.wm.addKeybinding(
+          key,
+          this._settings,
+          Meta.KeyBindingFlags.NONE,
+          Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
+          actions[key],
+        );
+        this._boundShortcuts.push(key);
+      } catch (_error) {
+        console.error(`Clipboard X: invalid ${key} was ignored`);
+      }
     }
+    this._shortcutBound = this._boundShortcuts.length > 0;
   }
 
-  _unbindShortcut() {
-    if (!this._shortcutBound)
-      return;
-    Main.wm.removeKeybinding('panel-shortcut');
+  _unbindShortcuts() {
+    for (const key of this._boundShortcuts ?? [])
+      Main.wm.removeKeybinding(key);
+    this._boundShortcuts = [];
     this._shortcutBound = false;
   }
 

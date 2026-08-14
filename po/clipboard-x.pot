@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 21:31+0800\n"
+"POT-Creation-Date: 2026-08-15 00:39+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,530 +17,551 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/indicator.js:83 src/indicator.js:190
+#: src/indicator.js:84 src/indicator.js:196
 msgid "Sync disabled"
 msgstr ""
 
-#: src/indicator.js:122
+#: src/indicator.js:136
 msgid "Search clipboard history…"
 msgstr ""
 
-#: src/indicator.js:139
+#: src/indicator.js:150 src/prefs.js:177
 msgid "Screenshot"
 msgstr ""
 
-#: src/indicator.js:141
+#: src/indicator.js:152 src/prefs.js:225
 msgid "Pick color"
 msgstr ""
 
-#: src/indicator.js:143
+#: src/indicator.js:154
 msgid "Synchronization settings"
 msgstr ""
 
-#: src/indicator.js:172 src/indicator.js:565
+#: src/indicator.js:178 src/indicator.js:632 src/prefs.js:39
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/indicator.js:178
+#: src/indicator.js:184 src/prefs.js:227
 msgid "Clear unpinned history"
 msgstr ""
 
-#: src/indicator.js:180
+#: src/indicator.js:186
 msgid "Preferences"
 msgstr ""
 
-#: src/indicator.js:193
+#: src/indicator.js:199
 msgid "Sync Service offline"
 msgstr ""
 
-#: src/indicator.js:196
+#: src/indicator.js:202
 msgid "Sync protocol error"
 msgstr ""
 
-#: src/indicator.js:202
+#: src/indicator.js:208
 msgid "Sync Service online"
 msgstr ""
 
-#: src/indicator.js:224
+#: src/indicator.js:229
 msgid "Loading clipboard history…"
 msgstr ""
 
-#: src/indicator.js:228
+#: src/indicator.js:233
 msgid "Clipboard history could not be loaded"
 msgstr ""
 
-#: src/indicator.js:237
+#: src/indicator.js:242
 msgid "No matching entries"
 msgstr ""
 
-#: src/indicator.js:237
+#: src/indicator.js:242
 msgid "Clipboard history is empty"
 msgstr ""
 
-#: src/indicator.js:248
+#: src/indicator.js:253
 msgid "Only the first 200 entries are shown; refine the search to see others"
 msgstr ""
 
-#: src/indicator.js:270 src/prefs.js:142
+#: src/indicator.js:276 src/prefs.js:144
 msgid "Text"
 msgstr ""
 
-#: src/indicator.js:282
+#: src/indicator.js:294
 msgid "Image"
 msgstr ""
 
-#: src/indicator.js:289
+#: src/indicator.js:301
 msgid "Download original and copy"
 msgstr ""
 
-#: src/indicator.js:290
+#: src/indicator.js:302
 msgid "Copy original"
 msgstr ""
 
-#: src/indicator.js:295 src/indicator.js:399
+#: src/indicator.js:307 src/indicator.js:414
 msgid "Segment text"
 msgstr ""
 
-#: src/indicator.js:298
+#: src/indicator.js:310
 msgid "Edit image"
 msgstr ""
 
-#: src/indicator.js:302
+#: src/indicator.js:314
 msgid "Unpin"
 msgstr ""
 
-#: src/indicator.js:302
+#: src/indicator.js:314
 msgid "Pin"
 msgstr ""
 
-#: src/indicator.js:310
+#: src/indicator.js:325
 msgid "Delete from local history"
 msgstr ""
 
-#: src/indicator.js:315
+#: src/indicator.js:330
 msgid "Synchronize"
 msgstr ""
 
-#: src/indicator.js:327
+#: src/indicator.js:342
 msgid "Uploading"
 msgstr ""
 
-#: src/indicator.js:327
+#: src/indicator.js:342
 msgid "Downloading"
 msgstr ""
 
-#: src/indicator.js:330
+#: src/indicator.js:345
 msgid "Waiting for peer device"
 msgstr ""
 
-#: src/indicator.js:330
+#: src/indicator.js:345
 msgid "Preparing transfer"
 msgstr ""
 
-#: src/indicator.js:336
+#: src/indicator.js:351
 msgid "Transfer failed; activate to retry"
 msgstr ""
 
-#: src/indicator.js:341
+#: src/indicator.js:356
 msgid "Upload completed"
 msgstr ""
 
-#: src/indicator.js:341
+#: src/indicator.js:356
 msgid "Original downloaded"
 msgstr ""
 
-#: src/indicator.js:346
+#: src/indicator.js:361
 msgid "Synchronization is disabled"
 msgstr ""
 
-#: src/indicator.js:352
+#: src/indicator.js:367
 msgid "Retry original download"
 msgstr ""
 
-#: src/indicator.js:352
+#: src/indicator.js:367
 msgid "Download original"
 msgstr ""
 
-#: src/indicator.js:356
+#: src/indicator.js:371
 msgid "Original is available locally"
 msgstr ""
 
-#: src/indicator.js:356
+#: src/indicator.js:371
 msgid "Send to synchronization Service"
 msgstr ""
 
-#: src/indicator.js:378
+#: src/indicator.js:393
 msgid "This text is too large for interactive processing"
 msgstr ""
 
-#: src/indicator.js:397
+#: src/indicator.js:412
 msgid "Back to clipboard history"
 msgstr ""
 
-#: src/indicator.js:440
+#: src/indicator.js:455
 msgid "URL"
 msgstr ""
 
-#: src/indicator.js:442
+#: src/indicator.js:457
 msgid "Number"
 msgstr ""
 
-#: src/indicator.js:443
+#: src/indicator.js:458
 msgid "Email address"
 msgstr ""
 
-#: src/indicator.js:443
+#: src/indicator.js:458
 msgid "Word"
 msgstr ""
 
-#: src/indicator.js:451 src/indicator.js:466
+#: src/indicator.js:466 src/indicator.js:481
 msgid "Select one or more words"
 msgstr ""
 
-#: src/indicator.js:457
+#: src/indicator.js:472
 msgid "Copy selected words"
 msgstr ""
 
-#: src/indicator.js:514
+#: src/indicator.js:529
 msgid "Unknown device"
 msgstr ""
 
-#: src/indicator.js:565
+#: src/indicator.js:632
 msgid "Resume clipboard recording"
 msgstr ""
 
-#: src/prefs.js:25
-msgid "General"
-msgstr ""
-
-#: src/prefs.js:26
-msgid "Panel"
-msgstr ""
-
 #: src/prefs.js:28
-msgid "Show panel indicator"
+msgid "Clipboard"
+msgstr ""
+
+#: src/prefs.js:29
+msgid "Panel and history"
 msgstr ""
 
 #: src/prefs.js:31
-msgid "Clipboard history"
+msgid "Show panel indicator"
 msgstr ""
 
-#: src/prefs.js:33
+#: src/prefs.js:32
 msgid "History entries"
 msgstr ""
 
-#: src/prefs.js:34
+#: src/prefs.js:33
 msgid "Cache size"
 msgstr ""
 
-#: src/prefs.js:34 src/prefs.js:36
+#: src/prefs.js:33 src/prefs.js:35 src/prefs.js:156
 msgid "MiB"
 msgstr ""
 
-#: src/prefs.js:35
+#: src/prefs.js:34
 msgid "Automatic cleanup"
 msgstr ""
 
-#: src/prefs.js:35
+#: src/prefs.js:34
 msgid "days; 0 disables"
 msgstr ""
 
-#: src/prefs.js:36
+#: src/prefs.js:35
 msgid "Maximum item size"
 msgstr ""
 
 #: src/prefs.js:37
-msgid "Private mode"
+msgid "Privacy"
 msgstr ""
 
-#: src/prefs.js:37
-msgid "Pause clipboard capture"
-msgstr ""
-
-#: src/prefs.js:38 src/prefs.js:145
+#: src/prefs.js:40 src/prefs.js:147
 msgid "Sensitive content"
 msgstr ""
 
-#: src/prefs.js:39
+#: src/prefs.js:41
 msgid "Do not record"
 msgstr ""
 
-#: src/prefs.js:40
+#: src/prefs.js:42
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/prefs.js:41
+#: src/prefs.js:43
 msgid "Store like other history"
 msgstr ""
 
-#: src/prefs.js:46
+#: src/prefs.js:48
 msgid "Excluded applications"
 msgstr ""
 
-#: src/prefs.js:47
+#: src/prefs.js:49
 msgid "Comma-separated window classes"
 msgstr ""
 
-#: src/prefs.js:53
+#: src/prefs.js:55
 msgid "Synchronization"
 msgstr ""
 
-#: src/prefs.js:54
+#: src/prefs.js:56
 msgid "Device"
 msgstr ""
 
-#: src/prefs.js:56
+#: src/prefs.js:58
 msgid "Device ID"
 msgstr ""
 
-#: src/prefs.js:61
+#: src/prefs.js:63
 msgid "Device tag"
 msgstr ""
 
-#: src/prefs.js:61
+#: src/prefs.js:63
 msgid "Friendly name shown during device discovery"
 msgstr ""
 
-#: src/prefs.js:62
+#: src/prefs.js:64
 msgid "Device icon"
 msgstr ""
 
-#: src/prefs.js:63
+#: src/prefs.js:65
 msgid "Desktop"
 msgstr ""
 
-#: src/prefs.js:64
+#: src/prefs.js:66
 msgid "Laptop"
 msgstr ""
 
-#: src/prefs.js:65
+#: src/prefs.js:67
 msgid "Phone"
 msgstr ""
 
-#: src/prefs.js:66
+#: src/prefs.js:68
 msgid "Tablet"
 msgstr ""
 
-#: src/prefs.js:67
+#: src/prefs.js:69
 msgid "Server"
 msgstr ""
 
-#: src/prefs.js:68
+#: src/prefs.js:70
 msgid "Other"
 msgstr ""
 
-#: src/prefs.js:71
+#: src/prefs.js:73
 msgid "Service connection"
 msgstr ""
 
-#: src/prefs.js:73
+#: src/prefs.js:75
 msgid "Enable synchronization integration"
 msgstr ""
 
-#: src/prefs.js:77
+#: src/prefs.js:79
 msgid "D-Bus name"
 msgstr ""
 
-#: src/prefs.js:84
+#: src/prefs.js:86
 msgid "Object path"
 msgstr ""
 
-#: src/prefs.js:88
+#: src/prefs.js:90
 msgid "Service status"
 msgstr ""
 
-#: src/prefs.js:88
+#: src/prefs.js:90
 msgid "Not tested"
 msgstr ""
 
-#: src/prefs.js:89
+#: src/prefs.js:91
 msgid "Test connection"
 msgstr ""
 
-#: src/prefs.js:92
+#: src/prefs.js:94
 msgid "Connecting…"
 msgstr ""
 
-#: src/prefs.js:103
+#: src/prefs.js:105
 msgid "item limit"
 msgstr ""
 
-#: src/prefs.js:104
+#: src/prefs.js:106
 msgid "preview limit"
 msgstr ""
 
-#: src/prefs.js:116
+#: src/prefs.js:118
 msgid "Service preferences"
 msgstr ""
 
-#: src/prefs.js:117
+#: src/prefs.js:119
 msgid "Provided by the external synchronization Service"
 msgstr ""
 
-#: src/prefs.js:119
+#: src/prefs.js:121
 msgid "Open"
 msgstr ""
 
-#: src/prefs.js:130
+#: src/prefs.js:132
 msgid "Transfer policy"
 msgstr ""
 
-#: src/prefs.js:132
+#: src/prefs.js:134
 msgid "Send mode"
 msgstr ""
 
-#: src/prefs.js:133 src/prefs.js:138
+#: src/prefs.js:135 src/prefs.js:140 src/prefs.js:319 src/prefs.js:329
 msgid "Disabled"
 msgstr ""
 
-#: src/prefs.js:134
+#: src/prefs.js:136
 msgid "Manual"
 msgstr ""
 
-#: src/prefs.js:135
+#: src/prefs.js:137
 msgid "Automatic"
 msgstr ""
 
-#: src/prefs.js:137
+#: src/prefs.js:139
 msgid "Receive mode"
 msgstr ""
 
-#: src/prefs.js:139
+#: src/prefs.js:141
 msgid "History only"
 msgstr ""
 
-#: src/prefs.js:140
+#: src/prefs.js:142
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/prefs.js:143
+#: src/prefs.js:145
 msgid "HTML"
 msgstr ""
 
-#: src/prefs.js:144
+#: src/prefs.js:146
 msgid "Images"
 msgstr ""
 
-#: src/prefs.js:145
+#: src/prefs.js:147
 msgid "Disabled by default"
 msgstr ""
 
-#: src/prefs.js:149
+#: src/prefs.js:151
 msgid "Favorites only"
 msgstr ""
 
-#: src/prefs.js:150
+#: src/prefs.js:152
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/prefs.js:152
-msgid "Text eager threshold"
-msgstr ""
-
-#: src/prefs.js:152 src/prefs.js:153 src/prefs.js:154 src/prefs.js:156
-msgid "bytes"
-msgstr ""
-
-#: src/prefs.js:153
-msgid "Text preview limit"
-msgstr ""
-
 #: src/prefs.js:154
-msgid "Image eager threshold"
+msgid "Small text sent in full"
+msgstr ""
+
+#: src/prefs.js:154 src/prefs.js:155 src/prefs.js:158
+msgid "KiB"
 msgstr ""
 
 #: src/prefs.js:155
-msgid "Thumbnail dimension"
-msgstr ""
-
-#: src/prefs.js:155
-msgid "px"
+msgid "Large text preview"
 msgstr ""
 
 #: src/prefs.js:156
+msgid "Small images sent in full"
+msgstr ""
+
+#: src/prefs.js:157
+msgid "Thumbnail dimension"
+msgstr ""
+
+#: src/prefs.js:157
+msgid "px"
+msgstr ""
+
+#: src/prefs.js:158
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/prefs.js:157
+#: src/prefs.js:159
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/prefs.js:157
+#: src/prefs.js:159
 msgid "seconds"
 msgstr ""
 
-#: src/prefs.js:162
-msgid "Capture and editing"
-msgstr ""
-
-#: src/prefs.js:163
-msgid "Screenshot Portal"
-msgstr ""
-
-#: src/prefs.js:165
-msgid "Default target"
-msgstr ""
-
-#: src/prefs.js:166
-msgid "Interactive"
-msgstr ""
-
-#: src/prefs.js:167
-msgid "Full screen"
-msgstr ""
-
-#: src/prefs.js:168
-msgid "Window"
-msgstr ""
-
-#: src/prefs.js:169
-msgid "Area"
-msgstr ""
-
-#: src/prefs.js:170
-msgid "Active window"
-msgstr ""
-
-#: src/prefs.js:172
-msgid "Add to history"
-msgstr ""
-
-#: src/prefs.js:173
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/prefs.js:174
-msgid "Open image editor"
-msgstr ""
-
-#: src/prefs.js:176
-msgid "Image editor"
-msgstr ""
-
-#: src/prefs.js:182
-msgid "Advanced command"
-msgstr ""
-
-#: src/prefs.js:183
-msgid "%u is the URI, %f is a local path and %% is a percent sign"
-msgstr ""
-
-#: src/prefs.js:194
+#: src/prefs.js:164
 msgid "Color picker"
 msgstr ""
 
-#: src/prefs.js:196
+#: src/prefs.js:165
+msgid "Color format"
+msgstr ""
+
+#: src/prefs.js:167
 msgid "Default format"
 msgstr ""
 
-#: src/prefs.js:248
-msgid "Panel shortcut"
+#: src/prefs.js:178
+msgid "Screenshot Portal"
 msgstr ""
 
-#: src/prefs.js:279
+#: src/prefs.js:180
+msgid "Default target"
+msgstr ""
+
+#: src/prefs.js:181
+msgid "Interactive"
+msgstr ""
+
+#: src/prefs.js:182
+msgid "Full screen"
+msgstr ""
+
+#: src/prefs.js:183
+msgid "Window"
+msgstr ""
+
+#: src/prefs.js:184
+msgid "Area"
+msgstr ""
+
+#: src/prefs.js:185
+msgid "Active window"
+msgstr ""
+
+#: src/prefs.js:187
+msgid "Add to history"
+msgstr ""
+
+#: src/prefs.js:188
+msgid "Copy screenshot"
+msgstr ""
+
+#: src/prefs.js:189
+msgid "Open image editor"
+msgstr ""
+
+#: src/prefs.js:191
+msgid "Image editor"
+msgstr ""
+
+#: src/prefs.js:197
+msgid "Advanced command"
+msgstr ""
+
+#: src/prefs.js:198
+msgid "%u is the URI, %f is a local path and %% is a percent sign"
+msgstr ""
+
+#: src/prefs.js:214
+msgid "Shortcuts"
+msgstr ""
+
+#: src/prefs.js:218
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: src/prefs.js:219
+msgid ""
+"Click a shortcut, then press the new key combination. Backspace disables it."
+msgstr ""
+
+#: src/prefs.js:223
+msgid "Open clipboard panel"
+msgstr ""
+
+#: src/prefs.js:224
+msgid "Take screenshot"
+msgstr ""
+
+#: src/prefs.js:226
+msgid "Pause or resume clipboard recording"
+msgstr ""
+
+#: src/prefs.js:324
+msgid "Click to set a shortcut"
+msgstr ""
+
+#: src/prefs.js:345
+msgid "Press shortcut…"
+msgstr ""
+
+#: src/prefs.js:396
 msgid "Custom command"
 msgstr ""
 
-#: src/prefs.js:282
+#: src/prefs.js:399
 msgid "Application"
 msgstr ""

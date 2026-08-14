@@ -59,6 +59,13 @@ export async function run() {
     'Opening the panel must focus its keyboard-search entry');
   assert(indicator._toolbar.get_children().length === 3,
     'Top toolbar must contain only screenshot, color picker and synchronization actions');
+  assert(indicator._search.get_parent() === indicator._toolbar.get_parent(),
+    'Search and the three primary tools must share one row');
+  indicator._syncToolButton.grab_key_focus();
+  indicator._showTooltip(indicator._syncToolButton, true);
+  assert(indicator._tooltip.visible && indicator._tooltip.get_parent() === Main.uiGroup,
+    'Icon help must use a floating Shell tooltip');
+  indicator._hideTooltip();
 
   indicator.menu.close();
   await Scripting.sleep(100);
@@ -88,6 +95,11 @@ export async function run() {
     'Case-insensitive clipboard history search did not find the expected entry');
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
+  const pinnedRow = indicator._entry(capturedText);
+  assert(pinnedRow.get_children().some(child => child instanceof St.Button
+      && child.get_child()?.icon_name === 'emblem-favorite-symbolic'),
+  'Pinned history entry did not switch to a distinct pinned icon');
+  pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
   await indicator._openTokenizer(capturedText);
@@ -258,6 +270,10 @@ export async function run() {
   indicator._settings.set_boolean('sync-favorites-only', false);
   indicator._settings.set_string('sync-send-mode', 'manual');
   indicator._settings.set_boolean('sync-enabled', false);
+  const syncDisabledRow = indicator._entry(imageItem);
+  assert(syncDisabledRow.get_children().filter(child => child instanceof St.Button).length === 4,
+    'Per-item synchronization UI remained visible while synchronization was disabled');
+  syncDisabledRow.destroy();
 
   indicator._controller.remove(imageItem.id);
   const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-screenshot-pipeline-XXXXXX.png');

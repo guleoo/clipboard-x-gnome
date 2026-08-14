@@ -21,11 +21,12 @@
 - `meson.build` 提供 `local`、`system`、`package` 三种 target，并构建 metadata、Schema、
   CSS 和 Gettext。
 - `tests/shell.smoke.js` 在真正的嵌套 GNOME Shell 50 中验证面板鼠标开关、搜索框键盘
-  焦点、动态显隐、用户快捷键、设置生效、重复 enable/disable、锁定/解锁和进程暂停/
-  恢复。
+  焦点、搜索与三按钮同行布局、浮动 Tooltip、动态显隐、用户快捷键、设置生效、重复
+  enable/disable、锁定/解锁和进程暂停/恢复。
 - 同一测试保留旧对象引用，确认禁用后 selection/settings 信号、快捷键、D-Bus 名称
   watch、idle source、传输 waiter 和 modal grab 都已释放。
-- `tests/prefs.smoke.js` 从扩展打开真实 GTK 4/Libadwaita 设置窗口。
+- `tests/prefs.smoke.js` 从扩展打开真实 GTK 4/Libadwaita 设置窗口；窗口按剪切板、同步、
+  取色器、截图和快捷键划分五页，设备类型使用图标工厂，传输尺寸以 KiB/MiB 展示。
 
 ## 阶段 3：本地剪切板
 
