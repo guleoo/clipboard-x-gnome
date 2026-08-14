@@ -28,11 +28,11 @@ class TestSettings {
 
 const client = new SyncClient(new TestSettings());
 let itemEvents = 0;
-const rejected = new Promise((resolve, reject) => {
+const connected = new Promise((resolve, reject) => {
   const timeout = setTimeout(() => reject(new Error('Malformed Service test timed out')), 5000);
   client.connect('item-available', () => itemEvents++);
   client.connect('status-changed', (_client, status) => {
-    if (status === 'error') {
+    if (status === 'online') {
       clearTimeout(timeout);
       resolve();
     }
@@ -41,12 +41,12 @@ const rejected = new Promise((resolve, reject) => {
 
 try {
   await client.start();
-  await rejected;
+  await connected;
   await new Promise(resolve => setTimeout(resolve, 50));
   if (itemEvents !== 0)
     throw new Error('Malformed item signal escaped client validation');
-  if (client.capabilities !== null)
-    throw new Error('Malformed pending IDs did not invalidate Service capabilities');
+  if (client.capabilities === null)
+    throw new Error('Malformed notification unnecessarily invalidated the healthy Service connection');
 } finally {
   client.destroy();
 }

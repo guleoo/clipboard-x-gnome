@@ -33,7 +33,14 @@ const proxy = Gio.DBusProxy.new_for_bus_sync(
 );
 
 const deviceId = GLib.uuid_string_random();
-call(proxy, 'RegisterDevice', new GLib.Variant('(ss)', [deviceId, 'Integration Test']));
+call(proxy, 'RegisterDevice', new GLib.Variant('(sa{sv})', [deviceId, {
+  tag: new GLib.Variant('s', 'Integration Test'),
+  'icon-kind': new GLib.Variant('s', 'laptop'),
+}]));
+const status = call(proxy, 'GetStatus', new GLib.Variant('(s)', [deviceId])).deepUnpack()[0];
+assert(status.state.deepUnpack() === 'online', 'GetStatus must return the authoritative Service state');
+const devices = call(proxy, 'ListDevices', new GLib.Variant('(s)', [deviceId])).deepUnpack()[0];
+assert(devices.length === 1, 'ListDevices must include the registered device');
 
 const [file, ioStream] = Gio.File.new_tmp('clipboard-x-integration-XXXXXX');
 ioStream.get_output_stream().write_all(new TextEncoder().encode('full clipboard content'), null);
@@ -56,23 +63,31 @@ const contentMetadata = {
 };
 const [publishReply] = proxy.call_with_unix_fd_list_sync(
   'Publish',
-  new GLib.Variant('(sa{sv}a(sa{sv}h)a(sa{sv}h))', [
+  new GLib.Variant('(sa{sv}a(sa{sv}h)a(sa{sv}h)a{sv})', [
     deviceId,
     item,
     [],
     [['text/plain;charset=utf-8', contentMetadata, fdIndex]],
+    {},
   ]),
   Gio.DBusCallFlags.NONE,
   5000,
   fdList,
   null,
 );
-assert(publishReply.deepUnpack()[0] === itemId, 'Publish must preserve item ID');
+const [publishedItemId, publishTransferId] = publishReply.deepUnpack();
+assert(publishedItemId === itemId, 'Publish must preserve item ID');
+assert(/^[0-9a-f-]{36}$/u.test(publishTransferId), 'Publish must return an upload transfer ID');
 input.close(null);
 file.delete(null);
 
-const pending = call(proxy, 'ListPending', new GLib.Variant('(s)', [deviceId])).deepUnpack()[0];
-assert(pending.includes(itemId), 'Published item must be pending');
+const [_cursor, changes] = call(proxy, 'GetChanges', new GLib.Variant('(ssa{sv})', [
+  deviceId,
+  '',
+  {},
+])).deepUnpack();
+assert(changes.some(change => change['item-id'].deepUnpack() === itemId),
+  'Published item must appear in the incremental changes log');
 
 const [openReply, openFds] = proxy.call_with_unix_fd_list_sync(
   'OpenContent',

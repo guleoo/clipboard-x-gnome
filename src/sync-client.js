@@ -8,6 +8,7 @@ import {ensureDeviceIdentity, isUuid, sha256, stringFromBytes, truncateUtf8, var
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
+  DEVICE_ICON_KINDS,
   MAX_ITEM_REPRESENTATIONS,
   SYNC_API_VERSION,
   SYNC_INTERFACE,
@@ -29,10 +30,14 @@ export class SyncClient extends EventEmitter {
     this._nameWatchId = 0;
     this._settingsSignals = [];
     this._cancellable = new Gio.Cancellable();
-    this._registeredTag = null;
+    this._registeredProfile = null;
     this._transferWaiters = new Map();
     this._transferStates = new Map();
     this._knownTransfers = new Set();
+    this._devices = new Map();
+    this._status = null;
+    this._cursor = '';
+    this._syncingChanges = false;
     this._capabilities = null;
     this._connecting = false;
     this._connectIdleId = 0;
@@ -48,9 +53,25 @@ export class SyncClient extends EventEmitter {
     return this._capabilities ? {...this._capabilities} : null;
   }
 
+  get devices() {
+    return [...this._devices.values()].map(device => ({...device}));
+  }
+
+  get status() {
+    return this._status ? {...this._status} : null;
+  }
+
+  getTransferForItem(itemId) {
+    const transfers = [...this._transferStates.values()]
+      .filter(transfer => transfer.itemId === itemId)
+      .sort((left, right) => right.updatedAt - left.updatedAt);
+    return transfers[0] ? {...transfers[0]} : null;
+  }
+
   async start() {
     this._settingsSignals.push(
       this._settings.connect('changed::device-tag', () => this._registerDevice().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-kind', () => this._registerDevice().catch(error => this._report(error))),
       this._settings.connect('changed::service-bus-name', () => this.restart().catch(error => this._report(error))),
       this._settings.connect('changed::service-object-path', () => this.restart().catch(error => this._report(error))),
     );
@@ -61,6 +82,7 @@ export class SyncClient extends EventEmitter {
     if (this._destroyed)
       return;
     this._generation++;
+    this._cursor = '';
     this._stopWatchingName();
     this._disconnectProxy();
     if (this._settings.get_boolean('sync-enabled'))
@@ -151,7 +173,6 @@ export class SyncClient extends EventEmitter {
         id: item.id,
         'created-at': item.createdAt,
         'origin-device-id': deviceId,
-        favorite: item.favorite,
       });
       metadata.contents = new GLib.Variant(
         'aa{sv}',
@@ -163,18 +184,25 @@ export class SyncClient extends EventEmitter {
           delivery: representation.delivery,
         })),
       );
-      const parameters = new GLib.Variant('(sa{sv}a(sa{sv}h)a(sa{sv}h))', [
+      const parameters = new GLib.Variant('(sa{sv}a(sa{sv}h)a(sa{sv}h)a{sv})', [
         deviceId,
         metadata,
         previews,
         contents,
+        variantDictionary({}),
       ]);
 
       const [reply] = await this._callWithFds('Publish', parameters, fdList);
-      const publishedId = reply.deepUnpack()[0];
+      const [publishedId, transferId] = reply.deepUnpack();
       if (publishedId !== item.id)
         throw new Error('Synchronization Service did not preserve the published item ID');
-      return publishedId;
+      if (!isUuid(transferId))
+        throw new Error('Synchronization Service returned an invalid publication transfer ID');
+      this._knownTransfers.add(transferId);
+      const current = this._transferStates.get(transferId);
+      if (current)
+        this.emit('transfer-changed', {...current});
+      return {itemId: publishedId, transferId};
     } finally {
       for (const stream of streams)
         stream.close(null);
@@ -188,17 +216,22 @@ export class SyncClient extends EventEmitter {
     }
   }
 
-  async listPending(nameKnownPresent = false) {
-    if (!nameKnownPresent && !this.connected)
-      return [];
+  async getChanges(cursor = this._cursor, options = {}) {
+    if (!this.connected)
+      return {nextCursor: cursor, changes: [], hasMore: false};
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('ListPending', new GLib.Variant('(s)', [deviceId]));
-    const itemIds = reply.deepUnpack()[0];
-    if (!Array.isArray(itemIds)
-        || itemIds.length > MAX_PENDING_ITEMS
-        || !itemIds.every(isUuid))
-      throw new Error('Synchronization Service returned invalid pending item IDs');
-    return [...new Set(itemIds)];
+    const reply = await this._call('GetChanges', new GLib.Variant('(ssa{sv})', [
+      deviceId,
+      cursor,
+      variantDictionary(options),
+    ]));
+    const [nextCursor, rawChanges, hasMore] = reply.deepUnpack();
+    if (typeof nextCursor !== 'string' || nextCursor.length > 256
+        || !Array.isArray(rawChanges) || rawChanges.length > MAX_PENDING_ITEMS
+        || typeof hasMore !== 'boolean')
+      throw new Error('Synchronization Service returned an invalid changes page');
+    const changes = rawChanges.map(validateChange);
+    return {nextCursor, changes, hasMore};
   }
 
   async requestContent(itemId, contentIds) {
@@ -211,7 +244,12 @@ export class SyncClient extends EventEmitter {
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const reply = await this._call(
       'RequestContent',
-      new GLib.Variant('(ssas)', [deviceId, itemId, [...new Set(contentIds)]]),
+      new GLib.Variant('(ssasa{sv})', [
+        deviceId,
+        itemId,
+        [...new Set(contentIds)],
+        variantDictionary({}),
+      ]),
     );
     const transferId = reply.deepUnpack()[0];
     if (!isUuid(transferId))
@@ -219,7 +257,7 @@ export class SyncClient extends EventEmitter {
     this._knownTransfers.add(transferId);
     const current = this._transferStates.get(transferId);
     if (current)
-      this.emit('transfer-changed', transferId, current.state, current.received, current.total, current.error);
+      this.emit('transfer-changed', {...current});
     return transferId;
   }
 
@@ -265,8 +303,9 @@ export class SyncClient extends EventEmitter {
     const createdAt = Number(metadata['created-at']);
     if (!Number.isSafeInteger(createdAt) || createdAt < 0)
       throw new Error('Synchronization Service returned an invalid timestamp');
-    if (metadata.favorite !== undefined && typeof metadata.favorite !== 'boolean')
-      throw new Error('Synchronization Service returned an invalid favorite flag');
+    const originDeviceIconKind = safeString(metadata['origin-device-icon-kind'] ?? 'other', 32);
+    if (!DEVICE_ICON_KINDS.includes(originDeviceIconKind))
+      throw new Error('Synchronization Service returned an invalid device icon kind');
 
     let preview = null;
     if (!Array.isArray(rawPreviews) || rawPreviews.length > MAX_ITEM_REPRESENTATIONS)
@@ -330,9 +369,10 @@ export class SyncClient extends EventEmitter {
       createdAt,
       originDeviceId: metadata['origin-device-id'] ?? '',
       originDeviceTag: safeString(metadata['origin-device-tag'] ?? '', 256),
+      originDeviceIconKind,
       representations,
       preview,
-      favorite: Boolean(metadata.favorite),
+      favorite: false,
       remote: true,
       availability: 'preview',
     });
@@ -342,7 +382,7 @@ export class SyncClient extends EventEmitter {
     if (!item.remote || item.representations.every(representation => representation.bytes))
       return item;
 
-    item.availability = 'waiting-for-source';
+    item.availability = 'waiting-for-peer';
     try {
       const contentIds = item.representations.map(representation => representation.id);
       const transferId = await this.requestContent(item.id, contentIds);
@@ -411,6 +451,26 @@ export class SyncClient extends EventEmitter {
       throw new Error('Synchronization transfer ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     await this._call('CancelTransfer', new GLib.Variant('(ss)', [deviceId, transferId]));
+  }
+
+  async getTransfer(transferId) {
+    if (!isUuid(transferId))
+      throw new Error('Synchronization transfer ID is invalid');
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('GetTransfer', new GLib.Variant('(ss)', [deviceId, transferId]));
+    return validateTransfer(reply.deepUnpack()[0], deviceId);
+  }
+
+  async listTransfers(filter = {}) {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('ListTransfers', new GLib.Variant('(sa{sv})', [
+      deviceId,
+      variantDictionary(filter),
+    ]));
+    const values = reply.deepUnpack()[0];
+    if (!Array.isArray(values) || values.length > MAX_TRANSFER_STATES)
+      throw new Error('Synchronization Service returned an invalid transfer list');
+    return values.map(value => validateTransfer(value, deviceId));
   }
 
   async openPreferences() {
@@ -483,19 +543,20 @@ export class SyncClient extends EventEmitter {
 
       this._proxySignal = this._proxy.connect('g-signal', (_proxy, _sender, name, parameters) => {
         const values = parameters.deepUnpack();
-        if (name === 'ItemAvailable') {
-          if (isUuid(values[0]))
-            this.emit('item-available', values[0]);
+        if (name === 'StatusChanged')
+          this._handleStatusChanged(values[0]);
+        else if (name === 'DeviceChanged')
+          this._handleDeviceChanged(values[0]);
+        else if (name === 'DeviceRemoved')
+          this._handleDeviceRemoved(...values);
+        else if (name === 'ChangesAvailable') {
+          if (typeof values[0] !== 'string' || values[0].length > 256 || /[\r\n\0]/u.test(values[0]))
+            this._report(new Error('Service emitted an invalid changes cursor'));
           else
-            this._report(new Error('Service emitted an invalid item ID'));
-        } else if (name === 'ItemRemoved') {
-          if (isUuid(values[0]) && typeof values[1] === 'string')
-            this.emit('item-removed', values[0], safeString(values[1], 256));
-          else
-            this._report(new Error('Service emitted invalid removal metadata'));
+            this._syncChanges().catch(error => this._report(error));
         }
         else if (name === 'TransferChanged')
-          this._handleTransferChanged(...values);
+          this._handleTransferChanged(values[0]);
       });
       await this._handleNameOwnerChanged(true);
     } finally {
@@ -536,8 +597,9 @@ export class SyncClient extends EventEmitter {
 
   async _handleNameOwnerChanged(nameKnownPresent = false) {
     if (!nameKnownPresent && !this.connected) {
-      this._registeredTag = null;
+      this._registeredProfile = null;
       this._capabilities = null;
+      this._status = null;
       this._rejectTransfers(new Error('Synchronization service went offline'));
       this.emit('status-changed', 'offline', null);
       return;
@@ -547,12 +609,15 @@ export class SyncClient extends EventEmitter {
       this._capabilities = await this._loadCapabilities();
       if (this._capabilities.apiVersion !== SYNC_API_VERSION)
         throw new Error(`Unsupported synchronization API version: ${this._capabilities.apiVersion}`);
-      this._registeredTag = null;
+      this._registeredProfile = null;
       await this._registerDevice(nameKnownPresent);
-      const pending = await this.listPending(nameKnownPresent);
-      for (const itemId of pending)
-        this.emit('item-available', itemId);
-      this.emit('status-changed', this._capabilities.status || 'online', this.capabilities);
+      await Promise.all([
+        this._loadStatus(),
+        this._loadDevices(),
+        this._loadTransfers(),
+      ]);
+      await this._syncChanges();
+      this.emit('status-changed', this._status?.state ?? this._capabilities.status ?? 'online', this.capabilities);
     } catch (error) {
       this._capabilities = null;
       this.emit('status-changed', 'error', {error: error.message});
@@ -594,6 +659,91 @@ export class SyncClient extends EventEmitter {
     };
   }
 
+  async _loadStatus() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('GetStatus', new GLib.Variant('(s)', [deviceId]));
+    this._status = validateStatus(reply.deepUnpack()[0]);
+    this.emit('status-details-changed', {...this._status});
+    return this._status;
+  }
+
+  async _loadDevices() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('ListDevices', new GLib.Variant('(s)', [deviceId]));
+    const values = reply.deepUnpack()[0];
+    if (!Array.isArray(values) || values.length > 10_000)
+      throw new Error('Synchronization Service returned an invalid device list');
+    this._devices.clear();
+    for (const value of values) {
+      const device = validateDevice(value);
+      this._devices.set(device.deviceId, device);
+    }
+    this.emit('devices-changed', this.devices);
+    return this.devices;
+  }
+
+  async _loadTransfers() {
+    const values = await this.listTransfers();
+    for (const transfer of values)
+      this._transferStates.set(transfer.transferId, transfer);
+    this.emit('transfers-restored', values.map(transfer => ({...transfer})));
+    return values;
+  }
+
+  async _syncChanges() {
+    if (this._syncingChanges || !this.connected)
+      return;
+    this._syncingChanges = true;
+    try {
+      let hasMore;
+      do {
+        const page = await this.getChanges(this._cursor, {limit: 200});
+        for (const change of page.changes) {
+          if (change.kind === 'upsert')
+            this.emit('item-available', change.itemId);
+          else
+            this.emit('item-removed', change.itemId, change.reason);
+        }
+        if (page.nextCursor === this._cursor && page.hasMore)
+          throw new Error('Synchronization Service returned a non-advancing changes cursor');
+        this._cursor = page.nextCursor;
+        hasMore = page.hasMore;
+      } while (hasMore);
+    } finally {
+      this._syncingChanges = false;
+    }
+  }
+
+  _handleStatusChanged(rawStatus) {
+    try {
+      this._status = validateStatus(rawStatus);
+      this.emit('status-details-changed', {...this._status});
+      this.emit('status-changed', this._status.state, this.capabilities);
+    } catch (error) {
+      this._report(error);
+    }
+  }
+
+  _handleDeviceChanged(rawDevice) {
+    try {
+      const device = validateDevice(rawDevice);
+      this._devices.set(device.deviceId, device);
+      this.emit('devices-changed', this.devices);
+    } catch (error) {
+      this._report(error);
+    }
+  }
+
+  _handleDeviceRemoved(deviceId, reason) {
+    if (!isUuid(deviceId) || typeof reason !== 'string') {
+      this._report(new Error('Service emitted invalid device removal metadata'));
+      return;
+    }
+    this._devices.delete(deviceId);
+    this.emit('device-removed', deviceId, safeString(reason, 256));
+    this.emit('devices-changed', this.devices);
+  }
+
   _canPublish(mimeType) {
     if (mimeType === 'text/html' && !this._settings.get_boolean('sync-html'))
       return false;
@@ -614,11 +764,15 @@ export class SyncClient extends EventEmitter {
   async _registerDevice(nameKnownPresent = false) {
     if (!nameKnownPresent && !this.connected)
       return;
-    const {deviceId, deviceTag} = ensureDeviceIdentity(this._settings);
-    if (deviceTag === this._registeredTag)
+    const {deviceId, deviceTag, deviceIconKind} = ensureDeviceIdentity(this._settings);
+    const serialized = `${deviceTag}\0${deviceIconKind}`;
+    if (serialized === this._registeredProfile)
       return;
-    await this._call('RegisterDevice', new GLib.Variant('(ss)', [deviceId, deviceTag]));
-    this._registeredTag = deviceTag;
+    await this._call('RegisterDevice', new GLib.Variant('(sa{sv})', [
+      deviceId,
+      variantDictionary({tag: deviceTag, 'icon-kind': deviceIconKind}),
+    ]));
+    this._registeredProfile = serialized;
   }
 
   _call(method, parameters) {
@@ -664,24 +818,25 @@ export class SyncClient extends EventEmitter {
     });
   }
 
-  _handleTransferChanged(transferId, state, received, total, error) {
-    if (!isUuid(transferId) || !TRANSFER_STATES.has(state)
-        || !Number.isSafeInteger(received) || received < 0
-        || !Number.isSafeInteger(total) || total < 0
-        || received > ABSOLUTE_ITEM_LIMIT_BYTES || total > ABSOLUTE_ITEM_LIMIT_BYTES
-        || (total > 0 && received > total)
-        || typeof error !== 'string') {
-      this._report(new Error('Service emitted invalid transfer metadata'));
+  _handleTransferChanged(rawTransfer) {
+    let transfer;
+    try {
+      const {deviceId} = ensureDeviceIdentity(this._settings);
+      transfer = validateTransfer(rawTransfer, deviceId);
+      const previous = this._transferStates.get(transfer.transferId);
+      if (previous && (transfer.completedBytes < previous.completedBytes
+          || (previous.totalBytes > 0 && transfer.totalBytes !== previous.totalBytes)))
+        throw new Error('Service emitted non-monotonic transfer progress');
+    } catch (error) {
+      this._report(error);
       return;
     }
-    error = safeString(error, 512);
+    const {transferId, state} = transfer;
     if (!this._transferStates.has(transferId) && this._transferStates.size >= MAX_TRANSFER_STATES)
       this._transferStates.delete(this._transferStates.keys().next().value);
-    this._transferStates.set(transferId, {state, received, total, error});
-    if (!this._knownTransfers.has(transferId))
-      return;
+    this._transferStates.set(transferId, transfer);
     const waiter = this._transferWaiters.get(transferId);
-    if (waiter && state === 'ready') {
+    if (waiter && state === 'completed') {
       clearTimeout(waiter.timeout);
       this._transferWaiters.delete(transferId);
       this._knownTransfers.delete(transferId);
@@ -690,22 +845,22 @@ export class SyncClient extends EventEmitter {
       clearTimeout(waiter.timeout);
       this._transferWaiters.delete(transferId);
       this._knownTransfers.delete(transferId);
-      waiter.reject(new Error(error || `Transfer ${state}`));
+      waiter.reject(new Error(transfer.errorMessage || `Transfer ${state}`));
     }
-    this.emit('transfer-changed', transferId, state, received, total, error);
+    this.emit('transfer-changed', {...transfer});
   }
 
   _waitForTransfer(transferId) {
     if (!isUuid(transferId) || !this._knownTransfers.has(transferId))
       return Promise.reject(new Error('Synchronization transfer ID is unknown'));
     const current = this._transferStates.get(transferId);
-    if (current?.state === 'ready') {
+    if (current?.state === 'completed') {
       this._knownTransfers.delete(transferId);
       return Promise.resolve();
     }
     if (current && ['cancelled', 'expired', 'failed'].includes(current.state)) {
       this._knownTransfers.delete(transferId);
-      return Promise.reject(new Error(current.error || `Transfer ${current.state}`));
+      return Promise.reject(new Error(current.errorMessage || `Transfer ${current.state}`));
     }
 
     return new Promise((resolve, reject) => {
@@ -729,8 +884,9 @@ export class SyncClient extends EventEmitter {
       this._proxy.disconnect(this._proxySignal);
     this._proxySignal = 0;
     this._proxy = null;
-    this._registeredTag = null;
+    this._registeredProfile = null;
     this._capabilities = null;
+    this._status = null;
   }
 
   _stopWatchingName() {
@@ -818,6 +974,109 @@ async function readFdListBytes(fdList, index, cancellable, maxBytes = 0) {
     offset += chunk.length;
   }
   return new GLib.Bytes(output);
+}
+
+function validateChange(rawValue) {
+  const value = unpackDictionary(rawValue);
+  const sequence = Number(value.sequence);
+  const kind = value.kind;
+  const itemId = value['item-id'];
+  if (!Number.isSafeInteger(sequence) || sequence < 0
+      || !['upsert', 'remove'].includes(kind)
+      || !isUuid(itemId))
+    throw new Error('Synchronization Service returned an invalid change record');
+  return {
+    sequence,
+    kind,
+    itemId,
+    reason: safeString(value.reason ?? '', 256),
+  };
+}
+
+function validateStatus(rawValue) {
+  const value = unpackDictionary(rawValue);
+  const state = safeString(value.state ?? '', 32);
+  const networkState = safeString(value['network-state'] ?? '', 64);
+  const pendingItems = Number(value['pending-items']);
+  const activeTransfers = Number(value['active-transfers']);
+  const lastSyncAt = Number(value['last-sync-at']);
+  const revision = Number(value.revision);
+  if (!['online', 'offline', 'degraded', 'error'].includes(state)
+      || !networkState
+      || !Number.isSafeInteger(pendingItems) || pendingItems < 0
+      || !Number.isSafeInteger(activeTransfers) || activeTransfers < 0
+      || !Number.isSafeInteger(lastSyncAt) || lastSyncAt < 0
+      || !Number.isSafeInteger(revision) || revision < 0)
+    throw new Error('Synchronization Service returned invalid status metadata');
+  return {
+    state,
+    networkState,
+    pendingItems,
+    activeTransfers,
+    lastSyncAt,
+    revision,
+    errorCode: safeString(value['error-code'] ?? '', 128),
+    errorMessage: safeString(value['error-message'] ?? '', 512),
+  };
+}
+
+function validateDevice(rawValue) {
+  const value = unpackDictionary(rawValue);
+  const deviceId = value['device-id'];
+  const tag = safeString(value.tag ?? '', 256);
+  const iconKind = safeString(value['icon-kind'] ?? '', 32);
+  const state = safeString(value.state ?? '', 32);
+  const lastSeenAt = Number(value['last-seen-at']);
+  if (!isUuid(deviceId) || !tag || !DEVICE_ICON_KINDS.includes(iconKind)
+      || !['online', 'offline', 'unavailable'].includes(state)
+      || !Number.isSafeInteger(lastSeenAt) || lastSeenAt < 0
+      || typeof value['is-current'] !== 'boolean')
+    throw new Error('Synchronization Service returned invalid device metadata');
+  return {deviceId, tag, iconKind, state, lastSeenAt, isCurrent: value['is-current']};
+}
+
+function validateTransfer(rawValue, expectedDeviceId = '') {
+  const value = unpackDictionary(rawValue);
+  const transferId = value['transfer-id'];
+  const itemId = value['item-id'];
+  const deviceId = value['device-id'];
+  const kind = value.kind;
+  const direction = value.direction;
+  const state = value.state;
+  const completedBytes = Number(value['completed-bytes']);
+  const totalBytes = Number(value['total-bytes']);
+  const peerDeviceIds = value['peer-device-ids'];
+  const createdAt = Number(value['created-at']);
+  const updatedAt = Number(value['updated-at']);
+  if (!isUuid(transferId) || !isUuid(itemId) || !isUuid(deviceId)
+      || (expectedDeviceId && deviceId !== expectedDeviceId)
+      || !['publish', 'content'].includes(kind)
+      || !['upload', 'download'].includes(direction)
+      || !TRANSFER_STATES.has(state)
+      || !Number.isSafeInteger(completedBytes) || completedBytes < 0
+      || !Number.isSafeInteger(totalBytes) || totalBytes < 0
+      || (totalBytes > 0 && completedBytes > totalBytes)
+      || (state === 'completed' && completedBytes !== totalBytes)
+      || !Array.isArray(peerDeviceIds) || peerDeviceIds.length > 10_000
+      || !peerDeviceIds.every(isUuid)
+      || !Number.isSafeInteger(createdAt) || createdAt < 0
+      || !Number.isSafeInteger(updatedAt) || updatedAt < createdAt)
+    throw new Error('Synchronization Service returned invalid transfer metadata');
+  return {
+    transferId,
+    itemId,
+    deviceId,
+    kind,
+    direction,
+    state,
+    completedBytes,
+    totalBytes,
+    peerDeviceIds: [...new Set(peerDeviceIds)],
+    createdAt,
+    updatedAt,
+    errorCode: safeString(value['error-code'] ?? '', 128),
+    errorMessage: safeString(value['error-message'] ?? '', 512),
+  };
 }
 
 function validateRepresentation(representation) {

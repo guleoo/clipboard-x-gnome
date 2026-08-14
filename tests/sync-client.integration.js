@@ -25,6 +25,7 @@ class TestSettings {
       'sync-enabled': true,
       'device-id': '',
       'device-tag': 'Sync Client Integration',
+      'device-icon-kind': 'laptop',
       'service-bus-name': 'io.github.guleo.ClipboardX.MockService',
       'service-object-path': '/io/github/guleo/ClipboardX/Sync',
       'sync-text': true,
@@ -102,18 +103,21 @@ stream.close(null);
 item.primary.path = file.get_path();
 
 try {
-  const publishedId = await client.publish(item);
-  assert(publishedId === item.id, 'SyncClient must preserve immutable item IDs');
-  assert(await client.publish(item) === item.id, 'repeated Publish must be idempotent');
-  const pending = await client.listPending();
-  assert(pending.filter(itemId => itemId === item.id).length === 1,
-    'repeated Publish must not create duplicate pending items');
+  const published = await client.publish(item);
+  assert(published.itemId === item.id && published.transferId.length === 36,
+    'SyncClient must preserve item IDs and expose upload progress IDs');
+  const repeated = await client.publish(item);
+  assert(repeated.itemId === item.id, 'repeated Publish must be idempotent');
+  const changes = await client.getChanges('', {limit: 200});
+  assert(changes.changes.some(change => change.itemId === item.id),
+    'Publish must create an incremental change record');
 
   const remote = await client.getItem(item.id);
   assert(remote.remote && remote.availability === 'preview', 'GetItem must create a preview-only remote item');
   assert(remote.primary.bytes === null, 'GetItem must not eagerly read full content');
   assert(remote.preview.text === 'full synchronized content', 'GetItem must receive the text preview');
   assert(remote.originDeviceTag === 'Sync Client Integration', 'GetItem must resolve the friendly Device Tag');
+  assert(remote.originDeviceIconKind === 'laptop', 'GetItem must resolve the portable device icon');
   const stableDeviceId = settings.get_string('device-id');
   settings.changeString('device-tag', '工作设备 🐧');
   let updatedTag = '';
@@ -133,9 +137,9 @@ try {
   await client.acknowledge(remote.id, 'accepted');
 
   const cancelled = new Promise(resolve => {
-    client.connect('transfer-changed', (_client, transferId, state) => {
-      if (state === 'cancelled')
-        resolve(transferId);
+    client.connect('transfer-changed', (_client, transfer) => {
+      if (transfer.state === 'cancelled')
+        resolve(transfer.transferId);
     });
   });
   const transferId = await client.requestContent(remote.id, [remote.primary.id]);

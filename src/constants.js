@@ -5,6 +5,14 @@ export const SYNC_API_VERSION = 1;
 export const ABSOLUTE_ITEM_LIMIT_BYTES = 256 * 1024 * 1024;
 export const ABSOLUTE_PREVIEW_LIMIT_BYTES = 1024 * 1024;
 export const MAX_ITEM_REPRESENTATIONS = 16;
+export const DEVICE_ICON_KINDS = Object.freeze([
+  'desktop',
+  'laptop',
+  'phone',
+  'tablet',
+  'server',
+  'other',
+]);
 
 export const ClipboardMimeTypes = Object.freeze([
   'text/plain;charset=utf-8',
@@ -26,10 +34,11 @@ export const SensitiveClipboardMimeTypes = Object.freeze([
 
 export const TransferState = Object.freeze({
   QUEUED: 'queued',
-  WAITING_FOR_SOURCE: 'waiting-for-source',
+  WAITING_FOR_PEER: 'waiting-for-peer',
   TRANSFERRING: 'transferring',
-  READY: 'ready',
+  VERIFYING: 'verifying',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
   CANCELLED: 'cancelled',
   EXPIRED: 'expired',
-  FAILED: 'failed',
 });

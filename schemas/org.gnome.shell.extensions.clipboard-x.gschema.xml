@@ -9,6 +9,18 @@
       <default>''</default>
       <summary>Friendly device name</summary>
     </key>
+    <key name="device-icon-kind" type="s">
+      <choices>
+        <choice value="desktop"/>
+        <choice value="laptop"/>
+        <choice value="phone"/>
+        <choice value="tablet"/>
+        <choice value="server"/>
+        <choice value="other"/>
+      </choices>
+      <default>'desktop'</default>
+      <summary>Portable device icon category</summary>
+    </key>
     <key name="show-indicator" type="b">
       <default>true</default>
       <summary>Show the panel indicator</summary>

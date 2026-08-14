@@ -19,14 +19,18 @@ assert(ok, 'protocol XML must be readable');
 const xml = new TextDecoder().decode(bytes);
 
 for (const name of [
+  'GetStatus',
   'RegisterDevice',
+  'ListDevices',
   'Publish',
+  'GetChanges',
   'GetItem',
   'RequestContent',
   'OpenContent',
   'CancelTransfer',
   'Acknowledge',
-  'ListPending',
+  'GetTransfer',
+  'ListTransfers',
 ]) {
   assert(xml.includes(`<method name="${name}">`), `protocol must define ${name}`);
   const method = xml.match(new RegExp(`<method name="${name}">([\\s\\S]*?)<\\/method>`, 'u'))?.[1] ?? '';
@@ -39,5 +43,18 @@ assert(xml.includes('type="h"'), 'protocol must use UNIX FD payloads');
 const preferences = xml.match(/<method name="OpenPreferences"([\s\S]*?)\/>/u)?.[0] ?? '';
 assert(!preferences.includes('deviceId'), 'OpenPreferences is not a synchronization data operation');
 
-const tagOccurrences = xml.match(/deviceTag/g)?.length ?? 0;
-assert(tagOccurrences === 1, 'Device Tag must only be registered, not carried by every operation');
+for (const name of [
+  'StatusChanged',
+  'DeviceChanged',
+  'DeviceRemoved',
+  'ChangesAvailable',
+  'TransferChanged',
+])
+  assert(xml.includes(`<signal name="${name}">`), `protocol must define ${name}`);
+
+const publish = xml.match(/<method name="Publish">([\s\S]*?)<\/method>/u)?.[1] ?? '';
+assert(publish.includes('<arg name="transferId" type="s" direction="out"/>'),
+  'Publish must return a transfer ID for exact upload progress');
+const transferSignal = xml.match(/<signal name="TransferChanged">([\s\S]*?)<\/signal>/u)?.[1] ?? '';
+assert(transferSignal.includes('<arg name="transfer" type="a{sv}"/>'),
+  'TransferChanged must carry the recoverable transfer record');

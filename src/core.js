@@ -1,6 +1,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import {DEVICE_ICON_KINDS} from './constants.js';
+
 export function ensureDeviceIdentity(settings) {
   let deviceId = settings.get_string('device-id').trim();
   if (!isUuid(deviceId)) {
@@ -14,7 +16,13 @@ export function ensureDeviceIdentity(settings) {
     settings.set_string('device-tag', deviceTag);
   }
 
-  return {deviceId, deviceTag};
+  let deviceIconKind = String(settings.get_string('device-icon-kind') ?? '').trim();
+  if (!DEVICE_ICON_KINDS.includes(deviceIconKind)) {
+    deviceIconKind = 'desktop';
+    settings.set_string('device-icon-kind', deviceIconKind);
+  }
+
+  return {deviceId, deviceTag, deviceIconKind};
 }
 
 export function isUuid(value) {

@@ -12,17 +12,16 @@ const SUPPORTED_MIME_TYPES = (GLib.getenv('CLIPBOARD_X_MOCK_MIME_TYPES')
   .split(',').map(value => value.trim()).filter(Boolean);
 const MAX_ITEM_BYTES = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_MAX_ITEM_BYTES'), 128 * 1024 * 1024);
 const MAX_PREVIEW_BYTES = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_MAX_PREVIEW_BYTES'), 512 * 1024);
-const TRANSFER_STATES = (GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE') ?? 'ready')
-  .split(',').map(value => value.trim()).filter(value => ['ready', 'expired', 'failed'].includes(value));
+const TRANSFER_STATES = (GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE') ?? 'completed')
+  .split(',').map(value => value.trim() === 'ready' ? 'completed' : value.trim())
+  .filter(value => ['completed', 'expired', 'failed'].includes(value));
 const TRANSFER_DELAY_MS = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_DELAY_MS'), 60);
 const MALFORMED_SIGNALS = GLib.getenv('CLIPBOARD_X_MOCK_MALFORMED') === '1';
+const TERMINAL_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
 const sourcePath = GLib.filename_from_uri(import.meta.url)[0];
 const protocolPath = GLib.build_filenamev([
-  GLib.path_get_dirname(sourcePath),
-  '..',
-  'protocol',
-  'io.github.guleo.ClipboardX.Sync1.xml',
+  GLib.path_get_dirname(sourcePath), '..', 'protocol', 'io.github.guleo.ClipboardX.Sync1.xml',
 ]);
 const [ok, xmlBytes] = Gio.File.new_for_path(protocolPath).load_contents(null);
 if (!ok)
@@ -33,9 +32,11 @@ const interfaceInfo = nodeInfo.interfaces[0];
 const devices = new Map();
 const items = new Map();
 const transfers = new Map();
+const changes = [];
 let connection = null;
 let registrationId = 0;
 let transferRequestCount = 0;
+let revision = 0;
 
 function parseLimit(value, fallback) {
   if (value === null || value === '')
@@ -44,13 +45,44 @@ function parseLimit(value, fallback) {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-function emptyReply(invocation) {
-  invocation.return_value(new GLib.Variant('()', []));
+function now() {
+  return Date.now();
 }
 
-function metadataString(dictionary, key, fallback = '') {
-  const value = dictionary[key];
-  return value instanceof GLib.Variant ? value.get_string()[0] : value ?? fallback;
+function variant(value) {
+  if (value instanceof GLib.Variant)
+    return value;
+  if (typeof value === 'boolean')
+    return new GLib.Variant('b', value);
+  if (typeof value === 'number')
+    return new GLib.Variant(Number.isInteger(value) && value >= 0 ? 't' : 'd', value);
+  if (typeof value === 'string')
+    return new GLib.Variant('s', value);
+  if (Array.isArray(value))
+    return new GLib.Variant('as', value);
+  throw new TypeError(`Unsupported variant value: ${typeof value}`);
+}
+
+function dictionary(value) {
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, variant(entry)]));
+}
+
+function unpack(value) {
+  return value instanceof GLib.Variant ? value.deepUnpack() : value;
+}
+
+function metadataString(value, key, fallback = '') {
+  const entry = value[key];
+  return entry === undefined ? fallback : String(unpack(entry));
+}
+
+function metadataNumber(value, key, fallback = 0) {
+  const entry = value[key];
+  return entry === undefined ? fallback : Number(unpack(entry));
+}
+
+function emptyReply(invocation) {
+  invocation.return_value(new GLib.Variant('()', []));
 }
 
 function bytesFromFd(fdList, index) {
@@ -100,21 +132,138 @@ function payloadReply(payloads) {
   return {fdList, streams, values};
 }
 
+function deviceRecord(deviceId, requesterId = '') {
+  const profile = devices.get(deviceId) ?? {tag: '', iconKind: 'other'};
+  return {
+    'device-id': deviceId,
+    tag: profile.tag,
+    'icon-kind': profile.iconKind,
+    state: 'online',
+    'last-seen-at': profile.lastSeenAt ?? now(),
+    'is-current': deviceId === requesterId,
+  };
+}
+
+function statusRecord(deviceId) {
+  return {
+    state: 'online',
+    'network-state': 'connected',
+    'pending-items': changes.length,
+    'active-transfers': [...transfers.values()].filter(transfer =>
+      transfer.deviceId === deviceId && !TERMINAL_STATES.has(transfer.state)).length,
+    'last-sync-at': revision > 0 ? now() : 0,
+    revision,
+  };
+}
+
+function emitDictionarySignal(name, value) {
+  connection.emit_signal(null, OBJECT_PATH, INTERFACE, name,
+    new GLib.Variant('(a{sv})', [dictionary(value)]));
+}
+
+function transferRecord({
+  transferId = GLib.uuid_string_random(),
+  itemId,
+  deviceId,
+  kind,
+  direction,
+  state = 'queued',
+  completedBytes = 0,
+  totalBytes = 0,
+  peerDeviceIds = [],
+  createdAt = now(),
+  updatedAt = createdAt,
+  errorCode = '',
+  errorMessage = '',
+}) {
+  return {
+    transferId, itemId, deviceId, kind, direction, state,
+    completedBytes, totalBytes, peerDeviceIds, createdAt, updatedAt,
+    errorCode, errorMessage,
+  };
+}
+
+function transferDictionary(transfer) {
+  const value = {
+    'transfer-id': transfer.transferId,
+    'item-id': transfer.itemId,
+    'device-id': transfer.deviceId,
+    kind: transfer.kind,
+    direction: transfer.direction,
+    state: transfer.state,
+    'completed-bytes': transfer.completedBytes,
+    'total-bytes': transfer.totalBytes,
+    'peer-device-ids': transfer.peerDeviceIds,
+    'created-at': transfer.createdAt,
+    'updated-at': transfer.updatedAt,
+  };
+  if (transfer.errorCode)
+    value['error-code'] = transfer.errorCode;
+  if (transfer.errorMessage)
+    value['error-message'] = transfer.errorMessage;
+  return value;
+}
+
+function emitTransfer(transfer, state, completedBytes, errorMessage = '') {
+  if (TERMINAL_STATES.has(transfer.state))
+    return;
+  transfer.state = state;
+  transfer.completedBytes = completedBytes;
+  transfer.updatedAt = now();
+  transfer.errorCode = errorMessage ? `mock-${state}` : '';
+  transfer.errorMessage = errorMessage;
+  emitDictionarySignal('TransferChanged', transferDictionary(transfer));
+}
+
+function scheduleTransfer(transfer, terminalState) {
+  emitDictionarySignal('TransferChanged', transferDictionary(transfer));
+  GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(1, Math.floor(TRANSFER_DELAY_MS / 2)), () => {
+    emitTransfer(transfer, 'transferring', Math.floor(transfer.totalBytes / 2));
+  });
+  GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(2, TRANSFER_DELAY_MS), () => {
+    const completed = terminalState === 'completed';
+    emitTransfer(
+      transfer,
+      terminalState,
+      completed ? transfer.totalBytes : transfer.completedBytes,
+      completed ? '' : `Mock transfer ${terminalState}`,
+    );
+  });
+}
+
+function addChange(kind, itemId, reason = '') {
+  revision++;
+  const change = {sequence: revision, kind, itemId, reason};
+  changes.push(change);
+  connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'ChangesAvailable',
+    new GLib.Variant('(s)', [String(revision)]));
+}
+
 function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodName, parameters, invocation) {
   try {
     const values = parameters.deepUnpack();
+    if (methodName === 'GetStatus') {
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary(statusRecord(values[0]))]));
+      return;
+    }
+
     if (methodName === 'RegisterDevice') {
-      devices.set(values[0], values[1]);
+      const profile = values[1];
+      devices.set(values[0], {
+        tag: metadataString(profile, 'tag'),
+        iconKind: metadataString(profile, 'icon-kind', 'other'),
+        lastSeenAt: now(),
+      });
       emptyReply(invocation);
-      if (MALFORMED_SIGNALS) {
-        connection.emit_signal(
-          null,
-          OBJECT_PATH,
-          INTERFACE,
-          'ItemAvailable',
-          new GLib.Variant('(s)', ['../../invalid-preview-path']),
-        );
-      }
+      emitDictionarySignal('DeviceChanged', deviceRecord(values[0], values[0]));
+      if (MALFORMED_SIGNALS)
+        connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'ChangesAvailable', new GLib.Variant('(s)', ['invalid cursor']));
+      return;
+    }
+
+    if (methodName === 'ListDevices') {
+      const result = [...devices.keys()].map(deviceId => dictionary(deviceRecord(deviceId, values[0])));
+      invocation.return_value(new GLib.Variant('(aa{sv})', [result]));
       return;
     }
 
@@ -122,22 +271,44 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
       const [deviceId, metadata, previewValues, contentValues] = values;
       const fdList = invocation.get_message().get_unix_fd_list();
       const itemId = metadataString(metadata, 'id', GLib.uuid_string_random());
-      items.set(itemId, {
+      const previews = receivePayloads(previewValues, fdList);
+      const contents = receivePayloads(contentValues, fdList);
+      items.set(itemId, {deviceId, metadata, previews, contents});
+      const total = previews.reduce((sum, payload) => sum + payload.bytes.get_size(), 0)
+        + contents.filter(payload => metadataString(payload.metadata, 'delivery') === 'eager')
+          .reduce((sum, payload) => sum + payload.bytes.get_size(), 0);
+      const transfer = transferRecord({
+        itemId,
         deviceId,
-        metadata,
-        previews: receivePayloads(previewValues, fdList),
-        contents: receivePayloads(contentValues, fdList),
+        kind: 'publish',
+        direction: 'upload',
+        totalBytes: total,
+        peerDeviceIds: [...devices.keys()].filter(candidate => candidate !== deviceId),
       });
-      invocation.return_value(new GLib.Variant('(s)', [itemId]));
-      connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'ItemAvailable', new GLib.Variant('(s)', [itemId]));
+      transfers.set(transfer.transferId, transfer);
+      invocation.return_value(new GLib.Variant('(ss)', [itemId, transfer.transferId]));
+      addChange('upsert', itemId);
+      scheduleTransfer(transfer, 'completed');
       return;
     }
 
-    if (methodName === 'ListPending') {
-      const pending = [...items.keys()];
-      if (MALFORMED_SIGNALS)
-        pending.push('not-a-uuid');
-      invocation.return_value(new GLib.Variant('(as)', [pending]));
+    if (methodName === 'GetChanges') {
+      const cursor = Number.parseInt(values[1] || '0', 10);
+      if (!Number.isSafeInteger(cursor) || cursor < 0)
+        throw new Error('Invalid cursor');
+      const limit = Math.max(1, Math.min(1000, metadataNumber(values[2], 'limit', 200)));
+      const pending = changes.filter(change => change.sequence > cursor);
+      if (MALFORMED_SIGNALS && pending.length === 0)
+        pending.push({sequence: 1, kind: 'upsert', itemId: 'not-a-uuid', reason: ''});
+      const page = pending.slice(0, limit);
+      const nextCursor = page.length > 0 ? page.at(-1).sequence : cursor;
+      const result = page.map(change => dictionary({
+        sequence: change.sequence,
+        kind: change.kind,
+        'item-id': change.itemId,
+        ...(change.reason ? {reason: change.reason} : {}),
+      }));
+      invocation.return_value(new GLib.Variant('(saa{sv}b)', [String(nextCursor), result, pending.length > page.length]));
       return;
     }
 
@@ -146,57 +317,37 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
       if (!item)
         throw new Error('Unknown item');
       const reply = payloadReply(item.previews);
+      const device = deviceRecord(item.deviceId);
       const metadata = {
         ...item.metadata,
-        'origin-device-tag': new GLib.Variant('s', devices.get(item.deviceId) ?? ''),
+        'origin-device-tag': new GLib.Variant('s', device.tag),
+        'origin-device-icon-kind': new GLib.Variant('s', device['icon-kind']),
       };
       invocation.return_value_with_unix_fd_list(
-        new GLib.Variant('(a{sv}a(sa{sv}h))', [metadata, reply.values]),
-        reply.fdList,
-      );
+        new GLib.Variant('(a{sv}a(sa{sv}h))', [metadata, reply.values]), reply.fdList);
       reply.streams.forEach(stream => stream.close(null));
       return;
     }
 
     if (methodName === 'RequestContent') {
-      const transferId = GLib.uuid_string_random();
-      const item = items.get(values[1]);
+      const [deviceId, itemId, contentIds] = values;
+      const item = items.get(itemId);
       const total = item?.contents
-        .filter(payload => values[2].includes(metadataString(payload.metadata, 'content-id')))
+        .filter(payload => contentIds.includes(metadataString(payload.metadata, 'content-id')))
         .reduce((sum, payload) => sum + payload.bytes.get_size(), 0) ?? 0;
-      transfers.set(transferId, {itemId: values[1], contentIds: values[2], state: 'queued', total});
-      const terminalState = TRANSFER_STATES[Math.min(transferRequestCount, TRANSFER_STATES.length - 1)] ?? 'ready';
+      const transfer = transferRecord({
+        itemId,
+        deviceId,
+        kind: 'content',
+        direction: 'download',
+        totalBytes: total,
+        peerDeviceIds: item ? [item.deviceId] : [],
+      });
+      transfers.set(transfer.transferId, transfer);
+      const terminalState = TRANSFER_STATES[Math.min(transferRequestCount, TRANSFER_STATES.length - 1)] ?? 'completed';
       transferRequestCount++;
-      invocation.return_value(new GLib.Variant('(s)', [transferId]));
-      connection.emit_signal(
-        null,
-        OBJECT_PATH,
-        INTERFACE,
-        'TransferChanged',
-        new GLib.Variant('(sstts)', [transferId, 'queued', 0, total, '']),
-      );
-      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(1, Math.floor(TRANSFER_DELAY_MS / 2)), () => {
-        const transfer = transfers.get(transferId);
-        if (!transfer)
-          return;
-        transfer.state = 'transferring';
-        connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'TransferChanged',
-          new GLib.Variant('(sstts)', [transferId, 'transferring', Math.floor(total / 2), total, '']));
-      });
-      GLib.timeout_add_once(GLib.PRIORITY_DEFAULT, Math.max(2, TRANSFER_DELAY_MS), () => {
-        const transfer = transfers.get(transferId);
-        if (!transfer)
-          return;
-        transfer.state = terminalState;
-        connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'TransferChanged',
-          new GLib.Variant('(sstts)', [
-            transferId,
-            terminalState,
-            terminalState === 'ready' ? total : 0,
-            total,
-            terminalState === 'ready' ? '' : `Mock transfer ${terminalState}`,
-          ]));
-      });
+      invocation.return_value(new GLib.Variant('(s)', [transfer.transferId]));
+      scheduleTransfer(transfer, terminalState);
       return;
     }
 
@@ -207,20 +358,33 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
         throw new Error('Unknown content');
       const reply = payloadReply([payload]);
       invocation.return_value_with_unix_fd_list(
-        new GLib.Variant('(a{sv}h)', [payload.metadata, reply.values[0][2]]),
-        reply.fdList,
-      );
+        new GLib.Variant('(a{sv}h)', [payload.metadata, reply.values[0][2]]), reply.fdList);
       reply.streams.forEach(stream => stream.close(null));
       return;
     }
 
     if (methodName === 'CancelTransfer') {
-      const transferId = values[1];
-      if (transfers.delete(transferId)) {
-        connection.emit_signal(null, OBJECT_PATH, INTERFACE, 'TransferChanged',
-          new GLib.Variant('(sstts)', [transferId, 'cancelled', 0, 0, 'Cancelled by client']));
-      }
+      const transfer = transfers.get(values[1]);
+      if (transfer && !TERMINAL_STATES.has(transfer.state))
+        emitTransfer(transfer, 'cancelled', transfer.completedBytes, 'Cancelled by client');
       emptyReply(invocation);
+      return;
+    }
+
+    if (methodName === 'GetTransfer') {
+      const transfer = transfers.get(values[1]);
+      if (!transfer || transfer.deviceId !== values[0])
+        throw new Error('Unknown transfer');
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary(transferDictionary(transfer))]));
+      return;
+    }
+
+    if (methodName === 'ListTransfers') {
+      const state = metadataString(values[1], 'state');
+      const result = [...transfers.values()]
+        .filter(transfer => transfer.deviceId === values[0] && (!state || transfer.state === state))
+        .map(transfer => dictionary(transferDictionary(transfer)));
+      invocation.return_value(new GLib.Variant('(aa{sv})', [result]));
       return;
     }
 
@@ -239,7 +403,7 @@ function getProperty(_connection, _sender, _path, _interface, propertyName) {
   const properties = {
     ApiVersion: new GLib.Variant('u', 1),
     ImplementationName: new GLib.Variant('s', 'Clipboard X Mock Service'),
-    ImplementationVersion: new GLib.Variant('s', '0.1.0'),
+    ImplementationVersion: new GLib.Variant('s', '0.2.0'),
     Status: new GLib.Variant('s', 'online'),
     SupportedMimeTypes: new GLib.Variant('as', SUPPORTED_MIME_TYPES),
     MaxItemBytes: new GLib.Variant('t', MAX_ITEM_BYTES),

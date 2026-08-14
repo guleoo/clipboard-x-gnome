@@ -68,8 +68,8 @@ export default class ClipboardXExtension extends Extension {
     });
     this._transferSignal = this._sync.connect(
       'transfer-changed',
-      (_sync, transferId, state, received, total, error) => {
-        this._indicator?.setTransfer(transferId, state, received, total, error);
+      (_sync, transfer) => {
+        this._indicator?.setTransfer(transfer);
       },
     );
 

@@ -52,8 +52,8 @@ try {
   await online;
   await client.publish(item);
   const remote = await client.getItem(item.id);
-  client.connect('transfer-changed', (_client, _transferId, state) => {
-    if (state === 'queued')
+  client.connect('transfer-changed', (_client, transfer) => {
+    if (transfer.state === 'queued' && transfer.kind === 'content')
       print('TRANSFER_STARTED');
   });
   try {

@@ -23,10 +23,12 @@ PROTOCOL_PATH = (
     / "io.github.guleo.ClipboardX.Sync1.xml"
 )
 
-DEVICES: dict[str, str] = {}
+DEVICES: dict[str, dict] = {}
 ITEMS: dict[str, dict] = {}
 TRANSFERS: dict[str, dict] = {}
+CHANGES: list[dict] = []
 CONNECTION: Gio.DBusConnection | None = None
+REVISION = 0
 
 
 def _variant(value):
@@ -94,7 +96,37 @@ def _payload_reply(payloads: list[dict]):
     return fd_list, open_fds, values
 
 
-def _emit_transfer(transfer_id: str, state: str, received: int, total: int, error=""):
+def _device_record(device_id: str, requester_id: str = "") -> dict:
+    profile = DEVICES.get(device_id, {"tag": "", "icon-kind": "other"})
+    return {
+        "device-id": device_id,
+        "tag": profile["tag"],
+        "icon-kind": profile["icon-kind"],
+        "state": "online",
+        "last-seen-at": profile.get("last-seen-at", 0),
+        "is-current": device_id == requester_id,
+    }
+
+
+def _transfer_dictionary(transfer: dict) -> dict:
+    return {
+        "transfer-id": transfer["transfer-id"],
+        "item-id": transfer["item-id"],
+        "device-id": transfer["device-id"],
+        "kind": transfer["kind"],
+        "direction": transfer["direction"],
+        "state": transfer["state"],
+        "completed-bytes": transfer["completed-bytes"],
+        "total-bytes": transfer["total-bytes"],
+        "peer-device-ids": transfer["peer-device-ids"],
+        "created-at": transfer["created-at"],
+        "updated-at": transfer["updated-at"],
+        **({"error-code": transfer["error-code"]} if transfer.get("error-code") else {}),
+        **({"error-message": transfer["error-message"]} if transfer.get("error-message") else {}),
+    }
+
+
+def _emit_transfer(transfer: dict):
     if CONNECTION is None:
         return
     CONNECTION.emit_signal(
@@ -102,8 +134,43 @@ def _emit_transfer(transfer_id: str, state: str, received: int, total: int, erro
         OBJECT_PATH,
         INTERFACE,
         "TransferChanged",
-        GLib.Variant("(sstts)", (transfer_id, state, received, total, error)),
+        GLib.Variant("(a{sv})", (_variant_dictionary(_transfer_dictionary(transfer)),)),
     )
+
+
+def _new_transfer(item_id: str, device_id: str, kind: str, direction: str, total: int) -> dict:
+    timestamp = GLib.get_real_time() // 1000
+    transfer = {
+        "transfer-id": str(uuid.uuid4()),
+        "item-id": item_id,
+        "device-id": device_id,
+        "kind": kind,
+        "direction": direction,
+        "state": "queued",
+        "completed-bytes": 0,
+        "total-bytes": total,
+        "peer-device-ids": [candidate for candidate in DEVICES if candidate != device_id],
+        "created-at": timestamp,
+        "updated-at": timestamp,
+        "error-code": "",
+        "error-message": "",
+    }
+    TRANSFERS[transfer["transfer-id"]] = transfer
+    return transfer
+
+
+def _add_change(item_id: str):
+    global REVISION
+    REVISION += 1
+    CHANGES.append({"sequence": REVISION, "kind": "upsert", "item-id": item_id})
+    if CONNECTION is not None:
+        CONNECTION.emit_signal(
+            None,
+            OBJECT_PATH,
+            INTERFACE,
+            "ChangesAvailable",
+            GLib.Variant("(s)", (str(REVISION),)),
+        )
 
 
 def _method_call(
@@ -117,13 +184,58 @@ def _method_call(
 ):
     try:
         values = parameters.unpack()
+        if method_name == "GetStatus":
+            status = {
+                "state": "online",
+                "network-state": "connected",
+                "pending-items": len(CHANGES),
+                "active-transfers": sum(
+                    transfer["device-id"] == values[0]
+                    and transfer["state"] not in {"completed", "failed", "cancelled", "expired"}
+                    for transfer in TRANSFERS.values()
+                ),
+                "last-sync-at": GLib.get_real_time() // 1000 if REVISION else 0,
+                "revision": REVISION,
+            }
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary(status),))
+            )
+            return
+
         if method_name == "RegisterDevice":
-            DEVICES[values[0]] = values[1]
+            profile = values[1]
+            DEVICES[values[0]] = {
+                "tag": profile.get("tag", ""),
+                "icon-kind": profile.get("icon-kind", "other"),
+                "last-seen-at": GLib.get_real_time() // 1000,
+            }
             invocation.return_value(GLib.Variant("()", ()))
+            _connection.emit_signal(
+                None,
+                OBJECT_PATH,
+                INTERFACE,
+                "DeviceChanged",
+                GLib.Variant(
+                    "(a{sv})",
+                    (_variant_dictionary(_device_record(values[0], values[0])),),
+                ),
+            )
+            return
+
+        if method_name == "ListDevices":
+            invocation.return_value(
+                GLib.Variant(
+                    "(aa{sv})",
+                    ([
+                        _variant_dictionary(_device_record(device_id, values[0]))
+                        for device_id in DEVICES
+                    ],),
+                )
+            )
             return
 
         if method_name == "Publish":
-            device_id, metadata, previews, contents = values
+            device_id, metadata, previews, contents, _options = values
             item_id = metadata.get("id", str(uuid.uuid4()))
             fd_list = invocation.get_message().get_unix_fd_list()
             ITEMS[item_id] = {
@@ -132,25 +244,54 @@ def _method_call(
                 "previews": _receive_payloads(previews, fd_list),
                 "contents": _receive_payloads(contents, fd_list),
             }
-            invocation.return_value(GLib.Variant("(s)", (item_id,)))
-            _connection.emit_signal(
-                None,
-                OBJECT_PATH,
-                INTERFACE,
-                "ItemAvailable",
-                GLib.Variant("(s)", (item_id,)),
+            eager_size = sum(
+                len(payload["bytes"])
+                for payload in ITEMS[item_id]["contents"]
+                if payload["metadata"].get("delivery") == "eager"
             )
+            preview_size = sum(len(payload["bytes"]) for payload in ITEMS[item_id]["previews"])
+            transfer = _new_transfer(item_id, device_id, "publish", "upload", eager_size + preview_size)
+            invocation.return_value(
+                GLib.Variant("(ss)", (item_id, transfer["transfer-id"]))
+            )
+            _add_change(item_id)
+            _emit_transfer(transfer)
+
+            def complete_publish():
+                transfer["state"] = "completed"
+                transfer["completed-bytes"] = transfer["total-bytes"]
+                transfer["updated-at"] = GLib.get_real_time() // 1000
+                _emit_transfer(transfer)
+                return GLib.SOURCE_REMOVE
+
+            GLib.timeout_add(20, complete_publish)
             return
 
-        if method_name == "ListPending":
-            invocation.return_value(GLib.Variant("(as)", (list(ITEMS),)))
+        if method_name == "GetChanges":
+            cursor = int(values[1] or "0")
+            limit = max(1, min(1000, int(values[2].get("limit", 200))))
+            pending = [change for change in CHANGES if change["sequence"] > cursor]
+            page = pending[:limit]
+            next_cursor = page[-1]["sequence"] if page else cursor
+            invocation.return_value(
+                GLib.Variant(
+                    "(saa{sv}b)",
+                    (
+                        str(next_cursor),
+                        [_variant_dictionary(change) for change in page],
+                        len(pending) > len(page),
+                    ),
+                )
+            )
             return
 
         if method_name == "GetItem":
             item = ITEMS[values[1]]
             fd_list, open_fds, previews = _payload_reply(item["previews"])
             metadata = dict(item["metadata"])
-            metadata["origin-device-tag"] = DEVICES.get(item["device_id"], "")
+            device = _device_record(item["device_id"])
+            metadata["origin-device-tag"] = device["tag"]
+            metadata["origin-device-icon-kind"] = device["icon-kind"]
             try:
                 invocation.return_value_with_unix_fd_list(
                     GLib.Variant(
@@ -165,36 +306,40 @@ def _method_call(
             return
 
         if method_name == "RequestContent":
-            _, item_id, content_ids = values
-            transfer_id = str(uuid.uuid4())
+            device_id, item_id, content_ids, _options = values
             selected = [
                 payload
                 for payload in ITEMS[item_id]["contents"]
                 if payload["metadata"].get("content-id") in content_ids
             ]
             total = sum(len(payload["bytes"]) for payload in selected)
-            TRANSFERS[transfer_id] = {"total": total, "state": "queued"}
+            transfer = _new_transfer(item_id, device_id, "content", "download", total)
+            transfer_id = transfer["transfer-id"]
             invocation.return_value(GLib.Variant("(s)", (transfer_id,)))
-            _emit_transfer(transfer_id, "queued", 0, total)
+            _emit_transfer(transfer)
 
             def transferring():
-                transfer = TRANSFERS.get(transfer_id)
-                if transfer is None:
+                current = TRANSFERS.get(transfer_id)
+                if current is None or current["state"] in {"cancelled", "failed", "expired"}:
                     return GLib.SOURCE_REMOVE
-                transfer["state"] = "transferring"
-                _emit_transfer(transfer_id, "transferring", total // 2, total)
+                current["state"] = "transferring"
+                current["completed-bytes"] = total // 2
+                current["updated-at"] = GLib.get_real_time() // 1000
+                _emit_transfer(current)
                 return GLib.SOURCE_REMOVE
 
-            def ready():
-                transfer = TRANSFERS.get(transfer_id)
-                if transfer is None:
+            def completed():
+                current = TRANSFERS.get(transfer_id)
+                if current is None or current["state"] in {"cancelled", "failed", "expired"}:
                     return GLib.SOURCE_REMOVE
-                transfer["state"] = "ready"
-                _emit_transfer(transfer_id, "ready", total, total)
+                current["state"] = "completed"
+                current["completed-bytes"] = total
+                current["updated-at"] = GLib.get_real_time() // 1000
+                _emit_transfer(current)
                 return GLib.SOURCE_REMOVE
 
             GLib.timeout_add(30, transferring)
-            GLib.timeout_add(60, ready)
+            GLib.timeout_add(60, completed)
             return
 
         if method_name == "OpenContent":
@@ -220,9 +365,37 @@ def _method_call(
 
         if method_name == "CancelTransfer":
             transfer_id = values[1]
-            if TRANSFERS.pop(transfer_id, None) is not None:
-                _emit_transfer(transfer_id, "cancelled", 0, 0, "Cancelled by client")
+            transfer = TRANSFERS.get(transfer_id)
+            if transfer is not None and transfer["state"] not in {"completed", "failed", "cancelled", "expired"}:
+                transfer["state"] = "cancelled"
+                transfer["error-code"] = "cancelled"
+                transfer["error-message"] = "Cancelled by client"
+                transfer["updated-at"] = GLib.get_real_time() // 1000
+                _emit_transfer(transfer)
             invocation.return_value(GLib.Variant("()", ()))
+            return
+
+        if method_name == "GetTransfer":
+            transfer = TRANSFERS[values[1]]
+            if transfer["device-id"] != values[0]:
+                raise KeyError(values[1])
+            invocation.return_value(
+                GLib.Variant(
+                    "(a{sv})",
+                    (_variant_dictionary(_transfer_dictionary(transfer)),),
+                )
+            )
+            return
+
+        if method_name == "ListTransfers":
+            state = values[1].get("state", "")
+            result = [
+                _variant_dictionary(_transfer_dictionary(transfer))
+                for transfer in TRANSFERS.values()
+                if transfer["device-id"] == values[0]
+                and (not state or transfer["state"] == state)
+            ]
+            invocation.return_value(GLib.Variant("(aa{sv})", (result,)))
             return
 
         if method_name in {"Acknowledge", "OpenPreferences"}:

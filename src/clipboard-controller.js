@@ -11,7 +11,7 @@ import {search as searchHistory} from './history-search.js';
 import {delivery} from './sync-policy.js';
 import {EventEmitter} from './event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
-import {diagnosticCode, loadFile, sha256, writeFile} from './core.js';
+import {diagnosticCode, ensureDeviceIdentity, loadFile, sha256, writeFile} from './core.js';
 
 const CLIPBOARD = St.ClipboardType.CLIPBOARD;
 
@@ -132,8 +132,12 @@ export class ClipboardController extends EventEmitter {
       if (values.length === 0)
         return null;
 
+      const identity = ensureDeviceIdentity(this._settings);
       const item = ClipboardItem.fromRepresentations(values, {
         textPreviewLimit: this._settings.get_uint('text-preview-limit'),
+        originDeviceId: identity.deviceId,
+        originDeviceTag: identity.deviceTag,
+        originDeviceIconKind: identity.deviceIconKind,
         sensitive: sensitive && sensitiveMode !== 'store',
       });
 
@@ -174,8 +178,12 @@ export class ClipboardController extends EventEmitter {
       throw new Error('Screenshot exceeds the configured capture limit');
     const bytes = await loadFile(file, this._cancellable);
     const mimeType = info.get_content_type() || 'image/png';
+    const identity = ensureDeviceIdentity(this._settings);
     const item = ClipboardItem.fromBytes(mimeType, bytes, {
       textPreviewLimit: this._settings.get_uint('text-preview-limit'),
+      originDeviceId: identity.deviceId,
+      originDeviceTag: identity.deviceTag,
+      originDeviceIconKind: identity.deviceIconKind,
     });
     await this._prepareItem(item);
     return item;

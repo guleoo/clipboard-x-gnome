@@ -11,9 +11,19 @@
     <property name="MaxItemBytes" type="t" access="read"/>
     <property name="MaxPreviewBytes" type="t" access="read"/>
 
+    <method name="GetStatus">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="status" type="a{sv}" direction="out"/>
+    </method>
+
     <method name="RegisterDevice">
       <arg name="deviceId" type="s" direction="in"/>
-      <arg name="deviceTag" type="s" direction="in"/>
+      <arg name="profile" type="a{sv}" direction="in"/>
+    </method>
+
+    <method name="ListDevices">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="devices" type="aa{sv}" direction="out"/>
     </method>
 
     <method name="Publish">
@@ -21,7 +31,18 @@
       <arg name="item" type="a{sv}" direction="in"/>
       <arg name="previews" type="a(sa{sv}h)" direction="in"/>
       <arg name="contents" type="a(sa{sv}h)" direction="in"/>
+      <arg name="options" type="a{sv}" direction="in"/>
       <arg name="itemId" type="s" direction="out"/>
+      <arg name="transferId" type="s" direction="out"/>
+    </method>
+
+    <method name="GetChanges">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="cursor" type="s" direction="in"/>
+      <arg name="options" type="a{sv}" direction="in"/>
+      <arg name="nextCursor" type="s" direction="out"/>
+      <arg name="changes" type="aa{sv}" direction="out"/>
+      <arg name="hasMore" type="b" direction="out"/>
     </method>
 
     <method name="GetItem">
@@ -35,6 +56,7 @@
       <arg name="deviceId" type="s" direction="in"/>
       <arg name="itemId" type="s" direction="in"/>
       <arg name="contentIds" type="as" direction="in"/>
+      <arg name="options" type="a{sv}" direction="in"/>
       <arg name="transferId" type="s" direction="out"/>
     </method>
 
@@ -58,26 +80,39 @@
       <arg name="message" type="s" direction="in"/>
     </method>
 
-    <method name="ListPending">
+    <method name="GetTransfer">
       <arg name="deviceId" type="s" direction="in"/>
-      <arg name="itemIds" type="as" direction="out"/>
+      <arg name="transferId" type="s" direction="in"/>
+      <arg name="transfer" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="ListTransfers">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="filter" type="a{sv}" direction="in"/>
+      <arg name="transfers" type="aa{sv}" direction="out"/>
     </method>
 
     <method name="OpenPreferences"/>
 
-    <signal name="ItemAvailable">
-      <arg name="itemId" type="s"/>
+    <signal name="StatusChanged">
+      <arg name="status" type="a{sv}"/>
     </signal>
-    <signal name="ItemRemoved">
-      <arg name="itemId" type="s"/>
+
+    <signal name="DeviceChanged">
+      <arg name="device" type="a{sv}"/>
+    </signal>
+
+    <signal name="DeviceRemoved">
+      <arg name="deviceId" type="s"/>
       <arg name="reason" type="s"/>
     </signal>
+
+    <signal name="ChangesAvailable">
+      <arg name="latestCursor" type="s"/>
+    </signal>
+
     <signal name="TransferChanged">
-      <arg name="transferId" type="s"/>
-      <arg name="state" type="s"/>
-      <arg name="receivedBytes" type="t"/>
-      <arg name="totalBytes" type="t"/>
-      <arg name="error" type="s"/>
+      <arg name="transfer" type="a{sv}"/>
     </signal>
   </interface>
 </node>

@@ -5,6 +5,7 @@ import {ClipboardItem} from './clipboard-item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
+  DEVICE_ICON_KINDS,
   MAX_ITEM_REPRESENTATIONS,
   UUID,
 } from './constants.js';
@@ -192,10 +193,13 @@ function validateStoredItem(value, objectsPath, previewsPath) {
     throw new Error('origin device ID is invalid');
   if (typeof value.originDeviceTag !== 'string' || value.originDeviceTag.length > 256)
     throw new Error('origin device tag is invalid');
+  value.originDeviceIconKind ??= 'other';
+  if (!DEVICE_ICON_KINDS.includes(value.originDeviceIconKind))
+    throw new Error('origin device icon kind is invalid');
   if (typeof value.favorite !== 'boolean'
       || typeof value.remote !== 'boolean'
       || typeof value.sensitive !== 'boolean'
-      || !['ready', 'preview', 'waiting-for-source', 'failed'].includes(value.availability))
+      || !['ready', 'preview', 'waiting-for-source', 'waiting-for-peer', 'failed'].includes(value.availability))
     throw new Error('entry state is invalid');
   if (!Array.isArray(value.representations)
       || value.representations.length === 0

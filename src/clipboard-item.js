@@ -8,6 +8,7 @@ export class ClipboardItem {
     createdAt = Date.now(),
     originDeviceId = '',
     originDeviceTag = '',
+    originDeviceIconKind = 'other',
     representations = [],
     preview = null,
     favorite = false,
@@ -19,6 +20,7 @@ export class ClipboardItem {
     this.createdAt = createdAt;
     this.originDeviceId = originDeviceId;
     this.originDeviceTag = originDeviceTag;
+    this.originDeviceIconKind = originDeviceIconKind;
     this.representations = representations;
     this.preview = preview;
     this.favorite = favorite;
@@ -124,6 +126,7 @@ export class ClipboardItem {
       createdAt: this.createdAt,
       originDeviceId: this.originDeviceId,
       originDeviceTag: this.originDeviceTag,
+      originDeviceIconKind: this.originDeviceIconKind,
       representations: this.representations.map(({bytes: _bytes, ...representation}) => representation),
       preview: this.preview,
       favorite: this.favorite,
@@ -134,10 +137,10 @@ export class ClipboardItem {
   }
 
   static fromJSON(value) {
-    const availability = value.remote && value.availability === 'waiting-for-source'
+    const availability = value.remote && ['waiting-for-source', 'waiting-for-peer'].includes(value.availability)
       ? 'failed'
       : value.availability;
-    return new ClipboardItem({...value, availability});
+    return new ClipboardItem({originDeviceIconKind: 'other', ...value, availability});
   }
 }
 
