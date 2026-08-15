@@ -89,6 +89,16 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/shell.s
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.smoke.js
 ```
 
+交互式调试可以运行：
+
+```sh
+tools/run-dev-shell.sh
+```
+
+该脚本使用独立的 XDG 数据和配置目录，并让嵌套 GNOME Shell 直接加载
+`build-devkit/clipboard-x@guleo.github.io`。修改代码后关闭 Devkit 窗口并重新运行脚本，
+无需注销宿主桌面，也不会读取宿主桌面的 Clipboard X 配置。
+
 若嵌套 Mutter 能看到 `wl-copy` MIME 却无法完成 selection transfer，可在只验证 UI 与
 生命周期时设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1`；这只跳过外部 Wayland/XWayland
 来源用例，不跳过扩展内部的文本、图片、截图、分词、同步进度和生命周期测试。
