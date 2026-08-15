@@ -1,28 +1,44 @@
 .clipboard-x-menu {
-  min-width: 520px;
+  width: 360px;
+  max-width: 360px;
+}
+
+.clipboard-x-menu .popup-menu-content {
+  padding: 4px;
+}
+
+.clipboard-x-menu .popup-menu-item {
+  padding: 2px 4px;
 }
 
 .clipboard-x-search-toolbar {
-  spacing: 8px;
-  padding: 3px 4px;
+  spacing: 4px;
+  padding: 1px 2px;
 }
 
 .clipboard-x-search {
-  border-radius: 12px;
-  padding: 5px 9px;
+  min-height: 30px;
+  border-radius: 10px;
+  padding: 3px 7px;
 }
 
 .clipboard-x-toolbar {
-  spacing: 3px;
+  spacing: 1px;
 }
 
 .clipboard-x-icon-button {
   color: inherit;
-  padding: 4px;
-  min-width: 28px;
-  min-height: 28px;
-  border-radius: 8px;
+  padding: 3px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 7px;
   transition-duration: 120ms;
+}
+
+.clipboard-x-toolbar .clipboard-x-icon-button,
+.clipboard-x-footer .clipboard-x-icon-button {
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 1;
 }
 
 .clipboard-x-icon-button:hover,
@@ -36,15 +52,15 @@
 }
 
 .clipboard-x-history {
-  max-height: 520px;
+  max-height: 480px;
 }
 
 .clipboard-x-entry {
   color: inherit;
-  spacing: 3px;
-  padding: 3px 6px;
-  margin: 1px 4px;
-  border-radius: 8px;
+  spacing: 1px;
+  padding: 2px 3px;
+  margin: 1px 2px;
+  border-radius: 7px;
   transition-duration: 120ms;
 }
 
@@ -54,7 +70,7 @@
 
 .clipboard-x-entry-content {
   color: inherit;
-  padding: 5px 7px;
+  padding: 4px 5px;
   border-radius: 6px;
   text-align: left;
 }
@@ -68,7 +84,7 @@
   color: inherit;
   font-size: 1em;
   font-weight: normal;
-  max-width: 315px;
+  max-width: 185px;
   text-align: left;
 }
 
@@ -78,23 +94,23 @@
 }
 
 .clipboard-x-empty {
-  padding: 28px 18px;
+  padding: 18px 10px;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .clipboard-x-device-icon {
   color: inherit;
   opacity: 0.72;
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .clipboard-x-image-content {
-  spacing: 8px;
+  spacing: 5px;
 }
 
 .clipboard-x-footer {
-  spacing: 4px;
-  padding: 2px 4px;
+  spacing: 1px;
+  padding: 1px 2px;
 }
 
 .clipboard-x-pinned {
@@ -122,13 +138,13 @@
 
 .clipboard-x-token-source,
 .clipboard-x-token-result {
-  max-width: 345px;
-  padding: 6px;
+  max-width: 320px;
+  padding: 4px;
   color: rgba(255, 255, 255, 0.72);
 }
 
 .clipboard-x-token-box {
-  padding: 8px 2px;
+  padding: 5px 1px;
 }
 
 .clipboard-x-token {

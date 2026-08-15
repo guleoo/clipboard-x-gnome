@@ -12,7 +12,6 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {composeTokens, tokenizeText} from './text-processors.js';
 
-const PANEL_ITEM_LIMIT = 200;
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
 const DEVICE_ICON_NAMES = Object.freeze({
@@ -101,6 +100,7 @@ class Indicator extends PanelMenu.Button {
 
     this._changedSignal = controller.connect('changed', () => this._refresh());
     this._privateSignal = settings.connect('changed::private-mode', () => this._updatePrivateButton());
+    this._visibleItemLimitSignal = settings.connect('changed::panel-visible-item-limit', () => this._refresh());
     this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
@@ -157,7 +157,6 @@ class Indicator extends PanelMenu.Button {
     searchItem.add_child(searchToolbar);
     this.menu.addMenuItem(searchItem);
 
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
     this._history = new PopupMenu.PopupMenuSection();
     this._scroll = new St.ScrollView({
       overlay_scrollbars: true,
@@ -208,7 +207,7 @@ class Indicator extends PanelMenu.Button {
         : _('Sync Service online');
     }
     this._setButtonIcon(this._syncToolButton, iconName);
-    this._attachHint(this._syncToolButton, this._syncStatusText);
+    this._setHint(this._syncToolButton, this._syncStatusText);
   }
 
   setTransfer(transfer) {
@@ -233,7 +232,8 @@ class Indicator extends PanelMenu.Button {
       this._addState(_('Clipboard history could not be loaded'), 'dialog-error-symbolic');
       return;
     }
-    const items = this._controller.search(this._query, PANEL_ITEM_LIMIT + 1);
+    const visibleItemLimit = this._settings.get_int('panel-visible-item-limit');
+    const items = this._controller.search(this._query, visibleItemLimit + 1);
     const currentDeviceId = this._actions.ensureIdentity().deviceId;
     this._multipleDevices = new Set(this._controller.items.map(item => item.originDeviceId || currentDeviceId)).size > 1;
     if (items.length === 0) {
@@ -246,11 +246,11 @@ class Indicator extends PanelMenu.Button {
       return;
     }
 
-    for (const item of items.slice(0, PANEL_ITEM_LIMIT))
+    for (const item of items.slice(0, visibleItemLimit))
       this._history.addMenuItem(this._entry(item));
-    if (items.length > PANEL_ITEM_LIMIT) {
+    if (items.length > visibleItemLimit) {
       this._history.addMenuItem(new PopupMenu.PopupMenuItem(
-        _('Only the first 200 entries are shown; refine the search to see others'),
+        _('More entries are available; refine the search to see others'),
         {reactive: false},
       ));
     }
@@ -297,22 +297,23 @@ class Indicator extends PanelMenu.Button {
       content.set_child(box);
     }
     content.connect('clicked', () => this._activate(item));
-    this._attachHint(content, item.remote && item.availability !== 'ready'
+    content.accessible_name = item.remote && item.availability !== 'ready'
       ? _('Download original and copy')
-      : _('Copy original'));
+      : _('Copy original');
     row.add_child(content);
 
     if (item.isText) {
       row.add_child(this._iconButton(
-        'format-text-plaintext-symbolic', _('Segment text'), () => this._openTokenizer(item)));
+        'format-text-plaintext-symbolic', _('Segment text'), () => this._openTokenizer(item), {showTooltip: false}));
     } else {
       row.add_child(this._iconButton(
-        'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item)));
+        'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item), {showTooltip: false}));
     }
     const pinButton = this._iconButton(
       item.favorite ? 'emblem-favorite-symbolic' : 'view-pin-symbolic',
       item.favorite ? _('Unpin') : _('Pin'),
       () => this._controller.toggleFavorite(item.id),
+      {showTooltip: false},
     );
     pinButton.toggle_mode = true;
     pinButton.checked = item.favorite;
@@ -322,12 +323,17 @@ class Indicator extends PanelMenu.Button {
     if (this._settings.get_boolean('sync-enabled'))
       row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
-      'edit-delete-symbolic', _('Delete from local history'), () => this._controller.remove(item.id)));
+      'edit-delete-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
     return row;
   }
 
   _syncButton(item) {
-    const button = this._iconButton('folder-remote-symbolic', _('Synchronize'), () => this._activateSync(item));
+    const button = this._iconButton(
+      'folder-remote-symbolic',
+      _('Synchronize'),
+      () => this._activateSync(item),
+      {showTooltip: false},
+    );
     button._clipboardItem = item;
     this._syncButtons.set(item.id, button);
     this._updateSyncButton(item, button);
@@ -339,36 +345,36 @@ class Indicator extends PanelMenu.Button {
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       if (transfer.totalBytes > 0) {
         button.set_child(new ProgressRing(transfer.completedBytes / transfer.totalBytes));
-        this._attachHint(button, `${transfer.direction === 'upload' ? _('Uploading') : _('Downloading')} · ${Math.round(transfer.completedBytes / transfer.totalBytes * 100)}%`);
+        this._setHint(button, `${transfer.direction === 'upload' ? _('Uploading') : _('Downloading')} · ${Math.round(transfer.completedBytes / transfer.totalBytes * 100)}%`);
       } else {
         this._setButtonIcon(button, 'content-loading-symbolic');
-        this._attachHint(button, transfer.state === 'waiting-for-peer' ? _('Waiting for peer device') : _('Preparing transfer'));
+        this._setHint(button, transfer.state === 'waiting-for-peer' ? _('Waiting for peer device') : _('Preparing transfer'));
       }
       return;
     }
     if (transfer?.state === 'failed' || transfer?.state === 'expired') {
       this._setButtonIcon(button, 'view-refresh-symbolic');
-      this._attachHint(button, transfer.errorMessage || _('Transfer failed; activate to retry'));
+      this._setHint(button, transfer.errorMessage || _('Transfer failed; activate to retry'));
       return;
     }
     if (transfer?.state === 'completed') {
       this._setButtonIcon(button, 'emblem-ok-symbolic');
-      this._attachHint(button, transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
+      this._setHint(button, transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
       return;
     }
     if (!this._settings.get_boolean('sync-enabled')) {
       this._setButtonIcon(button, 'network-offline-symbolic');
-      this._attachHint(button, _('Synchronization is disabled'));
+      this._setHint(button, _('Synchronization is disabled'));
       return;
     }
     if (item.remote && item.availability !== 'ready') {
       const failed = item.availability === 'failed';
       this._setButtonIcon(button, failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
-      this._attachHint(button, failed ? _('Retry original download') : _('Download original'));
+      this._setHint(button, failed ? _('Retry original download') : _('Download original'));
       return;
     }
     this._setButtonIcon(button, 'folder-remote-symbolic');
-    this._attachHint(button, item.remote ? _('Original is available locally') : _('Send to synchronization Service'));
+    this._setHint(button, item.remote ? _('Original is available locally') : _('Send to synchronization Service'));
   }
 
   async _activateSync(item) {
@@ -542,7 +548,8 @@ class Indicator extends PanelMenu.Button {
     return icon;
   }
 
-  _iconButton(iconName, hintText, callback) {
+  _iconButton(iconName, hintText, callback, options = {}) {
+    const {showTooltip = true} = options;
     const button = new St.Button({
       can_focus: true,
       track_hover: true,
@@ -550,13 +557,20 @@ class Indicator extends PanelMenu.Button {
       accessible_name: hintText,
     });
     this._setButtonIcon(button, iconName);
-    this._attachHint(button, hintText);
+    button._clipboardXShowTooltip = showTooltip;
+    this._setHint(button, hintText);
     button.connect('clicked', () => Promise.resolve(callback()).catch(error => this._actions.reportError(error)));
     return button;
   }
 
   _setButtonIcon(button, iconName) {
     button.set_child(new St.Icon({icon_name: iconName, icon_size: ICON_SIZE}));
+  }
+
+  _setHint(actor, text) {
+    actor.accessible_name = text;
+    if (actor._clipboardXShowTooltip)
+      this._attachHint(actor, text);
   }
 
   _attachHint(actor, text) {
@@ -631,7 +645,7 @@ class Indicator extends PanelMenu.Button {
     const paused = this._settings.get_boolean('private-mode');
     const text = paused ? _('Resume clipboard recording') : _('Pause clipboard recording');
     this._setButtonIcon(this._privateButton, paused ? 'media-playback-start-symbolic' : 'media-playback-pause-symbolic');
-    this._attachHint(this._privateButton, text);
+    this._setHint(this._privateButton, text);
     this._privateButton.checked = paused;
   }
 
@@ -659,6 +673,7 @@ class Indicator extends PanelMenu.Button {
       this._controller.disconnect(this._changedSignal);
     for (const signal of [
       this._privateSignal,
+      this._visibleItemLimitSignal,
       this._syncEnabledSignal,
       this._deviceTagSignal,
       this._deviceIconSignal,
@@ -668,6 +683,7 @@ class Indicator extends PanelMenu.Button {
     }
     this._changedSignal = 0;
     this._privateSignal = 0;
+    this._visibleItemLimitSignal = 0;
     this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;

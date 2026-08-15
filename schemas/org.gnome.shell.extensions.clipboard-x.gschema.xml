@@ -50,6 +50,11 @@
       <range min="1" max="10000"/>
       <summary>Maximum history entries</summary>
     </key>
+    <key name="panel-visible-item-limit" type="i">
+      <default>20</default>
+      <range min="1" max="200"/>
+      <summary>Maximum entries rendered in the clipboard panel</summary>
+    </key>
     <key name="cache-size-mib" type="i">
       <default>256</default>
       <range min="16" max="16384"/>

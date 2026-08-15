@@ -29,6 +29,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const appearance = new Adw.PreferencesGroup({title: _('Panel and history')});
     page.add(appearance);
     appearance.add(this._switch(settings, 'show-indicator', _('Show panel indicator')));
+    appearance.add(this._spin(settings, 'panel-visible-item-limit', _('Maximum entries shown in panel'), 1, 200, 1));
     appearance.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
     appearance.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
     appearance.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
