@@ -63,25 +63,35 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       row._clipboardXPageName = name;
       navigation.append(row);
     }
-    navigation.connect('row-selected', (_list, row) => {
-      if (row)
-        stack.visible_child_name = row._clipboardXPageName;
-    });
     const sidebar = new Gtk.ScrolledWindow({
       child: navigation,
-      width_request: 190,
       vexpand: true,
       hscrollbar_policy: Gtk.PolicyType.NEVER,
     });
-    const content = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL});
-    content.append(sidebar);
-    content.append(new Gtk.Separator({orientation: Gtk.Orientation.VERTICAL}));
-    content.append(stack);
-    const toolbarView = new Adw.ToolbarView({content});
-    toolbarView.add_top_bar(new Adw.HeaderBar({
-      title_widget: new Adw.WindowTitle({title: 'Clipboard X'}),
-    }));
-    window.set_content(toolbarView);
+    const sidebarView = new Adw.ToolbarView({content: sidebar});
+    sidebarView.add_top_bar(new Adw.HeaderBar());
+    const sidebarPage = new Adw.NavigationPage({
+      title: 'Clipboard X',
+      child: sidebarView,
+    });
+    const contentView = new Adw.ToolbarView({content: stack});
+    contentView.add_top_bar(new Adw.HeaderBar());
+    const contentPage = new Adw.NavigationPage({
+      title: pages[0][2].title,
+      child: contentView,
+    });
+    const splitView = new Adw.NavigationSplitView({
+      sidebar: sidebarPage,
+      content: contentPage,
+    });
+    navigation.connect('row-selected', (_list, row) => {
+      if (!row)
+        return;
+      stack.visible_child_name = row._clipboardXPageName;
+      contentPage.title = stack.visible_child.title;
+      splitView.show_content = true;
+    });
+    window.set_content(splitView);
     navigation.select_row(navigation.get_row_at_index(0));
   }
 
