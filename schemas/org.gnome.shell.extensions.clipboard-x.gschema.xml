@@ -55,6 +55,20 @@
       <range min="1" max="200"/>
       <summary>Maximum entries rendered in the clipboard panel</summary>
     </key>
+    <key name="panel-width" type="i">
+      <default>360</default>
+      <range min="300" max="800"/>
+      <summary>Clipboard panel width in logical pixels</summary>
+    </key>
+    <key name="panel-height" type="i">
+      <default>220</default>
+      <range min="160" max="800"/>
+      <summary>Clipboard history viewport height in logical pixels</summary>
+    </key>
+    <key name="preserve-panel-state" type="b">
+      <default>false</default>
+      <summary>Reopen the clipboard panel in its previous view</summary>
+    </key>
     <key name="cache-size-mib" type="i">
       <default>256</default>
       <range min="16" max="16384"/>

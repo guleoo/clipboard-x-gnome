@@ -82,6 +82,7 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
+    this._resetViewAfterClose = false;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
     this._tooltip = new St.Label({
@@ -97,15 +98,28 @@ class Indicator extends PanelMenu.Button {
     }));
     this.menu.actor.add_style_class_name('clipboard-x-menu');
     this._buildMenu();
+    this._updatePanelGeometry();
 
     this._changedSignal = controller.connect('changed', () => this._refresh());
     this._privateSignal = settings.connect('changed::private-mode', () => this._updatePrivateButton());
+    this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
+    this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
     this._visibleItemLimitSignal = settings.connect('changed::panel-visible-item-limit', () => this._refresh());
+    this._preservePanelStateSignal = settings.connect(
+      'changed::preserve-panel-state',
+      () => this._updatePanelStateRetention(),
+    );
     this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
+    this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
+      if (!this.menu.actor.visible && this._resetViewAfterClose)
+        this._resetPanelView();
+    });
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
+        if (this._resetViewAfterClose)
+          this._resetPanelView();
         this._actions.ensureIdentity();
         if (!this._tokenState) {
           this._search.set_text('');
@@ -114,11 +128,11 @@ class Indicator extends PanelMenu.Button {
       } else {
         this._cancelFocusSearch();
         this._hideTooltip();
-        const wasTokenizing = Boolean(this._tokenState);
-        this._tokenState = null;
-        this._searchItem.visible = true;
-        if (wasTokenizing)
-          this._refresh();
+        if (this._tokenState && !this._settings.get_boolean('preserve-panel-state')) {
+          this._resetViewAfterClose = true;
+          if (!this.menu.actor.visible)
+            this._resetPanelView();
+        }
       }
     });
     this._refresh();
@@ -130,13 +144,15 @@ class Indicator extends PanelMenu.Button {
     const searchToolbar = new St.BoxLayout({
       style_class: 'clipboard-x-search-toolbar',
       x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
     });
     this._search = new St.Entry({
-      style_class: 'search-entry clipboard-x-search',
+      style_class: 'clipboard-x-search',
       hint_text: _('Search clipboard history…'),
       can_focus: true,
       x_expand: true,
-      primary_icon: new St.Icon({icon_name: 'edit-find-symbolic', icon_size: ICON_SIZE}),
+      y_align: Clutter.ActorAlign.CENTER,
+      primary_icon: new St.Icon({icon_name: 'edit-find-symbolic', icon_size: 14}),
     });
     this._search.clutter_text.connect('text-changed', () => {
       this._query = this._search.get_text();
@@ -144,14 +160,29 @@ class Indicator extends PanelMenu.Button {
         this._refresh();
     });
     searchToolbar.add_child(this._search);
-    const toolbar = new St.BoxLayout({style_class: 'clipboard-x-toolbar'});
+    const toolbar = new St.BoxLayout({
+      style_class: 'clipboard-x-toolbar',
+      y_align: Clutter.ActorAlign.CENTER,
+    });
     this._toolbar = toolbar;
     toolbar.add_child(this._iconButton(
-      'camera-photo-symbolic', _('Screenshot'), () => this._runAndClose(() => this._actions.screenshot())));
+      'camera-photo-symbolic',
+      _('Screenshot'),
+      () => this._runAndClose(() => this._actions.screenshot()),
+      {iconSize: 14},
+    ));
     toolbar.add_child(this._iconButton(
-      'color-select-symbolic', _('Pick color'), () => this._runAndClose(() => this._actions.pickColor())));
+      'color-select-symbolic',
+      _('Pick color'),
+      () => this._runAndClose(() => this._actions.pickColor()),
+      {iconSize: 14},
+    ));
     this._syncToolButton = this._iconButton(
-      'network-offline-symbolic', _('Synchronization settings'), () => this._runAndClose(() => this._actions.openPreferences()));
+      'network-offline-symbolic',
+      _('Synchronization settings'),
+      () => this._runAndClose(() => this._actions.openPreferences()),
+      {iconSize: 14},
+    );
     toolbar.add_child(this._syncToolButton);
     searchToolbar.add_child(toolbar);
     searchItem.add_child(searchToolbar);
@@ -173,7 +204,7 @@ class Indicator extends PanelMenu.Button {
     this._footer = footer;
     footer.add_child(new St.Widget({x_expand: true}));
     this._privateButton = this._iconButton(
-      'media-playback-pause-symbolic',
+      'security-high-symbolic',
       _('Pause clipboard recording'),
       () => {
         this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
@@ -277,6 +308,7 @@ class Indicator extends PanelMenu.Button {
       content.set_child(new St.Label({
         text: title.slice(0, 240),
         style_class: 'clipboard-x-entry-preview',
+        style: `max-width: ${this._entryPreviewWidth}px;`,
         x_expand: true,
         x_align: Clutter.ActorAlign.START,
         y_align: Clutter.ActorAlign.CENTER,
@@ -428,6 +460,7 @@ class Indicator extends PanelMenu.Button {
     preview.add_child(new St.Label({
       text: state.source.slice(0, 500),
       style_class: 'clipboard-x-token-source',
+      style: `max-width: ${this._tokenContentWidth}px;`,
       x_expand: true,
     }));
     this._history.addMenuItem(preview);
@@ -448,6 +481,7 @@ class Indicator extends PanelMenu.Button {
         label: token.text,
         can_focus: true,
         toggle_mode: true,
+        checked: state.selected.has(token.index),
         style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
       });
       button.connect('clicked', () => {
@@ -471,6 +505,7 @@ class Indicator extends PanelMenu.Button {
     this._tokenResult = new St.Label({
       text: _('Select one or more words'),
       style_class: 'clipboard-x-token-result',
+      style: `max-width: ${this._tokenContentWidth}px;`,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -480,6 +515,7 @@ class Indicator extends PanelMenu.Button {
     this._tokenCopy.opacity = 128;
     resultItem.add_child(this._tokenCopy);
     this._history.addMenuItem(resultItem);
+    this._updateTokenResult();
   }
 
   _updateTokenResult() {
@@ -494,9 +530,41 @@ class Indicator extends PanelMenu.Button {
     if (!result)
       return;
     this._actions.copyText(result);
+    this.menu.close();
+  }
+
+  _updatePanelGeometry() {
+    const panelWidth = this._settings.get_int('panel-width');
+    const panelHeight = this._settings.get_int('panel-height');
+    const searchWidth = Math.max(140, panelWidth - 140);
+    this._entryPreviewWidth = Math.max(125, panelWidth - 175);
+    this._tokenContentWidth = Math.max(260, panelWidth - 40);
+    this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
+    this._search.set_style(`width: ${searchWidth}px; min-width: 0; max-width: ${searchWidth}px;`);
+    this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    if (this._history)
+      this._refresh();
+  }
+
+  _updatePanelStateRetention() {
+    if (this._settings.get_boolean('preserve-panel-state')) {
+      this._resetViewAfterClose = false;
+      return;
+    }
+    if (!this.menu.isOpen && this._tokenState) {
+      this._resetViewAfterClose = true;
+      if (!this.menu.actor.visible)
+        this._resetPanelView();
+    }
+  }
+
+  _resetPanelView() {
+    this._resetViewAfterClose = false;
+    if (!this._tokenState)
+      return;
     this._tokenState = null;
     this._searchItem.visible = true;
-    this.menu.close();
+    this._refresh();
   }
 
   _closeTokenizer() {
@@ -549,13 +617,14 @@ class Indicator extends PanelMenu.Button {
   }
 
   _iconButton(iconName, hintText, callback, options = {}) {
-    const {showTooltip = true} = options;
+    const {showTooltip = true, iconSize = ICON_SIZE} = options;
     const button = new St.Button({
       can_focus: true,
       track_hover: true,
       style_class: 'clipboard-x-icon-button',
       accessible_name: hintText,
     });
+    button._clipboardXIconSize = iconSize;
     this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
     this._setHint(button, hintText);
@@ -564,7 +633,10 @@ class Indicator extends PanelMenu.Button {
   }
 
   _setButtonIcon(button, iconName) {
-    button.set_child(new St.Icon({icon_name: iconName, icon_size: ICON_SIZE}));
+    button.set_child(new St.Icon({
+      icon_name: iconName,
+      icon_size: button._clipboardXIconSize ?? ICON_SIZE,
+    }));
   }
 
   _setHint(actor, text) {
@@ -644,9 +716,15 @@ class Indicator extends PanelMenu.Button {
   _updatePrivateButton() {
     const paused = this._settings.get_boolean('private-mode');
     const text = paused ? _('Resume clipboard recording') : _('Pause clipboard recording');
-    this._setButtonIcon(this._privateButton, paused ? 'media-playback-start-symbolic' : 'media-playback-pause-symbolic');
+    this._setButtonIcon(this._privateButton, 'security-high-symbolic');
     this._setHint(this._privateButton, text);
     this._privateButton.checked = paused;
+    this._privateButton.remove_style_class_name(
+      paused ? 'clipboard-x-private-inactive' : 'clipboard-x-private-active',
+    );
+    this._privateButton.add_style_class_name(
+      paused ? 'clipboard-x-private-active' : 'clipboard-x-private-inactive',
+    );
   }
 
   _runAndClose(callback) {
@@ -673,7 +751,10 @@ class Indicator extends PanelMenu.Button {
       this._controller.disconnect(this._changedSignal);
     for (const signal of [
       this._privateSignal,
+      this._panelWidthSignal,
+      this._panelHeightSignal,
       this._visibleItemLimitSignal,
+      this._preservePanelStateSignal,
       this._syncEnabledSignal,
       this._deviceTagSignal,
       this._deviceIconSignal,
@@ -683,10 +764,16 @@ class Indicator extends PanelMenu.Button {
     }
     this._changedSignal = 0;
     this._privateSignal = 0;
+    this._panelWidthSignal = 0;
+    this._panelHeightSignal = 0;
     this._visibleItemLimitSignal = 0;
+    this._preservePanelStateSignal = 0;
     this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;
+    if (this._menuVisibilitySignal)
+      this.menu.actor.disconnect(this._menuVisibilitySignal);
+    this._menuVisibilitySignal = 0;
     this._tooltip.destroy();
     super.destroy();
   }
