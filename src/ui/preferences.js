@@ -34,12 +34,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
-      ['shortcuts', 'preferences-desktop-keyboard-shortcuts-symbolic', this._shortcutsPage(settings)],
+      ['shortcuts', 'input-keyboard-symbolic', this._shortcutsPage(settings)],
     ];
     const stack = new Gtk.Stack({
       hexpand: true,
       vexpand: true,
-      transition_type: Gtk.StackTransitionType.CROSSFADE,
+      transition_type: Gtk.StackTransitionType.NONE,
     });
     const navigation = new Gtk.ListBox({
       selection_mode: Gtk.SelectionMode.SINGLE,
@@ -57,7 +57,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         margin_start: 12,
         margin_end: 12,
       });
-      content.append(new Gtk.Image({icon_name: iconName, pixel_size: 18}));
+      content.append(new Gtk.Image({icon_name: iconName, pixel_size: 16}));
       content.append(new Gtk.Label({label: page.title, xalign: 0, hexpand: true}));
       row.set_child(content);
       row._clipboardXPageName = name;
@@ -455,7 +455,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
 
   _screenshotPage(settings) {
     const page = new Adw.PreferencesPage({title: _('Screenshot'), icon_name: 'camera-photo-symbolic'});
-    const screenshot = new Adw.PreferencesGroup({title: _('Screenshot Portal')});
+    const screenshot = new Adw.PreferencesGroup({title: _('Screenshot')});
     page.add(screenshot);
     screenshot.add(this._combo(settings, 'screenshot-target', _('Default target'), [
       ['interactive', _('Interactive')],
@@ -468,7 +468,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     screenshot.add(this._switch(settings, 'screenshot-write-clipboard', _('Copy screenshot')));
     screenshot.add(this._switch(settings, 'screenshot-open-editor', _('Open image editor')));
 
-    const editor = new Adw.PreferencesGroup({title: _('Image editor')});
+    const editor = new Adw.PreferencesGroup({title: _('Image editing')});
     page.add(editor);
     editor.add(this._editorAppCombo(settings));
     editor.add(this._entry(
@@ -492,7 +492,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   _shortcutsPage(settings) {
     const page = new Adw.PreferencesPage({
       title: _('Shortcuts'),
-      icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
+      icon_name: 'input-keyboard-symbolic',
     });
     const clipboard = new Adw.PreferencesGroup({
       title: _('Clipboard'),
