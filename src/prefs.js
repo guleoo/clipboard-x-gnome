@@ -62,6 +62,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       css_classes: ['heading'],
     }));
     const palette = new Gtk.FlowBox({
+      css_classes: ['clipboard-x-theme-color-palette'],
       selection_mode: Gtk.SelectionMode.NONE,
       homogeneous: false,
       min_children_per_line: 1,
@@ -84,6 +85,17 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         background-color: transparent;
         background-image: none;
         box-shadow: none;
+        border-radius: 999px;
+        padding: 0;
+      }
+      .clipboard-x-theme-color-palette > flowboxchild,
+      .clipboard-x-theme-color-palette > flowboxchild:hover,
+      .clipboard-x-theme-color-palette > flowboxchild:active,
+      .clipboard-x-theme-color-palette > flowboxchild:selected {
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+        padding: 0;
       }
     `);
     Gtk.StyleContext.add_provider_for_display(
@@ -109,8 +121,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         has_frame: false,
         css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: label,
-        width_request: 30,
-        height_request: 30,
+        width_request: 26,
+        height_request: 26,
+        halign: Gtk.Align.CENTER,
+        valign: Gtk.Align.CENTER,
+        hexpand: false,
+        vexpand: false,
       });
       button.connect('toggled', () => {
         if (button.active && settings.get_string('theme-color') !== value)
@@ -159,8 +175,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         has_frame: false,
         css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: _('Add custom color'),
-        width_request: 30,
-        height_request: 30,
+        width_request: 26,
+        height_request: 26,
+        halign: Gtk.Align.CENTER,
+        valign: Gtk.Align.CENTER,
+        hexpand: false,
+        vexpand: false,
       });
       addButton.connect('clicked', () => {
         const dialog = new Gtk.ColorDialog({
