@@ -25,37 +25,64 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
     const {deviceId} = ensureDeviceIdentity(settings);
+    window.set_title('Clipboard X');
     window.set_default_size(900, 700);
 
     const pages = [
-      ['general', this._generalPage(settings)],
-      ['clipboard', this._clipboardPage(settings)],
-      ['sync', this._syncPage(settings, deviceId)],
-      ['color-picker', this._colorPage(settings)],
-      ['screenshot', this._screenshotPage(settings)],
-      ['shortcuts', this._shortcutsPage(settings)],
+      ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings)],
+      ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings)],
+      ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
+      ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
+      ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
+      ['shortcuts', 'preferences-desktop-keyboard-shortcuts-symbolic', this._shortcutsPage(settings)],
     ];
     const stack = new Gtk.Stack({
       hexpand: true,
       vexpand: true,
       transition_type: Gtk.StackTransitionType.CROSSFADE,
     });
-    for (const [name, page] of pages) {
-      const stackPage = stack.add_titled(page, name, page.title);
-      stackPage.icon_name = page.icon_name;
-    }
-    const sidebar = new Gtk.StackSidebar({
-      stack,
+    const navigation = new Gtk.ListBox({
+      selection_mode: Gtk.SelectionMode.SINGLE,
+      css_classes: ['navigation-sidebar'],
       width_request: 190,
       vexpand: true,
+    });
+    for (const [name, iconName, page] of pages) {
+      stack.add_named(page, name);
+      const row = new Gtk.ListBoxRow({activatable: true});
+      const content = new Gtk.Box({
+        spacing: 10,
+        margin_top: 10,
+        margin_bottom: 10,
+        margin_start: 12,
+        margin_end: 12,
+      });
+      content.append(new Gtk.Image({icon_name: iconName, pixel_size: 18}));
+      content.append(new Gtk.Label({label: page.title, xalign: 0, hexpand: true}));
+      row.set_child(content);
+      row._clipboardXPageName = name;
+      navigation.append(row);
+    }
+    navigation.connect('row-selected', (_list, row) => {
+      if (row)
+        stack.visible_child_name = row._clipboardXPageName;
+    });
+    const sidebar = new Gtk.ScrolledWindow({
+      child: navigation,
+      width_request: 190,
+      vexpand: true,
+      hscrollbar_policy: Gtk.PolicyType.NEVER,
     });
     const content = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL});
     content.append(sidebar);
     content.append(new Gtk.Separator({orientation: Gtk.Orientation.VERTICAL}));
     content.append(stack);
     const toolbarView = new Adw.ToolbarView({content});
-    toolbarView.add_top_bar(new Adw.HeaderBar());
+    toolbarView.add_top_bar(new Adw.HeaderBar({
+      title_widget: new Adw.WindowTitle({title: 'Clipboard X'}),
+    }));
     window.set_content(toolbarView);
+    navigation.select_row(navigation.get_row_at_index(0));
   }
 
   _generalPage(settings) {

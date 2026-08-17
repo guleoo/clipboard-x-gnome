@@ -85,6 +85,7 @@ export const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
   _init(settings, controller, actions) {
     super._init(0.0, 'Clipboard X');
+    this.add_style_class_name('clipboard-x-panel-button');
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;

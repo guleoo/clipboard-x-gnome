@@ -2,6 +2,11 @@
   padding: 4px;
 }
 
+#panel .clipboard-x-panel-button {
+  -natural-hpadding: 4px;
+  -minimum-hpadding: 2px;
+}
+
 .clipboard-x-menu .popup-menu-item {
   padding: 2px 4px;
 }
@@ -45,12 +50,6 @@
 .clipboard-x-footer .clipboard-x-icon-button {
   color: rgba(255, 255, 255, 0.95);
   opacity: 1;
-}
-
-.clipboard-x-toolbar .clipboard-x-icon-button {
-  padding: 2px;
-  min-width: 22px;
-  min-height: 24px;
 }
 
 .clipboard-x-icon-button:hover,
