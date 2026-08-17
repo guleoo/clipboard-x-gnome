@@ -190,6 +190,10 @@ export async function run() {
   pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
+  const originalSourcePreview = indicator._settings.get_boolean('tokenizer-show-source-preview');
+  const originalConfineFocus = indicator._settings.get_boolean('tokenizer-confine-focus');
+  indicator._settings.set_boolean('tokenizer-show-source-preview', false);
+  indicator._settings.set_boolean('tokenizer-confine-focus', true);
   indicator.menu.open();
   await Scripting.sleep(100);
   await indicator._openTokenizer(capturedText);
@@ -207,6 +211,41 @@ export async function run() {
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
+  assert(global.stage.get_key_focus() === tokenButtons[0],
+    'Opening the tokenizer did not focus the first token');
+  assert(!indicator._tokenSource.visible,
+    'Disabled source preview remained visible in the tokenizer');
+  assert(tokenButtons.every(button => !button._clipboardXHintConnected),
+    'Tokenizer buttons unexpectedly registered tooltip handlers');
+  assert(indicator._handleTokenKey(
+    tokenButtons[0],
+    tokenState.tokens[0],
+    tokenState,
+    entryEvent(Clutter.KEY_Right),
+  ) === Clutter.EVENT_STOP && global.stage.get_key_focus() === tokenButtons[1],
+  'Right Arrow did not move focus to the next token');
+  const lastTokenButton = tokenButtons.at(-1);
+  lastTokenButton.grab_key_focus();
+  assert(indicator._handleTokenKey(
+    lastTokenButton,
+    lastTokenButton._clipboardXToken,
+    tokenState,
+    entryEvent(Clutter.KEY_Right),
+  ) === Clutter.EVENT_STOP && global.stage.get_key_focus() === lastTokenButton,
+  'Confined tokenizer focus escaped at the final token');
+  indicator._settings.set_boolean('tokenizer-confine-focus', false);
+  assert(indicator._handleTokenKey(
+    lastTokenButton,
+    lastTokenButton._clipboardXToken,
+    tokenState,
+    entryEvent(Clutter.KEY_Right),
+  ) === Clutter.EVENT_PROPAGATE,
+  'Disabled focus confinement still consumed an edge arrow key');
+  indicator._settings.set_boolean('tokenizer-confine-focus', true);
+  indicator._settings.set_boolean('tokenizer-show-source-preview', true);
+  assert(indicator._tokenSource.visible,
+    'Enabled source preview was not shown immediately');
+  tokenButtons[0].grab_key_focus();
   indicator._handleTokenKey(
     tokenButtons[0],
     tokenState.tokens[0],
@@ -240,6 +279,8 @@ export async function run() {
     'Selected token did not update the copy result preview');
   assert(indicator._tokenResult.get_parent().get_parent() === indicator._tokenPanel,
     'Selected-token preview is not fixed outside the scrolling token area');
+  indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
+  indicator._settings.set_boolean('tokenizer-confine-focus', originalConfineFocus);
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history')
       && indicator._searchItem.visible

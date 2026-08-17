@@ -314,6 +314,16 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
     history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MB')));
 
+    const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
+    page.add(tokenizer);
+    tokenizer.add(this._switch(settings, 'tokenizer-show-source-preview', _('Show source text preview')));
+    tokenizer.add(this._switch(
+      settings,
+      'tokenizer-confine-focus',
+      _('Keep keyboard focus in tokenizer'),
+      _('At the edge, arrow keys do not move focus outside the tokenizer panel'),
+    ));
+
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);
     privacy.add(this._switch(settings, 'private-mode', _('Pause clipboard recording')));

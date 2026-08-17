@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-17 15:37+0800\n"
+"POT-Creation-Date: 2026-08-17 16:09+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,196 +27,180 @@ msgid ""
 "keyboard is idle."
 msgstr ""
 
-#: src/ui/indicator.js:95 src/ui/indicator.js:340
+#: src/ui/indicator.js:113 src/ui/indicator.js:365
 msgid "Sync disabled"
 msgstr ""
 
-#: src/ui/indicator.js:182
+#: src/ui/indicator.js:206
 msgid "Search clipboard history…"
 msgstr ""
 
-#: src/ui/indicator.js:203 src/ui/preferences.js:457 src/ui/preferences.js:458
-#: src/ui/preferences.js:543
+#: src/ui/indicator.js:227 src/ui/preferences.js:467 src/ui/preferences.js:468
+#: src/ui/preferences.js:553
 msgid "Screenshot"
 msgstr ""
 
-#: src/ui/indicator.js:209 src/ui/preferences.js:541
+#: src/ui/indicator.js:233 src/ui/preferences.js:551
 msgid "Pick color"
 msgstr ""
 
-#: src/ui/indicator.js:215 src/ui/indicator.js:1112
+#: src/ui/indicator.js:239 src/ui/indicator.js:1208
 msgid "Privacy mode"
 msgstr ""
 
-#: src/ui/indicator.js:251
+#: src/ui/indicator.js:275
 msgid "Back to clipboard history"
 msgstr ""
 
-#: src/ui/indicator.js:256 src/ui/indicator.js:470
+#: src/ui/indicator.js:280 src/ui/indicator.js:495
 msgid "Segment text"
 msgstr ""
 
-#: src/ui/indicator.js:285 src/ui/indicator.js:850
+#: src/ui/indicator.js:310 src/ui/indicator.js:890
 msgid "Select one or more words"
 msgstr ""
 
-#: src/ui/indicator.js:294
+#: src/ui/indicator.js:319
 msgid "Copy selected words"
 msgstr ""
 
-#: src/ui/indicator.js:315
+#: src/ui/indicator.js:340
 msgid "Synchronization settings"
 msgstr ""
 
-#: src/ui/indicator.js:319 src/ui/preferences.js:505
+#: src/ui/indicator.js:344 src/ui/preferences.js:515
 msgid "Clear unpinned history"
 msgstr ""
 
-#: src/ui/indicator.js:321
+#: src/ui/indicator.js:346
 msgid "Preferences"
 msgstr ""
 
-#: src/ui/indicator.js:343
+#: src/ui/indicator.js:368
 msgid "Sync Service offline"
 msgstr ""
 
-#: src/ui/indicator.js:346
+#: src/ui/indicator.js:371
 msgid "Sync protocol error"
 msgstr ""
 
-#: src/ui/indicator.js:352
+#: src/ui/indicator.js:377
 msgid "Sync Service online"
 msgstr ""
 
-#: src/ui/indicator.js:373
+#: src/ui/indicator.js:398
 msgid "Loading clipboard history…"
 msgstr ""
 
-#: src/ui/indicator.js:377
+#: src/ui/indicator.js:402
 msgid "Clipboard history could not be loaded"
 msgstr ""
 
-#: src/ui/indicator.js:387
+#: src/ui/indicator.js:412
 msgid "No matching entries"
 msgstr ""
 
-#: src/ui/indicator.js:387
+#: src/ui/indicator.js:412
 msgid "Clipboard history is empty"
 msgstr ""
 
-#: src/ui/indicator.js:398
+#: src/ui/indicator.js:423
 msgid "More entries are available; refine the search to see others"
 msgstr ""
 
-#: src/ui/indicator.js:421 src/ui/preferences.js:424
+#: src/ui/indicator.js:446 src/ui/preferences.js:434
 msgid "Text"
 msgstr ""
 
-#: src/ui/indicator.js:440
+#: src/ui/indicator.js:465
 msgid "Image"
 msgstr ""
 
-#: src/ui/indicator.js:464
+#: src/ui/indicator.js:489
 msgid "Download original and copy"
 msgstr ""
 
-#: src/ui/indicator.js:465
+#: src/ui/indicator.js:490
 msgid "Copy original"
 msgstr ""
 
-#: src/ui/indicator.js:473
+#: src/ui/indicator.js:498
 msgid "Edit image"
 msgstr ""
 
-#: src/ui/indicator.js:477
+#: src/ui/indicator.js:502
 msgid "Unpin"
 msgstr ""
 
-#: src/ui/indicator.js:477
+#: src/ui/indicator.js:502
 msgid "Pin"
 msgstr ""
 
-#: src/ui/indicator.js:492
+#: src/ui/indicator.js:517
 msgid "Delete from local history"
 msgstr ""
 
-#: src/ui/indicator.js:500
+#: src/ui/indicator.js:525
 msgid "Synchronize"
 msgstr ""
 
-#: src/ui/indicator.js:515
+#: src/ui/indicator.js:540
 msgid "Uploading"
 msgstr ""
 
-#: src/ui/indicator.js:515
+#: src/ui/indicator.js:540
 msgid "Downloading"
 msgstr ""
 
-#: src/ui/indicator.js:518
+#: src/ui/indicator.js:543
 msgid "Waiting for peer device"
 msgstr ""
 
-#: src/ui/indicator.js:518
+#: src/ui/indicator.js:543
 msgid "Preparing transfer"
 msgstr ""
 
-#: src/ui/indicator.js:524
+#: src/ui/indicator.js:549
 msgid "Transfer failed; activate to retry"
 msgstr ""
 
-#: src/ui/indicator.js:529
+#: src/ui/indicator.js:554
 msgid "Upload completed"
 msgstr ""
 
-#: src/ui/indicator.js:529
+#: src/ui/indicator.js:554
 msgid "Original downloaded"
 msgstr ""
 
-#: src/ui/indicator.js:534
+#: src/ui/indicator.js:559
 msgid "Synchronization is disabled"
 msgstr ""
 
-#: src/ui/indicator.js:540
+#: src/ui/indicator.js:565
 msgid "Retry original download"
 msgstr ""
 
-#: src/ui/indicator.js:540
+#: src/ui/indicator.js:565
 msgid "Download original"
 msgstr ""
 
-#: src/ui/indicator.js:544
+#: src/ui/indicator.js:569
 msgid "Original is available locally"
 msgstr ""
 
-#: src/ui/indicator.js:544
+#: src/ui/indicator.js:569
 msgid "Send to synchronization Service"
 msgstr ""
 
-#: src/ui/indicator.js:566
+#: src/ui/indicator.js:591
 msgid "This text is too large for interactive processing"
 msgstr ""
 
-#: src/ui/indicator.js:653
-msgid "URL"
-msgstr ""
-
-#: src/ui/indicator.js:655
-msgid "Number"
-msgstr ""
-
-#: src/ui/indicator.js:656
-msgid "Email address"
-msgstr ""
-
-#: src/ui/indicator.js:656
-msgid "Word"
-msgstr ""
-
-#: src/ui/indicator.js:670
+#: src/ui/indicator.js:693
 msgid "No words found"
 msgstr ""
 
-#: src/ui/indicator.js:970
+#: src/ui/indicator.js:1030
 msgid "Unknown device"
 msgstr ""
 
@@ -241,7 +225,7 @@ msgid "Panel width"
 msgstr ""
 
 #: src/ui/preferences.js:110 src/ui/preferences.js:111
-#: src/ui/preferences.js:437
+#: src/ui/preferences.js:447
 msgid "px"
 msgstr ""
 
@@ -302,7 +286,7 @@ msgstr ""
 msgid "Choose custom theme color"
 msgstr ""
 
-#: src/ui/preferences.js:309 src/ui/preferences.js:498
+#: src/ui/preferences.js:309 src/ui/preferences.js:508
 msgid "Clipboard"
 msgstr ""
 
@@ -319,7 +303,7 @@ msgid "Cache size"
 msgstr ""
 
 #: src/ui/preferences.js:313 src/ui/preferences.js:315
-#: src/ui/preferences.js:436
+#: src/ui/preferences.js:446
 msgid "MB"
 msgstr ""
 
@@ -335,381 +319,393 @@ msgstr ""
 msgid "Maximum item size"
 msgstr ""
 
-#: src/ui/preferences.js:317
-msgid "Privacy"
+#: src/ui/preferences.js:317 src/ui/preferences.js:534
+msgid "Tokenizer"
 msgstr ""
 
 #: src/ui/preferences.js:319
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/preferences.js:320 src/ui/preferences.js:427
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/preferences.js:321
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/preferences.js:322
-msgid "Keep until extension stops"
+msgid "Show source text preview"
 msgstr ""
 
 #: src/ui/preferences.js:323
-msgid "Store like other history"
+msgid "Keep keyboard focus in tokenizer"
 msgstr ""
 
-#: src/ui/preferences.js:328
-msgid "Excluded applications"
+#: src/ui/preferences.js:324
+msgid "At the edge, arrow keys do not move focus outside the tokenizer panel"
+msgstr ""
+
+#: src/ui/preferences.js:327
+msgid "Privacy"
 msgstr ""
 
 #: src/ui/preferences.js:329
-msgid "Comma-separated window classes"
+msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/preferences.js:335
-msgid "Synchronization"
+#: src/ui/preferences.js:330 src/ui/preferences.js:437
+msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/preferences.js:336
-msgid "Device"
+#: src/ui/preferences.js:331
+msgid "Do not record"
+msgstr ""
+
+#: src/ui/preferences.js:332
+msgid "Keep until extension stops"
+msgstr ""
+
+#: src/ui/preferences.js:333
+msgid "Store like other history"
 msgstr ""
 
 #: src/ui/preferences.js:338
-msgid "Device ID"
+msgid "Excluded applications"
 msgstr ""
 
-#: src/ui/preferences.js:343
-msgid "Device tag"
-msgstr ""
-
-#: src/ui/preferences.js:343
-msgid "Friendly name shown during device discovery"
-msgstr ""
-
-#: src/ui/preferences.js:344
-msgid "Device icon"
+#: src/ui/preferences.js:339
+msgid "Comma-separated window classes"
 msgstr ""
 
 #: src/ui/preferences.js:345
-msgid "Desktop"
+msgid "Synchronization"
 msgstr ""
 
 #: src/ui/preferences.js:346
-msgid "Laptop"
-msgstr ""
-
-#: src/ui/preferences.js:347
-msgid "Phone"
+msgid "Device"
 msgstr ""
 
 #: src/ui/preferences.js:348
-msgid "Tablet"
-msgstr ""
-
-#: src/ui/preferences.js:349
-msgid "Server"
-msgstr ""
-
-#: src/ui/preferences.js:350
-msgid "Other"
+msgid "Device ID"
 msgstr ""
 
 #: src/ui/preferences.js:353
-msgid "Service connection"
+msgid "Device tag"
+msgstr ""
+
+#: src/ui/preferences.js:353
+msgid "Friendly name shown during device discovery"
+msgstr ""
+
+#: src/ui/preferences.js:354
+msgid "Device icon"
 msgstr ""
 
 #: src/ui/preferences.js:355
-msgid "Enable synchronization integration"
+msgid "Desktop"
+msgstr ""
+
+#: src/ui/preferences.js:356
+msgid "Laptop"
+msgstr ""
+
+#: src/ui/preferences.js:357
+msgid "Phone"
+msgstr ""
+
+#: src/ui/preferences.js:358
+msgid "Tablet"
 msgstr ""
 
 #: src/ui/preferences.js:359
+msgid "Server"
+msgstr ""
+
+#: src/ui/preferences.js:360
+msgid "Other"
+msgstr ""
+
+#: src/ui/preferences.js:363
+msgid "Service connection"
+msgstr ""
+
+#: src/ui/preferences.js:365
+msgid "Enable synchronization integration"
+msgstr ""
+
+#: src/ui/preferences.js:369
 msgid "D-Bus name"
 msgstr ""
 
-#: src/ui/preferences.js:366
+#: src/ui/preferences.js:376
 msgid "Object path"
 msgstr ""
 
-#: src/ui/preferences.js:370
+#: src/ui/preferences.js:380
 msgid "Service status"
 msgstr ""
 
-#: src/ui/preferences.js:370
+#: src/ui/preferences.js:380
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/preferences.js:371
+#: src/ui/preferences.js:381
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/preferences.js:374
+#: src/ui/preferences.js:384
 msgid "Connecting…"
 msgstr ""
 
-#: src/ui/preferences.js:385
+#: src/ui/preferences.js:395
 msgid "item limit"
 msgstr ""
 
-#: src/ui/preferences.js:386
+#: src/ui/preferences.js:396
 msgid "preview limit"
 msgstr ""
 
-#: src/ui/preferences.js:398
+#: src/ui/preferences.js:408
 msgid "Service preferences"
 msgstr ""
 
-#: src/ui/preferences.js:399
+#: src/ui/preferences.js:409
 msgid "Provided by the external synchronization Service"
 msgstr ""
 
-#: src/ui/preferences.js:401
+#: src/ui/preferences.js:411
 msgid "Open"
 msgstr ""
 
-#: src/ui/preferences.js:412
+#: src/ui/preferences.js:422
 msgid "Transfer policy"
 msgstr ""
 
-#: src/ui/preferences.js:414
+#: src/ui/preferences.js:424
 msgid "Send mode"
 msgstr ""
 
-#: src/ui/preferences.js:415 src/ui/preferences.js:420
-#: src/ui/preferences.js:635 src/ui/preferences.js:645
+#: src/ui/preferences.js:425 src/ui/preferences.js:430
+#: src/ui/preferences.js:645 src/ui/preferences.js:655
 msgid "Disabled"
 msgstr ""
 
-#: src/ui/preferences.js:416
+#: src/ui/preferences.js:426
 msgid "Manual"
 msgstr ""
 
-#: src/ui/preferences.js:417
+#: src/ui/preferences.js:427
 msgid "Automatic"
 msgstr ""
 
-#: src/ui/preferences.js:419
+#: src/ui/preferences.js:429
 msgid "Receive mode"
 msgstr ""
 
-#: src/ui/preferences.js:421
+#: src/ui/preferences.js:431
 msgid "History only"
 msgstr ""
 
-#: src/ui/preferences.js:422
+#: src/ui/preferences.js:432
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/ui/preferences.js:425
+#: src/ui/preferences.js:435
 msgid "HTML"
 msgstr ""
 
-#: src/ui/preferences.js:426
+#: src/ui/preferences.js:436
 msgid "Images"
 msgstr ""
 
-#: src/ui/preferences.js:427
+#: src/ui/preferences.js:437
 msgid "Disabled by default"
 msgstr ""
 
-#: src/ui/preferences.js:431
+#: src/ui/preferences.js:441
 msgid "Favorites only"
 msgstr ""
 
-#: src/ui/preferences.js:432
+#: src/ui/preferences.js:442
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/ui/preferences.js:434
+#: src/ui/preferences.js:444
 msgid "Small text sent in full"
 msgstr ""
 
-#: src/ui/preferences.js:434 src/ui/preferences.js:435
-#: src/ui/preferences.js:438
+#: src/ui/preferences.js:444 src/ui/preferences.js:445
+#: src/ui/preferences.js:448
 msgid "KB"
 msgstr ""
 
-#: src/ui/preferences.js:435
+#: src/ui/preferences.js:445
 msgid "Large text preview"
 msgstr ""
 
-#: src/ui/preferences.js:436
+#: src/ui/preferences.js:446
 msgid "Small images sent in full"
 msgstr ""
 
-#: src/ui/preferences.js:437
+#: src/ui/preferences.js:447
 msgid "Thumbnail dimension"
 msgstr ""
 
-#: src/ui/preferences.js:438
+#: src/ui/preferences.js:448
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/ui/preferences.js:439
+#: src/ui/preferences.js:449
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/ui/preferences.js:439
+#: src/ui/preferences.js:449
 msgid "seconds"
 msgstr ""
 
-#: src/ui/preferences.js:444 src/ui/preferences.js:539
+#: src/ui/preferences.js:454 src/ui/preferences.js:549
 msgid "Color picker"
 msgstr ""
 
-#: src/ui/preferences.js:445
+#: src/ui/preferences.js:455
 msgid "Color format"
 msgstr ""
 
-#: src/ui/preferences.js:447
+#: src/ui/preferences.js:457
 msgid "Default format"
 msgstr ""
 
-#: src/ui/preferences.js:460
+#: src/ui/preferences.js:470
 msgid "Default target"
 msgstr ""
 
-#: src/ui/preferences.js:461
+#: src/ui/preferences.js:471
 msgid "Interactive"
 msgstr ""
 
-#: src/ui/preferences.js:462
+#: src/ui/preferences.js:472
 msgid "Full screen"
 msgstr ""
 
-#: src/ui/preferences.js:463
+#: src/ui/preferences.js:473
 msgid "Window"
 msgstr ""
 
-#: src/ui/preferences.js:464
+#: src/ui/preferences.js:474
 msgid "Area"
 msgstr ""
 
-#: src/ui/preferences.js:465
+#: src/ui/preferences.js:475
 msgid "Active window"
 msgstr ""
 
-#: src/ui/preferences.js:467
+#: src/ui/preferences.js:477
 msgid "Add to history"
 msgstr ""
 
-#: src/ui/preferences.js:468
+#: src/ui/preferences.js:478
 msgid "Copy screenshot"
 msgstr ""
 
-#: src/ui/preferences.js:469
+#: src/ui/preferences.js:479
 msgid "Open image editor"
 msgstr ""
 
-#: src/ui/preferences.js:471
+#: src/ui/preferences.js:481
 msgid "Image editing"
 msgstr ""
 
-#: src/ui/preferences.js:477
+#: src/ui/preferences.js:487
 msgid "Advanced command"
 msgstr ""
 
-#: src/ui/preferences.js:478
+#: src/ui/preferences.js:488
 msgid "%u is the URI, %f is a local path and %% is a percent sign"
 msgstr ""
 
-#: src/ui/preferences.js:494
+#: src/ui/preferences.js:504
 msgid "Shortcuts"
 msgstr ""
 
-#: src/ui/preferences.js:499
+#: src/ui/preferences.js:509
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
 
-#: src/ui/preferences.js:503
+#: src/ui/preferences.js:513
 msgid "Open clipboard panel"
 msgstr ""
 
-#: src/ui/preferences.js:504
+#: src/ui/preferences.js:514
 msgid "Pause or resume clipboard recording"
 msgstr ""
 
-#: src/ui/preferences.js:510
+#: src/ui/preferences.js:520
 msgid "Clipboard history entries"
 msgstr ""
 
-#: src/ui/preferences.js:511
+#: src/ui/preferences.js:521
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
 
-#: src/ui/preferences.js:515
+#: src/ui/preferences.js:525
 msgid "Paste entry"
 msgstr ""
 
-#: src/ui/preferences.js:516
+#: src/ui/preferences.js:526
 msgid "Pin or unpin entry"
 msgstr ""
 
-#: src/ui/preferences.js:517
+#: src/ui/preferences.js:527
 msgid "Delete entry"
 msgstr ""
 
-#: src/ui/preferences.js:518
+#: src/ui/preferences.js:528
 msgid "Type entry directly"
 msgstr ""
 
-#: src/ui/preferences.js:519
+#: src/ui/preferences.js:529
 msgid "Type entry instead of copying"
 msgstr ""
 
-#: src/ui/preferences.js:524
-msgid "Tokenizer"
-msgstr ""
-
-#: src/ui/preferences.js:525
+#: src/ui/preferences.js:535
 msgid "Active while a token has keyboard focus."
 msgstr ""
 
-#: src/ui/preferences.js:529
+#: src/ui/preferences.js:539
 msgid "Copy selected tokens"
 msgstr ""
 
-#: src/ui/preferences.js:530
+#: src/ui/preferences.js:540
 msgid "Paste selected tokens"
 msgstr ""
 
-#: src/ui/preferences.js:531
+#: src/ui/preferences.js:541
 msgid "Type selected tokens"
 msgstr ""
 
-#: src/ui/preferences.js:532
+#: src/ui/preferences.js:542
 msgid "Extend selection left"
 msgstr ""
 
-#: src/ui/preferences.js:533
+#: src/ui/preferences.js:543
 msgid "Extend selection right"
 msgstr ""
 
-#: src/ui/preferences.js:534
+#: src/ui/preferences.js:544
 msgid "Extend selection upward"
 msgstr ""
 
-#: src/ui/preferences.js:535
+#: src/ui/preferences.js:545
 msgid "Extend selection downward"
 msgstr ""
 
-#: src/ui/preferences.js:545
+#: src/ui/preferences.js:555
 msgid "Take screenshot"
 msgstr ""
 
-#: src/ui/preferences.js:640
+#: src/ui/preferences.js:650
 msgid "Click to set a shortcut"
 msgstr ""
 
-#: src/ui/preferences.js:661
+#: src/ui/preferences.js:671
 msgid "Press shortcut…"
 msgstr ""
 
-#: src/ui/preferences.js:716
+#: src/ui/preferences.js:726
 msgid "Custom command"
 msgstr ""
 
-#: src/ui/preferences.js:719
+#: src/ui/preferences.js:729
 msgid "Application"
 msgstr ""

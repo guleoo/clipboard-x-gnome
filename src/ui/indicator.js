@@ -8,6 +8,7 @@ import St from 'gi://St';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelManager} from './panel-manager.js';
@@ -35,6 +36,23 @@ const TOKEN_SELECTION_SHORTCUTS = Object.freeze([
   ['tokenizer-select-above-shortcut', Clutter.KEY_Up],
   ['tokenizer-select-below-shortcut', Clutter.KEY_Down],
 ]);
+const TOKEN_NAVIGATION_KEYS = new Map([
+  [Clutter.KEY_Left, Clutter.KEY_Left],
+  [Clutter.KEY_Right, Clutter.KEY_Right],
+  [Clutter.KEY_Up, Clutter.KEY_Up],
+  [Clutter.KEY_Down, Clutter.KEY_Down],
+  [Clutter.KEY_KP_Left, Clutter.KEY_Left],
+  [Clutter.KEY_KP_Right, Clutter.KEY_Right],
+  [Clutter.KEY_KP_Up, Clutter.KEY_Up],
+  [Clutter.KEY_KP_Down, Clutter.KEY_Down],
+]);
+const TOKEN_NAVIGATION_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
+  | Clutter.ModifierType.CONTROL_MASK
+  | Clutter.ModifierType.MOD1_MASK
+  | Clutter.ModifierType.MOD4_MASK
+  | Clutter.ModifierType.SUPER_MASK
+  | Clutter.ModifierType.HYPER_MASK
+  | Clutter.ModifierType.META_MASK;
 
 const ProgressRing = GObject.registerClass(
 class ProgressRing extends St.DrawingArea {
@@ -141,6 +159,10 @@ class Indicator extends PanelMenu.Button {
       'changed::preserve-panel-state',
       () => this._updatePanelStateRetention(),
     );
+    this._tokenSourcePreviewSignal = settings.connect(
+      'changed::tokenizer-show-source-preview',
+      () => this._updateTokenSourceVisibility(),
+    );
     this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
@@ -156,9 +178,10 @@ class Indicator extends PanelMenu.Button {
         if (this._panelManager.is('history')) {
           this._search.set_text('');
           this._focusSearch();
-        }
+        } else if (this._panelManager.is('tokenizer'))
+          this._focusFirstToken();
       } else {
-        this._cancelFocusSearch();
+        this._cancelPendingFocus();
         this._hideTooltip();
         this._panelManager.close({
           preserve: this._settings.get_boolean('preserve-panel-state'),
@@ -263,6 +286,7 @@ class Indicator extends PanelMenu.Button {
     this._tokenSource = new St.Label({
       style_class: 'clipboard-x-token-source',
       x_expand: true,
+      visible: this._settings.get_boolean('tokenizer-show-source-preview'),
     });
     this._tokenSource.clutter_text.single_line_mode = true;
     tokenPanel.add_child(this._tokenSource);
@@ -574,6 +598,7 @@ class Indicator extends PanelMenu.Button {
         selected: new Set(),
         keyboardSelection: null,
       });
+      this._focusFirstToken();
     } catch (error) {
       this._actions.reportError(error);
     }
@@ -622,6 +647,8 @@ class Indicator extends PanelMenu.Button {
       this._tokenButtons.push(button);
       button.connect('key-press-event', (_actor, event) =>
         this._handleTokenKey(button, token, state, event));
+      button.connect('key-focus-in', () =>
+        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, button));
       button.connect('button-press-event', (_actor, event) => {
         if (event.get_button() === Clutter.BUTTON_PRIMARY)
           this._beginTokenSelectionDrag(button, token, state);
@@ -650,11 +677,6 @@ class Indicator extends PanelMenu.Button {
         this._setTokenSelected(button, token, state, !state.selected.has(token.index));
       });
       this._updateTokenButtonStyle(button, token);
-      this._attachHint(button, token.type === 'url'
-        ? _('URL')
-        : token.type === 'number'
-          ? _('Number')
-          : token.type === 'email' ? _('Email address') : _('Word'), {scope: 'panel'});
       if (!tokenRow)
         startRow();
       tokenRow.add_child(button);
@@ -681,15 +703,32 @@ class Indicator extends PanelMenu.Button {
     }
     if (matchesShortcut(this._settings, 'tokenizer-copy-shortcut', event)) {
       this._runTokenAction('copyText', token);
-    } else if (matchesShortcut(this._settings, 'tokenizer-paste-shortcut', event)) {
-      this._runTokenAction('pasteText', token);
-    } else if (matchesShortcut(this._settings, 'tokenizer-type-shortcut', event)) {
-      this._runTokenAction('typeText', token);
-    } else {
-      state.keyboardSelection = null;
-      return Clutter.EVENT_PROPAGATE;
+      return Clutter.EVENT_STOP;
     }
-    return Clutter.EVENT_STOP;
+    if (matchesShortcut(this._settings, 'tokenizer-paste-shortcut', event)) {
+      this._runTokenAction('pasteText', token);
+      return Clutter.EVENT_STOP;
+    }
+    if (matchesShortcut(this._settings, 'tokenizer-type-shortcut', event)) {
+      this._runTokenAction('typeText', token);
+      return Clutter.EVENT_STOP;
+    }
+    const direction = TOKEN_NAVIGATION_KEYS.get(event.get_key_symbol());
+    const modifiers = event.get_state() & TOKEN_NAVIGATION_MODIFIER_MASK;
+    if (direction && modifiers === 0) {
+      state.keyboardSelection = null;
+      const target = this._tokenTarget(button, direction);
+      if (target) {
+        target.grab_key_focus();
+        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, target);
+        return Clutter.EVENT_STOP;
+      }
+      return this._settings.get_boolean('tokenizer-confine-focus')
+        ? Clutter.EVENT_STOP
+        : Clutter.EVENT_PROPAGATE;
+    }
+    state.keyboardSelection = null;
+    return Clutter.EVENT_PROPAGATE;
   }
 
   _extendTokenSelection(button, state, key) {
@@ -943,7 +982,7 @@ class Indicator extends PanelMenu.Button {
   }
 
   _focusSearch() {
-    this._cancelFocusSearch();
+    this._cancelPendingFocus();
     this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
       this._focusIdleId = 0;
       if (this.menu.isOpen && this._panelManager.is('history'))
@@ -952,7 +991,27 @@ class Indicator extends PanelMenu.Button {
     });
   }
 
-  _cancelFocusSearch() {
+  _focusFirstToken() {
+    this._cancelPendingFocus();
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      if (!this.menu.isOpen || !this._panelManager.is('tokenizer'))
+        return GLib.SOURCE_REMOVE;
+      const first = this._tokenButtons[0];
+      if (first) {
+        first.grab_key_focus();
+        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, first);
+      }
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _updateTokenSourceVisibility() {
+    if (this._tokenSource)
+      this._tokenSource.visible = this._settings.get_boolean('tokenizer-show-source-preview');
+  }
+
+  _cancelPendingFocus() {
     if (!this._focusIdleId)
       return;
     GLib.Source.remove(this._focusIdleId);
@@ -1212,7 +1271,7 @@ class Indicator extends PanelMenu.Button {
   }
 
   destroy() {
-    this._cancelFocusSearch();
+    this._cancelPendingFocus();
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
@@ -1225,6 +1284,7 @@ class Indicator extends PanelMenu.Button {
       this._panelHeightSignal,
       this._visibleItemLimitSignal,
       this._preservePanelStateSignal,
+      this._tokenSourcePreviewSignal,
       this._syncEnabledSignal,
       this._deviceTagSignal,
       this._deviceIconSignal,
@@ -1239,6 +1299,7 @@ class Indicator extends PanelMenu.Button {
     this._panelHeightSignal = 0;
     this._visibleItemLimitSignal = 0;
     this._preservePanelStateSignal = 0;
+    this._tokenSourcePreviewSignal = 0;
     this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;

@@ -101,6 +101,14 @@
       <default>['&lt;Shift&gt;Down']</default>
       <summary>Context shortcut for extending token selection downward</summary>
     </key>
+    <key name="tokenizer-show-source-preview" type="b">
+      <default>false</default>
+      <summary>Show the source text preview in the tokenizer panel</summary>
+    </key>
+    <key name="tokenizer-confine-focus" type="b">
+      <default>true</default>
+      <summary>Keep arrow-key focus navigation inside the tokenizer panel at its edges</summary>
+    </key>
     <key name="history-size" type="i">
       <default>100</default>
       <range min="1" max="10000"/>
