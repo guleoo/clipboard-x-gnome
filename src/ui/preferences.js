@@ -505,7 +505,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       icon_name: 'input-keyboard-symbolic',
     });
     const clipboard = new Adw.PreferencesGroup({
-      title: _('Clipboard'),
+      title: _('Global'),
       description: _('Click a shortcut, then press the new key combination. Backspace disables it.'),
     });
     page.add(clipboard);
@@ -518,7 +518,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       clipboard.add(this._shortcut(settings, key, title));
 
     const history = new Adw.PreferencesGroup({
-      title: _('Clipboard history entries'),
+      title: _('Clipboard'),
       description: _('Active while a clipboard history entry has keyboard focus.'),
     });
     page.add(history);

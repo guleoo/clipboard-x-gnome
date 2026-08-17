@@ -17,6 +17,14 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+function isDescendant(actor, ancestor) {
+  for (let current = actor; current; current = current.get_parent()) {
+    if (current === ancestor)
+      return true;
+  }
+  return false;
+}
+
 async function waitUntil(predicate, timeoutMilliseconds = 2000) {
   const deadline = GLib.get_monotonic_time() + timeoutMilliseconds * 1000;
   while (!predicate() && GLib.get_monotonic_time() < deadline)
@@ -73,27 +81,27 @@ export async function run() {
     'Moving the mouse did not dismiss a keyboard-triggered tooltip');
   const originalSearchShortcut = indicator._settings.get_strv('history-search-shortcut');
   indicator._settings.set_strv('history-search-shortcut', ['<Control>f']);
-  assert(indicator._handleStageCapturedEvent({
-    type: () => Clutter.EventType.KEY_PRESS,
+  assert(indicator._handleMenuKey({
     get_key_symbol: () => Clutter.KEY_f,
     get_state: () => Clutter.ModifierType.CONTROL_MASK,
   }) === Clutter.EVENT_STOP, 'Clipboard search shortcut was not consumed');
-  await Scripting.sleep(10);
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Clipboard search shortcut did not focus the search entry');
   indicator._settings.set_strv('history-search-shortcut', originalSearchShortcut);
   const originalPanelConfineFocus = indicator._settings.get_boolean('panel-confine-focus');
   indicator._settings.set_boolean('panel-confine-focus', true);
   indicator._privateButton.grab_key_focus();
-  assert(indicator._handleStageCapturedEvent({
-    type: () => Clutter.EventType.KEY_PRESS,
+  assert(indicator._handleMenuKey({
     get_key_symbol: () => Clutter.KEY_Down,
     get_state: () => 0,
-  }) === Clutter.EVENT_PROPAGATE, 'Panel focus guard unexpectedly consumed navigation');
-  global.stage.set_key_focus(indicator);
-  await Scripting.sleep(10);
-  assert(global.stage.get_key_focus() === indicator._privateButton,
-    'Panel focus guard did not restore focus after it escaped the clipboard panel');
+  }) === Clutter.EVENT_STOP, 'Panel focus guard did not consume navigation');
+  assert(isDescendant(global.stage.get_key_focus(), indicator.menu.actor),
+    'Panel focus navigation escaped the clipboard panel');
+  indicator._settings.set_boolean('panel-confine-focus', false);
+  assert(indicator._handleMenuKey({
+    get_key_symbol: () => Clutter.KEY_Down,
+    get_state: () => 0,
+  }) === Clutter.EVENT_PROPAGATE, 'Disabled panel focus guard still consumed navigation');
   indicator._settings.set_boolean('panel-confine-focus', originalPanelConfineFocus);
 
   indicator.menu.close();
@@ -257,15 +265,13 @@ export async function run() {
     lastTokenButton._clipboardXToken,
     tokenState,
     entryEvent(Clutter.KEY_Right),
-  ) === Clutter.EVENT_STOP && global.stage.get_key_focus() === lastTokenButton,
+  ) === Clutter.EVENT_PROPAGATE,
+  'Tokenizer edge navigation did not continue into the surrounding panel');
+  assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
+      && isDescendant(global.stage.get_key_focus(), indicator.menu.actor),
   'Confined tokenizer focus escaped at the final token');
   indicator._settings.set_boolean('panel-confine-focus', false);
-  assert(indicator._handleTokenKey(
-    lastTokenButton,
-    lastTokenButton._clipboardXToken,
-    tokenState,
-    entryEvent(Clutter.KEY_Right),
-  ) === Clutter.EVENT_PROPAGATE,
+  assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_PROPAGATE,
   'Disabled focus confinement still consumed an edge arrow key');
   indicator._settings.set_boolean('panel-confine-focus', true);
   indicator._settings.set_boolean('tokenizer-show-source-preview', true);
@@ -282,6 +288,26 @@ export async function run() {
       && tokenState.selected.has(tokenState.tokens[1].index)
       && global.stage.get_key_focus() === tokenButtons[1],
     'Shift+Arrow did not extend token selection and keyboard focus');
+  tokenButtons[0].grab_key_focus();
+  assert(indicator._handleTokenKey(
+    tokenButtons[0],
+    tokenState.tokens[0],
+    tokenState,
+    entryEvent(Clutter.KEY_Up),
+  ) === Clutter.EVENT_PROPAGATE
+      && indicator._handleMenuKey(entryEvent(Clutter.KEY_Up)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === indicator._tokenBack,
+  'Up Arrow did not move from the first token to the tokenizer back button');
+  lastTokenButton.grab_key_focus();
+  assert(indicator._handleTokenKey(
+    lastTokenButton,
+    lastTokenButton._clipboardXToken,
+    tokenState,
+    entryEvent(Clutter.KEY_Down),
+  ) === Clutter.EVENT_PROPAGATE
+      && indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === indicator._tokenCopy,
+  'Down Arrow did not move from the final token to the copy button');
   tokenState.keyboardSelection = null;
   tokenButtons[0].grab_key_focus();
   indicator._handleTokenKey(

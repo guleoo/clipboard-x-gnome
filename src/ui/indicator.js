@@ -3,6 +3,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -45,6 +46,12 @@ const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_KP_Right, Clutter.KEY_Right],
   [Clutter.KEY_KP_Up, Clutter.KEY_Up],
   [Clutter.KEY_KP_Down, Clutter.KEY_Down],
+]);
+const FOCUS_DIRECTIONS = new Map([
+  [Clutter.KEY_Left, St.DirectionType.LEFT],
+  [Clutter.KEY_Right, St.DirectionType.RIGHT],
+  [Clutter.KEY_Up, St.DirectionType.UP],
+  [Clutter.KEY_Down, St.DirectionType.DOWN],
 ]);
 const TOKEN_NAVIGATION_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.CONTROL_MASK
@@ -112,7 +119,6 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
-    this._focusGuardIdleId = 0;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
     this._tooltipFromKeyboard = false;
@@ -174,6 +180,8 @@ class Indicator extends PanelMenu.Button {
     });
     this._stageCapturedSignal = global.stage.connect('captured-event', (_stage, event) =>
       this._handleStageCapturedEvent(event));
+    this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
+      this._handleMenuKey(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
         this._actions.rememberInputTarget();
@@ -220,6 +228,11 @@ class Indicator extends PanelMenu.Button {
     });
     this._search.clutter_text.connect('key-focus-in', () => this._updateSearchStyle());
     this._search.clutter_text.connect('key-focus-out', () => this._updateSearchStyle());
+    this._search.clutter_text.connect('key-press-event', (_actor, event) => {
+      if (matchesShortcut(this._settings, 'history-search-shortcut', event))
+        return Clutter.EVENT_STOP;
+      return Clutter.EVENT_PROPAGATE;
+    });
     searchToolbar.add_child(this._search);
     const toolbar = new St.BoxLayout({
       style_class: 'clipboard-x-toolbar',
@@ -274,12 +287,13 @@ class Indicator extends PanelMenu.Button {
       style_class: 'clipboard-x-token-header',
       x_expand: true,
     });
-    tokenHeader.add_child(this._iconButton(
+    this._tokenBack = this._iconButton(
       'go-previous-symbolic',
       _('Back to clipboard history'),
       () => this._closeTokenizer(),
       {showTooltip: false},
-    ));
+    );
+    tokenHeader.add_child(this._tokenBack);
     tokenHeader.add_child(new St.Label({
       text: _('Segment text'),
       style_class: 'clipboard-x-token-title',
@@ -448,14 +462,16 @@ class Indicator extends PanelMenu.Button {
     });
     if (item.isText) {
       const title = item.preview?.text?.replaceAll('\n', ' ') || _('Text');
-      content.set_child(new St.Label({
+      const preview = new St.Label({
         text: title.slice(0, 240),
         style_class: 'clipboard-x-entry-preview',
-        style: `max-width: ${this._entryPreviewWidth}px;`,
         x_expand: true,
-        x_align: Clutter.ActorAlign.START,
+        x_align: Clutter.ActorAlign.FILL,
         y_align: Clutter.ActorAlign.CENTER,
-      }));
+      });
+      preview.clutter_text.single_line_mode = true;
+      preview.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+      content.set_child(preview);
     } else {
       const box = new St.BoxLayout({
         style_class: 'clipboard-x-image-content',
@@ -479,7 +495,8 @@ class Indicator extends PanelMenu.Button {
     });
     content.connect('key-press-event', (_button, event) => {
       content._clipboardXTypeOnClick = false;
-      return this._handleEntryKey(item, event);
+      const result = this._handleEntryKey(item, event);
+      return result === Clutter.EVENT_PROPAGATE ? this._handleMenuKey(event) : result;
     });
     content.connect('clicked', () => {
       const type = content._clipboardXTypeOnClick;
@@ -649,8 +666,10 @@ class Indicator extends PanelMenu.Button {
       button._clipboardXToken = token;
       button._clipboardXTokenState = state;
       this._tokenButtons.push(button);
-      button.connect('key-press-event', (_actor, event) =>
-        this._handleTokenKey(button, token, state, event));
+      button.connect('key-press-event', (_actor, event) => {
+        const result = this._handleTokenKey(button, token, state, event);
+        return result === Clutter.EVENT_PROPAGATE ? this._handleMenuKey(event) : result;
+      });
       button.connect('key-focus-in', () =>
         AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, button));
       button.connect('button-press-event', (_actor, event) => {
@@ -727,9 +746,7 @@ class Indicator extends PanelMenu.Button {
         AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, target);
         return Clutter.EVENT_STOP;
       }
-      return this._settings.get_boolean('panel-confine-focus')
-        ? Clutter.EVENT_STOP
-        : Clutter.EVENT_PROPAGATE;
+      return Clutter.EVENT_PROPAGATE;
     }
     state.keyboardSelection = null;
     return Clutter.EVENT_PROPAGATE;
@@ -925,7 +942,6 @@ class Indicator extends PanelMenu.Button {
     const panelHeight = this._settings.get_int('panel-height');
     const searchWidth = Math.max(140, panelWidth - 140);
     this._searchWidth = searchWidth;
-    this._entryPreviewWidth = Math.max(125, panelWidth - 175);
     this._tokenContentWidth = Math.max(260, panelWidth - 40);
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
     this._updateSearchStyle();
@@ -1075,6 +1091,7 @@ class Indicator extends PanelMenu.Button {
     button._clipboardXShowTooltip = showTooltip;
     button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
+    button.connect('key-press-event', (_actor, event) => this._handleMenuKey(event));
     button.connect('clicked', () => {
       if (stateful)
         this._stateHoverTransfer = true;
@@ -1205,42 +1222,25 @@ class Indicator extends PanelMenu.Button {
       this._hideTooltip();
       return Clutter.EVENT_PROPAGATE;
     }
-    if (type !== Clutter.EventType.KEY_PRESS || !this.menu.isOpen)
-      return Clutter.EVENT_PROPAGATE;
-    if (this._panelManager.is('history')
-        && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
-      this._focusSearch();
-      return Clutter.EVENT_STOP;
-    }
-    if (!NAVIGATION_KEYS.has(event.get_key_symbol())
-        || !this._settings.get_boolean('panel-confine-focus'))
-      return Clutter.EVENT_PROPAGATE;
-    const focus = global.stage.get_key_focus();
-    if (!this._isMenuActor(focus))
-      return Clutter.EVENT_PROPAGATE;
-    this._guardPanelFocus(focus);
     return Clutter.EVENT_PROPAGATE;
   }
 
-  _guardPanelFocus(previousFocus) {
-    if (this._focusGuardIdleId)
-      GLib.Source.remove(this._focusGuardIdleId);
-    this._focusGuardIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusGuardIdleId = 0;
-      if (!this.menu.isOpen || this._isMenuActor(global.stage.get_key_focus()))
-        return GLib.SOURCE_REMOVE;
-      if (previousFocus.mapped)
-        previousFocus.grab_key_focus();
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  _isMenuActor(actor) {
-    for (let current = actor; current; current = current.get_parent()) {
-      if (current === this.menu.actor)
-        return true;
+  _handleMenuKey(event) {
+    if (!this.menu.isOpen)
+      return Clutter.EVENT_PROPAGATE;
+    if (this._panelManager.is('history')
+        && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
+      this._cancelPendingFocus();
+      global.stage.set_key_focus(this._search.clutter_text);
+      return Clutter.EVENT_STOP;
     }
-    return false;
+    const directionKey = NAVIGATION_KEYS.get(event.get_key_symbol());
+    if (!directionKey || !this._settings.get_boolean('panel-confine-focus'))
+      return Clutter.EVENT_PROPAGATE;
+    const stageFocus = global.stage.get_key_focus();
+    const focus = stageFocus === this._search.clutter_text ? this._search : stageFocus;
+    this.menu.actor.navigate_focus(focus, FOCUS_DIRECTIONS.get(directionKey), false);
+    return Clutter.EVENT_STOP;
   }
 
   _cancelTooltipTimeout() {
@@ -1319,9 +1319,6 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelPendingFocus();
-    if (this._focusGuardIdleId)
-      GLib.Source.remove(this._focusGuardIdleId);
-    this._focusGuardIdleId = 0;
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
@@ -1359,6 +1356,9 @@ class Indicator extends PanelMenu.Button {
     if (this._stageCapturedSignal)
       global.stage.disconnect(this._stageCapturedSignal);
     this._stageCapturedSignal = 0;
+    if (this._menuKeyPressSignal)
+      this.menu.actor.disconnect(this._menuKeyPressSignal);
+    this._menuKeyPressSignal = 0;
     this._tooltip.destroy();
     super.destroy();
   }
