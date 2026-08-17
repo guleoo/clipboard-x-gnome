@@ -70,6 +70,14 @@ export async function run() {
   indicator.menu.close();
   await Scripting.sleep(100);
   assert(!indicator.menu.isOpen, 'Clipboard X menu did not close');
+  indicator._settings.set_string('theme-color', '#123456');
+  await Scripting.sleep(50);
+  assert(indicator._customAccentColor === '#123456',
+    'A custom theme color did not reach the panel');
+  indicator._settings.set_string('theme-color', 'system');
+  await Scripting.sleep(50);
+  assert(indicator._customAccentColor === null,
+    'Following the system theme did not clear the custom accent override');
 
   const deviceId = indicator._settings.get_string('device-id');
   assert(/^[0-9a-f-]{36}$/u.test(deviceId), 'Opening Clipboard X did not create a DeviceId');

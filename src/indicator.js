@@ -18,6 +18,7 @@ const ICON_SIZE = 16;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'yellow', 'orange', 'red', 'pink', 'purple', 'slate',
 ].map(color => `clipboard-x-accent-${color}`));
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const DEVICE_ICON_NAMES = Object.freeze({
   desktop: 'video-display-symbolic',
   laptop: 'computer-symbolic',
@@ -176,6 +177,8 @@ class Indicator extends PanelMenu.Button {
       if (this._panelManager?.is('history'))
         this._refresh();
     });
+    this._search.clutter_text.connect('key-focus-in', () => this._updateSearchStyle());
+    this._search.clutter_text.connect('key-focus-out', () => this._updateSearchStyle());
     searchToolbar.add_child(this._search);
     const toolbar = new St.BoxLayout({
       style_class: 'clipboard-x-toolbar',
@@ -368,6 +371,12 @@ class Indicator extends PanelMenu.Button {
     pinButton.checked = item.favorite;
     if (item.favorite)
       pinButton.add_style_class_name('clipboard-x-pinned');
+    if (item.favorite && this._customAccentColor) {
+      pinButton.set_style([
+        `color: ${this._customAccentColor}`,
+        `background-color: ${colorWithAlpha(this._customAccentColor, 0.16)}`,
+      ].join('; '));
+    }
     row.add_child(pinButton);
     if (this._settings.get_boolean('sync-enabled'))
       row.add_child(this._syncButton(item));
@@ -511,8 +520,10 @@ class Indicator extends PanelMenu.Button {
           state.selected.add(token.index);
         else
           state.selected.delete(token.index);
+        this._updateTokenButtonStyle(button, token);
         this._updateTokenResult();
       });
+      this._updateTokenButtonStyle(button, token);
       this._attachHint(button, token.type === 'url'
         ? _('URL')
         : token.type === 'number'
@@ -570,10 +581,11 @@ class Indicator extends PanelMenu.Button {
     const panelWidth = this._settings.get_int('panel-width');
     const panelHeight = this._settings.get_int('panel-height');
     const searchWidth = Math.max(140, panelWidth - 140);
+    this._searchWidth = searchWidth;
     this._entryPreviewWidth = Math.max(125, panelWidth - 175);
     this._tokenContentWidth = Math.max(260, panelWidth - 40);
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
-    this._search.set_style(`width: ${searchWidth}px; min-width: 0; max-width: ${searchWidth}px;`);
+    this._updateSearchStyle();
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
     if (this._panelManager)
       this._refresh();
@@ -585,6 +597,36 @@ class Indicator extends PanelMenu.Button {
     const configured = `clipboard-x-accent-${this._settings.get_string('theme-color')}`;
     if (THEME_COLOR_CLASSES.includes(configured))
       this.menu.actor.add_style_class_name(configured);
+    const selected = this._settings.get_string('theme-color');
+    this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
+    this._updateSearchStyle();
+    this._updatePrivateButton();
+    this._refresh();
+  }
+
+  _updateSearchStyle() {
+    if (!this._search || !this._searchWidth)
+      return;
+    const styles = [
+      `width: ${this._searchWidth}px`,
+      'min-width: 0',
+      `max-width: ${this._searchWidth}px`,
+    ];
+    if (this._customAccentColor && this._search.clutter_text.has_key_focus())
+      styles.push(`border-color: ${this._customAccentColor}`);
+    this._search.set_style(`${styles.join('; ')};`);
+  }
+
+  _updateTokenButtonStyle(button, token) {
+    if (!this._customAccentColor) {
+      button.set_style('');
+      return;
+    }
+    if (button.checked) {
+      button.set_style(`background-color: ${this._customAccentColor}; color: white;`);
+      return;
+    }
+    button.set_style(token.type === 'url' ? `color: ${this._customAccentColor};` : '');
   }
 
   _updatePanelStateRetention() {
@@ -775,6 +817,9 @@ class Indicator extends PanelMenu.Button {
     this._privateButton.add_style_class_name(
       paused ? 'clipboard-x-private-active' : 'clipboard-x-private-inactive',
     );
+    this._privateButton.set_style(paused && this._customAccentColor
+      ? `color: ${this._customAccentColor}; background-color: ${colorWithAlpha(this._customAccentColor, 0.18)};`
+      : '');
   }
 
   _runAndClose(callback) {
@@ -838,4 +883,11 @@ function formatBytes(bytes) {
   if (bytes < 1024 * 1024)
     return `${(bytes / 1024).toFixed(1)} KiB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+}
+
+function colorWithAlpha(color, alpha) {
+  const red = Number.parseInt(color.slice(1, 3), 16);
+  const green = Number.parseInt(color.slice(3, 5), 16);
+  const blue = Number.parseInt(color.slice(5, 7), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }

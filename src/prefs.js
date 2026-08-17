@@ -11,6 +11,19 @@ import {buildEditorArgv} from './editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from './constants.js';
 import {effectiveCapabilities} from './sync-policy.js';
 
+const THEME_COLORS = Object.freeze([
+  ['blue', '#3584e4'],
+  ['teal', '#2190a4'],
+  ['green', '#3a944a'],
+  ['yellow', '#c88800'],
+  ['orange', '#ed5b00'],
+  ['red', '#e62d42'],
+  ['pink', '#d56199'],
+  ['purple', '#9141ac'],
+  ['slate', '#6f8396'],
+]);
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
@@ -32,19 +45,154 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     });
     const appearance = new Adw.PreferencesGroup({title: _('Appearance')});
     page.add(appearance);
-    appearance.add(this._combo(settings, 'theme-color', _('Theme color'), [
-      ['system', _('Follow system')],
-      ['blue', _('Blue')],
-      ['teal', _('Teal')],
-      ['green', _('Green')],
-      ['yellow', _('Yellow')],
-      ['orange', _('Orange')],
-      ['red', _('Red')],
-      ['pink', _('Pink')],
-      ['purple', _('Purple')],
-      ['slate', _('Slate')],
-    ]));
+    appearance.add(this._themeColorRow(settings));
     return page;
+  }
+
+  _themeColorRow(settings) {
+    const row = new Adw.PreferencesRow({activatable: false});
+    const content = new Gtk.Box({
+      orientation: Gtk.Orientation.VERTICAL,
+      spacing: 8,
+      margin_top: 12,
+      margin_bottom: 12,
+      margin_start: 12,
+      margin_end: 12,
+    });
+    content.append(new Gtk.Label({
+      label: _('Theme color'),
+      xalign: 0,
+      css_classes: ['heading'],
+    }));
+    const scroller = new Gtk.ScrolledWindow({
+      hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+      vscrollbar_policy: Gtk.PolicyType.NEVER,
+      propagate_natural_height: true,
+      hexpand: true,
+    });
+    const palette = new Gtk.Box({spacing: 8, halign: Gtk.Align.CENTER});
+    scroller.set_child(palette);
+    content.append(scroller);
+    row.set_child(content);
+
+    const styleManager = Adw.StyleManager.get_default();
+    let buttons = [];
+    const updateSelection = () => {
+      const selected = settings.get_string('theme-color');
+      for (const [value, button] of buttons) {
+        button.active = value === selected;
+        button.get_child().queue_draw();
+      }
+    };
+    const addSwatch = (value, color, label) => {
+      const swatch = new Gtk.DrawingArea({
+        content_width: 30,
+        content_height: 30,
+      });
+      const button = new Gtk.ToggleButton({
+        child: swatch,
+        has_frame: false,
+        tooltip_text: label,
+        width_request: 36,
+        height_request: 36,
+      });
+      button.connect('toggled', () => {
+        if (button.active && settings.get_string('theme-color') !== value)
+          settings.set_string('theme-color', value);
+        else if (!button.active && settings.get_string('theme-color') === value)
+          button.active = true;
+      });
+      swatch.set_draw_func((_area, context, width, height) => {
+        const rgba = value === 'system'
+          ? styleManager.get_accent_color_rgba()
+          : parseColor(color);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        if (button.active) {
+          setCairoColor(context, rgba);
+          context.setLineWidth(2.5);
+          context.arc(centerX, centerY, 13, 0, Math.PI * 2);
+          context.stroke();
+        }
+        setCairoColor(context, rgba);
+        context.arc(centerX, centerY, button.active ? 9.5 : 11, 0, Math.PI * 2);
+        context.fill();
+      });
+      palette.append(button);
+      buttons.push([value, button]);
+    };
+    const render = () => {
+      while (palette.get_first_child())
+        palette.remove(palette.get_first_child());
+      buttons = [];
+      addSwatch('system', null, _('Follow system'));
+      const labels = [
+        _('Blue'), _('Teal'), _('Green'), _('Yellow'), _('Orange'),
+        _('Red'), _('Pink'), _('Purple'), _('Slate'),
+      ];
+      THEME_COLORS.forEach(([value, color], index) => addSwatch(value, color, labels[index]));
+      const selected = settings.get_string('theme-color');
+      const customColors = uniqueColors([
+        ...settings.get_strv('custom-theme-colors'),
+        ...(HEX_COLOR_PATTERN.test(selected) ? [selected] : []),
+      ]);
+      for (const color of customColors)
+        addSwatch(color, color, color.toUpperCase());
+
+      const addButton = new Gtk.Button({
+        icon_name: 'list-add-symbolic',
+        has_frame: false,
+        tooltip_text: _('Add custom color'),
+        width_request: 36,
+        height_request: 36,
+      });
+      addButton.connect('clicked', () => {
+        const dialog = new Gtk.ColorDialog({
+          title: _('Choose custom theme color'),
+          modal: true,
+          with_alpha: false,
+        });
+        const initial = HEX_COLOR_PATTERN.test(settings.get_string('theme-color'))
+          ? parseColor(settings.get_string('theme-color'))
+          : styleManager.get_accent_color_rgba();
+        dialog.choose_rgba(windowFor(addButton), initial, null, (_source, result) => {
+          try {
+            const color = rgbaToHex(dialog.choose_rgba_finish(result));
+            settings.set_strv('custom-theme-colors', uniqueColors([
+              ...settings.get_strv('custom-theme-colors'),
+              color,
+            ]));
+            settings.set_string('theme-color', color);
+          } catch (_error) {
+            // Closing the color chooser is not an error for the preferences UI.
+          }
+        });
+      });
+      palette.append(addButton);
+      updateSelection();
+    };
+
+    const themeColorSignal = settings.connect('changed::theme-color', updateSelection);
+    const customColorsSignal = settings.connect('changed::custom-theme-colors', render);
+    const systemAccentSignal = styleManager.connect('notify::accent-color-rgba', () => {
+      buttons[0]?.[1].get_child().queue_draw();
+    });
+    let wasRooted = false;
+    let disconnected = false;
+    row.connect('notify::root', () => {
+      if (row.get_root()) {
+        wasRooted = true;
+        return;
+      }
+      if (!wasRooted || disconnected)
+        return;
+      disconnected = true;
+      settings.disconnect(themeColorSignal);
+      settings.disconnect(customColorsSignal);
+      styleManager.disconnect(systemAccentSignal);
+    });
+    render();
+    return row;
   }
 
   _clipboardPage(settings) {
@@ -486,6 +634,29 @@ function unpackVariants(value) {
   if (value && typeof value === 'object')
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, unpackVariants(item)]));
   return value;
+}
+
+function parseColor(value) {
+  const color = new Gdk.RGBA();
+  if (!color.parse(value))
+    color.parse('#3584e4');
+  return color;
+}
+
+function setCairoColor(context, color) {
+  context.setSourceRGBA(color.red, color.green, color.blue, color.alpha);
+}
+
+function rgbaToHex(color) {
+  const channel = value => Math.round(Math.max(0, Math.min(1, value)) * 255)
+    .toString(16).padStart(2, '0');
+  return `#${channel(color.red)}${channel(color.green)}${channel(color.blue)}`;
+}
+
+function uniqueColors(colors) {
+  return [...new Set(colors
+    .map(color => color.toLowerCase())
+    .filter(color => HEX_COLOR_PATTERN.test(color)))];
 }
 
 function formatBytes(bytes) {
