@@ -15,13 +15,15 @@ const THEME_COLORS = Object.freeze([
   ['blue', '#3584e4'],
   ['teal', '#2190a4'],
   ['green', '#3a944a'],
-  ['yellow', '#c88800'],
   ['orange', '#ed5b00'],
-  ['red', '#e62d42'],
   ['pink', '#d56199'],
-  ['purple', '#9141ac'],
   ['slate', '#6f8396'],
 ]);
+const REMOVED_THEME_COLORS = Object.freeze({
+  yellow: '#c88800',
+  red: '#e62d42',
+  purple: '#9141ac',
+});
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
@@ -50,6 +52,15 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   }
 
   _themeColorRow(settings) {
+    const removedColor = REMOVED_THEME_COLORS[settings.get_string('theme-color')];
+    if (removedColor) {
+      settings.set_strv('custom-theme-colors', uniqueColors([
+        ...settings.get_strv('custom-theme-colors'),
+        removedColor,
+      ]));
+      settings.set_string('theme-color', removedColor);
+    }
+
     const row = new Adw.PreferencesRow({activatable: false});
     const content = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
@@ -104,16 +115,16 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     };
     const addSwatch = (value, color, label) => {
       const swatch = new Gtk.DrawingArea({
-        content_width: 30,
-        content_height: 30,
+        content_width: 28,
+        content_height: 28,
       });
       const button = new Gtk.ToggleButton({
         child: swatch,
         has_frame: false,
         css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: label,
-        width_request: 36,
-        height_request: 36,
+        width_request: 30,
+        height_request: 30,
       });
       button.connect('toggled', () => {
         if (button.active && settings.get_string('theme-color') !== value)
@@ -130,11 +141,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         if (button.active) {
           setCairoColor(context, rgba);
           context.setLineWidth(2.5);
-          context.arc(centerX, centerY, 13, 0, Math.PI * 2);
+          context.arc(centerX, centerY, 12, 0, Math.PI * 2);
           context.stroke();
         }
         setCairoColor(context, rgba);
-        context.arc(centerX, centerY, button.active ? 9.5 : 11, 0, Math.PI * 2);
+        context.arc(centerX, centerY, button.active ? 8.5 : 10, 0, Math.PI * 2);
         context.fill();
       });
       palette.append(button);
@@ -146,8 +157,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       buttons = [];
       addSwatch('system', null, _('Follow system'));
       const labels = [
-        _('Blue'), _('Teal'), _('Green'), _('Yellow'), _('Orange'),
-        _('Red'), _('Pink'), _('Purple'), _('Slate'),
+        _('Blue'), _('Teal'), _('Green'), _('Orange'), _('Pink'), _('Slate'),
       ];
       THEME_COLORS.forEach(([value, color], index) => addSwatch(value, color, labels[index]));
       const selected = settings.get_string('theme-color');
@@ -163,8 +173,8 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
         has_frame: false,
         css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: _('Add custom color'),
-        width_request: 36,
-        height_request: 36,
+        width_request: 30,
+        height_request: 30,
       });
       addButton.connect('clicked', () => {
         const dialog = new Gtk.ColorDialog({

@@ -188,35 +188,17 @@
 .clipboard-x-accent-green .clipboard-x-token-url { color: #3a944a; }
 .clipboard-x-accent-green .clipboard-x-token:checked { background-color: #3a944a; }
 
-.clipboard-x-accent-yellow .clipboard-x-search:focus { border-color: #c88800; }
-.clipboard-x-accent-yellow .clipboard-x-private-active,
-.clipboard-x-accent-yellow .clipboard-x-pinned,
-.clipboard-x-accent-yellow .clipboard-x-token-url { color: #f6d32d; }
-.clipboard-x-accent-yellow .clipboard-x-token:checked { background-color: #c88800; }
-
 .clipboard-x-accent-orange .clipboard-x-search:focus { border-color: #ed5b00; }
 .clipboard-x-accent-orange .clipboard-x-private-active,
 .clipboard-x-accent-orange .clipboard-x-pinned,
 .clipboard-x-accent-orange .clipboard-x-token-url { color: #ff7800; }
 .clipboard-x-accent-orange .clipboard-x-token:checked { background-color: #ed5b00; }
 
-.clipboard-x-accent-red .clipboard-x-search:focus { border-color: #e62d42; }
-.clipboard-x-accent-red .clipboard-x-private-active,
-.clipboard-x-accent-red .clipboard-x-pinned,
-.clipboard-x-accent-red .clipboard-x-token-url { color: #ed333b; }
-.clipboard-x-accent-red .clipboard-x-token:checked { background-color: #e62d42; }
-
 .clipboard-x-accent-pink .clipboard-x-search:focus { border-color: #d56199; }
 .clipboard-x-accent-pink .clipboard-x-private-active,
 .clipboard-x-accent-pink .clipboard-x-pinned,
 .clipboard-x-accent-pink .clipboard-x-token-url { color: #d56199; }
 .clipboard-x-accent-pink .clipboard-x-token:checked { background-color: #d56199; }
-
-.clipboard-x-accent-purple .clipboard-x-search:focus { border-color: #9141ac; }
-.clipboard-x-accent-purple .clipboard-x-private-active,
-.clipboard-x-accent-purple .clipboard-x-pinned,
-.clipboard-x-accent-purple .clipboard-x-token-url { color: #9141ac; }
-.clipboard-x-accent-purple .clipboard-x-token:checked { background-color: #9141ac; }
 
 .clipboard-x-accent-slate .clipboard-x-search:focus { border-color: #6f8396; }
 .clipboard-x-accent-slate .clipboard-x-private-active,
