@@ -3,7 +3,6 @@ import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
-import Meta from 'gi://Meta';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
@@ -620,7 +619,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
           return Gdk.EVENT_STOP;
         }
         const accelerator = contextual
-          ? Meta.accelerator_name(modifiers, keyval)
+          ? Gtk.accelerator_name(keyval, modifiers)
           : Gtk.accelerator_name_with_keycode(null, keyval, keycode, modifiers);
         settings.set_strv(key, [accelerator]);
         stop();
