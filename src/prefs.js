@@ -64,18 +64,36 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       xalign: 0,
       css_classes: ['heading'],
     }));
-    const scroller = new Gtk.ScrolledWindow({
-      hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-      vscrollbar_policy: Gtk.PolicyType.NEVER,
-      propagate_natural_height: true,
+    const palette = new Gtk.FlowBox({
+      selection_mode: Gtk.SelectionMode.NONE,
+      homogeneous: false,
+      min_children_per_line: 1,
+      max_children_per_line: 32,
+      column_spacing: 0,
+      row_spacing: 0,
       hexpand: true,
     });
-    const palette = new Gtk.Box({spacing: 8, halign: Gtk.Align.CENTER});
-    scroller.set_child(palette);
-    content.append(scroller);
+    content.append(palette);
     row.set_child(content);
 
     const styleManager = Adw.StyleManager.get_default();
+    const display = row.get_display();
+    const styleProvider = new Gtk.CssProvider();
+    styleProvider.load_from_string(`
+      .clipboard-x-theme-color-button,
+      .clipboard-x-theme-color-button:hover,
+      .clipboard-x-theme-color-button:active,
+      .clipboard-x-theme-color-button:checked {
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+      }
+    `);
+    Gtk.StyleContext.add_provider_for_display(
+      display,
+      styleProvider,
+      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
     let buttons = [];
     const updateSelection = () => {
       const selected = settings.get_string('theme-color');
@@ -92,6 +110,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       const button = new Gtk.ToggleButton({
         child: swatch,
         has_frame: false,
+        css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: label,
         width_request: 36,
         height_request: 36,
@@ -142,6 +161,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       const addButton = new Gtk.Button({
         icon_name: 'list-add-symbolic',
         has_frame: false,
+        css_classes: ['flat', 'clipboard-x-theme-color-button'],
         tooltip_text: _('Add custom color'),
         width_request: 36,
         height_request: 36,
@@ -190,6 +210,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       settings.disconnect(themeColorSignal);
       settings.disconnect(customColorsSignal);
       styleManager.disconnect(systemAccentSignal);
+      Gtk.StyleContext.remove_provider_for_display(display, styleProvider);
     });
     render();
     return row;
