@@ -184,6 +184,9 @@ export async function run() {
       && child.get_child()?.icon_name === 'view-pin-symbolic'
       && child.has_style_class_name('clipboard-x-pinned')),
   'Pinned history entry did not keep the pin icon with a distinct color class');
+  assert(pinnedRow.get_children().some(child => child instanceof St.Button
+      && child.get_child()?.icon_name === 'user-trash-symbolic'),
+  'Clipboard history entry did not use the standard trash icon');
   pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
@@ -252,11 +255,17 @@ export async function run() {
     'Programmatic clipboard activation was captured again instead of being loop-suppressed');
 
   indicator._settings.set_boolean('private-mode', true);
+  assert(indicator._privateButton.checked
+      && indicator._privateButton.has_style_class_name('clipboard-x-private-active'),
+  'Privacy mode button did not expose its selected visual state');
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'private clipboard value must not be recorded');
   await Scripting.sleep(300);
   assert(!indicator._controller.items.some(item => item.text.includes('private clipboard value')),
     'Private mode did not pause clipboard capture');
   indicator._settings.set_boolean('private-mode', false);
+  assert(!indicator._privateButton.checked
+      && indicator._privateButton.has_style_class_name('clipboard-x-private-inactive'),
+  'Privacy mode button did not return to its inactive visual state');
 
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'disposable clipboard history entry');
   await Scripting.sleep(300);

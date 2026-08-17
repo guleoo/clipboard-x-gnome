@@ -99,6 +99,7 @@ class Indicator extends PanelMenu.Button {
     this._tokenSelectionDrag = null;
     this._tokenDragCaptureId = 0;
     this._tokenButtons = [];
+    this._stateHoverTransfer = false;
     this._hintConnections = new Map();
     this._tooltip = new St.Label({
       style_class: 'clipboard-x-tooltip',
@@ -489,7 +490,7 @@ class Indicator extends PanelMenu.Button {
     if (this._settings.get_boolean('sync-enabled'))
       row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
-      'edit-delete-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
+      'user-trash-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
     row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
     return row;
   }
@@ -998,13 +999,49 @@ class Indicator extends PanelMenu.Button {
     });
     if (stateful)
       button.add_style_class_name('clipboard-x-state-icon');
+    if (stateful && this._stateHoverTransfer)
+      this._suppressStateHover(button);
     button._clipboardXIconSize = iconSize;
     this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
     button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
-    button.connect('clicked', () => Promise.resolve(callback()).catch(error => this._actions.reportError(error)));
+    button.connect('clicked', () => {
+      if (stateful) {
+        this._suppressStateHover(button);
+        this._stateHoverTransfer = true;
+      }
+      let result;
+      try {
+        result = callback();
+      } catch (error) {
+        this._actions.reportError(error);
+        return;
+      } finally {
+        this._stateHoverTransfer = false;
+      }
+      Promise.resolve(result).catch(error => this._actions.reportError(error));
+    });
     return button;
+  }
+
+  _suppressStateHover(button) {
+    button.add_style_class_name('clipboard-x-state-hover-suppressed');
+    if (!button._clipboardXStateHoverSignal) {
+      button._clipboardXStateHoverSignal = button.connect('notify::hover', () => {
+        if (!button.hover)
+          button.remove_style_class_name('clipboard-x-state-hover-suppressed');
+      });
+    }
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      try {
+        if (!button.hover)
+          button.remove_style_class_name('clipboard-x-state-hover-suppressed');
+      } catch (_error) {
+        // A history refresh may have destroyed this button in the same frame.
+      }
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   _setButtonIcon(button, iconName) {
