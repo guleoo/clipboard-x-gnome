@@ -86,8 +86,8 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 ```sh
 meson test -C build --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```
 
 交互式调试可以运行：

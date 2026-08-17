@@ -16,9 +16,18 @@ meson install -C build
 Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/prefs.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```
+
+## 目录结构
+
+- `src/extension.js`、`src/prefs.js` 只作为 GNOME 规定的加载入口。
+- `src/common/` 只存放被多个领域复用的基础设施。
+- `src/application/`、`clipboard/`、`device/`、`sync/`、`tokenizer/`、`screenshot/`、
+  `color-picker/` 和 `ui/` 按功能领域组织实现。
+- `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`，同步集成场景放在
+  `tests/sync/integration/`。
 
 同步协议改动必须同时更新 XML、`protocol/SYNC1.md`、GJS Mock、Python Mock 和协议
 测试。兼容性破坏必须创建新的接口主版本，不能原地改变 Sync1 的既有签名或语义。

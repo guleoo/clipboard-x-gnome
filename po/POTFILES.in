@@ -1,2 +1,2 @@
-src/indicator.js
-src/prefs.js
+src/ui/indicator.js
+src/ui/preferences.js

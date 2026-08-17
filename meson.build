@@ -68,16 +68,21 @@ else
 endif
 
 test_runner = find_program('gjs')
-test('core', test_runner, args: ['-m', meson.current_source_dir() / 'tests/core.test.js'])
-test('protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/protocol.test.js'])
-test('tools', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tools.test.js'])
-test('storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/storage.test.js'])
-test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/panel-manager.test.js'])
-test('tokenizer', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer.test.js'])
+test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
+test('device-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/device/identity.test.js'])
+test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
+test('clipboard-storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/storage.test.js'])
+test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tests/color-picker/color.test.js'])
+test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'])
+test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
+test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
+test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer/processors.test.js'])
+test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer/multilingual.test.js'])
+test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])
 test(
   'stress',
   test_runner,
-  args: ['-m', meson.current_source_dir() / 'tests/stress.test.js'],
+  args: ['-m', meson.current_source_dir() / 'tests/clipboard/stress.test.js'],
   timeout: 30,
   suite: 'stress',
 )
@@ -87,7 +92,7 @@ test(
   args: [
     '--',
     find_program('bash'),
-    meson.current_source_dir() / 'tests/run-sync-integration.sh',
+    meson.current_source_dir() / 'tests/sync/run-integration.sh',
   ],
   timeout: 30,
 )
@@ -99,5 +104,6 @@ if target == 'package'
     meson.project_build_root() / 'clipboard-x.zip',
     extension_dir,
     'org.gnome.shell.extensions.clipboard-x.gschema.xml',
+    meson.project_source_root() / 'src',
   )
 endif

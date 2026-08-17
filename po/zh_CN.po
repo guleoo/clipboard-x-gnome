@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-17 11:02+0800\n"
+"POT-Creation-Date: 2026-08-17 12:45+0800\n"
 "PO-Revision-Date: 2026-08-14 21:35+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
@@ -16,629 +16,632 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/indicator.js:87 src/indicator.js:246
+#: src/ui/indicator.js:87 src/ui/indicator.js:331
 msgid "Sync disabled"
 msgstr "同步已禁用"
 
-#: src/indicator.js:169
+#: src/ui/indicator.js:173
 msgid "Search clipboard history…"
 msgstr "搜索剪切板历史…"
 
-#: src/indicator.js:190 src/prefs.js:394
+#: src/ui/indicator.js:194 src/ui/preferences.js:397
 msgid "Screenshot"
 msgstr "截图"
 
-#: src/indicator.js:196 src/prefs.js:442
+#: src/ui/indicator.js:200 src/ui/preferences.js:445
 msgid "Pick color"
 msgstr "取色"
 
-#: src/indicator.js:202
-msgid "Synchronization settings"
-msgstr "同步设置"
-
-#: src/indicator.js:228 src/indicator.js:825 src/prefs.js:256
-msgid "Pause clipboard recording"
-msgstr "暂停剪切板记录"
-
-#: src/indicator.js:234 src/prefs.js:444
-msgid "Clear unpinned history"
-msgstr "清空未固定的历史"
-
-#: src/indicator.js:236
-msgid "Preferences"
-msgstr "设置"
-
-#: src/indicator.js:249
-msgid "Sync Service offline"
-msgstr "同步服务离线"
-
-#: src/indicator.js:252
-msgid "Sync protocol error"
-msgstr "同步协议错误"
-
-#: src/indicator.js:258
-msgid "Sync Service online"
-msgstr "同步服务在线"
-
-#: src/indicator.js:279
-msgid "Loading clipboard history…"
-msgstr "正在加载剪切板历史…"
-
-#: src/indicator.js:283
-msgid "Clipboard history could not be loaded"
-msgstr "无法加载剪切板历史"
-
-#: src/indicator.js:293
-msgid "No matching entries"
-msgstr "没有匹配的条目"
-
-#: src/indicator.js:293
-msgid "Clipboard history is empty"
-msgstr "剪切板历史为空"
-
-#: src/indicator.js:304
-msgid "More entries are available; refine the search to see others"
-msgstr "还有更多条目；请缩小搜索范围以查看"
-
-#: src/indicator.js:327 src/prefs.js:361
-msgid "Text"
-msgstr "文本"
-
-#: src/indicator.js:346
-msgid "Image"
-msgstr "图片"
-
-#: src/indicator.js:353
-msgid "Download original and copy"
-msgstr "下载原始内容并复制"
-
-#: src/indicator.js:354
-msgid "Copy original"
-msgstr "复制原文"
-
-#: src/indicator.js:359 src/indicator.js:482
-msgid "Segment text"
-msgstr "分词"
-
-#: src/indicator.js:362
-msgid "Edit image"
-msgstr "编辑图片"
-
-#: src/indicator.js:366
-msgid "Unpin"
-msgstr "取消固定"
-
-#: src/indicator.js:366
-msgid "Pin"
-msgstr "固定"
-
-#: src/indicator.js:384
-msgid "Delete from local history"
-msgstr "从本地历史中删除"
-
-#: src/indicator.js:391
-msgid "Synchronize"
-msgstr "同步"
-
-#: src/indicator.js:406
-msgid "Uploading"
-msgstr "正在上传"
-
-#: src/indicator.js:406
-msgid "Downloading"
-msgstr "正在下载"
-
-#: src/indicator.js:409
-msgid "Waiting for peer device"
-msgstr "正在等待对端设备"
-
-#: src/indicator.js:409
-msgid "Preparing transfer"
-msgstr "正在准备传输"
-
-#: src/indicator.js:415
-msgid "Transfer failed; activate to retry"
-msgstr "传输失败；点击重试"
-
-#: src/indicator.js:420
-msgid "Upload completed"
-msgstr "上传完成"
-
-#: src/indicator.js:420
-msgid "Original downloaded"
-msgstr "原始内容已下载"
-
-#: src/indicator.js:425
-msgid "Synchronization is disabled"
-msgstr "同步已禁用"
-
-#: src/indicator.js:431
-msgid "Retry original download"
-msgstr "重试下载原始内容"
-
-#: src/indicator.js:431
-msgid "Download original"
-msgstr "下载原始内容"
-
-#: src/indicator.js:435
-msgid "Original is available locally"
-msgstr "原始内容已在本机就绪"
-
-#: src/indicator.js:435
-msgid "Send to synchronization Service"
-msgstr "发送到同步服务"
-
-#: src/indicator.js:457
-msgid "This text is too large for interactive processing"
-msgstr "此文本过大，无法进行交互式处理"
-
-#: src/indicator.js:477
-msgid "Back to clipboard history"
-msgstr "返回剪切板历史"
-
-#: src/indicator.js:537
-msgid "URL"
-msgstr "网址"
-
-#: src/indicator.js:539
-msgid "Number"
-msgstr "数字"
-
-#: src/indicator.js:540
-msgid "Email address"
-msgstr "电子邮箱地址"
-
-#: src/indicator.js:540
-msgid "Word"
-msgstr "词语"
-
-#: src/indicator.js:549
-msgid "No words found"
-msgstr "未找到可分词内容"
-
-#: src/indicator.js:555 src/indicator.js:580
-msgid "Select one or more words"
-msgstr "请选择一个或多个词"
-
-#: src/indicator.js:564
-msgid "Copy selected words"
-msgstr "复制所选词语"
-
-#: src/indicator.js:690
-msgid "Unknown device"
-msgstr "未知设备"
-
-#: src/indicator.js:203 src/indicator.js:944
+#: src/ui/indicator.js:206 src/ui/indicator.js:993
 msgid "Privacy mode"
 msgstr "隐私模式"
 
-#: src/prefs.js:40
+#: src/ui/indicator.js:242
+msgid "Back to clipboard history"
+msgstr "返回剪切板历史"
+
+#: src/ui/indicator.js:247 src/ui/indicator.js:444
+msgid "Segment text"
+msgstr "分词"
+
+#: src/ui/indicator.js:276 src/ui/indicator.js:745
+msgid "Select one or more words"
+msgstr "请选择一个或多个词"
+
+#: src/ui/indicator.js:285
+msgid "Copy selected words"
+msgstr "复制所选词语"
+
+#: src/ui/indicator.js:306
+msgid "Synchronization settings"
+msgstr "同步设置"
+
+#: src/ui/indicator.js:310 src/ui/preferences.js:447
+msgid "Clear unpinned history"
+msgstr "清空未固定的历史"
+
+#: src/ui/indicator.js:312
+msgid "Preferences"
+msgstr "设置"
+
+#: src/ui/indicator.js:334
+msgid "Sync Service offline"
+msgstr "同步服务离线"
+
+#: src/ui/indicator.js:337
+msgid "Sync protocol error"
+msgstr "同步协议错误"
+
+#: src/ui/indicator.js:343
+msgid "Sync Service online"
+msgstr "同步服务在线"
+
+#: src/ui/indicator.js:364
+msgid "Loading clipboard history…"
+msgstr "正在加载剪切板历史…"
+
+#: src/ui/indicator.js:368
+msgid "Clipboard history could not be loaded"
+msgstr "无法加载剪切板历史"
+
+#: src/ui/indicator.js:378
+msgid "No matching entries"
+msgstr "没有匹配的条目"
+
+#: src/ui/indicator.js:378
+msgid "Clipboard history is empty"
+msgstr "剪切板历史为空"
+
+#: src/ui/indicator.js:389
+msgid "More entries are available; refine the search to see others"
+msgstr "还有更多条目；请缩小搜索范围以查看"
+
+#: src/ui/indicator.js:412 src/ui/preferences.js:364
+msgid "Text"
+msgstr "文本"
+
+#: src/ui/indicator.js:431
+msgid "Image"
+msgstr "图片"
+
+#: src/ui/indicator.js:438
+msgid "Download original and copy"
+msgstr "下载原始内容并复制"
+
+#: src/ui/indicator.js:439
+msgid "Copy original"
+msgstr "复制原文"
+
+#: src/ui/indicator.js:447
+msgid "Edit image"
+msgstr "编辑图片"
+
+#: src/ui/indicator.js:451
+msgid "Unpin"
+msgstr "取消固定"
+
+#: src/ui/indicator.js:451
+msgid "Pin"
+msgstr "固定"
+
+#: src/ui/indicator.js:469
+msgid "Delete from local history"
+msgstr "从本地历史中删除"
+
+#: src/ui/indicator.js:476
+msgid "Synchronize"
+msgstr "同步"
+
+#: src/ui/indicator.js:491
+msgid "Uploading"
+msgstr "正在上传"
+
+#: src/ui/indicator.js:491
+msgid "Downloading"
+msgstr "正在下载"
+
+#: src/ui/indicator.js:494
+msgid "Waiting for peer device"
+msgstr "正在等待对端设备"
+
+#: src/ui/indicator.js:494
+msgid "Preparing transfer"
+msgstr "正在准备传输"
+
+#: src/ui/indicator.js:500
+msgid "Transfer failed; activate to retry"
+msgstr "传输失败；点击重试"
+
+#: src/ui/indicator.js:505
+msgid "Upload completed"
+msgstr "上传完成"
+
+#: src/ui/indicator.js:505
+msgid "Original downloaded"
+msgstr "原始内容已下载"
+
+#: src/ui/indicator.js:510
+msgid "Synchronization is disabled"
+msgstr "同步已禁用"
+
+#: src/ui/indicator.js:516
+msgid "Retry original download"
+msgstr "重试下载原始内容"
+
+#: src/ui/indicator.js:516
+msgid "Download original"
+msgstr "下载原始内容"
+
+#: src/ui/indicator.js:520
+msgid "Original is available locally"
+msgstr "原始内容已在本机就绪"
+
+#: src/ui/indicator.js:520
+msgid "Send to synchronization Service"
+msgstr "发送到同步服务"
+
+#: src/ui/indicator.js:542
+msgid "This text is too large for interactive processing"
+msgstr "此文本过大，无法进行交互式处理"
+
+#: src/ui/indicator.js:625
+msgid "URL"
+msgstr "网址"
+
+#: src/ui/indicator.js:627
+msgid "Number"
+msgstr "数字"
+
+#: src/ui/indicator.js:628
+msgid "Email address"
+msgstr "电子邮箱地址"
+
+#: src/ui/indicator.js:628
+msgid "Word"
+msgstr "词语"
+
+#: src/ui/indicator.js:642
+msgid "No words found"
+msgstr "未找到可分词内容"
+
+#: src/ui/indicator.js:858
+msgid "Unknown device"
+msgstr "未知设备"
+
+#: src/ui/preferences.js:40
 msgid "General"
 msgstr "常规"
 
-#: src/prefs.js:43
+#: src/ui/preferences.js:43
 msgid "Appearance"
 msgstr "外观"
 
-#: src/prefs.js:47
+#: src/ui/preferences.js:47
 msgid "Panel"
 msgstr "面板"
 
-#: src/prefs.js:60
-msgid "Theme color"
-msgstr "主题色"
-
-#: src/prefs.js:160
-msgid "Follow system"
-msgstr "跟随系统"
-
-#: src/prefs.js:162
-msgid "Blue"
-msgstr "蓝色"
-
-#: src/prefs.js:162
-msgid "Teal"
-msgstr "青色"
-
-#: src/prefs.js:162
-msgid "Green"
-msgstr "绿色"
-
-#: src/prefs.js:162
-msgid "Orange"
-msgstr "橙色"
-
-#: src/prefs.js:162
-msgid "Pink"
-msgstr "粉色"
-
-#: src/prefs.js:162
-msgid "Slate"
-msgstr "灰蓝色"
-
-#: src/prefs.js:177
-msgid "Add custom color"
-msgstr "添加自定义颜色"
-
-#: src/prefs.js:187
-msgid "Choose custom theme color"
-msgstr "选择自定义主题色"
-
-#: src/prefs.js:236
-msgid "Clipboard"
-msgstr "剪切板"
-
-#: src/prefs.js:251
-msgid "History"
-msgstr "历史"
-
-#: src/prefs.js:239
+#: src/ui/preferences.js:49
 msgid "Show panel indicator"
 msgstr "显示顶栏图标"
 
-#: src/prefs.js:240
+#: src/ui/preferences.js:50
 msgid "Panel width"
 msgstr "面板宽度"
 
-#: src/prefs.js:240 src/prefs.js:241 src/prefs.js:374
+#: src/ui/preferences.js:50 src/ui/preferences.js:51 src/ui/preferences.js:377
 msgid "px"
 msgstr "像素"
 
-#: src/prefs.js:241
+#: src/ui/preferences.js:51
 msgid "Panel height"
 msgstr "面板高度"
 
-#: src/prefs.js:242
+#: src/ui/preferences.js:52
 msgid "Maximum entries shown in panel"
 msgstr "面板最大显示条目数"
 
-#: src/prefs.js:246
+#: src/ui/preferences.js:56
 msgid "Preserve panel state"
 msgstr "保留面板现场"
 
-#: src/prefs.js:247
+#: src/ui/preferences.js:57
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr "重新打开时恢复上次视图，而不是始终返回剪切板历史"
 
-#: src/prefs.js:249
+#: src/ui/preferences.js:73
+msgid "Theme color"
+msgstr "主题色"
+
+#: src/ui/preferences.js:173
+msgid "Follow system"
+msgstr "跟随系统"
+
+#: src/ui/preferences.js:175
+msgid "Blue"
+msgstr "蓝色"
+
+#: src/ui/preferences.js:175
+msgid "Teal"
+msgstr "青色"
+
+#: src/ui/preferences.js:175
+msgid "Green"
+msgstr "绿色"
+
+#: src/ui/preferences.js:175
+msgid "Orange"
+msgstr "橙色"
+
+#: src/ui/preferences.js:175
+msgid "Pink"
+msgstr "粉色"
+
+#: src/ui/preferences.js:175
+msgid "Slate"
+msgstr "灰蓝色"
+
+#: src/ui/preferences.js:190
+msgid "Add custom color"
+msgstr "添加自定义颜色"
+
+#: src/ui/preferences.js:200
+msgid "Choose custom theme color"
+msgstr "选择自定义主题色"
+
+#: src/ui/preferences.js:249
+msgid "Clipboard"
+msgstr "剪切板"
+
+#: src/ui/preferences.js:250
+msgid "History"
+msgstr "历史"
+
+#: src/ui/preferences.js:252
 msgid "History entries"
 msgstr "历史条目数"
 
-#: src/prefs.js:250
+#: src/ui/preferences.js:253
 msgid "Cache size"
 msgstr "缓存大小"
 
-#: src/prefs.js:250 src/prefs.js:252 src/prefs.js:373
+#: src/ui/preferences.js:253 src/ui/preferences.js:255
+#: src/ui/preferences.js:376
 msgid "MiB"
 msgstr "MiB"
 
-#: src/prefs.js:251
+#: src/ui/preferences.js:254
 msgid "Automatic cleanup"
 msgstr "自动清理"
 
-#: src/prefs.js:251
+#: src/ui/preferences.js:254
 msgid "days; 0 disables"
 msgstr "天；0 表示禁用"
 
-#: src/prefs.js:252
+#: src/ui/preferences.js:255
 msgid "Maximum item size"
 msgstr "单个条目大小上限"
 
-#: src/prefs.js:254
+#: src/ui/preferences.js:257
 msgid "Privacy"
 msgstr "隐私"
 
-#: src/prefs.js:257 src/prefs.js:364
+#: src/ui/preferences.js:259
+msgid "Pause clipboard recording"
+msgstr "暂停剪切板记录"
+
+#: src/ui/preferences.js:260 src/ui/preferences.js:367
 msgid "Sensitive content"
 msgstr "敏感内容"
 
-#: src/prefs.js:258
+#: src/ui/preferences.js:261
 msgid "Do not record"
 msgstr "不记录"
 
-#: src/prefs.js:259
+#: src/ui/preferences.js:262
 msgid "Keep until extension stops"
 msgstr "仅保留到扩展停止"
 
-#: src/prefs.js:260
+#: src/ui/preferences.js:263
 msgid "Store like other history"
 msgstr "按普通历史保存"
 
-#: src/prefs.js:265
+#: src/ui/preferences.js:268
 msgid "Excluded applications"
 msgstr "排除的应用"
 
-#: src/prefs.js:266
+#: src/ui/preferences.js:269
 msgid "Comma-separated window classes"
 msgstr "以逗号分隔窗口类名"
 
-#: src/prefs.js:272
+#: src/ui/preferences.js:275
 msgid "Synchronization"
 msgstr "同步"
 
-#: src/prefs.js:273
+#: src/ui/preferences.js:276
 msgid "Device"
 msgstr "设备"
 
-#: src/prefs.js:275
+#: src/ui/preferences.js:278
 msgid "Device ID"
 msgstr "设备 ID"
 
-#: src/prefs.js:280
+#: src/ui/preferences.js:283
 msgid "Device tag"
 msgstr "设备标签"
 
-#: src/prefs.js:280
+#: src/ui/preferences.js:283
 msgid "Friendly name shown during device discovery"
 msgstr "设备发现时显示的友好名称"
 
-#: src/prefs.js:281
+#: src/ui/preferences.js:284
 msgid "Device icon"
 msgstr "设备图标"
 
-#: src/prefs.js:282
+#: src/ui/preferences.js:285
 msgid "Desktop"
 msgstr "台式电脑"
 
-#: src/prefs.js:283
+#: src/ui/preferences.js:286
 msgid "Laptop"
 msgstr "笔记本电脑"
 
-#: src/prefs.js:284
+#: src/ui/preferences.js:287
 msgid "Phone"
 msgstr "手机"
 
-#: src/prefs.js:285
+#: src/ui/preferences.js:288
 msgid "Tablet"
 msgstr "平板电脑"
 
-#: src/prefs.js:286
+#: src/ui/preferences.js:289
 msgid "Server"
 msgstr "服务器"
 
-#: src/prefs.js:287
+#: src/ui/preferences.js:290
 msgid "Other"
 msgstr "其他"
 
-#: src/prefs.js:290
+#: src/ui/preferences.js:293
 msgid "Service connection"
 msgstr "服务连接"
 
-#: src/prefs.js:292
+#: src/ui/preferences.js:295
 msgid "Enable synchronization integration"
 msgstr "启用同步服务集成"
 
-#: src/prefs.js:296
+#: src/ui/preferences.js:299
 msgid "D-Bus name"
 msgstr "D-Bus 名称"
 
-#: src/prefs.js:303
+#: src/ui/preferences.js:306
 msgid "Object path"
 msgstr "对象路径"
 
-#: src/prefs.js:307
+#: src/ui/preferences.js:310
 msgid "Service status"
 msgstr "服务状态"
 
-#: src/prefs.js:307
+#: src/ui/preferences.js:310
 msgid "Not tested"
 msgstr "尚未测试"
 
-#: src/prefs.js:308
+#: src/ui/preferences.js:311
 msgid "Test connection"
 msgstr "测试连接"
 
-#: src/prefs.js:311
+#: src/ui/preferences.js:314
 msgid "Connecting…"
 msgstr "正在连接…"
 
-#: src/prefs.js:322
+#: src/ui/preferences.js:325
 msgid "item limit"
 msgstr "条目上限"
 
-#: src/prefs.js:323
+#: src/ui/preferences.js:326
 msgid "preview limit"
 msgstr "预览上限"
 
-#: src/prefs.js:335
+#: src/ui/preferences.js:338
 msgid "Service preferences"
 msgstr "服务设置"
 
-#: src/prefs.js:336
+#: src/ui/preferences.js:339
 msgid "Provided by the external synchronization Service"
 msgstr "由外部同步服务提供"
 
-#: src/prefs.js:338
+#: src/ui/preferences.js:341
 msgid "Open"
 msgstr "打开"
 
-#: src/prefs.js:349
+#: src/ui/preferences.js:352
 msgid "Transfer policy"
 msgstr "传输策略"
 
-#: src/prefs.js:351
+#: src/ui/preferences.js:354
 msgid "Send mode"
 msgstr "发送模式"
 
-#: src/prefs.js:352 src/prefs.js:357 src/prefs.js:536 src/prefs.js:546
+#: src/ui/preferences.js:355 src/ui/preferences.js:360
+#: src/ui/preferences.js:539 src/ui/preferences.js:549
 msgid "Disabled"
 msgstr "禁用"
 
-#: src/prefs.js:353
+#: src/ui/preferences.js:356
 msgid "Manual"
 msgstr "手动"
 
-#: src/prefs.js:354
+#: src/ui/preferences.js:357
 msgid "Automatic"
 msgstr "自动"
 
-#: src/prefs.js:356
+#: src/ui/preferences.js:359
 msgid "Receive mode"
 msgstr "接收模式"
 
-#: src/prefs.js:358
+#: src/ui/preferences.js:361
 msgid "History only"
 msgstr "仅加入历史"
 
-#: src/prefs.js:359
+#: src/ui/preferences.js:362
 msgid "Activate clipboard"
 msgstr "设为当前剪切板"
 
-#: src/prefs.js:362
+#: src/ui/preferences.js:365
 msgid "HTML"
 msgstr "HTML"
 
-#: src/prefs.js:363
+#: src/ui/preferences.js:366
 msgid "Images"
 msgstr "图片"
 
-#: src/prefs.js:364
+#: src/ui/preferences.js:367
 msgid "Disabled by default"
 msgstr "默认禁用"
 
-#: src/prefs.js:368
+#: src/ui/preferences.js:371
 msgid "Favorites only"
 msgstr "仅收藏内容"
 
-#: src/prefs.js:369
+#: src/ui/preferences.js:372
 msgid "Only applies to automatic sending"
 msgstr "仅适用于自动发送"
 
-#: src/prefs.js:371
+#: src/ui/preferences.js:374
 msgid "Small text sent in full"
 msgstr "完整发送的小文本上限"
 
-#: src/prefs.js:371 src/prefs.js:372 src/prefs.js:375
+#: src/ui/preferences.js:374 src/ui/preferences.js:375
+#: src/ui/preferences.js:378
 msgid "KiB"
 msgstr "KiB"
 
-#: src/prefs.js:372
+#: src/ui/preferences.js:375
 msgid "Large text preview"
 msgstr "大文本预览大小"
 
-#: src/prefs.js:373
+#: src/ui/preferences.js:376
 msgid "Small images sent in full"
 msgstr "完整发送的小图片上限"
 
-#: src/prefs.js:374
+#: src/ui/preferences.js:377
 msgid "Thumbnail dimension"
 msgstr "缩略图尺寸"
 
-#: src/prefs.js:375
+#: src/ui/preferences.js:378
 msgid "Thumbnail size limit"
 msgstr "缩略图大小上限"
 
-#: src/prefs.js:376
+#: src/ui/preferences.js:379
 msgid "On-demand timeout"
 msgstr "按需传输超时"
 
-#: src/prefs.js:376
+#: src/ui/preferences.js:379
 msgid "seconds"
 msgstr "秒"
 
-#: src/prefs.js:381
+#: src/ui/preferences.js:384
 msgid "Color picker"
 msgstr "取色器"
 
-#: src/prefs.js:382
+#: src/ui/preferences.js:385
 msgid "Color format"
 msgstr "颜色格式"
 
-#: src/prefs.js:384
+#: src/ui/preferences.js:387
 msgid "Default format"
 msgstr "默认格式"
 
-#: src/prefs.js:395
+#: src/ui/preferences.js:398
 msgid "Screenshot Portal"
 msgstr "截图门户"
 
-#: src/prefs.js:397
+#: src/ui/preferences.js:400
 msgid "Default target"
 msgstr "默认目标"
 
-#: src/prefs.js:398
+#: src/ui/preferences.js:401
 msgid "Interactive"
 msgstr "交互选择"
 
-#: src/prefs.js:399
+#: src/ui/preferences.js:402
 msgid "Full screen"
 msgstr "全屏"
 
-#: src/prefs.js:400
+#: src/ui/preferences.js:403
 msgid "Window"
 msgstr "窗口"
 
-#: src/prefs.js:401
+#: src/ui/preferences.js:404
 msgid "Area"
 msgstr "区域"
 
-#: src/prefs.js:402
+#: src/ui/preferences.js:405
 msgid "Active window"
 msgstr "活动窗口"
 
-#: src/prefs.js:404
+#: src/ui/preferences.js:407
 msgid "Add to history"
 msgstr "加入历史"
 
-#: src/prefs.js:405
+#: src/ui/preferences.js:408
 msgid "Copy screenshot"
 msgstr "复制截图"
 
-#: src/prefs.js:406
+#: src/ui/preferences.js:409
 msgid "Open image editor"
 msgstr "打开图片编辑器"
 
-#: src/prefs.js:408
+#: src/ui/preferences.js:411
 msgid "Image editor"
 msgstr "图片编辑器"
 
-#: src/prefs.js:414
+#: src/ui/preferences.js:417
 msgid "Advanced command"
 msgstr "高级命令"
 
-#: src/prefs.js:415
+#: src/ui/preferences.js:418
 msgid "%u is the URI, %f is a local path and %% is a percent sign"
 msgstr "%u 表示 URI，%f 表示本地路径，%% 表示百分号"
 
-#: src/prefs.js:431
+#: src/ui/preferences.js:434
 msgid "Shortcuts"
 msgstr "快捷键"
 
-#: src/prefs.js:435
+#: src/ui/preferences.js:438
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-#: src/prefs.js:436
+#: src/ui/preferences.js:439
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr "点击快捷键，然后按下新的组合键；按退格键可将其禁用。"
 
-#: src/prefs.js:440
+#: src/ui/preferences.js:443
 msgid "Open clipboard panel"
 msgstr "打开剪切板面板"
 
-#: src/prefs.js:441
+#: src/ui/preferences.js:444
 msgid "Take screenshot"
 msgstr "截图"
 
-#: src/prefs.js:443
+#: src/ui/preferences.js:446
 msgid "Pause or resume clipboard recording"
 msgstr "暂停或恢复剪切板记录"
 
-#: src/prefs.js:541
+#: src/ui/preferences.js:544
 msgid "Click to set a shortcut"
 msgstr "点击以设置快捷键"
 
-#: src/prefs.js:562
+#: src/ui/preferences.js:565
 msgid "Press shortcut…"
 msgstr "请按快捷键…"
 
-#: src/prefs.js:613
+#: src/ui/preferences.js:616
 msgid "Custom command"
 msgstr "自定义命令"
 
-#: src/prefs.js:616
+#: src/ui/preferences.js:619
 msgid "Application"
 msgstr "应用"
 
