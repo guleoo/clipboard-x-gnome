@@ -7,6 +7,7 @@ import St from 'gi://St';
 import {ClipboardItem} from './item.js';
 import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
 import {search as searchHistory} from './history/search.js';
+import {order as orderHistory} from './history/order.js';
 import {HistoryStore} from './history/store.js';
 import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
@@ -53,7 +54,7 @@ export class ClipboardController extends EventEmitter {
 
   async start() {
     try {
-      this._items = await this._store.load(this._cancellable);
+      this._items = orderHistory(await this._store.load(this._cancellable));
       this._trim();
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
@@ -199,13 +200,14 @@ export class ClipboardController extends EventEmitter {
     if (existingIndex >= 0) {
       const [existing] = this._items.splice(existingIndex, 1);
       existing.createdAt = Date.now();
-      this._items.unshift(existing);
+      this._items.push(existing);
+      orderHistory(this._items);
       this._scheduleSave();
       this.emit('changed');
       return existing;
     }
 
-    this._items.unshift(item);
+    this._items.push(item);
     this._trim();
     this._scheduleSave();
     this.emit('item-added', item, source);
@@ -227,7 +229,7 @@ export class ClipboardController extends EventEmitter {
     if (!item)
       return;
     item.favorite = !item.favorite;
-    this._items.sort((left, right) => Number(right.favorite) - Number(left.favorite) || right.createdAt - left.createdAt);
+    orderHistory(this._items);
     this._scheduleSave();
     this.emit('favorite-changed', item, item.favorite);
     this.emit('changed');
@@ -375,6 +377,7 @@ export class ClipboardController extends EventEmitter {
   }
 
   _trim() {
+    orderHistory(this._items);
     const limit = this._settings.get_int('history-size');
     const retentionDays = this._settings.get_int('history-retention-days');
     const cutoff = retentionDays > 0 ? Date.now() - retentionDays * 86_400_000 : 0;

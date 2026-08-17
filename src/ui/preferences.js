@@ -25,14 +25,37 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
     const {deviceId} = ensureDeviceIdentity(settings);
-    window.set_default_size(720, 700);
+    window.set_default_size(900, 700);
 
-    window.add(this._generalPage(settings));
-    window.add(this._clipboardPage(settings));
-    window.add(this._syncPage(settings, deviceId));
-    window.add(this._colorPage(settings));
-    window.add(this._screenshotPage(settings));
-    window.add(this._shortcutsPage(settings));
+    const pages = [
+      ['general', this._generalPage(settings)],
+      ['clipboard', this._clipboardPage(settings)],
+      ['sync', this._syncPage(settings, deviceId)],
+      ['color-picker', this._colorPage(settings)],
+      ['screenshot', this._screenshotPage(settings)],
+      ['shortcuts', this._shortcutsPage(settings)],
+    ];
+    const stack = new Gtk.Stack({
+      hexpand: true,
+      vexpand: true,
+      transition_type: Gtk.StackTransitionType.CROSSFADE,
+    });
+    for (const [name, page] of pages) {
+      const stackPage = stack.add_titled(page, name, page.title);
+      stackPage.icon_name = page.icon_name;
+    }
+    const sidebar = new Gtk.StackSidebar({
+      stack,
+      width_request: 190,
+      vexpand: true,
+    });
+    const content = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL});
+    content.append(sidebar);
+    content.append(new Gtk.Separator({orientation: Gtk.Orientation.VERTICAL}));
+    content.append(stack);
+    const toolbarView = new Adw.ToolbarView({content});
+    toolbarView.add_top_bar(new Adw.HeaderBar());
+    window.set_content(toolbarView);
   }
 
   _generalPage(settings) {
@@ -250,9 +273,9 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const history = new Adw.PreferencesGroup({title: _('History')});
     page.add(history);
     history.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
-    history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
+    history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MB')));
     history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
-    history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
+    history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MB')));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);
@@ -371,11 +394,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Favorites only'),
       _('Only applies to automatic sending'),
     ));
-    policy.add(this._sizeSpin(settings, 'text-full-threshold', _('Small text sent in full'), 1, 16384, 1, 1024, _('KiB')));
-    policy.add(this._sizeSpin(settings, 'text-preview-limit', _('Large text preview'), 0.25, 64, 0.25, 1024, _('KiB'), 2));
-    policy.add(this._sizeSpin(settings, 'image-full-threshold', _('Small images sent in full'), 0.25, 128, 0.25, 1024 * 1024, _('MiB'), 2));
+    policy.add(this._sizeSpin(settings, 'text-full-threshold', _('Small text sent in full'), 1, 16384, 1, 1024, _('KB')));
+    policy.add(this._sizeSpin(settings, 'text-preview-limit', _('Large text preview'), 0.25, 64, 0.25, 1024, _('KB'), 2));
+    policy.add(this._sizeSpin(settings, 'image-full-threshold', _('Small images sent in full'), 0.25, 128, 0.25, 1024 * 1024, _('MB'), 2));
     policy.add(this._spin(settings, 'thumbnail-size', _('Thumbnail dimension'), 64, 1024, 16, _('px')));
-    policy.add(this._sizeSpin(settings, 'thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KiB')));
+    policy.add(this._sizeSpin(settings, 'thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KB')));
     policy.add(this._spin(settings, 'sync-transfer-timeout-seconds', _('On-demand timeout'), 5, 3600, 5, _('seconds')));
     return page;
   }
@@ -743,6 +766,6 @@ function formatBytes(bytes) {
   if (bytes < 1024)
     return `${bytes} B`;
   if (bytes < 1024 * 1024)
-    return `${(bytes / 1024).toFixed(1)} KiB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

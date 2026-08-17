@@ -215,7 +215,7 @@ class Indicator extends PanelMenu.Button {
       () => {
         this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
       },
-      {iconSize: 14},
+      {iconSize: 14, stateful: true},
     );
     toolbar.add_child(this._privateButton);
     searchToolbar.add_child(toolbar);
@@ -475,17 +475,14 @@ class Indicator extends PanelMenu.Button {
       'view-pin-symbolic',
       item.favorite ? _('Unpin') : _('Pin'),
       () => this._controller.toggleFavorite(item.id),
-      {showTooltip: false},
+      {showTooltip: false, stateful: true},
     );
     pinButton.toggle_mode = true;
     pinButton.checked = item.favorite;
     if (item.favorite)
       pinButton.add_style_class_name('clipboard-x-pinned');
     if (item.favorite && this._customAccentColor) {
-      pinButton.set_style([
-        `color: ${this._customAccentColor}`,
-        `background-color: ${colorWithAlpha(this._customAccentColor, 0.16)}`,
-      ].join('; '));
+      pinButton.set_style(`color: ${this._customAccentColor};`);
     }
     row.add_child(pinButton);
     if (this._settings.get_boolean('sync-enabled'))
@@ -986,13 +983,20 @@ class Indicator extends PanelMenu.Button {
   }
 
   _iconButton(iconName, hintText, callback, options = {}) {
-    const {showTooltip = true, iconSize = ICON_SIZE, tooltipScope = 'global'} = options;
+    const {
+      showTooltip = true,
+      iconSize = ICON_SIZE,
+      tooltipScope = 'global',
+      stateful = false,
+    } = options;
     const button = new St.Button({
       can_focus: true,
       track_hover: true,
       style_class: 'clipboard-x-icon-button',
       accessible_name: hintText,
     });
+    if (stateful)
+      button.add_style_class_name('clipboard-x-state-icon');
     button._clipboardXIconSize = iconSize;
     this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
@@ -1115,7 +1119,7 @@ class Indicator extends PanelMenu.Button {
       paused ? 'clipboard-x-private-active' : 'clipboard-x-private-inactive',
     );
     this._privateButton.set_style(paused && this._customAccentColor
-      ? `color: ${this._customAccentColor}; background-color: ${colorWithAlpha(this._customAccentColor, 0.18)};`
+      ? `color: ${this._customAccentColor};`
       : '');
   }
 
@@ -1214,11 +1218,4 @@ function formatBytes(bytes) {
   if (bytes < 1024 * 1024)
     return `${(bytes / 1024).toFixed(1)} KiB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
-}
-
-function colorWithAlpha(color, alpha) {
-  const red = Number.parseInt(color.slice(1, 3), 16);
-  const green = Number.parseInt(color.slice(3, 5), 16);
-  const blue = Number.parseInt(color.slice(5, 7), 16);
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }

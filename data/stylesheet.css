@@ -9,7 +9,7 @@
 .clipboard-x-search-toolbar {
   spacing: 4px;
   padding: 1px 2px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .clipboard-x-search {
@@ -45,6 +45,12 @@
 .clipboard-x-footer .clipboard-x-icon-button {
   color: rgba(255, 255, 255, 0.95);
   opacity: 1;
+}
+
+.clipboard-x-toolbar .clipboard-x-icon-button {
+  padding: 2px;
+  min-width: 22px;
+  min-height: 24px;
 }
 
 .clipboard-x-icon-button:hover,
@@ -121,12 +127,20 @@
 
 .clipboard-x-private-active {
   color: -st-accent-color;
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: transparent;
 }
 
 .clipboard-x-pinned {
   color: -st-accent-color;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+}
+
+.clipboard-x-icon-button.clipboard-x-state-icon,
+.clipboard-x-icon-button.clipboard-x-state-icon:hover,
+.clipboard-x-icon-button.clipboard-x-state-icon:focus,
+.clipboard-x-icon-button.clipboard-x-state-icon:active,
+.clipboard-x-icon-button.clipboard-x-state-icon:checked {
+  background-color: transparent;
 }
 
 .clipboard-x-tooltip {
