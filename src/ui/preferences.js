@@ -116,6 +116,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Preserve panel state'),
       _('Reopen the previous view instead of always returning to clipboard history'),
     ));
+    panel.add(this._switch(
+      settings,
+      'panel-confine-focus',
+      _('Keep keyboard focus in panel'),
+      _('At the edge, arrow keys do not move focus outside the extension panel'),
+    ));
     return page;
   }
 
@@ -317,12 +323,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
     tokenizer.add(this._switch(settings, 'tokenizer-show-source-preview', _('Show source text preview')));
-    tokenizer.add(this._switch(
-      settings,
-      'tokenizer-confine-focus',
-      _('Keep keyboard focus in tokenizer'),
-      _('At the edge, arrow keys do not move focus outside the tokenizer panel'),
-    ));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);
@@ -511,6 +511,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     page.add(clipboard);
     for (const [key, title] of [
       ['panel-shortcut', _('Open clipboard panel')],
+      ['history-search-shortcut', _('Focus clipboard search')],
       ['private-mode-shortcut', _('Pause or resume clipboard recording')],
       ['clear-history-shortcut', _('Clear unpinned history')],
     ])

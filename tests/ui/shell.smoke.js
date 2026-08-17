@@ -68,7 +68,33 @@ export async function run() {
   indicator._showTooltip(indicator._privateButton, true);
   assert(indicator._tooltip.visible && indicator._tooltip.get_parent() === Main.uiGroup,
     'Icon help must use a floating Shell tooltip');
-  indicator._hideTooltip();
+  indicator._handleStageCapturedEvent({type: () => Clutter.EventType.MOTION});
+  assert(!indicator._tooltip.visible,
+    'Moving the mouse did not dismiss a keyboard-triggered tooltip');
+  const originalSearchShortcut = indicator._settings.get_strv('history-search-shortcut');
+  indicator._settings.set_strv('history-search-shortcut', ['<Control>f']);
+  assert(indicator._handleStageCapturedEvent({
+    type: () => Clutter.EventType.KEY_PRESS,
+    get_key_symbol: () => Clutter.KEY_f,
+    get_state: () => Clutter.ModifierType.CONTROL_MASK,
+  }) === Clutter.EVENT_STOP, 'Clipboard search shortcut was not consumed');
+  await Scripting.sleep(10);
+  assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
+    'Clipboard search shortcut did not focus the search entry');
+  indicator._settings.set_strv('history-search-shortcut', originalSearchShortcut);
+  const originalPanelConfineFocus = indicator._settings.get_boolean('panel-confine-focus');
+  indicator._settings.set_boolean('panel-confine-focus', true);
+  indicator._privateButton.grab_key_focus();
+  assert(indicator._handleStageCapturedEvent({
+    type: () => Clutter.EventType.KEY_PRESS,
+    get_key_symbol: () => Clutter.KEY_Down,
+    get_state: () => 0,
+  }) === Clutter.EVENT_PROPAGATE, 'Panel focus guard unexpectedly consumed navigation');
+  global.stage.set_key_focus(indicator);
+  await Scripting.sleep(10);
+  assert(global.stage.get_key_focus() === indicator._privateButton,
+    'Panel focus guard did not restore focus after it escaped the clipboard panel');
+  indicator._settings.set_boolean('panel-confine-focus', originalPanelConfineFocus);
 
   indicator.menu.close();
   await Scripting.sleep(100);
@@ -191,9 +217,9 @@ export async function run() {
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
   const originalSourcePreview = indicator._settings.get_boolean('tokenizer-show-source-preview');
-  const originalConfineFocus = indicator._settings.get_boolean('tokenizer-confine-focus');
+  const originalConfineFocus = indicator._settings.get_boolean('panel-confine-focus');
   indicator._settings.set_boolean('tokenizer-show-source-preview', false);
-  indicator._settings.set_boolean('tokenizer-confine-focus', true);
+  indicator._settings.set_boolean('panel-confine-focus', true);
   indicator.menu.open();
   await Scripting.sleep(100);
   await indicator._openTokenizer(capturedText);
@@ -233,7 +259,7 @@ export async function run() {
     entryEvent(Clutter.KEY_Right),
   ) === Clutter.EVENT_STOP && global.stage.get_key_focus() === lastTokenButton,
   'Confined tokenizer focus escaped at the final token');
-  indicator._settings.set_boolean('tokenizer-confine-focus', false);
+  indicator._settings.set_boolean('panel-confine-focus', false);
   assert(indicator._handleTokenKey(
     lastTokenButton,
     lastTokenButton._clipboardXToken,
@@ -241,7 +267,7 @@ export async function run() {
     entryEvent(Clutter.KEY_Right),
   ) === Clutter.EVENT_PROPAGATE,
   'Disabled focus confinement still consumed an edge arrow key');
-  indicator._settings.set_boolean('tokenizer-confine-focus', true);
+  indicator._settings.set_boolean('panel-confine-focus', true);
   indicator._settings.set_boolean('tokenizer-show-source-preview', true);
   assert(indicator._tokenSource.visible,
     'Enabled source preview was not shown immediately');
@@ -256,6 +282,17 @@ export async function run() {
       && tokenState.selected.has(tokenState.tokens[1].index)
       && global.stage.get_key_focus() === tokenButtons[1],
     'Shift+Arrow did not extend token selection and keyboard focus');
+  tokenState.keyboardSelection = null;
+  tokenButtons[0].grab_key_focus();
+  indicator._handleTokenKey(
+    tokenButtons[0],
+    tokenState.tokens[0],
+    tokenState,
+    entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
+  );
+  assert(!tokenState.selected.has(tokenState.tokens[0].index)
+      && !tokenState.selected.has(tokenState.tokens[1].index),
+  'Shift+Arrow did not deselect a range anchored on a selected token');
   for (const button of tokenButtons) {
     const token = button._clipboardXToken;
     indicator._setTokenSelected(button, token, tokenState, false, false);
@@ -280,7 +317,7 @@ export async function run() {
   assert(indicator._tokenResult.get_parent().get_parent() === indicator._tokenPanel,
     'Selected-token preview is not fixed outside the scrolling token area');
   indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
-  indicator._settings.set_boolean('tokenizer-confine-focus', originalConfineFocus);
+  indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history')
       && indicator._searchItem.visible

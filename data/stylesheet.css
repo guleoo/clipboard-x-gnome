@@ -120,13 +120,11 @@
 }
 
 .clipboard-x-icon-button.clipboard-x-private-inactive {
-  color: rgba(255, 255, 255, 0.42);
-  background-color: transparent;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .clipboard-x-icon-button.clipboard-x-private-active {
   color: -st-accent-color;
-  background-color: transparent;
 }
 
 .clipboard-x-pinned {
@@ -147,12 +145,8 @@
   background-color: rgba(255, 255, 255, 0.18);
 }
 
-.clipboard-x-icon-button.clipboard-x-state-hover-suppressed,
-.clipboard-x-icon-button.clipboard-x-state-hover-suppressed:hover,
-.clipboard-x-icon-button.clipboard-x-state-hover-suppressed:focus,
-.clipboard-x-icon-button.clipboard-x-state-hover-suppressed:active,
-.clipboard-x-icon-button.clipboard-x-state-hover-suppressed:checked {
-  background-color: transparent;
+.clipboard-x-icon-button.clipboard-x-state-hover-immediate {
+  transition-duration: 0ms;
 }
 
 .clipboard-x-tooltip {

@@ -53,6 +53,10 @@
       <default>[]</default>
       <summary>User-defined shortcut for clearing unpinned history</summary>
     </key>
+    <key name="history-search-shortcut" type="as">
+      <default>['&lt;Control&gt;f']</default>
+      <summary>Context shortcut for focusing clipboard history search</summary>
+    </key>
     <key name="history-paste-shortcut" type="as">
       <default>['v']</default>
       <summary>Context shortcut for pasting a history entry</summary>
@@ -105,9 +109,9 @@
       <default>false</default>
       <summary>Show the source text preview in the tokenizer panel</summary>
     </key>
-    <key name="tokenizer-confine-focus" type="b">
+    <key name="panel-confine-focus" type="b">
       <default>true</default>
-      <summary>Keep arrow-key focus navigation inside the tokenizer panel at its edges</summary>
+      <summary>Keep arrow-key focus navigation inside the extension panel at its edges</summary>
     </key>
     <key name="history-size" type="i">
       <default>100</default>

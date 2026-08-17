@@ -36,7 +36,7 @@ const TOKEN_SELECTION_SHORTCUTS = Object.freeze([
   ['tokenizer-select-above-shortcut', Clutter.KEY_Up],
   ['tokenizer-select-below-shortcut', Clutter.KEY_Down],
 ]);
-const TOKEN_NAVIGATION_KEYS = new Map([
+const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_Left, Clutter.KEY_Left],
   [Clutter.KEY_Right, Clutter.KEY_Right],
   [Clutter.KEY_Up, Clutter.KEY_Up],
@@ -112,8 +112,10 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
+    this._focusGuardIdleId = 0;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
+    this._tooltipFromKeyboard = false;
     this._tokenSelectionDrag = null;
     this._tokenDragCaptureId = 0;
     this._tokenButtons = [];
@@ -170,6 +172,8 @@ class Indicator extends PanelMenu.Button {
       if (!this.menu.actor.visible)
         this._panelManager.hidden();
     });
+    this._stageCapturedSignal = global.stage.connect('captured-event', (_stage, event) =>
+      this._handleStageCapturedEvent(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
         this._actions.rememberInputTarget();
@@ -713,7 +717,7 @@ class Indicator extends PanelMenu.Button {
       this._runTokenAction('typeText', token);
       return Clutter.EVENT_STOP;
     }
-    const direction = TOKEN_NAVIGATION_KEYS.get(event.get_key_symbol());
+    const direction = NAVIGATION_KEYS.get(event.get_key_symbol());
     const modifiers = event.get_state() & TOKEN_NAVIGATION_MODIFIER_MASK;
     if (direction && modifiers === 0) {
       state.keyboardSelection = null;
@@ -723,7 +727,7 @@ class Indicator extends PanelMenu.Button {
         AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, target);
         return Clutter.EVENT_STOP;
       }
-      return this._settings.get_boolean('tokenizer-confine-focus')
+      return this._settings.get_boolean('panel-confine-focus')
         ? Clutter.EVENT_STOP
         : Clutter.EVENT_PROPAGATE;
     }
@@ -741,16 +745,22 @@ class Indicator extends PanelMenu.Button {
       state.keyboardSelection = {
         anchorPosition: position,
         baseSelected: new Set(state.selected),
+        targetSelected: !state.selected.has(token.index),
       };
     }
-    const {anchorPosition, baseSelected} = state.keyboardSelection;
+    const {anchorPosition, baseSelected, targetSelected} = state.keyboardSelection;
     state.selected.clear();
     for (const index of baseSelected)
       state.selected.add(index);
     const start = Math.min(anchorPosition, targetPosition);
     const end = Math.max(anchorPosition, targetPosition);
-    for (let index = start; index <= end; index++)
-      state.selected.add(this._tokenButtons[index]._clipboardXToken.index);
+    for (let index = start; index <= end; index++) {
+      const tokenIndex = this._tokenButtons[index]._clipboardXToken.index;
+      if (targetSelected)
+        state.selected.add(tokenIndex);
+      else
+        state.selected.delete(tokenIndex);
+    }
     for (const candidate of this._tokenButtons) {
       const candidateToken = candidate._clipboardXToken;
       candidate.checked = state.selected.has(candidateToken.index);
@@ -1059,17 +1069,15 @@ class Indicator extends PanelMenu.Button {
     if (stateful)
       button.add_style_class_name('clipboard-x-state-icon');
     if (stateful && this._stateHoverTransfer)
-      this._suppressStateHover(button);
+      this._skipStateHoverTransition(button);
     button._clipboardXIconSize = iconSize;
     this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
     button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
     button.connect('clicked', () => {
-      if (stateful) {
-        this._suppressStateHover(button);
+      if (stateful)
         this._stateHoverTransfer = true;
-      }
       let result;
       try {
         result = callback();
@@ -1084,18 +1092,11 @@ class Indicator extends PanelMenu.Button {
     return button;
   }
 
-  _suppressStateHover(button) {
-    button.add_style_class_name('clipboard-x-state-hover-suppressed');
-    if (!button._clipboardXStateHoverSignal) {
-      button._clipboardXStateHoverSignal = button.connect('notify::hover', () => {
-        if (!button.hover)
-          button.remove_style_class_name('clipboard-x-state-hover-suppressed');
-      });
-    }
+  _skipStateHoverTransition(button) {
+    button.add_style_class_name('clipboard-x-state-hover-immediate');
     GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
       try {
-        if (!button.hover)
-          button.remove_style_class_name('clipboard-x-state-hover-suppressed');
+        button.remove_style_class_name('clipboard-x-state-hover-immediate');
       } catch (_error) {
         // A history refresh may have destroyed this button in the same frame.
       }
@@ -1163,6 +1164,7 @@ class Indicator extends PanelMenu.Button {
       if (!actor.mapped || (!actor.hover && !actor.has_key_focus?.()))
         return GLib.SOURCE_REMOVE;
       this._tooltipSource = actor;
+      this._tooltipFromKeyboard = immediate;
       this._tooltip.text = actor._hintText;
       this._tooltip.show();
       Main.uiGroup.set_child_above_sibling(this._tooltip, null);
@@ -1193,7 +1195,52 @@ class Indicator extends PanelMenu.Button {
       return;
     this._cancelTooltipTimeout();
     this._tooltipSource = null;
+    this._tooltipFromKeyboard = false;
     this._tooltip.hide();
+  }
+
+  _handleStageCapturedEvent(event) {
+    const type = event.type();
+    if (type === Clutter.EventType.MOTION && this._tooltipFromKeyboard) {
+      this._hideTooltip();
+      return Clutter.EVENT_PROPAGATE;
+    }
+    if (type !== Clutter.EventType.KEY_PRESS || !this.menu.isOpen)
+      return Clutter.EVENT_PROPAGATE;
+    if (this._panelManager.is('history')
+        && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
+      this._focusSearch();
+      return Clutter.EVENT_STOP;
+    }
+    if (!NAVIGATION_KEYS.has(event.get_key_symbol())
+        || !this._settings.get_boolean('panel-confine-focus'))
+      return Clutter.EVENT_PROPAGATE;
+    const focus = global.stage.get_key_focus();
+    if (!this._isMenuActor(focus))
+      return Clutter.EVENT_PROPAGATE;
+    this._guardPanelFocus(focus);
+    return Clutter.EVENT_PROPAGATE;
+  }
+
+  _guardPanelFocus(previousFocus) {
+    if (this._focusGuardIdleId)
+      GLib.Source.remove(this._focusGuardIdleId);
+    this._focusGuardIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusGuardIdleId = 0;
+      if (!this.menu.isOpen || this._isMenuActor(global.stage.get_key_focus()))
+        return GLib.SOURCE_REMOVE;
+      if (previousFocus.mapped)
+        previousFocus.grab_key_focus();
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _isMenuActor(actor) {
+    for (let current = actor; current; current = current.get_parent()) {
+      if (current === this.menu.actor)
+        return true;
+    }
+    return false;
   }
 
   _cancelTooltipTimeout() {
@@ -1272,6 +1319,9 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelPendingFocus();
+    if (this._focusGuardIdleId)
+      GLib.Source.remove(this._focusGuardIdleId);
+    this._focusGuardIdleId = 0;
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
@@ -1306,6 +1356,9 @@ class Indicator extends PanelMenu.Button {
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;
+    if (this._stageCapturedSignal)
+      global.stage.disconnect(this._stageCapturedSignal);
+    this._stageCapturedSignal = 0;
     this._tooltip.destroy();
     super.destroy();
   }
@@ -1315,6 +1368,6 @@ function formatBytes(bytes) {
   if (bytes < 1024)
     return `${bytes} B`;
   if (bytes < 1024 * 1024)
-    return `${(bytes / 1024).toFixed(1)} KiB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
