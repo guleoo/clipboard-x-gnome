@@ -88,6 +88,20 @@ export async function run() {
     ?? Main.extensionManager._extensionOrder?.find?.(candidate => candidate.uuid === UUID)
     ?? extension.stateObj;
   assert(extensionObject, 'Clipboard X extension object is unavailable');
+  const terminalInput = extensionObject._terminalInput;
+  const modifierState = terminalInput._modifierState;
+  let simulatedModifiers = Clutter.ModifierType.CONTROL_MASK;
+  terminalInput._modifierState = () => simulatedModifiers;
+  let modifiersReleased = false;
+  const releaseWait = terminalInput._waitForModifiersReleased().then(result => {
+    modifiersReleased = result;
+  });
+  await Scripting.sleep(50);
+  assert(!modifiersReleased, 'Terminal input did not wait for the triggering Ctrl key to be released');
+  simulatedModifiers = 0;
+  await releaseWait;
+  assert(modifiersReleased, 'Terminal input did not resume after the triggering Ctrl key was released');
+  terminalInput._modifierState = modifierState.bind(terminalInput);
 
   indicator._settings.set_boolean('show-indicator', false);
   await Scripting.sleep(100);

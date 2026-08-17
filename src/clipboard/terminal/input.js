@@ -6,7 +6,18 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {typingSequence} from './sequence.js';
 
 const SETTLE_DELAY_MILLISECONDS = 75;
+const MODIFIER_POLL_MILLISECONDS = 20;
+const MODIFIER_WAIT_TIMEOUT_MILLISECONDS = 10_000;
 const SYMBOLS_PER_BATCH = 32;
+const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
+  | Clutter.ModifierType.CONTROL_MASK
+  | Clutter.ModifierType.MOD1_MASK
+  | Clutter.ModifierType.MOD3_MASK
+  | Clutter.ModifierType.MOD4_MASK
+  | Clutter.ModifierType.MOD5_MASK
+  | Clutter.ModifierType.SUPER_MASK
+  | Clutter.ModifierType.HYPER_MASK
+  | Clutter.ModifierType.META_MASK;
 
 export class TerminalInput {
   constructor() {
@@ -27,8 +38,7 @@ export class TerminalInput {
       ? [Clutter.KEY_Control_L, Clutter.KEY_Shift_L]
       : [Clutter.KEY_Shift_L];
     return this._enqueue(async () => {
-      await this._settle();
-      if (!this._destroyed)
+      if (await this._prepare())
         this._chord(modifiers, Clutter.KEY_Insert);
     });
   }
@@ -36,7 +46,8 @@ export class TerminalInput {
   type(text) {
     const sequence = typingSequence(text);
     return this._enqueue(async () => {
-      await this._settle();
+      if (!await this._prepare())
+        return;
       for (let index = 0; index < sequence.length && !this._destroyed; index++) {
         this._typeCharacter(sequence[index]);
         if ((index + 1) % SYMBOLS_PER_BATCH === 0)
@@ -98,6 +109,40 @@ export class TerminalInput {
     for (const digit of codePoint.toString(16))
       this._tap(Clutter.unicode_to_keysym(digit.codePointAt(0)));
     this._tap(Clutter.KEY_Return);
+  }
+
+  async _prepare() {
+    if (!await this._waitForModifiersReleased())
+      return false;
+    await this._settle();
+    return !this._destroyed;
+  }
+
+  _waitForModifiersReleased() {
+    if (!(this._modifierState() & COMMAND_MODIFIER_MASK))
+      return Promise.resolve(true);
+    const deadline = GLib.get_monotonic_time() + MODIFIER_WAIT_TIMEOUT_MILLISECONDS * 1000;
+    return new Promise(resolve => {
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, MODIFIER_POLL_MILLISECONDS, () => {
+        if (this._destroyed) {
+          resolve(false);
+          return GLib.SOURCE_REMOVE;
+        }
+        if (!(this._modifierState() & COMMAND_MODIFIER_MASK)) {
+          resolve(true);
+          return GLib.SOURCE_REMOVE;
+        }
+        if (GLib.get_monotonic_time() >= deadline) {
+          resolve(false);
+          return GLib.SOURCE_REMOVE;
+        }
+        return GLib.SOURCE_CONTINUE;
+      });
+    });
+  }
+
+  _modifierState() {
+    return global.get_pointer()[2] ?? 0;
   }
 
   _settle() {
