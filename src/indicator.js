@@ -18,11 +18,6 @@ const ICON_SIZE = 16;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
 ].map(color => `clipboard-x-accent-${color}`));
-const REMOVED_THEME_COLORS = Object.freeze({
-  yellow: '#c88800',
-  red: '#e62d42',
-  purple: '#9141ac',
-});
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const DEVICE_ICON_NAMES = Object.freeze({
   desktop: 'video-display-symbolic',
@@ -603,9 +598,7 @@ class Indicator extends PanelMenu.Button {
     if (THEME_COLOR_CLASSES.includes(configured))
       this.menu.actor.add_style_class_name(configured);
     const selected = this._settings.get_string('theme-color');
-    this._customAccentColor = HEX_COLOR_PATTERN.test(selected)
-      ? selected.toLowerCase()
-      : REMOVED_THEME_COLORS[selected] ?? null;
+    this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
     this._updateSearchStyle();
     this._updatePrivateButton();
     this._refresh();

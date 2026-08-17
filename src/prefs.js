@@ -19,11 +19,6 @@ const THEME_COLORS = Object.freeze([
   ['pink', '#d56199'],
   ['slate', '#6f8396'],
 ]);
-const REMOVED_THEME_COLORS = Object.freeze({
-  yellow: '#c88800',
-  red: '#e62d42',
-  purple: '#9141ac',
-});
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
@@ -52,15 +47,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   }
 
   _themeColorRow(settings) {
-    const removedColor = REMOVED_THEME_COLORS[settings.get_string('theme-color')];
-    if (removedColor) {
-      settings.set_strv('custom-theme-colors', uniqueColors([
-        ...settings.get_strv('custom-theme-colors'),
-        removedColor,
-      ]));
-      settings.set_string('theme-color', removedColor);
-    }
-
     const row = new Adw.PreferencesRow({activatable: false});
     const content = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
