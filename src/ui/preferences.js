@@ -3,6 +3,7 @@ import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
+import Meta from 'gi://Meta';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
@@ -434,19 +435,55 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       title: _('Shortcuts'),
       icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
     });
-    const group = new Adw.PreferencesGroup({
-      title: _('Keyboard shortcuts'),
+    const clipboard = new Adw.PreferencesGroup({
+      title: _('Clipboard'),
       description: _('Click a shortcut, then press the new key combination. Backspace disables it.'),
     });
-    page.add(group);
+    page.add(clipboard);
     for (const [key, title] of [
       ['panel-shortcut', _('Open clipboard panel')],
-      ['screenshot-shortcut', _('Take screenshot')],
-      ['color-picker-shortcut', _('Pick color')],
       ['private-mode-shortcut', _('Pause or resume clipboard recording')],
       ['clear-history-shortcut', _('Clear unpinned history')],
     ])
-      group.add(this._shortcut(settings, key, title));
+      clipboard.add(this._shortcut(settings, key, title));
+
+    const history = new Adw.PreferencesGroup({
+      title: _('Clipboard history entries'),
+      description: _('Active while a clipboard history entry has keyboard focus.'),
+    });
+    page.add(history);
+    for (const [key, title] of [
+      ['history-paste-shortcut', _('Paste entry')],
+      ['history-pin-shortcut', _('Pin or unpin entry')],
+      ['history-delete-shortcut', _('Delete entry')],
+      ['history-type-shortcut', _('Type entry directly')],
+      ['history-type-activation-shortcut', _('Type entry instead of copying')],
+    ])
+      history.add(this._shortcut(settings, key, title, true));
+
+    const tokenizer = new Adw.PreferencesGroup({
+      title: _('Tokenizer'),
+      description: _('Active while a token has keyboard focus.'),
+    });
+    page.add(tokenizer);
+    for (const [key, title] of [
+      ['tokenizer-copy-shortcut', _('Copy selected tokens')],
+      ['tokenizer-paste-shortcut', _('Paste selected tokens')],
+      ['tokenizer-type-shortcut', _('Type selected tokens')],
+      ['tokenizer-select-previous-shortcut', _('Extend selection left')],
+      ['tokenizer-select-next-shortcut', _('Extend selection right')],
+      ['tokenizer-select-above-shortcut', _('Extend selection upward')],
+      ['tokenizer-select-below-shortcut', _('Extend selection downward')],
+    ])
+      tokenizer.add(this._shortcut(settings, key, title, true));
+
+    const colorPicker = new Adw.PreferencesGroup({title: _('Color picker')});
+    page.add(colorPicker);
+    colorPicker.add(this._shortcut(settings, 'color-picker-shortcut', _('Pick color')));
+
+    const screenshot = new Adw.PreferencesGroup({title: _('Screenshot')});
+    page.add(screenshot);
+    screenshot.add(this._shortcut(settings, 'screenshot-shortcut', _('Take screenshot')));
     return page;
   }
 
@@ -534,7 +571,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     return row;
   }
 
-  _shortcut(settings, key, title) {
+  _shortcut(settings, key, title, contextual = false) {
     const row = new Adw.ActionRow({title});
     const shortcut = new Adw.ShortcutLabel({disabled_text: _('Disabled')});
     const button = new Gtk.Button({
@@ -576,12 +613,16 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
           return Gdk.EVENT_STOP;
         }
         const valid = Gtk.accelerator_valid(keyval, modifiers)
+          || (contextual && modifiers === 0 && keyval !== 0)
           || (keyval === Gdk.KEY_Tab && modifiers !== 0);
         if (!valid) {
           button.add_css_class('error');
           return Gdk.EVENT_STOP;
         }
-        settings.set_strv(key, [Gtk.accelerator_name_with_keycode(null, keyval, keycode, modifiers)]);
+        const accelerator = contextual
+          ? Meta.accelerator_name(modifiers, keyval)
+          : Gtk.accelerator_name_with_keycode(null, keyval, keycode, modifiers);
+        settings.set_strv(key, [accelerator]);
         stop();
         return Gdk.EVENT_STOP;
       });

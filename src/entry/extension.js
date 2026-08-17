@@ -4,7 +4,7 @@ import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
@@ -30,7 +30,12 @@ export default class ClipboardXExtension extends Extension {
     this._controller = new ClipboardController(this._settings);
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings);
-    this._terminalInput = new TerminalInput();
+    this._terminalInput = new TerminalInput({
+      onManualInput: () => Main.notify(
+        _('Simulated keyboard input paused'),
+        _('Do not press other keys during simulated typing. Input will resume after the keyboard is idle.'),
+      ),
+    });
     this._colorPicker = null;
     this._settingsSignals = [];
     this._boundShortcuts = [];

@@ -102,6 +102,30 @@ export async function run() {
   await releaseWait;
   assert(modifiersReleased, 'Terminal input did not resume after the triggering Ctrl key was released');
   terminalInput._modifierState = modifierState.bind(terminalInput);
+  const manualInputCallback = terminalInput._onManualInput;
+  let manualInputNotifications = 0;
+  terminalInput._onManualInput = () => manualInputNotifications++;
+  terminalInput._monitoring = true;
+  const physicalKeyboard = {get_device_node: () => '/dev/input/event-test'};
+  const keyboardEvent = (type, device) => ({
+    type: () => type,
+    get_source_device: () => device,
+    get_key_code: () => 30,
+  });
+  terminalInput._filterEvent(keyboardEvent(
+    Clutter.EventType.KEY_PRESS,
+    {get_device_node: () => null},
+  ));
+  assert(manualInputNotifications === 0, 'Virtual keyboard event was mistaken for manual input');
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
+  await Scripting.sleep(10);
+  assert(manualInputNotifications === 1, 'Manual keyboard interruption did not emit one pause notification');
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_RELEASE, physicalKeyboard));
+  terminalInput._monitoring = false;
+  terminalInput._manualInputActive = false;
+  terminalInput._activity.reset();
+  terminalInput._onManualInput = manualInputCallback;
 
   indicator._settings.set_boolean('show-indicator', false);
   await Scripting.sleep(100);
@@ -138,6 +162,15 @@ export async function run() {
   await Scripting.sleep(10);
   assert(itemCommands.join(',') === `paste:${capturedText.id},type:${capturedText.id},type:${capturedText.id}`,
     'Clipboard entry keyboard commands invoked the wrong actions');
+  indicator._settings.set_strv('history-paste-shortcut', ['x']);
+  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_PROPAGATE,
+    'Reconfigured clipboard entry shortcut kept its old binding');
+  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_x)) === Clutter.EVENT_STOP,
+    'Reconfigured clipboard entry shortcut did not use its new binding');
+  await Scripting.sleep(10);
+  assert(itemCommands.at(-1) === `paste:${capturedText.id}`,
+    'Reconfigured clipboard entry shortcut invoked the wrong action');
+  indicator._settings.set_strv('history-paste-shortcut', ['v']);
   indicator._actions.typeItem = originalTypeItem;
   indicator._actions.pasteItem = originalPasteItem;
   indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));

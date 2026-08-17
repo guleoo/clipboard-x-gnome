@@ -11,6 +11,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelManager} from './panel-manager.js';
+import {matches as matchesShortcut} from './shortcut.js';
 import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
@@ -28,6 +29,12 @@ const DEVICE_ICON_NAMES = Object.freeze({
   other: 'avatar-default-symbolic',
 });
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
+const TOKEN_SELECTION_SHORTCUTS = Object.freeze([
+  ['tokenizer-select-previous-shortcut', Clutter.KEY_Left],
+  ['tokenizer-select-next-shortcut', Clutter.KEY_Right],
+  ['tokenizer-select-above-shortcut', Clutter.KEY_Up],
+  ['tokenizer-select-below-shortcut', Clutter.KEY_Down],
+]);
 
 const ProgressRing = GObject.registerClass(
 class ProgressRing extends St.DrawingArea {
@@ -667,25 +674,17 @@ class Indicator extends PanelMenu.Button {
   }
 
   _handleTokenKey(button, token, state, event) {
-    const key = event.get_key_symbol();
-    const modifiers = event.get_state();
-    const otherModifiers = Clutter.ModifierType.CONTROL_MASK
-      | Clutter.ModifierType.MOD1_MASK
-      | Clutter.ModifierType.SUPER_MASK;
-    if (modifiers & Clutter.ModifierType.SHIFT_MASK && !(modifiers & otherModifiers)) {
-      if ([Clutter.KEY_Left, Clutter.KEY_Right, Clutter.KEY_Up, Clutter.KEY_Down].includes(key)) {
-        this._extendTokenSelection(button, state, key);
+    for (const [setting, direction] of TOKEN_SELECTION_SHORTCUTS) {
+      if (matchesShortcut(this._settings, setting, event)) {
+        this._extendTokenSelection(button, state, direction);
         return Clutter.EVENT_STOP;
       }
     }
-    const commandModifiers = otherModifiers | Clutter.ModifierType.SHIFT_MASK;
-    if (modifiers & commandModifiers)
-      return Clutter.EVENT_PROPAGATE;
-    if (key === Clutter.KEY_c) {
+    if (matchesShortcut(this._settings, 'tokenizer-copy-shortcut', event)) {
       this._runTokenAction('copyText', token);
-    } else if (key === Clutter.KEY_v) {
+    } else if (matchesShortcut(this._settings, 'tokenizer-paste-shortcut', event)) {
       this._runTokenAction('pasteText', token);
-    } else if (key === Clutter.KEY_apostrophe) {
+    } else if (matchesShortcut(this._settings, 'tokenizer-type-shortcut', event)) {
       this._runTokenAction('typeText', token);
     } else {
       state.keyboardSelection = null;
@@ -1152,34 +1151,22 @@ class Indicator extends PanelMenu.Button {
   }
 
   _handleEntryKey(item, event) {
-    const key = event.get_key_symbol();
-    const modifiers = event.get_state();
-    if (this._isEnter(key) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+    if (matchesShortcut(this._settings, 'history-type-activation-shortcut', event)) {
       this._type(item);
       return Clutter.EVENT_STOP;
     }
-    const commandModifiers = Clutter.ModifierType.SHIFT_MASK
-      | Clutter.ModifierType.CONTROL_MASK
-      | Clutter.ModifierType.MOD1_MASK
-      | Clutter.ModifierType.SUPER_MASK;
-    if (modifiers & commandModifiers)
-      return Clutter.EVENT_PROPAGATE;
-    if (key === Clutter.KEY_v) {
+    if (matchesShortcut(this._settings, 'history-paste-shortcut', event)) {
       this._paste(item);
-    } else if (key === Clutter.KEY_p) {
+    } else if (matchesShortcut(this._settings, 'history-pin-shortcut', event)) {
       this._controller.toggleFavorite(item.id);
-    } else if (key === Clutter.KEY_Delete || key === Clutter.KEY_KP_Delete) {
+    } else if (matchesShortcut(this._settings, 'history-delete-shortcut', event)) {
       this._controller.remove(item.id);
-    } else if (key === Clutter.KEY_apostrophe) {
+    } else if (matchesShortcut(this._settings, 'history-type-shortcut', event)) {
       this._type(item);
     } else {
       return Clutter.EVENT_PROPAGATE;
     }
     return Clutter.EVENT_STOP;
-  }
-
-  _isEnter(key) {
-    return key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter;
   }
 
   destroy() {

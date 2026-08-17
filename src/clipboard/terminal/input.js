@@ -21,13 +21,16 @@ const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.META_MASK;
 
 export class TerminalInput {
-  constructor() {
+  constructor({onManualInput = null} = {}) {
     const seat = Clutter.get_default_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
     this._queue = Promise.resolve();
     this._destroyed = false;
+    this._emitting = false;
     this._monitoring = false;
+    this._manualInputActive = false;
+    this._onManualInput = onManualInput;
     this._activity = new Activity(MANUAL_INPUT_QUIET_MILLISECONDS * 1000);
     this._eventFilterId = Clutter.Event.add_filter(
       null,
@@ -66,6 +69,7 @@ export class TerminalInput {
         }
       } finally {
         this._monitoring = false;
+        this._manualInputActive = false;
         this._activity.reset();
       }
     });
@@ -102,7 +106,12 @@ export class TerminalInput {
   }
 
   _notify(key, state) {
-    this._device.notify_keyval(GLib.get_monotonic_time(), key, state);
+    this._emitting = true;
+    try {
+      this._device.notify_keyval(GLib.get_monotonic_time(), key, state);
+    } finally {
+      this._emitting = false;
+    }
   }
 
   _typeCharacter(character) {
@@ -130,7 +139,7 @@ export class TerminalInput {
   }
 
   _filterEvent(event) {
-    if (!this._monitoring)
+    if (!this._monitoring || this._emitting)
       return Clutter.EVENT_PROPAGATE;
     const type = event.type();
     if (type !== Clutter.EventType.KEY_PRESS && type !== Clutter.EventType.KEY_RELEASE)
@@ -144,6 +153,14 @@ export class TerminalInput {
       type === Clutter.EventType.KEY_PRESS,
       GLib.get_monotonic_time(),
     );
+    if (type === Clutter.EventType.KEY_PRESS && !this._manualInputActive) {
+      this._manualInputActive = true;
+      GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        if (!this._destroyed)
+          this._onManualInput?.();
+        return GLib.SOURCE_REMOVE;
+      });
+    }
     return Clutter.EVENT_PROPAGATE;
   }
 
@@ -181,7 +198,6 @@ export class TerminalInput {
     const now = GLib.get_monotonic_time();
     if (this._activity.ready(now))
       return Promise.resolve(true);
-    const deadline = now + INPUT_WAIT_TIMEOUT_MILLISECONDS * 1000;
     return new Promise(resolve => {
       GLib.timeout_add(GLib.PRIORITY_DEFAULT, INPUT_POLL_MILLISECONDS, () => {
         if (this._destroyed) {
@@ -190,11 +206,8 @@ export class TerminalInput {
         }
         const currentTime = GLib.get_monotonic_time();
         if (this._activity.ready(currentTime)) {
+          this._manualInputActive = false;
           resolve(true);
-          return GLib.SOURCE_REMOVE;
-        }
-        if (currentTime >= deadline) {
-          resolve(false);
           return GLib.SOURCE_REMOVE;
         }
         return GLib.SOURCE_CONTINUE;

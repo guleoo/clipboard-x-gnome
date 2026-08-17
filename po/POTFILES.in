@@ -1,2 +1,3 @@
+src/entry/extension.js
 src/ui/indicator.js
 src/ui/preferences.js

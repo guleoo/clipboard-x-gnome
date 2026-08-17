@@ -53,6 +53,54 @@
       <default>[]</default>
       <summary>User-defined shortcut for clearing unpinned history</summary>
     </key>
+    <key name="history-paste-shortcut" type="as">
+      <default>['v']</default>
+      <summary>Context shortcut for pasting a history entry</summary>
+    </key>
+    <key name="history-pin-shortcut" type="as">
+      <default>['p']</default>
+      <summary>Context shortcut for pinning a history entry</summary>
+    </key>
+    <key name="history-delete-shortcut" type="as">
+      <default>['Delete']</default>
+      <summary>Context shortcut for deleting a history entry</summary>
+    </key>
+    <key name="history-type-shortcut" type="as">
+      <default>['apostrophe']</default>
+      <summary>Context shortcut for typing a history entry</summary>
+    </key>
+    <key name="history-type-activation-shortcut" type="as">
+      <default>['&lt;Control&gt;Return']</default>
+      <summary>Context shortcut for typing the active history entry</summary>
+    </key>
+    <key name="tokenizer-copy-shortcut" type="as">
+      <default>['c']</default>
+      <summary>Context shortcut for copying selected tokens</summary>
+    </key>
+    <key name="tokenizer-paste-shortcut" type="as">
+      <default>['v']</default>
+      <summary>Context shortcut for pasting selected tokens</summary>
+    </key>
+    <key name="tokenizer-type-shortcut" type="as">
+      <default>['apostrophe']</default>
+      <summary>Context shortcut for typing selected tokens</summary>
+    </key>
+    <key name="tokenizer-select-previous-shortcut" type="as">
+      <default>['&lt;Shift&gt;Left']</default>
+      <summary>Context shortcut for extending token selection backward</summary>
+    </key>
+    <key name="tokenizer-select-next-shortcut" type="as">
+      <default>['&lt;Shift&gt;Right']</default>
+      <summary>Context shortcut for extending token selection forward</summary>
+    </key>
+    <key name="tokenizer-select-above-shortcut" type="as">
+      <default>['&lt;Shift&gt;Up']</default>
+      <summary>Context shortcut for extending token selection upward</summary>
+    </key>
+    <key name="tokenizer-select-below-shortcut" type="as">
+      <default>['&lt;Shift&gt;Down']</default>
+      <summary>Context shortcut for extending token selection downward</summary>
+    </key>
     <key name="history-size" type="i">
       <default>100</default>
       <range min="1" max="10000"/>
