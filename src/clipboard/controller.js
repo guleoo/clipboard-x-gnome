@@ -6,8 +6,8 @@ import St from 'gi://St';
 
 import {ClipboardItem} from './item.js';
 import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
-import {HistoryStore} from './history-store.js';
-import {search as searchHistory} from './history-search.js';
+import {search as searchHistory} from './history/search.js';
+import {HistoryStore} from './history/store.js';
 import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {createThumbnail} from './thumbnail.js';

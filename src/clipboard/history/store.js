@@ -1,18 +1,18 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {UUID} from '../entry/constants.js';
-import {bytesFromString, sha256, stringFromBytes} from '../common/bytes.js';
-import {diagnosticCode} from '../common/errors.js';
-import {loadFile, writeFile} from '../common/files.js';
-import {isUuid} from '../common/uuid.js';
-import {DEVICE_ICON_KINDS} from '../sync/device.js';
-import {ClipboardItem} from './item.js';
+import {UUID} from '../../entry/constants.js';
+import {bytesFromString, sha256, stringFromBytes} from '../../common/bytes.js';
+import {diagnosticCode} from '../../common/errors.js';
+import {loadFile, writeFile} from '../../common/files.js';
+import {isUuid} from '../../common/uuid.js';
+import {DEVICE_ICON_KINDS} from '../../sync/device.js';
+import {ClipboardItem} from '../item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
   MAX_ITEM_REPRESENTATIONS,
-} from './constants.js';
+} from '../constants.js';
 
 const MAX_INDEX_BYTES = 16 * 1024 * 1024;
 const MAX_STORED_ITEMS = 10_000;

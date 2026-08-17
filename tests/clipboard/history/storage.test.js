@@ -2,11 +2,11 @@ import GdkPixbuf from 'gi://GdkPixbuf';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {ClipboardItem} from '../../src/clipboard/item.js';
-import {HistoryStore} from '../../src/clipboard/history-store.js';
-import {createThumbnail} from '../../src/clipboard/thumbnail.js';
-import {bytesFromString, sha256} from '../../src/common/bytes.js';
-import {writeFile} from '../../src/common/files.js';
+import {ClipboardItem} from '../../../src/clipboard/item.js';
+import {HistoryStore} from '../../../src/clipboard/history/store.js';
+import {createThumbnail} from '../../../src/clipboard/thumbnail.js';
+import {bytesFromString, sha256} from '../../../src/common/bytes.js';
+import {writeFile} from '../../../src/common/files.js';
 
 function assert(condition, message) {
   if (!condition)

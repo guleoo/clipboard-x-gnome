@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 
-import {ClipboardItem} from '../../src/clipboard/item.js';
-import {search} from '../../src/clipboard/history-search.js';
+import {ClipboardItem} from '../../../src/clipboard/item.js';
+import {search} from '../../../src/clipboard/history/search.js';
 
 function assert(condition, message) {
   if (!condition)
