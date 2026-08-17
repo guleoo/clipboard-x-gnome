@@ -208,9 +208,9 @@ msgstr "复制所选词语"
 msgid "Unknown device"
 msgstr "未知设备"
 
-#: src/indicator.js:825
-msgid "Resume clipboard recording"
-msgstr "恢复剪切板记录"
+#: src/indicator.js:203 src/indicator.js:944
+msgid "Privacy mode"
+msgstr "隐私模式"
 
 #: src/prefs.js:40
 msgid "General"
@@ -650,9 +650,6 @@ msgstr "应用"
 
 #~ msgid "Purple"
 #~ msgstr "紫色"
-
-#~ msgid "Private mode"
-#~ msgstr "隐私模式"
 
 #~ msgid "Text eager threshold"
 #~ msgstr "文本立即传输阈值"

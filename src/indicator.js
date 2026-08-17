@@ -88,6 +88,8 @@ class Indicator extends PanelMenu.Button {
     this._focusIdleId = 0;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
+    this._tokenSelectionDrag = null;
+    this._tokenDragCaptureId = 0;
     this._hintConnections = new Map();
     this._tooltip = new St.Label({
       style_class: 'clipboard-x-tooltip',
@@ -113,6 +115,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('tokenizer', {
       enter: () => this._showPanelChrome('tokenizer'),
+      leave: () => this._endTokenSelectionDrag(),
       render: state => this._renderTokenizer(state),
     });
     this._updatePanelGeometry();
@@ -197,13 +200,15 @@ class Indicator extends PanelMenu.Button {
       () => this._runAndClose(() => this._actions.pickColor()),
       {iconSize: 14},
     ));
-    this._syncToolButton = this._iconButton(
-      'network-offline-symbolic',
-      _('Synchronization settings'),
-      () => this._runAndClose(() => this._actions.openPreferences()),
+    this._privateButton = this._iconButton(
+      'security-high-symbolic',
+      _('Privacy mode'),
+      () => {
+        this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
+      },
       {iconSize: 14},
     );
-    toolbar.add_child(this._syncToolButton);
+    toolbar.add_child(this._privateButton);
     searchToolbar.add_child(toolbar);
     searchItem.add_child(searchToolbar);
     this.menu.addMenuItem(searchItem);
@@ -295,14 +300,12 @@ class Indicator extends PanelMenu.Button {
     const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this._footer = footer;
     footer.add_child(new St.Widget({x_expand: true}));
-    this._privateButton = this._iconButton(
-      'security-high-symbolic',
-      _('Pause clipboard recording'),
-      () => {
-        this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
-      },
+    this._syncToolButton = this._iconButton(
+      'network-offline-symbolic',
+      _('Synchronization settings'),
+      () => this._runAndClose(() => this._actions.openPreferences()),
     );
-    footer.add_child(this._privateButton);
+    footer.add_child(this._syncToolButton);
     footer.add_child(this._iconButton('user-trash-symbolic', _('Clear unpinned history'), () => this._controller.clear()));
     footer.add_child(this._iconButton(
       'emblem-system-symbolic', _('Preferences'), () => this._runAndClose(() => this._actions.openPreferences())));
@@ -550,6 +553,7 @@ class Indicator extends PanelMenu.Button {
   }
 
   _renderTokenizer(state) {
+    this._endTokenSelectionDrag();
     this._tokenSection.removeAll();
     this._syncButtons.clear();
     this._tokenSource.text = state.source.slice(0, 500);
@@ -580,18 +584,23 @@ class Indicator extends PanelMenu.Button {
       const button = new St.Button({
         label: token.text,
         can_focus: true,
-        toggle_mode: true,
         checked: state.selected.has(token.index),
         style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
       });
       button._clipboardXMaximumWidth = maximumRowWidth;
+      button._clipboardXToken = token;
+      button._clipboardXTokenState = state;
+      button.connect('button-press-event', (_actor, event) => {
+        if (event.get_button() === Clutter.BUTTON_PRIMARY)
+          this._beginTokenSelectionDrag(button, token, state);
+        return Clutter.EVENT_PROPAGATE;
+      });
       button.connect('clicked', () => {
-        if (button.checked)
-          state.selected.add(token.index);
-        else
-          state.selected.delete(token.index);
-        this._updateTokenButtonStyle(button, token);
-        this._updateTokenResult();
+        if (button._clipboardXSuppressClick) {
+          button._clipboardXSuppressClick = false;
+          return;
+        }
+        this._setTokenSelected(button, token, state, !state.selected.has(token.index));
       });
       this._updateTokenButtonStyle(button, token);
       this._attachHint(button, token.type === 'url'
@@ -614,6 +623,73 @@ class Indicator extends PanelMenu.Button {
     if (state.tokens.length === 0)
       tokenBox.add_child(new St.Label({text: _('No words found'), style_class: 'clipboard-x-empty'}));
     this._updateTokenResult();
+  }
+
+  _beginTokenSelectionDrag(button, token, state) {
+    this._endTokenSelectionDrag();
+    const selected = !state.selected.has(token.index);
+    button._clipboardXSuppressClick = true;
+    this._tokenSelectionDrag = {
+      state,
+      selected,
+      initialButton: button,
+      visited: new Set(),
+    };
+    this._applyTokenSelectionDrag(button);
+    this._tokenDragCaptureId = global.stage.connect('captured-event', (_stage, event) => {
+      const type = event.type();
+      if (type === Clutter.EventType.MOTION) {
+        const [x, y] = event.get_coords();
+        let actor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+        while (actor && !actor._clipboardXToken)
+          actor = actor.get_parent();
+        if (actor)
+          this._applyTokenSelectionDrag(actor);
+      } else if (type === Clutter.EventType.BUTTON_RELEASE
+          && event.get_button() === Clutter.BUTTON_PRIMARY) {
+        this._endTokenSelectionDrag(true);
+      }
+      return Clutter.EVENT_PROPAGATE;
+    });
+  }
+
+  _applyTokenSelectionDrag(button) {
+    const drag = this._tokenSelectionDrag;
+    const token = button?._clipboardXToken;
+    if (!drag || !token || button._clipboardXTokenState !== drag.state
+        || drag.visited.has(token.index))
+      return;
+    drag.visited.add(token.index);
+    this._setTokenSelected(button, token, drag.state, drag.selected);
+  }
+
+  _setTokenSelected(button, token, state, selected) {
+    if (selected)
+      state.selected.add(token.index);
+    else
+      state.selected.delete(token.index);
+    button.checked = selected;
+    this._updateTokenButtonStyle(button, token);
+    this._updateTokenResult();
+  }
+
+  _endTokenSelectionDrag(deferClickReset = false) {
+    if (this._tokenDragCaptureId) {
+      global.stage.disconnect(this._tokenDragCaptureId);
+      this._tokenDragCaptureId = 0;
+    }
+    const button = this._tokenSelectionDrag?.initialButton;
+    this._tokenSelectionDrag = null;
+    if (!button)
+      return;
+    if (!deferClickReset) {
+      button._clipboardXSuppressClick = false;
+      return;
+    }
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      button._clipboardXSuppressClick = false;
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   _updateTokenResult() {
@@ -869,7 +945,7 @@ class Indicator extends PanelMenu.Button {
 
   _updatePrivateButton() {
     const paused = this._settings.get_boolean('private-mode');
-    const text = paused ? _('Resume clipboard recording') : _('Pause clipboard recording');
+    const text = _('Privacy mode');
     this._setButtonIcon(this._privateButton, 'security-high-symbolic');
     this._setHint(this._privateButton, text);
     this._privateButton.checked = paused;
@@ -903,6 +979,7 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelFocusSearch();
+    this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
     if (this._changedSignal)

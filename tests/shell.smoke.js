@@ -58,11 +58,14 @@ export async function run() {
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
   assert(indicator._toolbar.get_children().length === 3,
-    'Top toolbar must contain only screenshot, color picker and synchronization actions');
+    'Top toolbar must contain only screenshot, color picker and privacy actions');
   assert(indicator._search.get_parent() === indicator._toolbar.get_parent(),
     'Search and the three primary tools must share one row');
-  indicator._syncToolButton.grab_key_focus();
-  indicator._showTooltip(indicator._syncToolButton, true);
+  assert(indicator._privateButton.get_parent() === indicator._toolbar
+      && indicator._syncToolButton.get_parent() === indicator._footer,
+    'Privacy and synchronization buttons were not swapped');
+  indicator._privateButton.grab_key_focus();
+  indicator._showTooltip(indicator._privateButton, true);
   assert(indicator._tooltip.visible && indicator._tooltip.get_parent() === Main.uiGroup,
     'Icon help must use a floating Shell tooltip');
   indicator._hideTooltip();
@@ -128,8 +131,14 @@ export async function run() {
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
-  tokenState.selected.add(tokenState.tokens[0].index);
-  indicator._updateTokenResult();
+  indicator._beginTokenSelectionDrag(tokenButtons[0], tokenState.tokens[0], tokenState);
+  indicator._applyTokenSelectionDrag(tokenButtons[1]);
+  indicator._endTokenSelectionDrag();
+  assert(tokenState.selected.has(tokenState.tokens[0].index)
+      && tokenState.selected.has(tokenState.tokens[1].index)
+      && tokenButtons[0].checked && tokenButtons[1].checked,
+    'Press-and-drag token selection did not select every visited token');
+  indicator._setTokenSelected(tokenButtons[1], tokenState.tokens[1], tokenState, false);
   assert(indicator._tokenResult.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
   assert(indicator._tokenResult.get_parent().get_parent() === indicator._tokenPanel,
