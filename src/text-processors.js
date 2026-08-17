@@ -4,9 +4,17 @@ function unique(values) {
 
 const SPECIAL_TOKEN_RULES = Object.freeze([
   {type: 'url', pattern: /https?:\/\/[^\s<>"'，。；！？]+/giu, priority: 0},
-  {type: 'email', pattern: /[\p{L}\p{N}.!#$%&'*+/=?^_`{|}~-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/giu, priority: 1},
+  {
+    type: 'email',
+    pattern: /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+/giu,
+    priority: 1,
+  },
   {type: 'number', pattern: /[+-]?\d(?:[\d.,:/-]*\d)?/gu, priority: 2},
 ]);
+const IDENTIFIER_BOUNDARY_PATTERN = /^[a-z0-9_]$/iu;
+const WORD_GRAPHEME_PATTERN = /^[\p{L}\p{M}\p{N}_]+$/u;
+const PUNCTUATION_PATTERN = /^\p{P}+$/u;
+const APOSTROPHES = new Set(["'", '’']);
 
 export function tokenizeText(text, locale = undefined) {
   if (typeof text !== 'string')
@@ -25,7 +33,7 @@ export function tokenizeText(text, locale = undefined) {
       if (rule.type === 'number') {
         const previous = start > 0 ? text[start - 1] : '';
         const next = end < text.length ? text[end] : '';
-        if (/^[\p{L}\p{N}]$/u.test(previous) || /^[\p{L}\p{N}]$/u.test(next))
+        if (IDENTIFIER_BOUNDARY_PATTERN.test(previous) || IDENTIFIER_BOUNDARY_PATTERN.test(next))
           continue;
       }
       candidates.push({text: value, start, end, type: rule.type, priority: rule.priority});
@@ -43,29 +51,60 @@ export function tokenizeText(text, locale = undefined) {
   }
   specials.sort((left, right) => left.start - right.start);
 
-  const segmenter = new Intl.Segmenter(locale, {granularity: 'word'});
+  const wordSegmenter = new Intl.Segmenter(locale, {granularity: 'word'});
+  const graphemeSegmenter = new Intl.Segmenter(locale, {granularity: 'grapheme'});
   const tokens = [];
-  const addWords = (start, end) => {
+  const addToken = (tokenText, start, type) => {
+    tokens.push({text: tokenText, start, end: start + tokenText.length, type});
+  };
+  const addOrdinaryTokens = (start, end) => {
     const slice = text.slice(start, end);
-    for (const part of segmenter.segment(slice)) {
-      if (!part.isWordLike)
-        continue;
-      tokens.push({
-        text: part.segment,
-        start: start + part.index,
-        end: start + part.index + part.segment.length,
-        type: 'word',
-      });
+    for (const part of wordSegmenter.segment(slice)) {
+      const partStart = start + part.index;
+      const graphemes = [...graphemeSegmenter.segment(part.segment)];
+      let wordStart = -1;
+      let wordText = '';
+      const flushWord = () => {
+        if (!wordText)
+          return;
+        addToken(wordText, wordStart, 'word');
+        wordStart = -1;
+        wordText = '';
+      };
+
+      for (const [index, grapheme] of graphemes.entries()) {
+        const value = grapheme.segment;
+        const absoluteStart = partStart + grapheme.index;
+        if (/^\s+$/u.test(value)) {
+          flushWord();
+          continue;
+        }
+        if (WORD_GRAPHEME_PATTERN.test(value)) {
+          if (!wordText)
+            wordStart = absoluteStart;
+          wordText += value;
+          continue;
+        }
+        const previousIsWord = Boolean(wordText);
+        const nextValue = graphemes[index + 1]?.segment ?? '';
+        if (APOSTROPHES.has(value) && previousIsWord && WORD_GRAPHEME_PATTERN.test(nextValue)) {
+          wordText += value;
+          continue;
+        }
+        flushWord();
+        addToken(value, absoluteStart, PUNCTUATION_PATTERN.test(value) ? 'punctuation' : 'symbol');
+      }
+      flushWord();
     }
   };
 
   let cursor = 0;
   for (const special of specials) {
-    addWords(cursor, special.start);
+    addOrdinaryTokens(cursor, special.start);
     tokens.push({text: special.text, start: special.start, end: special.end, type: special.type});
     cursor = special.end;
   }
-  addWords(cursor, text.length);
+  addOrdinaryTokens(cursor, text.length);
   return tokens
     .sort((left, right) => left.start - right.start)
     .map((token, index) => Object.freeze({...token, index}));

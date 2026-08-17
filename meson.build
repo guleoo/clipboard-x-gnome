@@ -73,6 +73,7 @@ test('protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/p
 test('tools', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tools.test.js'])
 test('storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/storage.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/panel-manager.test.js'])
+test('tokenizer', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer.test.js'])
 test(
   'stress',
   test_runner,
