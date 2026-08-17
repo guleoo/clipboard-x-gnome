@@ -108,11 +108,11 @@ class Indicator extends PanelMenu.Button {
       hideTooltip: () => this._hideTooltip(),
     });
     this._panelManager.register('history', {
-      enter: () => this._searchItem.visible = true,
+      enter: () => this._showPanelChrome('history'),
       render: () => this._renderHistory(),
     });
     this._panelManager.register('tokenizer', {
-      enter: () => this._searchItem.visible = false,
+      enter: () => this._showPanelChrome('tokenizer'),
       render: state => this._renderTokenizer(state),
     });
     this._updatePanelGeometry();
@@ -215,11 +215,83 @@ class Indicator extends PanelMenu.Button {
     });
     this._scroll.add_child(this._history.actor);
     const scrollItem = new PopupMenu.PopupMenuSection();
+    this._historyScrollItem = scrollItem;
     scrollItem.actor.add_child(this._scroll);
     this.menu.addMenuItem(scrollItem);
-    this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+    const tokenPanelItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    this._tokenPanelItem = tokenPanelItem;
+    const tokenPanel = new St.BoxLayout({
+      vertical: true,
+      style_class: 'clipboard-x-token-panel',
+      x_expand: true,
+    });
+    this._tokenPanel = tokenPanel;
+    const tokenHeader = new St.BoxLayout({
+      style_class: 'clipboard-x-token-header',
+      x_expand: true,
+    });
+    tokenHeader.add_child(this._iconButton(
+      'go-previous-symbolic',
+      _('Back to clipboard history'),
+      () => this._closeTokenizer(),
+      {showTooltip: false},
+    ));
+    tokenHeader.add_child(new St.Label({
+      text: _('Segment text'),
+      style_class: 'clipboard-x-token-title',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    }));
+    tokenPanel.add_child(tokenHeader);
+    this._tokenSource = new St.Label({
+      style_class: 'clipboard-x-token-source',
+      x_expand: true,
+    });
+    this._tokenSource.clutter_text.single_line_mode = true;
+    tokenPanel.add_child(this._tokenSource);
+
+    this._tokenSection = new PopupMenu.PopupMenuSection();
+    this._tokenScroll = new St.ScrollView({
+      overlay_scrollbars: true,
+      style_class: 'clipboard-x-token-scroll',
+      x_expand: true,
+      y_expand: true,
+    });
+    this._tokenScroll.add_child(this._tokenSection.actor);
+    tokenPanel.add_child(this._tokenScroll);
+
+    const tokenResultRow = new St.BoxLayout({
+      style_class: 'clipboard-x-token-result-row',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    this._tokenResult = new St.Label({
+      text: _('Select one or more words'),
+      style_class: 'clipboard-x-token-result',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    this._tokenResult.clutter_text.single_line_mode = true;
+    tokenResultRow.add_child(this._tokenResult);
+    this._tokenCopy = this._iconButton(
+      'edit-copy-symbolic',
+      _('Copy selected words'),
+      () => this._copyTokens(),
+      {tooltipScope: 'panel'},
+    );
+    this._tokenCopy.reactive = false;
+    this._tokenCopy.opacity = 128;
+    tokenResultRow.add_child(this._tokenCopy);
+    tokenPanel.add_child(tokenResultRow);
+    tokenPanelItem.add_child(tokenPanel);
+    this.menu.addMenuItem(tokenPanelItem);
+
+    this._footerSeparator = new PopupMenu.PopupSeparatorMenuItem();
+    this.menu.addMenuItem(this._footerSeparator);
 
     const footerItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    this._footerItem = footerItem;
     const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this._footer = footer;
     footer.add_child(new St.Widget({x_expand: true}));
@@ -237,6 +309,15 @@ class Indicator extends PanelMenu.Button {
     footerItem.add_child(footer);
     this.menu.addMenuItem(footerItem);
     this._updatePrivateButton();
+  }
+
+  _showPanelChrome(panel) {
+    const history = panel === 'history';
+    this._searchItem.visible = history;
+    this._historyScrollItem.actor.visible = history;
+    this._footerSeparator.visible = history;
+    this._footerItem.visible = history;
+    this._tokenPanelItem.visible = !history;
   }
 
   setSyncStatus(status, capabilities = null) {
@@ -469,31 +550,9 @@ class Indicator extends PanelMenu.Button {
   }
 
   _renderTokenizer(state) {
-    this._history.removeAll();
+    this._tokenSection.removeAll();
     this._syncButtons.clear();
-    const header = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    header.add_child(this._iconButton(
-      'go-previous-symbolic',
-      _('Back to clipboard history'),
-      () => this._closeTokenizer(),
-      {showTooltip: false},
-    ));
-    header.add_child(new St.Label({
-      text: _('Segment text'),
-      style_class: 'clipboard-x-token-title',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    }));
-    this._history.addMenuItem(header);
-
-    const preview = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    preview.add_child(new St.Label({
-      text: state.source.slice(0, 500),
-      style_class: 'clipboard-x-token-source',
-      style: `max-width: ${this._tokenContentWidth}px;`,
-      x_expand: true,
-    }));
-    this._history.addMenuItem(preview);
+    this._tokenSource.text = state.source.slice(0, 500);
 
     const tokenItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     const tokenBox = new St.BoxLayout({
@@ -504,7 +563,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._tokenBox = tokenBox;
     tokenItem.add_child(tokenBox);
-    this._history.addMenuItem(tokenItem);
+    this._tokenSection.addMenuItem(tokenItem);
     const maximumRowWidth = this._tokenContentWidth - 2;
     const spacing = 6;
     let tokenRow = null;
@@ -554,26 +613,6 @@ class Indicator extends PanelMenu.Button {
     }
     if (state.tokens.length === 0)
       tokenBox.add_child(new St.Label({text: _('No words found'), style_class: 'clipboard-x-empty'}));
-
-    const resultItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this._tokenResult = new St.Label({
-      text: _('Select one or more words'),
-      style_class: 'clipboard-x-token-result',
-      style: `max-width: ${this._tokenContentWidth}px;`,
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    });
-    resultItem.add_child(this._tokenResult);
-    this._tokenCopy = this._iconButton(
-      'edit-copy-symbolic',
-      _('Copy selected words'),
-      () => this._copyTokens(),
-      {tooltipScope: 'panel'},
-    );
-    this._tokenCopy.reactive = false;
-    this._tokenCopy.opacity = 128;
-    resultItem.add_child(this._tokenCopy);
-    this._history.addMenuItem(resultItem);
     this._updateTokenResult();
   }
 
@@ -608,6 +647,9 @@ class Indicator extends PanelMenu.Button {
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
     this._updateSearchStyle();
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this._tokenPanel.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this._tokenSource.set_style(`max-width: ${this._tokenContentWidth}px;`);
+    this._tokenResult.set_style(`max-width: ${Math.max(200, this._tokenContentWidth - 32)}px;`);
     if (this._panelManager)
       this._refresh();
   }

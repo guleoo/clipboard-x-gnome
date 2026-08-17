@@ -43,6 +43,19 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const appearance = new Adw.PreferencesGroup({title: _('Appearance')});
     page.add(appearance);
     appearance.add(this._themeColorRow(settings));
+
+    const panel = new Adw.PreferencesGroup({title: _('Panel')});
+    page.add(panel);
+    panel.add(this._switch(settings, 'show-indicator', _('Show panel indicator')));
+    panel.add(this._spin(settings, 'panel-width', _('Panel width'), 300, 800, 10, _('px')));
+    panel.add(this._spin(settings, 'panel-height', _('Panel height'), 160, 800, 10, _('px')));
+    panel.add(this._spin(settings, 'panel-visible-item-limit', _('Maximum entries shown in panel'), 1, 200, 1));
+    panel.add(this._switch(
+      settings,
+      'preserve-panel-state',
+      _('Preserve panel state'),
+      _('Reopen the previous view instead of always returning to clipboard history'),
+    ));
     return page;
   }
 
@@ -234,22 +247,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
 
   _clipboardPage(settings) {
     const page = new Adw.PreferencesPage({title: _('Clipboard'), icon_name: 'edit-paste-symbolic'});
-    const appearance = new Adw.PreferencesGroup({title: _('Panel and history')});
-    page.add(appearance);
-    appearance.add(this._switch(settings, 'show-indicator', _('Show panel indicator')));
-    appearance.add(this._spin(settings, 'panel-width', _('Panel width'), 300, 800, 10, _('px')));
-    appearance.add(this._spin(settings, 'panel-height', _('Panel height'), 160, 800, 10, _('px')));
-    appearance.add(this._spin(settings, 'panel-visible-item-limit', _('Maximum entries shown in panel'), 1, 200, 1));
-    appearance.add(this._switch(
-      settings,
-      'preserve-panel-state',
-      _('Preserve panel state'),
-      _('Reopen the previous view instead of always returning to clipboard history'),
-    ));
-    appearance.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
-    appearance.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
-    appearance.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
-    appearance.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
+    const history = new Adw.PreferencesGroup({title: _('History')});
+    page.add(history);
+    history.add(this._spin(settings, 'history-size', _('History entries'), 1, 10000, 1));
+    history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MiB')));
+    history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
+    history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MiB')));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);

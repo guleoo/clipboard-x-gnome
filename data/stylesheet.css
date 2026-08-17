@@ -146,9 +146,31 @@
   padding-left: 6px;
 }
 
-.clipboard-x-token-source,
+.clipboard-x-token-panel {
+  spacing: 4px;
+}
+
+.clipboard-x-token-header {
+  spacing: 2px;
+  padding: 1px 2px;
+}
+
+.clipboard-x-token-source {
+  padding: 2px 4px 5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.clipboard-x-token-scroll {
+  padding: 0;
+}
+
+.clipboard-x-token-result-row {
+  padding: 5px 2px 1px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .clipboard-x-token-result {
-  padding: 4px;
+  padding: 4px 5px;
   color: rgba(255, 255, 255, 0.72);
 }
 

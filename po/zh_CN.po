@@ -220,6 +220,10 @@ msgstr "常规"
 msgid "Appearance"
 msgstr "外观"
 
+#: src/prefs.js:47
+msgid "Panel"
+msgstr "面板"
+
 #: src/prefs.js:60
 msgid "Theme color"
 msgstr "主题色"
@@ -264,9 +268,9 @@ msgstr "选择自定义主题色"
 msgid "Clipboard"
 msgstr "剪切板"
 
-#: src/prefs.js:237
-msgid "Panel and history"
-msgstr "面板与历史"
+#: src/prefs.js:251
+msgid "History"
+msgstr "历史"
 
 #: src/prefs.js:239
 msgid "Show panel indicator"

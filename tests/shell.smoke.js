@@ -116,7 +116,10 @@ export async function run() {
   await indicator._openTokenizer(capturedText);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
-      && !indicator._searchItem.visible,
+      && !indicator._searchItem.visible
+      && !indicator._historyScrollItem.actor.visible
+      && !indicator._footerItem.visible
+      && indicator._tokenPanelItem.visible,
     'Text segmentation did not switch the current panel to the token selection view');
   await Scripting.sleep(100);
   const tokenButtons = indicator._tokenBox.get_children()
@@ -129,8 +132,14 @@ export async function run() {
   indicator._updateTokenResult();
   assert(indicator._tokenResult.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
+  assert(indicator._tokenResult.get_parent().get_parent() === indicator._tokenPanel,
+    'Selected-token preview is not fixed outside the scrolling token area');
   indicator._closeTokenizer();
-  assert(indicator._panelManager.is('history') && indicator._searchItem.visible,
+  assert(indicator._panelManager.is('history')
+      && indicator._searchItem.visible
+      && indicator._historyScrollItem.actor.visible
+      && indicator._footerItem.visible
+      && !indicator._tokenPanelItem.visible,
     'Returning from text segmentation did not restore clipboard history');
   indicator.menu.close();
   const originalTimestamp = capturedText.createdAt;
