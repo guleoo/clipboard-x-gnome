@@ -23,7 +23,7 @@
 }
 
 .clipboard-x-search:focus {
-  border-color: rgba(98, 160, 234, 0.9);
+  border-color: -st-accent-color;
   background-color: rgba(255, 255, 255, 0.11);
 }
 
@@ -119,13 +119,13 @@
 }
 
 .clipboard-x-footer .clipboard-x-private-active {
-  color: #62a0ea;
-  background-color: rgba(53, 132, 228, 0.18);
+  color: -st-accent-color;
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .clipboard-x-pinned {
-  color: #62a0ea;
-  background-color: rgba(53, 132, 228, 0.16);
+  color: -st-accent-color;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .clipboard-x-tooltip {
@@ -162,13 +162,67 @@
 }
 
 .clipboard-x-token:checked {
-  background-color: rgba(53, 132, 228, 0.85);
+  background-color: -st-accent-color;
   color: white;
 }
 
 .clipboard-x-token-url {
-  color: #62a0ea;
+  color: -st-accent-color;
 }
+
+.clipboard-x-accent-blue .clipboard-x-search:focus { border-color: #3584e4; }
+.clipboard-x-accent-blue .clipboard-x-private-active,
+.clipboard-x-accent-blue .clipboard-x-pinned,
+.clipboard-x-accent-blue .clipboard-x-token-url { color: #3584e4; }
+.clipboard-x-accent-blue .clipboard-x-token:checked { background-color: #3584e4; }
+
+.clipboard-x-accent-teal .clipboard-x-search:focus { border-color: #2190a4; }
+.clipboard-x-accent-teal .clipboard-x-private-active,
+.clipboard-x-accent-teal .clipboard-x-pinned,
+.clipboard-x-accent-teal .clipboard-x-token-url { color: #2190a4; }
+.clipboard-x-accent-teal .clipboard-x-token:checked { background-color: #2190a4; }
+
+.clipboard-x-accent-green .clipboard-x-search:focus { border-color: #3a944a; }
+.clipboard-x-accent-green .clipboard-x-private-active,
+.clipboard-x-accent-green .clipboard-x-pinned,
+.clipboard-x-accent-green .clipboard-x-token-url { color: #3a944a; }
+.clipboard-x-accent-green .clipboard-x-token:checked { background-color: #3a944a; }
+
+.clipboard-x-accent-yellow .clipboard-x-search:focus { border-color: #c88800; }
+.clipboard-x-accent-yellow .clipboard-x-private-active,
+.clipboard-x-accent-yellow .clipboard-x-pinned,
+.clipboard-x-accent-yellow .clipboard-x-token-url { color: #f6d32d; }
+.clipboard-x-accent-yellow .clipboard-x-token:checked { background-color: #c88800; }
+
+.clipboard-x-accent-orange .clipboard-x-search:focus { border-color: #ed5b00; }
+.clipboard-x-accent-orange .clipboard-x-private-active,
+.clipboard-x-accent-orange .clipboard-x-pinned,
+.clipboard-x-accent-orange .clipboard-x-token-url { color: #ff7800; }
+.clipboard-x-accent-orange .clipboard-x-token:checked { background-color: #ed5b00; }
+
+.clipboard-x-accent-red .clipboard-x-search:focus { border-color: #e62d42; }
+.clipboard-x-accent-red .clipboard-x-private-active,
+.clipboard-x-accent-red .clipboard-x-pinned,
+.clipboard-x-accent-red .clipboard-x-token-url { color: #ed333b; }
+.clipboard-x-accent-red .clipboard-x-token:checked { background-color: #e62d42; }
+
+.clipboard-x-accent-pink .clipboard-x-search:focus { border-color: #d56199; }
+.clipboard-x-accent-pink .clipboard-x-private-active,
+.clipboard-x-accent-pink .clipboard-x-pinned,
+.clipboard-x-accent-pink .clipboard-x-token-url { color: #d56199; }
+.clipboard-x-accent-pink .clipboard-x-token:checked { background-color: #d56199; }
+
+.clipboard-x-accent-purple .clipboard-x-search:focus { border-color: #9141ac; }
+.clipboard-x-accent-purple .clipboard-x-private-active,
+.clipboard-x-accent-purple .clipboard-x-pinned,
+.clipboard-x-accent-purple .clipboard-x-token-url { color: #9141ac; }
+.clipboard-x-accent-purple .clipboard-x-token:checked { background-color: #9141ac; }
+
+.clipboard-x-accent-slate .clipboard-x-search:focus { border-color: #6f8396; }
+.clipboard-x-accent-slate .clipboard-x-private-active,
+.clipboard-x-accent-slate .clipboard-x-pinned,
+.clipboard-x-accent-slate .clipboard-x-token-url { color: #8c9fad; }
+.clipboard-x-accent-slate .clipboard-x-token:checked { background-color: #6f8396; }
 
 .clipboard-x-token-number {
   color: #f6d32d;

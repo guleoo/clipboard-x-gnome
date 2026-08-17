@@ -17,11 +17,34 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const {deviceId} = ensureDeviceIdentity(settings);
     window.set_default_size(720, 700);
 
+    window.add(this._generalPage(settings));
     window.add(this._clipboardPage(settings));
     window.add(this._syncPage(settings, deviceId));
     window.add(this._colorPage(settings));
     window.add(this._screenshotPage(settings));
     window.add(this._shortcutsPage(settings));
+  }
+
+  _generalPage(settings) {
+    const page = new Adw.PreferencesPage({
+      title: _('General'),
+      icon_name: 'preferences-desktop-appearance-symbolic',
+    });
+    const appearance = new Adw.PreferencesGroup({title: _('Appearance')});
+    page.add(appearance);
+    appearance.add(this._combo(settings, 'theme-color', _('Theme color'), [
+      ['system', _('Follow system')],
+      ['blue', _('Blue')],
+      ['teal', _('Teal')],
+      ['green', _('Green')],
+      ['yellow', _('Yellow')],
+      ['orange', _('Orange')],
+      ['red', _('Red')],
+      ['pink', _('Pink')],
+      ['purple', _('Purple')],
+      ['slate', _('Slate')],
+    ]));
+    return page;
   }
 
   _clipboardPage(settings) {

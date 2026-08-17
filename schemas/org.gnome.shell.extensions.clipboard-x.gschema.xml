@@ -25,6 +25,22 @@
       <default>true</default>
       <summary>Show the panel indicator</summary>
     </key>
+    <key name="theme-color" type="s">
+      <choices>
+        <choice value="system"/>
+        <choice value="blue"/>
+        <choice value="teal"/>
+        <choice value="green"/>
+        <choice value="yellow"/>
+        <choice value="orange"/>
+        <choice value="red"/>
+        <choice value="pink"/>
+        <choice value="purple"/>
+        <choice value="slate"/>
+      </choices>
+      <default>'system'</default>
+      <summary>Accent color used by the extension interface</summary>
+    </key>
     <key name="panel-shortcut" type="as">
       <default>[]</default>
       <summary>User-defined shortcut for the main panel</summary>

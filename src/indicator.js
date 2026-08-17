@@ -10,10 +10,14 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {PanelManager} from './panel-manager.js';
 import {composeTokens, tokenizeText} from './text-processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
+const THEME_COLOR_CLASSES = Object.freeze([
+  'blue', 'teal', 'green', 'yellow', 'orange', 'red', 'pink', 'purple', 'slate',
+].map(color => `clipboard-x-accent-${color}`));
 const DEVICE_ICON_NAMES = Object.freeze({
   desktop: 'video-display-symbolic',
   laptop: 'computer-symbolic',
@@ -77,14 +81,13 @@ class Indicator extends PanelMenu.Button {
     this._controller = controller;
     this._actions = actions;
     this._query = '';
-    this._tokenState = null;
     this._transfers = new Map();
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
-    this._resetViewAfterClose = false;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
+    this._hintConnections = new Map();
     this._tooltip = new St.Label({
       style_class: 'clipboard-x-tooltip',
       visible: false,
@@ -98,10 +101,25 @@ class Indicator extends PanelMenu.Button {
     }));
     this.menu.actor.add_style_class_name('clipboard-x-menu');
     this._buildMenu();
+    this._panelManager = new PanelManager({
+      defaultPanel: 'history',
+      clearPanelTooltips: () => this._clearHints('panel'),
+      hideTooltip: () => this._hideTooltip(),
+    });
+    this._panelManager.register('history', {
+      enter: () => this._searchItem.visible = true,
+      render: () => this._renderHistory(),
+    });
+    this._panelManager.register('tokenizer', {
+      enter: () => this._searchItem.visible = false,
+      render: state => this._renderTokenizer(state),
+    });
     this._updatePanelGeometry();
+    this._updateThemeColor();
 
     this._changedSignal = controller.connect('changed', () => this._refresh());
     this._privateSignal = settings.connect('changed::private-mode', () => this._updatePrivateButton());
+    this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
     this._visibleItemLimitSignal = settings.connect('changed::panel-visible-item-limit', () => this._refresh());
@@ -113,29 +131,28 @@ class Indicator extends PanelMenu.Button {
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
-      if (!this.menu.actor.visible && this._resetViewAfterClose)
-        this._resetPanelView();
+      if (!this.menu.actor.visible)
+        this._panelManager.hidden();
     });
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
-        if (this._resetViewAfterClose)
-          this._resetPanelView();
+        this._panelManager.open();
         this._actions.ensureIdentity();
-        if (!this._tokenState) {
+        if (this._panelManager.is('history')) {
           this._search.set_text('');
           this._focusSearch();
         }
       } else {
         this._cancelFocusSearch();
         this._hideTooltip();
-        if (this._tokenState && !this._settings.get_boolean('preserve-panel-state')) {
-          this._resetViewAfterClose = true;
-          if (!this.menu.actor.visible)
-            this._resetPanelView();
-        }
+        this._panelManager.close({
+          preserve: this._settings.get_boolean('preserve-panel-state'),
+        });
+        if (!this.menu.actor.visible)
+          this._panelManager.hidden();
       }
     });
-    this._refresh();
+    this._panelManager.show('history');
   }
 
   _buildMenu() {
@@ -156,7 +173,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._search.clutter_text.connect('text-changed', () => {
       this._query = this._search.get_text();
-      if (!this._tokenState)
+      if (this._panelManager?.is('history'))
         this._refresh();
     });
     searchToolbar.add_child(this._search);
@@ -249,12 +266,12 @@ class Indicator extends PanelMenu.Button {
   }
 
   _refresh() {
+    this._panelManager?.refresh();
+  }
+
+  _renderHistory() {
     this._history.removeAll();
     this._syncButtons.clear();
-    if (this._tokenState) {
-      this._renderTokenizer();
-      return;
-    }
     if (this._controller.loading) {
       this._addState(_('Loading clipboard history…'), 'content-loading-symbolic');
       return;
@@ -342,7 +359,7 @@ class Indicator extends PanelMenu.Button {
         'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item), {showTooltip: false}));
     }
     const pinButton = this._iconButton(
-      item.favorite ? 'emblem-favorite-symbolic' : 'view-pin-symbolic',
+      'view-pin-symbolic',
       item.favorite ? _('Unpin') : _('Pin'),
       () => this._controller.toggleFavorite(item.id),
       {showTooltip: false},
@@ -431,23 +448,27 @@ class Indicator extends PanelMenu.Button {
         throw new Error(_('This text is too large for interactive processing'));
       await this._actions.materializeItem(item);
       const source = item.text;
-      this._tokenState = {
+      this._panelManager.show('tokenizer', {
         item,
         source,
         tokens: tokenizeText(source),
         selected: new Set(),
-      };
-      this._searchItem.visible = false;
-      this._refresh();
+      });
     } catch (error) {
       this._actions.reportError(error);
     }
   }
 
-  _renderTokenizer() {
-    const state = this._tokenState;
+  _renderTokenizer(state) {
+    this._history.removeAll();
+    this._syncButtons.clear();
     const header = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    header.add_child(this._iconButton('go-previous-symbolic', _('Back to clipboard history'), () => this._closeTokenizer()));
+    header.add_child(this._iconButton(
+      'go-previous-symbolic',
+      _('Back to clipboard history'),
+      () => this._closeTokenizer(),
+      {showTooltip: false},
+    ));
     header.add_child(new St.Label({
       text: _('Segment text'),
       style_class: 'clipboard-x-token-title',
@@ -474,6 +495,7 @@ class Indicator extends PanelMenu.Button {
     const tokenBox = new St.Widget({
       layout_manager: flow,
       style_class: 'clipboard-x-token-box',
+      style: `width: ${this._tokenContentWidth}px; max-width: ${this._tokenContentWidth}px;`,
       x_expand: true,
     });
     for (const token of state.tokens) {
@@ -495,7 +517,7 @@ class Indicator extends PanelMenu.Button {
         ? _('URL')
         : token.type === 'number'
           ? _('Number')
-          : token.type === 'email' ? _('Email address') : _('Word'));
+          : token.type === 'email' ? _('Email address') : _('Word'), {scope: 'panel'});
       tokenBox.add_child(button);
     }
     tokenItem.add_child(tokenBox);
@@ -510,7 +532,12 @@ class Indicator extends PanelMenu.Button {
       y_align: Clutter.ActorAlign.CENTER,
     });
     resultItem.add_child(this._tokenResult);
-    this._tokenCopy = this._iconButton('edit-copy-symbolic', _('Copy selected words'), () => this._copyTokens());
+    this._tokenCopy = this._iconButton(
+      'edit-copy-symbolic',
+      _('Copy selected words'),
+      () => this._copyTokens(),
+      {tooltipScope: 'panel'},
+    );
     this._tokenCopy.reactive = false;
     this._tokenCopy.opacity = 128;
     resultItem.add_child(this._tokenCopy);
@@ -519,14 +546,20 @@ class Indicator extends PanelMenu.Button {
   }
 
   _updateTokenResult() {
-    const result = composeTokens(this._tokenState.source, this._tokenState.tokens, this._tokenState.selected);
+    const state = this._panelManager.state;
+    if (!this._panelManager.is('tokenizer') || !state)
+      return;
+    const result = composeTokens(state.source, state.tokens, state.selected);
     this._tokenResult.text = result || _('Select one or more words');
     this._tokenCopy.reactive = Boolean(result);
     this._tokenCopy.opacity = result ? 255 : 128;
   }
 
   _copyTokens() {
-    const result = composeTokens(this._tokenState.source, this._tokenState.tokens, this._tokenState.selected);
+    const state = this._panelManager.state;
+    if (!this._panelManager.is('tokenizer') || !state)
+      return;
+    const result = composeTokens(state.source, state.tokens, state.selected);
     if (!result)
       return;
     this._actions.copyText(result);
@@ -542,35 +575,32 @@ class Indicator extends PanelMenu.Button {
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
     this._search.set_style(`width: ${searchWidth}px; min-width: 0; max-width: ${searchWidth}px;`);
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
-    if (this._history)
+    if (this._panelManager)
       this._refresh();
+  }
+
+  _updateThemeColor() {
+    for (const styleClass of THEME_COLOR_CLASSES)
+      this.menu.actor.remove_style_class_name(styleClass);
+    const configured = `clipboard-x-accent-${this._settings.get_string('theme-color')}`;
+    if (THEME_COLOR_CLASSES.includes(configured))
+      this.menu.actor.add_style_class_name(configured);
   }
 
   _updatePanelStateRetention() {
     if (this._settings.get_boolean('preserve-panel-state')) {
-      this._resetViewAfterClose = false;
+      this._panelManager.preservePendingState();
       return;
     }
-    if (!this.menu.isOpen && this._tokenState) {
-      this._resetViewAfterClose = true;
+    if (!this.menu.isOpen && !this._panelManager.is('history')) {
+      this._panelManager.close({preserve: false});
       if (!this.menu.actor.visible)
-        this._resetPanelView();
+        this._panelManager.hidden();
     }
-  }
-
-  _resetPanelView() {
-    this._resetViewAfterClose = false;
-    if (!this._tokenState)
-      return;
-    this._tokenState = null;
-    this._searchItem.visible = true;
-    this._refresh();
   }
 
   _closeTokenizer() {
-    this._tokenState = null;
-    this._searchItem.visible = true;
-    this._refresh();
+    this._panelManager.show('history');
     this._focusSearch();
   }
 
@@ -578,7 +608,7 @@ class Indicator extends PanelMenu.Button {
     this._cancelFocusSearch();
     this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
       this._focusIdleId = 0;
-      if (this.menu.isOpen && !this._tokenState)
+      if (this.menu.isOpen && this._panelManager.is('history'))
         global.stage.set_key_focus(this._search.clutter_text);
       return GLib.SOURCE_REMOVE;
     });
@@ -612,12 +642,12 @@ class Indicator extends PanelMenu.Button {
       style_class: 'clipboard-x-device-icon',
       track_hover: true,
     });
-    this._attachHint(icon, tag);
+    this._attachHint(icon, tag, {scope: 'panel'});
     return icon;
   }
 
   _iconButton(iconName, hintText, callback, options = {}) {
-    const {showTooltip = true, iconSize = ICON_SIZE} = options;
+    const {showTooltip = true, iconSize = ICON_SIZE, tooltipScope = 'global'} = options;
     const button = new St.Button({
       can_focus: true,
       track_hover: true,
@@ -627,6 +657,7 @@ class Indicator extends PanelMenu.Button {
     button._clipboardXIconSize = iconSize;
     this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
+    button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
     button.connect('clicked', () => Promise.resolve(callback()).catch(error => this._actions.reportError(error)));
     return button;
@@ -642,28 +673,47 @@ class Indicator extends PanelMenu.Button {
   _setHint(actor, text) {
     actor.accessible_name = text;
     if (actor._clipboardXShowTooltip)
-      this._attachHint(actor, text);
+      this._attachHint(actor, text, {scope: actor._clipboardXTooltipScope});
   }
 
-  _attachHint(actor, text) {
+  _attachHint(actor, text, {scope = 'global'} = {}) {
     actor._hintText = text;
     if (!actor._clipboardXHintConnected) {
       actor._clipboardXHintConnected = true;
-      actor.connect('notify::hover', () => {
+      const signals = [];
+      signals.push(actor.connect('notify::hover', () => {
         if (actor.hover)
           this._showTooltip(actor, false);
         else if (!actor.has_key_focus?.())
           this._hideTooltip(actor);
-      });
-      actor.connect('key-focus-in', () => this._showTooltip(actor, true));
-      actor.connect('key-focus-out', () => {
+      }));
+      signals.push(actor.connect('key-focus-in', () => this._showTooltip(actor, true)));
+      signals.push(actor.connect('key-focus-out', () => {
         if (!actor.hover)
           this._hideTooltip(actor);
-      });
+      }));
+      this._hintConnections.set(actor, {scope, signals});
     }
     actor.accessible_name = text;
     if (this._tooltipSource === actor && this._tooltip.visible)
       this._tooltip.text = text;
+  }
+
+  _clearHints(scope = null) {
+    this._hideTooltip();
+    for (const [actor, connection] of this._hintConnections) {
+      if (scope && connection.scope !== scope)
+        continue;
+      for (const signal of connection.signals) {
+        try {
+          actor.disconnect(signal);
+        } catch (_error) {
+          // The actor may already have been destroyed by a panel refresh.
+        }
+      }
+      actor._clipboardXHintConnected = false;
+      this._hintConnections.delete(actor);
+    }
   }
 
   _showTooltip(actor, immediate) {
@@ -746,11 +796,13 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelFocusSearch();
-    this._hideTooltip();
+    this._panelManager?.destroy();
+    this._clearHints();
     if (this._changedSignal)
       this._controller.disconnect(this._changedSignal);
     for (const signal of [
       this._privateSignal,
+      this._themeColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
       this._visibleItemLimitSignal,
@@ -764,6 +816,7 @@ class Indicator extends PanelMenu.Button {
     }
     this._changedSignal = 0;
     this._privateSignal = 0;
+    this._themeColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
     this._visibleItemLimitSignal = 0;

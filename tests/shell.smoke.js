@@ -97,20 +97,23 @@ export async function run() {
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = indicator._entry(capturedText);
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
-      && child.get_child()?.icon_name === 'emblem-favorite-symbolic'),
-  'Pinned history entry did not switch to a distinct pinned icon');
+      && child.get_child()?.icon_name === 'view-pin-symbolic'
+      && child.has_style_class_name('clipboard-x-pinned')),
+  'Pinned history entry did not keep the pin icon with a distinct color class');
   pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
   await indicator._openTokenizer(capturedText);
-  assert(indicator._tokenState?.tokens.length > 1 && !indicator._searchItem.visible,
+  const tokenState = indicator._panelManager.state;
+  assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
+      && !indicator._searchItem.visible,
     'Text segmentation did not switch the current panel to the token selection view');
-  indicator._tokenState.selected.add(indicator._tokenState.tokens[0].index);
+  tokenState.selected.add(tokenState.tokens[0].index);
   indicator._updateTokenResult();
-  assert(indicator._tokenResult.text === indicator._tokenState.tokens[0].text,
+  assert(indicator._tokenResult.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
   indicator._closeTokenizer();
-  assert(!indicator._tokenState && indicator._searchItem.visible,
+  assert(indicator._panelManager.is('history') && indicator._searchItem.visible,
     'Returning from text segmentation did not restore clipboard history');
   const originalTimestamp = capturedText.createdAt;
   await indicator._controller.activate(capturedText);
