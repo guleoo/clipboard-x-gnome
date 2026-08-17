@@ -6,9 +6,9 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {ensureDeviceIdentity} from '../device/identity.js';
 import {buildEditorArgv} from '../screenshot/editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../sync/constants.js';
+import {ensureDeviceIdentity} from '../sync/device.js';
 import {effectiveCapabilities} from '../sync/policy.js';
 
 const THEME_COLORS = Object.freeze([

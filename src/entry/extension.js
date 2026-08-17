@@ -9,9 +9,9 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {ClipboardController} from '../clipboard/controller.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
-import {ensureDeviceIdentity} from '../device/identity.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
 import {SyncClient} from '../sync/client.js';
+import {ensureDeviceIdentity} from '../sync/device.js';
 import {Indicator} from '../ui/indicator.js';
 import {ScreenshotPortal} from '../screenshot/portal.js';
 

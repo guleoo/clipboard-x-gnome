@@ -11,7 +11,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelManager} from './panel-manager.js';
-import {composeTokens, tokenizeText} from '../tokenizer/processors.js';
+import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;

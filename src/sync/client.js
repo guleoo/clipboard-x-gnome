@@ -2,7 +2,7 @@ import Gio from 'gi://Gio';
 import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 
-import {UUID} from '../application/constants.js';
+import {UUID} from '../entry/constants.js';
 import {ClipboardItem} from '../clipboard/item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
@@ -13,8 +13,8 @@ import {sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
 import {variantDictionary} from '../common/dbus.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {writeFile} from '../common/files.js';
-import {DEVICE_ICON_KINDS} from '../device/constants.js';
-import {ensureDeviceIdentity, isUuid} from '../device/identity.js';
+import {isUuid} from '../common/uuid.js';
+import {DEVICE_ICON_KINDS, ensureDeviceIdentity} from './device.js';
 import {
   SYNC_API_VERSION,
   SYNC_INTERFACE,

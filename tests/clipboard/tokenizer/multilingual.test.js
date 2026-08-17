@@ -1,4 +1,4 @@
-import {tokenizeText} from '../../src/tokenizer/processors.js';
+import {tokenizeText} from '../../../src/clipboard/tokenizer/processors.js';
 
 const TEST_SENTENCES = Object.freeze({
   zh: [

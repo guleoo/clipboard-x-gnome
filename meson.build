@@ -69,15 +69,15 @@ endif
 
 test_runner = find_program('gjs')
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
-test('device-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/device/identity.test.js'])
+test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
 test('clipboard-storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/storage.test.js'])
 test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tests/color-picker/color.test.js'])
 test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'])
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
-test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer/processors.test.js'])
-test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/tokenizer/multilingual.test.js'])
+test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
+test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])
 test(
   'stress',

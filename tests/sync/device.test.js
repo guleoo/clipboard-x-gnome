@@ -1,4 +1,5 @@
-import {ensureDeviceIdentity, isUuid} from '../../src/device/identity.js';
+import {isUuid} from '../../src/common/uuid.js';
+import {ensureDeviceIdentity} from '../../src/sync/device.js';
 
 function assert(condition, message) {
   if (!condition)

@@ -39,9 +39,9 @@
 
 ## 阶段 4：文本处理
 
-- `src/tokenizer/processors.js` 先识别 URL、邮箱和结构化数字，再使用 `Intl.Segmenter` 产生
+- `src/clipboard/tokenizer/processors.js` 先识别 URL、邮箱和结构化数字，再使用 `Intl.Segmenter` 产生
   自然词元，并根据源文本位置组合所选内容。
-- `tests/tokenizer/processors.test.js` 使用中英混合文本、URL 和数字验证特殊词元不被拆散、选择顺序和
+- `tests/clipboard/tokenizer/processors.test.js` 使用中英混合文本、URL 和数字验证特殊词元不被拆散、选择顺序和
   间隔保持正确。
 - `tests/ui/shell.smoke.js` 验证点击条目分词按钮会在当前小面板切换视图、逐词选择会实时
   更新结果，并能返回历史列表；超过交互大小上限时明确拒绝。

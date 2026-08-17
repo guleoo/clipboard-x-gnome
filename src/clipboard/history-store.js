@@ -1,12 +1,12 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {UUID} from '../application/constants.js';
+import {UUID} from '../entry/constants.js';
 import {bytesFromString, sha256, stringFromBytes} from '../common/bytes.js';
 import {diagnosticCode} from '../common/errors.js';
 import {loadFile, writeFile} from '../common/files.js';
-import {DEVICE_ICON_KINDS} from '../device/constants.js';
-import {isUuid} from '../device/identity.js';
+import {isUuid} from '../common/uuid.js';
+import {DEVICE_ICON_KINDS} from '../sync/device.js';
 import {ClipboardItem} from './item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,

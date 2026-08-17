@@ -1,7 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {ClipboardItem} from '../../src/clipboard/item.js';
-import {isUuid} from '../../src/device/identity.js';
+import {isUuid} from '../../src/common/uuid.js';
 
 function assert(condition, message) {
   if (!condition)

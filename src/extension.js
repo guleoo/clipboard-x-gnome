@@ -1,3 +1,3 @@
-import ClipboardXExtension from './application/extension.js';
+import ClipboardXExtension from './entry/extension.js';
 
 export default ClipboardXExtension;

@@ -24,8 +24,8 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/pref
 
 - `src/extension.js`、`src/prefs.js` 只作为 GNOME 规定的加载入口。
 - `src/common/` 只存放被多个领域复用的基础设施。
-- `src/application/`、`clipboard/`、`device/`、`sync/`、`tokenizer/`、`screenshot/`、
-  `color-picker/` 和 `ui/` 按功能领域组织实现。
+- `src/entry/`、`clipboard/`、`sync/`、`screenshot/`、`color-picker/` 和 `ui/` 按功能领域
+  组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
 - `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`，同步集成场景放在
   `tests/sync/integration/`。
 

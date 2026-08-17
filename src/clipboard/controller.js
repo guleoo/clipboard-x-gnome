@@ -14,7 +14,7 @@ import {createThumbnail} from './thumbnail.js';
 import {sha256} from '../common/bytes.js';
 import {diagnosticCode} from '../common/errors.js';
 import {loadFile, writeFile} from '../common/files.js';
-import {ensureDeviceIdentity} from '../device/identity.js';
+import {ensureDeviceIdentity} from '../sync/device.js';
 
 const CLIPBOARD = St.ClipboardType.CLIPBOARD;
 

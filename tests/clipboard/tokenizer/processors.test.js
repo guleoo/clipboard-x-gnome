@@ -3,7 +3,7 @@ import {
   processText,
   TextProcessors,
   tokenizeText,
-} from '../../src/tokenizer/processors.js';
+} from '../../../src/clipboard/tokenizer/processors.js';
 
 function assert(condition, message) {
   if (!condition)
