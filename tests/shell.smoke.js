@@ -132,7 +132,12 @@ export async function run() {
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
   indicator._beginTokenSelectionDrag(tokenButtons[0], tokenState.tokens[0], tokenState);
-  indicator._applyTokenSelectionDrag(tokenButtons[1]);
+  const [secondTokenX, secondTokenY] = tokenButtons[1].get_transformed_position();
+  const [secondTokenWidth, secondTokenHeight] = tokenButtons[1].get_transformed_size();
+  indicator._applyTokenSelectionAt(
+    secondTokenX + secondTokenWidth / 2,
+    secondTokenY + secondTokenHeight / 2,
+  );
   indicator._endTokenSelectionDrag();
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)

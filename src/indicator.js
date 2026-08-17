@@ -90,6 +90,7 @@ class Indicator extends PanelMenu.Button {
     this._tooltipSource = null;
     this._tokenSelectionDrag = null;
     this._tokenDragCaptureId = 0;
+    this._tokenButtons = [];
     this._hintConnections = new Map();
     this._tooltip = new St.Label({
       style_class: 'clipboard-x-tooltip',
@@ -554,6 +555,7 @@ class Indicator extends PanelMenu.Button {
 
   _renderTokenizer(state) {
     this._endTokenSelectionDrag();
+    this._tokenButtons = [];
     this._tokenSection.removeAll();
     this._syncButtons.clear();
     this._tokenSource.text = state.source.slice(0, 500);
@@ -584,16 +586,32 @@ class Indicator extends PanelMenu.Button {
       const button = new St.Button({
         label: token.text,
         can_focus: true,
+        track_hover: true,
         checked: state.selected.has(token.index),
         style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
       });
       button._clipboardXMaximumWidth = maximumRowWidth;
       button._clipboardXToken = token;
       button._clipboardXTokenState = state;
+      this._tokenButtons.push(button);
       button.connect('button-press-event', (_actor, event) => {
         if (event.get_button() === Clutter.BUTTON_PRIMARY)
           this._beginTokenSelectionDrag(button, token, state);
         return Clutter.EVENT_PROPAGATE;
+      });
+      button.connect('motion-event', (_actor, event) => {
+        const [x, y] = event.get_coords();
+        this._applyTokenSelectionAt(x, y);
+        return Clutter.EVENT_PROPAGATE;
+      });
+      button.connect('button-release-event', (_actor, event) => {
+        if (event.get_button() === Clutter.BUTTON_PRIMARY)
+          this._endTokenSelectionDrag(true);
+        return Clutter.EVENT_PROPAGATE;
+      });
+      button.connect('notify::hover', () => {
+        if (button.hover)
+          this._applyTokenSelectionDrag(button);
       });
       button.connect('clicked', () => {
         if (button._clipboardXSuppressClick) {
@@ -633,6 +651,7 @@ class Indicator extends PanelMenu.Button {
       state,
       selected,
       initialButton: button,
+      lastIndex: token.index,
       visited: new Set(),
     };
     this._applyTokenSelectionDrag(button);
@@ -640,11 +659,7 @@ class Indicator extends PanelMenu.Button {
       const type = event.type();
       if (type === Clutter.EventType.MOTION) {
         const [x, y] = event.get_coords();
-        let actor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-        while (actor && !actor._clipboardXToken)
-          actor = actor.get_parent();
-        if (actor)
-          this._applyTokenSelectionDrag(actor);
+        this._applyTokenSelectionAt(x, y);
       } else if (type === Clutter.EventType.BUTTON_RELEASE
           && event.get_button() === Clutter.BUTTON_PRIMARY) {
         this._endTokenSelectionDrag(true);
@@ -656,21 +671,51 @@ class Indicator extends PanelMenu.Button {
   _applyTokenSelectionDrag(button) {
     const drag = this._tokenSelectionDrag;
     const token = button?._clipboardXToken;
-    if (!drag || !token || button._clipboardXTokenState !== drag.state
-        || drag.visited.has(token.index))
+    if (!drag || !token || button._clipboardXTokenState !== drag.state)
       return;
-    drag.visited.add(token.index);
-    this._setTokenSelected(button, token, drag.state, drag.selected);
+    const start = Math.min(drag.lastIndex, token.index);
+    const end = Math.max(drag.lastIndex, token.index);
+    let changed = false;
+    for (const candidate of this._tokenButtons) {
+      const candidateToken = candidate._clipboardXToken;
+      if (candidate._clipboardXTokenState !== drag.state
+          || candidateToken.index < start || candidateToken.index > end
+          || drag.visited.has(candidateToken.index))
+        continue;
+      drag.visited.add(candidateToken.index);
+      this._setTokenSelected(candidate, candidateToken, drag.state, drag.selected, false);
+      changed = true;
+    }
+    drag.lastIndex = token.index;
+    if (changed)
+      this._updateTokenResult();
   }
 
-  _setTokenSelected(button, token, state, selected) {
+  _applyTokenSelectionAt(x, y) {
+    if (!this._tokenSelectionDrag)
+      return;
+    for (const button of this._tokenButtons) {
+      if (!button.mapped)
+        continue;
+      const [buttonX, buttonY] = button.get_transformed_position();
+      const [buttonWidth, buttonHeight] = button.get_transformed_size();
+      if (x >= buttonX && x <= buttonX + buttonWidth
+          && y >= buttonY && y <= buttonY + buttonHeight) {
+        this._applyTokenSelectionDrag(button);
+        return;
+      }
+    }
+  }
+
+  _setTokenSelected(button, token, state, selected, updateResult = true) {
     if (selected)
       state.selected.add(token.index);
     else
       state.selected.delete(token.index);
     button.checked = selected;
     this._updateTokenButtonStyle(button, token);
-    this._updateTokenResult();
+    if (updateResult)
+      this._updateTokenResult();
   }
 
   _endTokenSelectionDrag(deferClickReset = false) {
