@@ -141,6 +141,7 @@ class Indicator extends PanelMenu.Button {
     });
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
+        this._actions.rememberInputTarget();
         this._panelManager.open();
         this._actions.ensureIdentity();
         if (this._panelManager.is('history')) {
@@ -433,7 +434,24 @@ class Indicator extends PanelMenu.Button {
       }));
       content.set_child(box);
     }
-    content.connect('clicked', () => this._activate(item));
+    content._clipboardXTypeOnClick = false;
+    content.connect('button-press-event', (_button, event) => {
+      content._clipboardXTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
+        && Boolean(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
+      return Clutter.EVENT_PROPAGATE;
+    });
+    content.connect('key-press-event', (_button, event) => {
+      content._clipboardXTypeOnClick = false;
+      return this._handleEntryKey(item, event);
+    });
+    content.connect('clicked', () => {
+      const type = content._clipboardXTypeOnClick;
+      content._clipboardXTypeOnClick = false;
+      if (type)
+        this._type(item);
+      else
+        this._activate(item);
+    });
     content.accessible_name = item.remote && item.availability !== 'ready'
       ? _('Download original and copy')
       : _('Copy original');
@@ -467,6 +485,7 @@ class Indicator extends PanelMenu.Button {
       row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
       'edit-delete-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
+    row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
     return row;
   }
 
@@ -547,6 +566,7 @@ class Indicator extends PanelMenu.Button {
         source,
         tokens: tokenizeText(source),
         selected: new Set(),
+        keyboardSelection: null,
       });
     } catch (error) {
       this._actions.reportError(error);
@@ -594,6 +614,8 @@ class Indicator extends PanelMenu.Button {
       button._clipboardXToken = token;
       button._clipboardXTokenState = state;
       this._tokenButtons.push(button);
+      button.connect('key-press-event', (_actor, event) =>
+        this._handleTokenKey(button, token, state, event));
       button.connect('button-press-event', (_actor, event) => {
         if (event.get_button() === Clutter.BUTTON_PRIMARY)
           this._beginTokenSelectionDrag(button, token, state);
@@ -618,6 +640,7 @@ class Indicator extends PanelMenu.Button {
           button._clipboardXSuppressClick = false;
           return;
         }
+        state.keyboardSelection = null;
         this._setTokenSelected(button, token, state, !state.selected.has(token.index));
       });
       this._updateTokenButtonStyle(button, token);
@@ -643,8 +666,93 @@ class Indicator extends PanelMenu.Button {
     this._updateTokenResult();
   }
 
+  _handleTokenKey(button, token, state, event) {
+    const key = event.get_key_symbol();
+    const modifiers = event.get_state();
+    const otherModifiers = Clutter.ModifierType.CONTROL_MASK
+      | Clutter.ModifierType.MOD1_MASK
+      | Clutter.ModifierType.SUPER_MASK;
+    if (modifiers & Clutter.ModifierType.SHIFT_MASK && !(modifiers & otherModifiers)) {
+      if ([Clutter.KEY_Left, Clutter.KEY_Right, Clutter.KEY_Up, Clutter.KEY_Down].includes(key)) {
+        this._extendTokenSelection(button, state, key);
+        return Clutter.EVENT_STOP;
+      }
+    }
+    const commandModifiers = otherModifiers | Clutter.ModifierType.SHIFT_MASK;
+    if (modifiers & commandModifiers)
+      return Clutter.EVENT_PROPAGATE;
+    if (key === Clutter.KEY_c) {
+      this._runTokenAction('copyText', token);
+    } else if (key === Clutter.KEY_v) {
+      this._runTokenAction('pasteText', token);
+    } else if (key === Clutter.KEY_apostrophe) {
+      this._runTokenAction('typeText', token);
+    } else {
+      state.keyboardSelection = null;
+      return Clutter.EVENT_PROPAGATE;
+    }
+    return Clutter.EVENT_STOP;
+  }
+
+  _extendTokenSelection(button, state, key) {
+    const position = this._tokenButtons.indexOf(button);
+    const target = this._tokenTarget(button, key);
+    const targetPosition = this._tokenButtons.indexOf(target);
+    if (position < 0 || targetPosition < 0)
+      return;
+    if (!state.keyboardSelection) {
+      state.keyboardSelection = {
+        anchorPosition: position,
+        baseSelected: new Set(state.selected),
+      };
+    }
+    const {anchorPosition, baseSelected} = state.keyboardSelection;
+    state.selected.clear();
+    for (const index of baseSelected)
+      state.selected.add(index);
+    const start = Math.min(anchorPosition, targetPosition);
+    const end = Math.max(anchorPosition, targetPosition);
+    for (let index = start; index <= end; index++)
+      state.selected.add(this._tokenButtons[index]._clipboardXToken.index);
+    for (const candidate of this._tokenButtons) {
+      const candidateToken = candidate._clipboardXToken;
+      candidate.checked = state.selected.has(candidateToken.index);
+      this._updateTokenButtonStyle(candidate, candidateToken);
+    }
+    target.grab_key_focus();
+    this._updateTokenResult();
+  }
+
+  _tokenTarget(button, key) {
+    const position = this._tokenButtons.indexOf(button);
+    if (key === Clutter.KEY_Left)
+      return this._tokenButtons[position - 1] ?? null;
+    if (key === Clutter.KEY_Right)
+      return this._tokenButtons[position + 1] ?? null;
+
+    const row = button.get_parent();
+    const rows = this._tokenBox.get_children();
+    const rowPosition = rows.indexOf(row);
+    const targetRow = rows[rowPosition + (key === Clutter.KEY_Up ? -1 : 1)];
+    if (!targetRow)
+      return null;
+    const candidates = targetRow.get_children();
+    if (candidates.length === 0)
+      return null;
+    const [buttonX] = button.get_transformed_position();
+    const [buttonWidth] = button.get_transformed_size();
+    const center = buttonX + buttonWidth / 2;
+    return candidates.reduce((closest, candidate) => {
+      const [candidateX] = candidate.get_transformed_position();
+      const [candidateWidth] = candidate.get_transformed_size();
+      const distance = Math.abs(candidateX + candidateWidth / 2 - center);
+      return distance < closest.distance ? {button: candidate, distance} : closest;
+    }, {button: candidates[0], distance: Infinity}).button;
+  }
+
   _beginTokenSelectionDrag(button, token, state) {
     this._endTokenSelectionDrag();
+    state.keyboardSelection = null;
     const selected = !state.selected.has(token.index);
     button._clipboardXSuppressClick = true;
     this._tokenSelectionDrag = {
@@ -748,14 +856,21 @@ class Indicator extends PanelMenu.Button {
   }
 
   _copyTokens() {
+    this._runTokenAction('copyText');
+  }
+
+  _runTokenAction(action, fallbackToken = null) {
     const state = this._panelManager.state;
     if (!this._panelManager.is('tokenizer') || !state)
       return;
-    const result = composeTokens(state.source, state.tokens, state.selected);
+    const result = composeTokens(state.source, state.tokens, state.selected)
+      || fallbackToken?.text
+      || '';
     if (!result)
       return;
-    this._actions.copyText(result);
     this.menu.close();
+    Promise.resolve(this._actions[action](result))
+      .catch(error => this._actions.reportError(error));
   }
 
   _updatePanelGeometry() {
@@ -1020,6 +1135,51 @@ class Indicator extends PanelMenu.Button {
   _activate(item) {
     this.menu.close();
     this._actions.activateItem(item).catch(error => this._actions.reportError(error));
+  }
+
+  _paste(item) {
+    this.menu.close();
+    this._actions.pasteItem(item).catch(error => this._actions.reportError(error));
+  }
+
+  _type(item) {
+    if (!item.isText) {
+      this._activate(item);
+      return;
+    }
+    this.menu.close();
+    this._actions.typeItem(item).catch(error => this._actions.reportError(error));
+  }
+
+  _handleEntryKey(item, event) {
+    const key = event.get_key_symbol();
+    const modifiers = event.get_state();
+    if (this._isEnter(key) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+      this._type(item);
+      return Clutter.EVENT_STOP;
+    }
+    const commandModifiers = Clutter.ModifierType.SHIFT_MASK
+      | Clutter.ModifierType.CONTROL_MASK
+      | Clutter.ModifierType.MOD1_MASK
+      | Clutter.ModifierType.SUPER_MASK;
+    if (modifiers & commandModifiers)
+      return Clutter.EVENT_PROPAGATE;
+    if (key === Clutter.KEY_v) {
+      this._paste(item);
+    } else if (key === Clutter.KEY_p) {
+      this._controller.toggleFavorite(item.id);
+    } else if (key === Clutter.KEY_Delete || key === Clutter.KEY_KP_Delete) {
+      this._controller.remove(item.id);
+    } else if (key === Clutter.KEY_apostrophe) {
+      this._type(item);
+    } else {
+      return Clutter.EVENT_PROPAGATE;
+    }
+    return Clutter.EVENT_STOP;
+  }
+
+  _isEnter(key) {
+    return key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter;
   }
 
   destroy() {

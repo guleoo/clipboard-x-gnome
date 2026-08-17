@@ -104,6 +104,32 @@ export async function run() {
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
     'Case-insensitive clipboard history search did not find the expected entry');
+  const originalTypeItem = indicator._actions.typeItem;
+  const originalPasteItem = indicator._actions.pasteItem;
+  const itemCommands = [];
+  indicator._actions.typeItem = async item => itemCommands.push(`type:${item.id}`);
+  indicator._actions.pasteItem = async item => itemCommands.push(`paste:${item.id}`);
+  const entryEvent = (key, modifiers = 0) => ({
+    get_key_symbol: () => key,
+    get_state: () => modifiers,
+  });
+  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_STOP,
+    'Clipboard entry paste shortcut was not consumed');
+  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_STOP,
+    'Clipboard entry typing shortcut was not consumed');
+  assert(indicator._handleEntryKey(
+    capturedText,
+    entryEvent(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK),
+  ) === Clutter.EVENT_STOP, 'Ctrl+Enter did not invoke clipboard entry typing');
+  await Scripting.sleep(10);
+  assert(itemCommands.join(',') === `paste:${capturedText.id},type:${capturedText.id},type:${capturedText.id}`,
+    'Clipboard entry keyboard commands invoked the wrong actions');
+  indicator._actions.typeItem = originalTypeItem;
+  indicator._actions.pasteItem = originalPasteItem;
+  indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
+  assert(capturedText.favorite, 'Clipboard entry p shortcut did not pin the entry');
+  indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
+  assert(!capturedText.favorite, 'Clipboard entry p shortcut did not unpin the entry');
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = indicator._entry(capturedText);
@@ -131,6 +157,22 @@ export async function run() {
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
+  indicator._handleTokenKey(
+    tokenButtons[0],
+    tokenState.tokens[0],
+    tokenState,
+    entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
+  );
+  assert(tokenState.selected.has(tokenState.tokens[0].index)
+      && tokenState.selected.has(tokenState.tokens[1].index)
+      && global.stage.get_key_focus() === tokenButtons[1],
+    'Shift+Arrow did not extend token selection and keyboard focus');
+  for (const button of tokenButtons) {
+    const token = button._clipboardXToken;
+    indicator._setTokenSelected(button, token, tokenState, false, false);
+  }
+  tokenState.keyboardSelection = null;
+  indicator._updateTokenResult();
   indicator._beginTokenSelectionDrag(tokenButtons[0], tokenState.tokens[0], tokenState);
   const [secondTokenX, secondTokenY] = tokenButtons[1].get_transformed_position();
   const [secondTokenWidth, secondTokenHeight] = tokenButtons[1].get_transformed_size();
@@ -173,7 +215,7 @@ export async function run() {
   await Scripting.sleep(300);
   const disposable = indicator._controller.items.find(item => item.text === 'disposable clipboard history entry');
   assert(disposable, 'Disposable history fixture was not captured');
-  indicator._controller.remove(disposable.id);
+  indicator._handleEntryKey(disposable, entryEvent(Clutter.KEY_Delete));
   assert(!indicator._controller.items.includes(disposable), 'Clipboard history entry could not be deleted');
 
   if (GLib.getenv('CLIPBOARD_X_SKIP_EXTERNAL_SOURCES') !== '1') {

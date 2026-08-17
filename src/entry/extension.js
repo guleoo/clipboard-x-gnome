@@ -7,6 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
+import {TerminalInput} from '../clipboard/terminal/input.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
@@ -29,6 +30,7 @@ export default class ClipboardXExtension extends Extension {
     this._controller = new ClipboardController(this._settings);
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings);
+    this._terminalInput = new TerminalInput();
     this._colorPicker = null;
     this._settingsSignals = [];
     this._boundShortcuts = [];
@@ -40,10 +42,15 @@ export default class ClipboardXExtension extends Extension {
       pickColor: () => this._pickColor(),
       editItem: item => this._editItem(item),
       activateItem: item => this._activateItem(item),
+      pasteItem: item => this._pasteItem(item),
+      typeItem: item => this._typeItem(item),
       materializeItem: item => this._ensureMaterialized(item),
       publish: item => this._publish(item),
       cancelTransfer: transferId => this._sync.cancelTransfer(transferId),
       copyText: text => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text),
+      pasteText: text => this._pasteText(text),
+      typeText: text => this._terminalInput.type(text),
+      rememberInputTarget: () => this._terminalInput.rememberTarget(),
       openPreferences: () => this.openPreferences(),
       reportError: error => this._reportError(error),
     };
@@ -118,12 +125,14 @@ export default class ClipboardXExtension extends Extension {
     this._settingsSignals = [];
 
     this._indicator?.destroy();
+    this._terminalInput?.destroy();
     this._sync?.destroy();
     this._controller?.destroy();
     this._indicator = null;
     this._sync = null;
     this._controller = null;
     this._portal = null;
+    this._terminalInput = null;
     this._settings = null;
   }
 
@@ -179,6 +188,23 @@ export default class ClipboardXExtension extends Extension {
   async _activateItem(item) {
     await this._ensureMaterialized(item);
     await this._controller.activate(item);
+  }
+
+  async _pasteItem(item) {
+    await this._activateItem(item);
+    await this._terminalInput.paste();
+  }
+
+  async _typeItem(item) {
+    await this._ensureMaterialized(item);
+    if (!item.isText)
+      throw new Error('Only text clipboard entries can be typed');
+    await this._terminalInput.type(item.text);
+  }
+
+  async _pasteText(text) {
+    St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
+    await this._terminalInput.paste();
   }
 
   async _ensureMaterialized(item) {
