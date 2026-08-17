@@ -496,17 +496,27 @@ class Indicator extends PanelMenu.Button {
     this._history.addMenuItem(preview);
 
     const tokenItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    const flow = new Clutter.FlowLayout({
-      orientation: Clutter.Orientation.HORIZONTAL,
-      column_spacing: 6,
-      row_spacing: 6,
-    });
-    const tokenBox = new St.Widget({
-      layout_manager: flow,
+    const tokenBox = new St.BoxLayout({
+      vertical: true,
       style_class: 'clipboard-x-token-box',
       style: `width: ${this._tokenContentWidth}px; max-width: ${this._tokenContentWidth}px;`,
       x_expand: true,
     });
+    this._tokenBox = tokenBox;
+    tokenItem.add_child(tokenBox);
+    this._history.addMenuItem(tokenItem);
+    const maximumRowWidth = this._tokenContentWidth - 2;
+    const spacing = 6;
+    let tokenRow = null;
+    let rowWidth = 0;
+    const startRow = () => {
+      tokenRow = new St.BoxLayout({
+        style_class: 'clipboard-x-token-row',
+        x_align: Clutter.ActorAlign.START,
+      });
+      tokenBox.add_child(tokenRow);
+      rowWidth = 0;
+    };
     for (const token of state.tokens) {
       const button = new St.Button({
         label: token.text,
@@ -515,6 +525,7 @@ class Indicator extends PanelMenu.Button {
         checked: state.selected.has(token.index),
         style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
       });
+      button._clipboardXMaximumWidth = maximumRowWidth;
       button.connect('clicked', () => {
         if (button.checked)
           state.selected.add(token.index);
@@ -529,10 +540,20 @@ class Indicator extends PanelMenu.Button {
         : token.type === 'number'
           ? _('Number')
           : token.type === 'email' ? _('Email address') : _('Word'), {scope: 'panel'});
-      tokenBox.add_child(button);
+      if (!tokenRow)
+        startRow();
+      tokenRow.add_child(button);
+      const [, naturalWidth] = button.get_preferred_width(-1);
+      const buttonWidth = Math.min(naturalWidth, maximumRowWidth);
+      if (rowWidth > 0 && rowWidth + spacing + buttonWidth > maximumRowWidth) {
+        tokenRow.remove_child(button);
+        startRow();
+        tokenRow.add_child(button);
+      }
+      rowWidth += (rowWidth > 0 ? spacing : 0) + buttonWidth;
     }
-    tokenItem.add_child(tokenBox);
-    this._history.addMenuItem(tokenItem);
+    if (state.tokens.length === 0)
+      tokenBox.add_child(new St.Label({text: _('No words found'), style_class: 'clipboard-x-empty'}));
 
     const resultItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this._tokenResult = new St.Label({
@@ -618,15 +639,14 @@ class Indicator extends PanelMenu.Button {
   }
 
   _updateTokenButtonStyle(button, token) {
-    if (!this._customAccentColor) {
-      button.set_style('');
-      return;
-    }
+    const styles = [`max-width: ${button._clipboardXMaximumWidth}px`];
     if (button.checked) {
-      button.set_style(`background-color: ${this._customAccentColor}; color: white;`);
-      return;
+      if (this._customAccentColor)
+        styles.push(`background-color: ${this._customAccentColor}`, 'color: white');
+    } else if (token.type === 'url' && this._customAccentColor) {
+      styles.push(`color: ${this._customAccentColor}`);
     }
-    button.set_style(token.type === 'url' ? `color: ${this._customAccentColor};` : '');
+    button.set_style(`${styles.join('; ')};`);
   }
 
   _updatePanelStateRetention() {

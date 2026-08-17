@@ -154,6 +154,11 @@
 
 .clipboard-x-token-box {
   padding: 5px 1px;
+  spacing: 6px;
+}
+
+.clipboard-x-token-row {
+  spacing: 6px;
 }
 
 .clipboard-x-token {

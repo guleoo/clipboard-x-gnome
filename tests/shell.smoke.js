@@ -111,11 +111,20 @@ export async function run() {
   pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
+  indicator.menu.open();
+  await Scripting.sleep(100);
   await indicator._openTokenizer(capturedText);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
       && !indicator._searchItem.visible,
     'Text segmentation did not switch the current panel to the token selection view');
+  await Scripting.sleep(100);
+  const tokenButtons = indicator._tokenBox.get_children()
+    .flatMap(row => row.get_children());
+  assert(tokenButtons.length === tokenState.tokens.length,
+    'Text segmentation did not render one visible button for each token');
+  assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
+    'Text segmentation rendered token buttons outside the visible layout');
   tokenState.selected.add(tokenState.tokens[0].index);
   indicator._updateTokenResult();
   assert(indicator._tokenResult.text === tokenState.tokens[0].text,
@@ -123,6 +132,7 @@ export async function run() {
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history') && indicator._searchItem.visible,
     'Returning from text segmentation did not restore clipboard history');
+  indicator.menu.close();
   const originalTimestamp = capturedText.createdAt;
   await indicator._controller.activate(capturedText);
   await Scripting.sleep(300);

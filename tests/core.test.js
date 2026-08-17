@@ -62,6 +62,8 @@ function testTextProcessors() {
 
   const source = '打开 https://example.com/a，订单号 123-456 works';
   const tokens = tokenizeText(source);
+  assertEqual(tokenizeText("I can't do that.").map(token => token.text),
+    ['I', "can't", 'do', 'that'], 'tokenizer should segment the reported English sentence');
   assert(tokens.some(token => token.type === 'url' && token.text === 'https://example.com/a'),
     'tokenizer must keep a URL as one token');
   assert(tokens.some(token => token.type === 'number' && token.text === '123-456'),
