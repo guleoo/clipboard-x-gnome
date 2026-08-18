@@ -15,14 +15,12 @@ import {PanelManager} from './panel-manager.js';
 import {FocusGrid} from './focus-grid.js';
 import {ContentItem} from './controls/content-item.js';
 import {IconButton} from './controls/icon-button.js';
-import {PanelFooter} from './controls/panel-footer.js';
-import {PanelHeader} from './controls/panel-header.js';
 import {SearchEntry} from './controls/search-entry.js';
 import {Tooltip} from './controls/tooltip.js';
 import {normalize as normalizePanelActions} from './panel-actions.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases.js';
+import {TokenizerPanel} from './panels/tokenizer/panel.js';
 import {matches as matchesShortcut} from './shortcut.js';
-import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
@@ -40,12 +38,6 @@ const DEVICE_ICON_NAMES = Object.freeze({
   other: 'avatar-default-symbolic',
 });
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
-const TOKEN_SELECTION_SHORTCUTS = Object.freeze([
-  ['tokenizer-select-previous-shortcut', Clutter.KEY_Left],
-  ['tokenizer-select-next-shortcut', Clutter.KEY_Right],
-  ['tokenizer-select-above-shortcut', Clutter.KEY_Up],
-  ['tokenizer-select-below-shortcut', Clutter.KEY_Down],
-]);
 const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_Left, 'left'],
   [Clutter.KEY_Right, 'right'],
@@ -123,9 +115,6 @@ class Indicator extends PanelMenu.Button {
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
     this._pendingHistoryViewState = null;
-    this._tokenSelectionDrag = null;
-    this._tokenDragCaptureId = 0;
-    this._tokenButtons = [];
     this._stateHoverTransfer = false;
     this._tooltip = new Tooltip();
 
@@ -141,12 +130,6 @@ class Indicator extends PanelMenu.Button {
         const row = actor._clipboardXHistoryRow;
         if (row?.mapped)
           AnimationUtils.ensureActorVisibleInScrollView(this._scroll, row);
-      },
-    });
-    this._tokenizerFocusGrid = new FocusGrid({
-      ensureVisible: actor => {
-        if (actor._clipboardXToken)
-          AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, actor);
       },
     });
     this._panelManager = new PanelManager({
@@ -165,11 +148,14 @@ class Indicator extends PanelMenu.Button {
       },
     });
     this._panelManager.register('tokenizer', {
-      focusGrid: this._tokenizerFocusGrid,
-      enter: () => this._showPanelChrome('tokenizer'),
-      leave: () => this._endTokenSelectionDrag(),
+      focusGrid: this._tokenizer.focusGrid,
+      enter: () => {
+        this._syncButtons.clear();
+        this._showPanelChrome('tokenizer');
+      },
+      leave: () => this._tokenizer.leave(),
       render: state => {
-        this._renderTokenizer(state);
+        this._tokenizer.render(state);
         this._applyTextVerticalOffset();
       },
     });
@@ -197,10 +183,6 @@ class Indicator extends PanelMenu.Button {
     this._preservePanelStateSignal = settings.connect(
       'changed::preserve-panel-state',
       () => this._updatePanelStateRetention(),
-    );
-    this._tokenSourcePreviewSignal = settings.connect(
-      'changed::tokenizer-show-source-preview',
-      () => this._updateTokenSourceVisibility(),
     );
     this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
@@ -235,7 +217,7 @@ class Indicator extends PanelMenu.Button {
           this._search.set_text('');
           this._focusSearch();
         } else if (this._panelManager.is('tokenizer'))
-          this._focusFirstToken();
+          this._tokenizer.focus();
         else if (this._panelManager.is('phrases'))
           this._focusPhrasePanel();
       } else {
@@ -323,68 +305,18 @@ class Indicator extends PanelMenu.Button {
     scrollItem.actor.add_child(this._scroll);
     this.menu.addMenuItem(scrollItem);
 
-    const tokenPanelItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this._tokenPanelItem = tokenPanelItem;
-    const tokenPanel = new St.BoxLayout({
-      vertical: true,
-      style_class: 'clipboard-x-token-panel',
-      x_expand: true,
+    this._tokenizer = new TokenizerPanel({
+      settings: this._settings,
+      createIconButton: (...args) => this._iconButton(...args),
+      handlePanelKey: event => this._handleMenuKey(event),
+      onBack: () => this._closeTokenizer(),
+      runAction: (action, text) => {
+        this.menu.close();
+        Promise.resolve(this._actions[action](text))
+          .catch(error => this._actions.reportError(error));
+      },
     });
-    this._tokenPanel = tokenPanel;
-    this._tokenBack = this._iconButton(
-      'go-previous-symbolic',
-      _('Back to clipboard history'),
-      () => this._closeTokenizer(),
-      {showTooltip: false},
-    );
-    this._tokenHeader = new PanelHeader({
-      title: _('Segment text'),
-      backButton: this._tokenBack,
-      styleClass: 'clipboard-x-token-header',
-      titleStyleClass: 'clipboard-x-token-title',
-      titleOffset: OPTICAL_BASELINE_OFFSET,
-    });
-    this._tokenTitle = this._tokenHeader.titleLabel;
-    tokenPanel.add_child(this._tokenHeader);
-    this._tokenSource = new St.Label({
-      style_class: 'clipboard-x-token-source',
-      x_expand: true,
-      visible: this._settings.get_boolean('tokenizer-show-source-preview'),
-    });
-    this._tokenSource.clutter_text.single_line_mode = true;
-    tokenPanel.add_child(this._tokenSource);
-
-    this._tokenSection = new PopupMenu.PopupMenuSection();
-    this._tokenScroll = new St.ScrollView({
-      overlay_scrollbars: true,
-      style_class: 'clipboard-x-token-scroll',
-      x_expand: true,
-      y_expand: true,
-    });
-    this._tokenScroll.add_child(this._tokenSection.actor);
-    tokenPanel.add_child(this._tokenScroll);
-
-    this._tokenFooter = new PanelFooter();
-    this._tokenResult = new St.Label({
-      text: _('Select one or more words'),
-      style_class: 'clipboard-x-token-result',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    });
-    this._tokenResult.clutter_text.single_line_mode = true;
-    this._tokenFooter.addContent(this._tokenResult);
-    this._tokenCopy = this._iconButton(
-      'edit-copy-symbolic',
-      _('Copy selected words'),
-      () => this._copyTokens(),
-      {tooltipScope: 'panel'},
-    );
-    this._tokenCopy.reactive = false;
-    this._tokenCopy.opacity = 128;
-    this._tokenFooter.addContent(this._tokenCopy);
-    tokenPanel.add_child(this._tokenFooter);
-    tokenPanelItem.add_child(tokenPanel);
-    this.menu.addMenuItem(tokenPanelItem);
+    this.menu.addMenuItem(this._tokenizer.item);
 
     this._quickPhrases = new QuickPhrasesPanel({
       settings: this._settings,
@@ -435,7 +367,7 @@ class Indicator extends PanelMenu.Button {
     this._historyScrollItem.actor.visible = history;
     this._footerSeparator.visible = history;
     this._footerItem.visible = history;
-    this._tokenPanelItem.visible = panel === 'tokenizer';
+    this._tokenizer.item.visible = panel === 'tokenizer';
     this._quickPhrases.item.visible = panel === 'phrases';
   }
 
@@ -757,119 +689,11 @@ class Indicator extends PanelMenu.Button {
         throw new Error(_('This text is too large for interactive processing'));
       await this._actions.materializeItem(item);
       const source = item.text;
-      this._panelManager.show('tokenizer', {
-        item,
-        source,
-        tokens: tokenizeText(source),
-        selected: new Set(),
-        keyboardSelection: null,
-      });
-      this._focusFirstToken();
+      this._panelManager.show('tokenizer', this._tokenizer.createState(item, source));
+      this._tokenizer.focus();
     } catch (error) {
       this._actions.reportError(error);
     }
-  }
-
-  _renderTokenizer(state) {
-    this._endTokenSelectionDrag();
-    this._tokenButtons = [];
-    this._tokenSection.removeAll();
-    this._syncButtons.clear();
-    this._tokenSource.text = state.source.slice(0, 500);
-
-    const tokenItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    const tokenBox = new St.BoxLayout({
-      vertical: true,
-      style_class: 'clipboard-x-token-box',
-      style: `width: ${this._tokenContentWidth}px; max-width: ${this._tokenContentWidth}px;`,
-      x_expand: true,
-    });
-    this._tokenBox = tokenBox;
-    tokenItem.add_child(tokenBox);
-    this._tokenSection.addMenuItem(tokenItem);
-    const maximumRowWidth = this._tokenContentWidth - 2;
-    const spacing = 6;
-    let tokenRow = null;
-    let tokenFocusRow = null;
-    const tokenFocusRows = [];
-    let rowWidth = 0;
-    const startRow = () => {
-      tokenRow = new St.BoxLayout({
-        style_class: 'clipboard-x-token-row',
-        x_align: Clutter.ActorAlign.START,
-      });
-      tokenBox.add_child(tokenRow);
-      tokenFocusRow = [];
-      tokenFocusRows.push(tokenFocusRow);
-      rowWidth = 0;
-    };
-    for (const token of state.tokens) {
-      const button = new St.Button({
-        label: token.text,
-        can_focus: true,
-        track_hover: true,
-        checked: state.selected.has(token.index),
-        style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
-      });
-      button._clipboardXMaximumWidth = maximumRowWidth;
-      button._clipboardXToken = token;
-      button._clipboardXTokenState = state;
-      this._tokenButtons.push(button);
-      button.connect('key-press-event', (_actor, event) => {
-        const result = this._handleTokenKey(button, token, state, event);
-        return result === Clutter.EVENT_PROPAGATE ? this._handleMenuKey(event) : result;
-      });
-      button.connect('key-focus-in', () =>
-        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, button));
-      button.connect('button-press-event', (_actor, event) => {
-        if (event.get_button() === Clutter.BUTTON_PRIMARY)
-          this._beginTokenSelectionDrag(button, token, state);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('motion-event', (_actor, event) => {
-        const [x, y] = event.get_coords();
-        this._applyTokenSelectionAt(x, y);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('button-release-event', (_actor, event) => {
-        if (event.get_button() === Clutter.BUTTON_PRIMARY)
-          this._endTokenSelectionDrag(true);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('notify::hover', () => {
-        if (button.hover)
-          this._applyTokenSelectionDrag(button);
-      });
-      button.connect('clicked', () => {
-        if (button._clipboardXSuppressClick) {
-          button._clipboardXSuppressClick = false;
-          return;
-        }
-        state.keyboardSelection = null;
-        this._setTokenSelected(button, token, state, !state.selected.has(token.index));
-      });
-      this._updateTokenButtonStyle(button, token);
-      if (!tokenRow)
-        startRow();
-      tokenRow.add_child(button);
-      const [, naturalWidth] = button.get_preferred_width(-1);
-      const buttonWidth = Math.min(naturalWidth, maximumRowWidth);
-      if (rowWidth > 0 && rowWidth + spacing + buttonWidth > maximumRowWidth) {
-        tokenRow.remove_child(button);
-        startRow();
-        tokenRow.add_child(button);
-      }
-      tokenFocusRow.push(button);
-      rowWidth += (rowWidth > 0 ? spacing : 0) + buttonWidth;
-    }
-    if (state.tokens.length === 0)
-      tokenBox.add_child(new St.Label({text: _('No words found'), style_class: 'clipboard-x-empty'}));
-    this._tokenizerFocusGrid.setRows([
-      [this._tokenBack],
-      ...tokenFocusRows,
-      [this._tokenCopy],
-    ]);
-    this._updateTokenResult();
   }
 
   _openPhrases() {
@@ -888,228 +712,17 @@ class Indicator extends PanelMenu.Button {
       .catch(error => this._actions.reportError(error));
   }
 
-  _handleTokenKey(button, token, state, event) {
-    for (const [setting, direction] of TOKEN_SELECTION_SHORTCUTS) {
-      if (matchesShortcut(this._settings, setting, event)) {
-        this._extendTokenSelection(button, state, direction);
-        return Clutter.EVENT_STOP;
-      }
-    }
-    if (matchesShortcut(this._settings, 'tokenizer-copy-shortcut', event)) {
-      this._runTokenAction('copyText', token);
-      return Clutter.EVENT_STOP;
-    }
-    if (matchesShortcut(this._settings, 'tokenizer-paste-shortcut', event)) {
-      this._runTokenAction('pasteText', token);
-      return Clutter.EVENT_STOP;
-    }
-    if (matchesShortcut(this._settings, 'tokenizer-type-shortcut', event)) {
-      this._runTokenAction('typeText', token);
-      return Clutter.EVENT_STOP;
-    }
-    state.keyboardSelection = null;
-    return Clutter.EVENT_PROPAGATE;
-  }
-
-  _extendTokenSelection(button, state, key) {
-    const position = this._tokenButtons.indexOf(button);
-    const target = this._tokenTarget(button, key);
-    const targetPosition = this._tokenButtons.indexOf(target);
-    if (position < 0 || targetPosition < 0)
-      return;
-    if (!state.keyboardSelection) {
-      state.keyboardSelection = {
-        anchorPosition: position,
-        baseSelected: new Set(state.selected),
-        targetSelected: !state.selected.has(button._clipboardXToken.index),
-      };
-    }
-    const {anchorPosition, baseSelected, targetSelected} = state.keyboardSelection;
-    state.selected.clear();
-    for (const index of baseSelected)
-      state.selected.add(index);
-    const start = Math.min(anchorPosition, targetPosition);
-    const end = Math.max(anchorPosition, targetPosition);
-    for (let index = start; index <= end; index++) {
-      const tokenIndex = this._tokenButtons[index]._clipboardXToken.index;
-      if (targetSelected)
-        state.selected.add(tokenIndex);
-      else
-        state.selected.delete(tokenIndex);
-    }
-    for (const candidate of this._tokenButtons) {
-      const candidateToken = candidate._clipboardXToken;
-      candidate.checked = state.selected.has(candidateToken.index);
-      this._updateTokenButtonStyle(candidate, candidateToken);
-    }
-    target.grab_key_focus();
-    this._updateTokenResult();
-  }
-
-  _tokenTarget(button, key) {
-    const position = this._tokenButtons.indexOf(button);
-    if (key === Clutter.KEY_Left)
-      return this._tokenButtons[position - 1] ?? null;
-    if (key === Clutter.KEY_Right)
-      return this._tokenButtons[position + 1] ?? null;
-
-    const row = button.get_parent();
-    const rows = this._tokenBox.get_children();
-    const rowPosition = rows.indexOf(row);
-    const targetRow = rows[rowPosition + (key === Clutter.KEY_Up ? -1 : 1)];
-    if (!targetRow)
-      return null;
-    const candidates = targetRow.get_children();
-    if (candidates.length === 0)
-      return null;
-    const [buttonX] = button.get_transformed_position();
-    const [buttonWidth] = button.get_transformed_size();
-    const center = buttonX + buttonWidth / 2;
-    return candidates.reduce((closest, candidate) => {
-      const [candidateX] = candidate.get_transformed_position();
-      const [candidateWidth] = candidate.get_transformed_size();
-      const distance = Math.abs(candidateX + candidateWidth / 2 - center);
-      return distance < closest.distance ? {button: candidate, distance} : closest;
-    }, {button: candidates[0], distance: Infinity}).button;
-  }
-
-  _beginTokenSelectionDrag(button, token, state) {
-    this._endTokenSelectionDrag();
-    state.keyboardSelection = null;
-    const selected = !state.selected.has(token.index);
-    button._clipboardXSuppressClick = true;
-    this._tokenSelectionDrag = {
-      state,
-      selected,
-      initialButton: button,
-      lastIndex: token.index,
-      visited: new Set(),
-    };
-    this._applyTokenSelectionDrag(button);
-    this._tokenDragCaptureId = global.stage.connect('captured-event', (_stage, event) => {
-      const type = event.type();
-      if (type === Clutter.EventType.MOTION) {
-        const [x, y] = event.get_coords();
-        this._applyTokenSelectionAt(x, y);
-      } else if (type === Clutter.EventType.BUTTON_RELEASE
-          && event.get_button() === Clutter.BUTTON_PRIMARY) {
-        this._endTokenSelectionDrag(true);
-      }
-      return Clutter.EVENT_PROPAGATE;
-    });
-  }
-
-  _applyTokenSelectionDrag(button) {
-    const drag = this._tokenSelectionDrag;
-    const token = button?._clipboardXToken;
-    if (!drag || !token || button._clipboardXTokenState !== drag.state)
-      return;
-    const start = Math.min(drag.lastIndex, token.index);
-    const end = Math.max(drag.lastIndex, token.index);
-    let changed = false;
-    for (const candidate of this._tokenButtons) {
-      const candidateToken = candidate._clipboardXToken;
-      if (candidate._clipboardXTokenState !== drag.state
-          || candidateToken.index < start || candidateToken.index > end
-          || drag.visited.has(candidateToken.index))
-        continue;
-      drag.visited.add(candidateToken.index);
-      this._setTokenSelected(candidate, candidateToken, drag.state, drag.selected, false);
-      changed = true;
-    }
-    drag.lastIndex = token.index;
-    if (changed)
-      this._updateTokenResult();
-  }
-
-  _applyTokenSelectionAt(x, y) {
-    if (!this._tokenSelectionDrag)
-      return;
-    for (const button of this._tokenButtons) {
-      if (!button.mapped)
-        continue;
-      const [buttonX, buttonY] = button.get_transformed_position();
-      const [buttonWidth, buttonHeight] = button.get_transformed_size();
-      if (x >= buttonX && x <= buttonX + buttonWidth
-          && y >= buttonY && y <= buttonY + buttonHeight) {
-        this._applyTokenSelectionDrag(button);
-        return;
-      }
-    }
-  }
-
-  _setTokenSelected(button, token, state, selected, updateResult = true) {
-    if (selected)
-      state.selected.add(token.index);
-    else
-      state.selected.delete(token.index);
-    button.checked = selected;
-    this._updateTokenButtonStyle(button, token);
-    if (updateResult)
-      this._updateTokenResult();
-  }
-
-  _endTokenSelectionDrag(deferClickReset = false) {
-    if (this._tokenDragCaptureId) {
-      global.stage.disconnect(this._tokenDragCaptureId);
-      this._tokenDragCaptureId = 0;
-    }
-    const button = this._tokenSelectionDrag?.initialButton;
-    this._tokenSelectionDrag = null;
-    if (!button)
-      return;
-    if (!deferClickReset) {
-      button._clipboardXSuppressClick = false;
-      return;
-    }
-    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      button._clipboardXSuppressClick = false;
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  _updateTokenResult() {
-    const state = this._panelManager.state;
-    if (!this._panelManager.is('tokenizer') || !state)
-      return;
-    const result = composeTokens(state.source, state.tokens, state.selected);
-    this._tokenResult.text = result || _('Select one or more words');
-    this._tokenCopy.reactive = Boolean(result);
-    this._tokenCopy.opacity = result ? 255 : 128;
-  }
-
-  _copyTokens() {
-    this._runTokenAction('copyText');
-  }
-
-  _runTokenAction(action, fallbackToken = null) {
-    const state = this._panelManager.state;
-    if (!this._panelManager.is('tokenizer') || !state)
-      return;
-    const result = composeTokens(state.source, state.tokens, state.selected)
-      || fallbackToken?.text
-      || '';
-    if (!result)
-      return;
-    this.menu.close();
-    Promise.resolve(this._actions[action](result))
-      .catch(error => this._actions.reportError(error));
-  }
-
   _updatePanelGeometry() {
     const panelWidth = this._settings.get_int('panel-width');
     const panelHeight = this._settings.get_int('panel-height');
     const searchWidth = Math.max(140, panelWidth - 140);
     this._searchWidth = searchWidth;
-    this._tokenContentWidth = Math.max(260, panelWidth - 40);
     this.menu.actor.set_width(panelWidth);
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
     this._updateSearchStyle();
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
-    this._tokenPanel.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this._tokenizer.setGeometry(panelWidth, panelHeight);
     this._quickPhrases.setHeight(panelHeight);
-    this._tokenSource.set_style(`max-width: ${this._tokenContentWidth}px;`);
-    this._tokenResult.set_style(`max-width: ${Math.max(200, this._tokenContentWidth - 32)}px;`);
     if (this._panelManager)
       this._refresh();
   }
@@ -1122,6 +735,7 @@ class Indicator extends PanelMenu.Button {
       this.menu.actor.add_style_class_name(configured);
     const selected = this._settings.get_string('theme-color');
     this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
+    this._tokenizer.setAccent(this._customAccentColor);
     this._updateSearchStyle();
     this._updatePrivateButton();
     this._refresh();
@@ -1138,17 +752,6 @@ class Indicator extends PanelMenu.Button {
     if (this._customAccentColor && this._search.clutter_text.has_key_focus())
       styles.push(`border-color: ${this._customAccentColor}`);
     this._search.set_style(`${styles.join('; ')};`);
-  }
-
-  _updateTokenButtonStyle(button, token) {
-    const styles = [`max-width: ${button._clipboardXMaximumWidth}px`];
-    if (button.checked) {
-      if (this._customAccentColor)
-        styles.push(`background-color: ${this._customAccentColor}`, 'color: white');
-    } else if (token.type === 'url' && this._customAccentColor) {
-      styles.push(`color: ${this._customAccentColor}`);
-    }
-    button.set_style(`${styles.join('; ')};`);
   }
 
   _updatePanelStateRetention() {
@@ -1177,21 +780,6 @@ class Indicator extends PanelMenu.Button {
     });
   }
 
-  _focusFirstToken() {
-    this._cancelPendingFocus();
-    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusIdleId = 0;
-      if (!this.menu.isOpen || !this._panelManager.is('tokenizer'))
-        return GLib.SOURCE_REMOVE;
-      const first = this._tokenButtons[0];
-      if (first) {
-        first.grab_key_focus();
-        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, first);
-      }
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
   _focusPhrasePanel() {
     this._cancelPendingFocus();
     this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
@@ -1201,11 +789,6 @@ class Indicator extends PanelMenu.Button {
       this._quickPhrases.focus();
       return GLib.SOURCE_REMOVE;
     });
-  }
-
-  _updateTokenSourceVisibility() {
-    if (this._tokenSource)
-      this._tokenSource.visible = this._settings.get_boolean('tokenizer-show-source-preview');
   }
 
   _cancelPendingFocus() {
@@ -1399,8 +982,8 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelPendingFocus();
-    this._endTokenSelectionDrag();
     this._panelManager?.destroy();
+    this._tokenizer.destroy();
     this._tooltip.clear();
     if (this._changedSignal)
       this._controller.disconnect(this._changedSignal);
@@ -1412,7 +995,6 @@ class Indicator extends PanelMenu.Button {
       this._textVerticalOffsetSignal,
       this._visibleItemLimitSignal,
       this._preservePanelStateSignal,
-      this._tokenSourcePreviewSignal,
       this._syncEnabledSignal,
       this._deviceTagSignal,
       this._deviceIconSignal,
@@ -1432,7 +1014,6 @@ class Indicator extends PanelMenu.Button {
     this._textVerticalOffsetSignal = 0;
     this._visibleItemLimitSignal = 0;
     this._preservePanelStateSignal = 0;
-    this._tokenSourcePreviewSignal = 0;
     this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;

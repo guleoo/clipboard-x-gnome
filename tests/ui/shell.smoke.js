@@ -66,8 +66,8 @@ export async function run() {
   assert(indicator._search._clipboardXControlType === 'search-entry'
       && indicator._screenshotButton._clipboardXControlType === 'icon-button',
     'Shared search or icon controls were not used by the history panel');
-  assert(indicator._tokenHeader._clipboardXControlType === 'panel-header'
-      && indicator._tokenFooter._clipboardXControlType === 'panel-footer',
+  assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
+      && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
     'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
@@ -77,7 +77,7 @@ export async function run() {
   indicator._settings.set_int('panel-text-vertical-offset', -1);
   assert(indicator._search.clutter_text.translation_y === -1
       && indicator._search.get_hint_actor().translation_y === -2
-      && indicator._tokenTitle.translation_y === -2
+      && indicator._tokenizer.titleLabel.translation_y === -2
       && indicator._tooltip.actor.translation_y === -1,
   'Configured text offset did not preserve special optical baseline corrections');
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
@@ -300,10 +300,10 @@ export async function run() {
       && !indicator._searchItem.visible
       && !indicator._historyScrollItem.actor.visible
       && !indicator._footerItem.visible
-      && indicator._tokenPanelItem.visible,
+      && indicator._tokenizer.item.visible,
     'Text segmentation did not switch the current panel to the token selection view');
   await Scripting.sleep(100);
-  const tokenButtons = indicator._tokenBox.get_children()
+  const tokenButtons = indicator._tokenizer.tokenBox.get_children()
     .flatMap(row => row.get_children());
   assert(tokenButtons.length === tokenState.tokens.length,
     'Text segmentation did not render one visible button for each token');
@@ -311,26 +311,20 @@ export async function run() {
     'Text segmentation rendered token buttons outside the visible layout');
   assert(global.stage.get_key_focus() === tokenButtons[0],
     'Opening the tokenizer did not focus the first token');
-  assert(!indicator._tokenSource.visible,
+  assert(!indicator._tokenizer.sourceLabel.visible,
     'Disabled source preview remained visible in the tokenizer');
   assert(tokenButtons.every(button => !button._clipboardXHintConnected),
     'Tokenizer buttons unexpectedly registered tooltip handlers');
-  assert(indicator._handleTokenKey(
-    tokenButtons[0],
-    tokenState.tokens[0],
-    tokenState,
-    entryEvent(Clutter.KEY_Right),
+  assert(indicator._tokenizer.handleKey(
+    tokenButtons[0], entryEvent(Clutter.KEY_Right),
   ) === Clutter.EVENT_PROPAGATE
       && indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === tokenButtons[1],
   'Right Arrow did not move focus to the next token');
   const lastTokenButton = tokenButtons.at(-1);
   lastTokenButton.grab_key_focus();
-  assert(indicator._handleTokenKey(
-    lastTokenButton,
-    lastTokenButton._clipboardXToken,
-    tokenState,
-    entryEvent(Clutter.KEY_Right),
+  assert(indicator._tokenizer.handleKey(
+    lastTokenButton, entryEvent(Clutter.KEY_Right),
   ) === Clutter.EVENT_PROPAGATE,
   'Tokenizer edge navigation did not continue into the surrounding panel');
   assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
@@ -341,75 +335,61 @@ export async function run() {
   'Disabled focus confinement still consumed an edge arrow key');
   indicator._settings.set_boolean('panel-confine-focus', true);
   indicator._settings.set_boolean('tokenizer-show-source-preview', true);
-  assert(indicator._tokenSource.visible,
+  assert(indicator._tokenizer.sourceLabel.visible,
     'Enabled source preview was not shown immediately');
   tokenButtons[0].grab_key_focus();
-  indicator._handleTokenKey(
-    tokenButtons[0],
-    tokenState.tokens[0],
-    tokenState,
-    entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
+  indicator._tokenizer.handleKey(
+    tokenButtons[0], entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
   );
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)
       && global.stage.get_key_focus() === tokenButtons[1],
     'Shift+Arrow did not extend token selection and keyboard focus');
   tokenButtons[0].grab_key_focus();
-  assert(indicator._handleTokenKey(
-    tokenButtons[0],
-    tokenState.tokens[0],
-    tokenState,
-    entryEvent(Clutter.KEY_Up),
+  assert(indicator._tokenizer.handleKey(
+    tokenButtons[0], entryEvent(Clutter.KEY_Up),
   ) === Clutter.EVENT_PROPAGATE
       && indicator._handleMenuKey(entryEvent(Clutter.KEY_Up)) === Clutter.EVENT_STOP
-      && global.stage.get_key_focus() === indicator._tokenBack,
+      && global.stage.get_key_focus() === indicator._tokenizer.backButton,
   'Up Arrow did not move from the first token to the tokenizer back button');
   lastTokenButton.grab_key_focus();
-  assert(indicator._handleTokenKey(
-    lastTokenButton,
-    lastTokenButton._clipboardXToken,
-    tokenState,
-    entryEvent(Clutter.KEY_Down),
+  assert(indicator._tokenizer.handleKey(
+    lastTokenButton, entryEvent(Clutter.KEY_Down),
   ) === Clutter.EVENT_PROPAGATE
       && indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
-      && global.stage.get_key_focus() === indicator._tokenCopy,
+      && global.stage.get_key_focus() === indicator._tokenizer.copyButton,
   'Down Arrow did not move from the final token to the copy button');
   assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
-      && global.stage.get_key_focus() === indicator._tokenCopy,
+      && global.stage.get_key_focus() === indicator._tokenizer.copyButton,
   'Tokenizer copy button did not stop at the focus matrix boundary');
   tokenState.keyboardSelection = null;
   tokenButtons[0].grab_key_focus();
-  indicator._handleTokenKey(
-    tokenButtons[0],
-    tokenState.tokens[0],
-    tokenState,
-    entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
+  indicator._tokenizer.handleKey(
+    tokenButtons[0], entryEvent(Clutter.KEY_Right, Clutter.ModifierType.SHIFT_MASK),
   );
   assert(!tokenState.selected.has(tokenState.tokens[0].index)
       && !tokenState.selected.has(tokenState.tokens[1].index),
   'Shift+Arrow did not deselect a range anchored on a selected token');
-  for (const button of tokenButtons) {
-    const token = button._clipboardXToken;
-    indicator._setTokenSelected(button, token, tokenState, false, false);
-  }
+  for (const button of tokenButtons)
+    indicator._tokenizer.setSelected(button, false, false);
   tokenState.keyboardSelection = null;
-  indicator._updateTokenResult();
-  indicator._beginTokenSelectionDrag(tokenButtons[0], tokenState.tokens[0], tokenState);
+  indicator._tokenizer.updateResult();
+  indicator._tokenizer.beginSelectionDrag(tokenButtons[0]);
   const [secondTokenX, secondTokenY] = tokenButtons[1].get_transformed_position();
   const [secondTokenWidth, secondTokenHeight] = tokenButtons[1].get_transformed_size();
-  indicator._applyTokenSelectionAt(
+  indicator._tokenizer.applySelectionAt(
     secondTokenX + secondTokenWidth / 2,
     secondTokenY + secondTokenHeight / 2,
   );
-  indicator._endTokenSelectionDrag();
+  indicator._tokenizer.endSelectionDrag();
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)
       && tokenButtons[0].checked && tokenButtons[1].checked,
     'Press-and-drag token selection did not select every visited token');
-  indicator._setTokenSelected(tokenButtons[1], tokenState.tokens[1], tokenState, false);
-  assert(indicator._tokenResult.text === tokenState.tokens[0].text,
+  indicator._tokenizer.setSelected(tokenButtons[1], false);
+  assert(indicator._tokenizer.resultLabel.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
-  assert(indicator._tokenResult.get_parent().get_parent() === indicator._tokenPanel,
+  assert(indicator._tokenizer.resultLabel.get_parent().get_parent() === indicator._tokenizer.actor,
     'Selected-token preview is not fixed outside the scrolling token area');
   indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
   indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);
@@ -418,7 +398,7 @@ export async function run() {
       && indicator._searchItem.visible
       && indicator._historyScrollItem.actor.visible
       && indicator._footerItem.visible
-      && !indicator._tokenPanelItem.visible,
+      && !indicator._tokenizer.item.visible,
     'Returning from text segmentation did not restore clipboard history');
   indicator.menu.close();
   const originalTimestamp = capturedText.createdAt;

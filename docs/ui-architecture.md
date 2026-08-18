@@ -4,7 +4,7 @@
 
 ## 1. 职责边界
 
-- `ui/indicator.js`：GNOME 顶栏入口和面板编排层。目标职责是系统级动作、菜单开关、面板注册、主题与 tooltip 协调；当前历史与分词内部状态仍暂存在这里，按第 5 节继续拆分。
+- `ui/indicator.js`：GNOME 顶栏入口和面板编排层。负责系统级动作、菜单开关、面板注册与主题协调；当前历史面板仍按第 5 节继续拆分。
 - `ui/panel-manager.js`：面板生命周期与现场管理。负责 `enter`、`leave`、`render`、视图捕获和恢复。
 - `ui/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
 - `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
@@ -15,6 +15,7 @@
 ## 2. 已有组件
 
 - `QuickPhrasesPanel`：快捷语句标题栏、输入表单、列表、本地存储操作和焦点矩阵。
+- `TokenizerPanel`：分词布局、选择状态、鼠标连续选择、键盘选择、结果预览和焦点矩阵。
 - `ContentItem`：统一的“左侧前导标识 + 可伸展内容 + 右侧动作”条目。`focusActors` 按实际显示顺序提供给面板焦点矩阵。
 - `PanelHeader`：返回按钮、标题和可选右侧动作；标题占据剩余空间，组件本身提供底部分割线。
 - `PanelFooter`：带顶部分割线的自由内容容器。
@@ -28,7 +29,7 @@
 
 公共 API 采用“上下文承载领域、成员表达动作”的命名方式。例如 `PreferenceRows.spin()`、`QuickPhrasesPanel.render()`；成员名称不重复类型已经表达的语义。
 
-控件不管理面板生命周期、tooltip 或业务快捷键。面板通过构造参数接入动作，并继续用自己的 `FocusGrid` 组织键盘导航；全局 tooltip 由 `Indicator` 协调，防止控件切换时遗留悬浮提示。
+除 `Tooltip` 自己的显示生命周期外，控件不管理面板生命周期或业务快捷键。面板通过构造参数接入动作，并用自己的 `FocusGrid` 组织键盘导航。
 
 ## 3. Shell 面板约定
 
@@ -50,14 +51,13 @@
 
 ## 5. 后续拆分顺序
 
-1. 将分词视图拆成 `TokenizerPanel`，收拢换行布局、鼠标连续选择和键盘选择状态。
-2. 将历史列表拆成 `HistoryPanel`，并在 `ContentItem` 之上拆分文本、图片内容呈现。
-3. 将 tooltip 生命周期从 `Indicator` 拆成控制器。
-4. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
+1. 将历史列表拆成 `HistoryPanel`，并在 `ContentItem` 之上拆分文本、图片内容呈现。
+2. 将快捷语句面板调整为与其他领域面板一致的目录结构。
+3. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
 
 ## 6. 验证要求
 
 - 纯状态和布局算法提供 GJS 单元测试。
 - Shell actor、焦点、菜单生命周期通过 `tests/ui/shell.smoke.js` 验证。
 - GTK 设置组件通过 `tests/ui/preferences.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
-- 每次结构重构必须通过构建、19 项常规测试、Shell 冒烟测试和设置窗口冒烟测试。
+- 每次结构重构必须通过构建、20 项常规测试、Shell 冒烟测试和设置窗口冒烟测试。
