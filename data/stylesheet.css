@@ -79,7 +79,7 @@
 }
 
 .clipboard-x-toolbar .clipboard-x-icon-button,
-.clipboard-x-footer .clipboard-x-icon-button {
+.clipboard-x-panel-footer .clipboard-x-icon-button {
   color: rgba(255, 255, 255, 0.95);
   opacity: 1;
 }
@@ -148,11 +148,6 @@
   spacing: 5px;
 }
 
-.clipboard-x-footer {
-  spacing: 1px;
-  padding: 1px 2px;
-}
-
 .clipboard-x-icon-button.clipboard-x-private-inactive {
   color: rgba(255, 255, 255, 0.95);
 }
@@ -207,11 +202,6 @@
 
 .clipboard-x-token-scroll {
   padding: 0 4px;
-}
-
-.clipboard-x-token-result-row {
-  padding: 5px 2px 1px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .clipboard-x-token-result {
@@ -335,9 +325,17 @@
   background-color: rgba(255, 255, 255, 0.12);
 }
 
+.clipboard-x-panel-header .clipboard-x-panel-divider {
+  margin-top: 2px;
+}
+
 .clipboard-x-panel-footer {
-  padding: 5px 6px 1px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  spacing: 0;
+}
+
+.clipboard-x-panel-footer-row {
+  spacing: 1px;
+  padding: 1px 2px;
 }
 
 .clipboard-x-color-lens {

@@ -184,7 +184,6 @@ class Indicator extends PanelMenu.Button {
     });
     this.menu.addMenuItem(this._quickPhrases.item);
 
-    this.menu.addMenuItem(this._historyPanel.footerSeparator);
     this.menu.addMenuItem(this._historyPanel.footerItem);
   }
 

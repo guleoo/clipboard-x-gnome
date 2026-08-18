@@ -65,8 +65,10 @@ export async function run() {
   await Scripting.sleep(200);
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
   assert(history.searchEntry._clipboardXControlType === 'search-entry'
-      && history.screenshotButton._clipboardXControlType === 'icon-button',
-    'Shared search or icon controls were not used by the history panel');
+      && history.screenshotButton._clipboardXControlType === 'icon-button'
+      && history.footer._clipboardXControlType === 'panel-footer'
+      && history.footer.divider !== null,
+    'Shared search, icon or footer controls were not used by the history panel');
   assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
       && indicator._tokenizer.header.divider !== null
       && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
@@ -98,7 +100,7 @@ export async function run() {
   assert(history.searchEntry.get_parent() === history.toolbar.get_parent(),
     'Search and the three primary tools must share one row');
   assert(history.phrasesButton.get_parent() === history.toolbar
-      && history.privateButton.get_parent() === history.footer,
+      && history.privateButton.get_parent() === history.footer.row,
     'Quick-phrase and privacy buttons were not swapped');
   indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
   indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
@@ -392,7 +394,8 @@ export async function run() {
   indicator._tokenizer.setSelected(tokenButtons[1], false);
   assert(indicator._tokenizer.resultLabel.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
-  assert(indicator._tokenizer.resultLabel.get_parent().get_parent() === indicator._tokenizer.actor,
+  assert(indicator._tokenizer.resultLabel.get_parent() === indicator._tokenizer.footer.row
+      && indicator._tokenizer.footer.get_parent() === indicator._tokenizer.actor,
     'Selected-token preview is not fixed outside the scrolling token area');
   indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
   indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);

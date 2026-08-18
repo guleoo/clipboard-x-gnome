@@ -6,6 +6,7 @@ import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {PanelFooter} from '../../controls/panel-footer.js';
 import {SearchEntry} from '../../controls/search-entry.js';
 import {normalize as normalizeActions} from '../../layouts/panel-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
@@ -118,11 +119,11 @@ export class HistoryPanel {
     this.scrollItem = new PopupMenu.PopupMenuSection();
     this.scrollItem.actor.add_child(this.scroll);
 
-    this.footerSeparator = new PopupMenu.PopupSeparatorMenuItem();
     this.footerItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this.footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this.footerSpacer = new St.Widget({x_expand: true});
-    this.footer.add_child(this.footerSpacer);
+    this.footer = new PanelFooter({
+      content: [this.footerSpacer],
+    });
     this._sync = new SyncAction({
       settings,
       actions,
@@ -174,13 +175,12 @@ export class HistoryPanel {
   }
 
   get items() {
-    return [this.searchItem, this.scrollItem, this.footerSeparator, this.footerItem];
+    return [this.searchItem, this.scrollItem, this.footerItem];
   }
 
   set visible(value) {
     this.searchItem.visible = value;
     this.scrollItem.actor.visible = value;
-    this.footerSeparator.visible = value;
     this.footerItem.visible = value;
   }
 
@@ -364,7 +364,7 @@ export class HistoryPanel {
     for (const action of layout.toolbar)
       this.toolbar.add_child(this._actionButtons.get(action));
     for (const action of layout.footer)
-      this.footer.add_child(this._actionButtons.get(action));
+      this.footer.addContent(this._actionButtons.get(action));
     if (this.focusGrid && this._isActive())
       this._requestRefresh();
   }
@@ -373,7 +373,7 @@ export class HistoryPanel {
     this.focusGrid.setRows([
       [this.searchEntry.clutter_text, ...this.toolbar.get_children()],
       ...rows,
-      this.footer.get_children().filter(actor => actor !== this.footerSpacer),
+      this.footer.contentActors.filter(actor => actor !== this.footerSpacer),
     ]);
   }
 
