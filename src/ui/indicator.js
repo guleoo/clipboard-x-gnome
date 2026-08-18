@@ -399,7 +399,7 @@ class Indicator extends PanelMenu.Button {
       return this._pendingHistoryViewState;
     return {
       focusLocation: this._historyFocusGrid.location(global.stage.get_key_focus()),
-      scrollValue: this._scroll.vscroll.adjustment.value,
+      scrollValue: this._scroll.get_vadjustment().value,
     };
   }
 
@@ -414,7 +414,7 @@ class Indicator extends PanelMenu.Button {
       if (!this.menu.isOpen || !this._panelManager.is('history'))
         return GLib.SOURCE_REMOVE;
       this._historyFocusGrid.focusAt(viewState.focusLocation);
-      const adjustment = this._scroll.vscroll.adjustment;
+      const adjustment = this._scroll.get_vadjustment();
       adjustment.value = Math.max(
         adjustment.lower,
         Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size),

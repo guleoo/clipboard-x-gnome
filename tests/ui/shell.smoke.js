@@ -65,6 +65,8 @@ export async function run() {
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
+  assert(Number.isFinite(indicator._captureHistoryView().scrollValue),
+    'Clipboard history view state could not read the GNOME 50 scroll adjustment');
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
   assert(indicator._toolbar.get_children().length === 3,
