@@ -95,7 +95,7 @@
 }
 
 .clipboard-x-entry {
-  color: inherit;
+  color: rgba(255, 255, 255, 0.95);
   spacing: 1px;
   padding: 2px 3px;
   margin: 1px 2px;
@@ -285,8 +285,7 @@
   padding: 2px;
 }
 
-.clipboard-x-phrase-entry,
-.clipboard-x-phrase-content {
+.clipboard-x-phrase-entry {
   min-width: 0;
 }
 

@@ -125,16 +125,13 @@ export class QuickPhrasesPanel {
       const content = new St.Button({
         can_focus: true,
         track_hover: true,
-        clip_to_allocation: true,
-        style_class: 'clipboard-x-entry-content clipboard-x-phrase-content',
-        x_expand: true,
-        x_align: Clutter.ActorAlign.FILL,
       });
       const label = new St.Label({
         text: phrase,
         style_class: 'clipboard-x-entry-preview',
         x_expand: true,
         x_align: Clutter.ActorAlign.FILL,
+        y_align: Clutter.ActorAlign.CENTER,
       });
       label.clutter_text.single_line_mode = true;
       label.clutter_text.ellipsize = Pango.EllipsizeMode.END;

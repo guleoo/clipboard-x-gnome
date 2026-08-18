@@ -1,3 +1,4 @@
+import Clutter from 'gi://Clutter';
 import GObject from 'gi://GObject';
 
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -34,7 +35,10 @@ class ContentItem extends PopupMenu.PopupBaseMenuItem {
     if (this._content)
       this.remove_child(this._content);
     this._content = actor;
+    actor.add_style_class_name('clipboard-x-entry-content');
+    actor.clip_to_allocation = true;
     actor.x_expand = true;
+    actor.x_align = Clutter.ActorAlign.FILL;
     const actions = this._actions ?? [];
     const firstActionPosition = actions.length > 0
       ? this.get_children().indexOf(actions[0])

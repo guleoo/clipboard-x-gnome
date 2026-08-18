@@ -22,10 +22,6 @@ export function create({
   const content = new St.Button({
     can_focus: true,
     track_hover: true,
-    clip_to_allocation: true,
-    style_class: 'clipboard-x-entry-content',
-    x_expand: true,
-    x_align: Clutter.ActorAlign.FILL,
   });
   content.set_child(item.isText ? textPreview(item) : imagePreview(item));
   content._clipboardXTypeOnClick = false;

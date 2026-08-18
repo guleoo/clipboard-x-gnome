@@ -129,7 +129,7 @@
       <summary>Default panel width in logical pixels</summary>
     </key>
     <key name="panel-height" type="i">
-      <default>300</default>
+      <default>400</default>
       <range min="160" max="800"/>
       <summary>Default panel height in logical pixels</summary>
     </key>

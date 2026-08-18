@@ -25,6 +25,11 @@ function isDescendant(actor, ancestor) {
   return false;
 }
 
+function foreground(actor) {
+  const color = actor.get_theme_node().get_foreground_color();
+  return [color.red, color.green, color.blue, color.alpha];
+}
+
 async function waitUntil(predicate, timeoutMilliseconds = 2000) {
   const deadline = GLib.get_monotonic_time() + timeoutMilliseconds * 1000;
   while (!predicate() && GLib.get_monotonic_time() < deadline)
@@ -76,8 +81,8 @@ export async function run() {
     'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
-  assert(indicator._settings.get_default_value('panel-height').deepUnpack() === 300,
-    'Default panel height must be 300 logical pixels');
+  assert(indicator._settings.get_default_value('panel-height').deepUnpack() === 400,
+    'Default panel height must be 400 logical pixels');
   assert(Number.isFinite(history.captureView().scrollValue),
     'Clipboard history view state could not read the GNOME 50 scroll adjustment');
   const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
@@ -131,9 +136,15 @@ export async function run() {
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
       && indicator._quickPhrases.header.divider !== null
       && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
+      && indicator._quickPhrases.buttons[0].has_style_class_name('clipboard-x-entry-content')
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
+  const phraseForeground = foreground(indicator._quickPhrases.buttons[0]);
+  assert(phraseForeground[3] >= 240
+      && indicator._quickPhrases.rows[0].focusActors.every(actor =>
+        foreground(actor).join(',') === phraseForeground.join(',')),
+    'Quick-phrase content and actions did not use the shared content-item foreground');
   indicator._quickPhrases.showForm();
   assert(indicator._quickPhrases.form.get_children().length === 1,
     'Quick-phrase form must contain only the text entry');
@@ -255,9 +266,19 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
     'Clipboard X did not capture a text clipboard change');
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
+  indicator.menu.open();
+  await Scripting.sleep(100);
+  const renderedHistoryRow = history._section.actor.get_children().find(actor =>
+    actor._clipboardXControlType === 'content-item');
+  assert(renderedHistoryRow?.focusActors.every(actor =>
+    foreground(actor).join(',') === phraseForeground.join(',')),
+  'Clipboard history content and actions did not use the shared content-item foreground');
+  indicator.menu.close();
+  await Scripting.sleep(100);
   const capturedRow = history.entry(capturedText);
   assert(capturedRow._clipboardXControlType === 'content-item'
-      && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length,
+      && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length
+      && capturedRow.focusActors[0].has_style_class_name('clipboard-x-entry-content'),
     'Clipboard history did not use the shared content-item control');
   capturedRow.destroy();
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
