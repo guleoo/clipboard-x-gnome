@@ -140,6 +140,9 @@ export async function run() {
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
+  assert(global.stage.get_key_focus() === indicator._quickPhrases.backButton
+      && !indicator._quickPhrases.buttons[0].has_key_focus(),
+    'Opening quick phrases left the first content item in a persistent focus background');
   const phraseForeground = foreground(indicator._quickPhrases.buttons[0]);
   assert(phraseForeground[3] >= 240
       && indicator._quickPhrases.rows[0].focusActors.every(actor =>
@@ -151,6 +154,8 @@ export async function run() {
   indicator._quickPhrases.toggleForm();
   assert(!indicator._quickPhrases.form.visible,
     'Activating the add action again did not collapse the quick-phrase form');
+  assert(global.stage.get_key_focus() === indicator._quickPhrases.backButton,
+    'Closing the quick-phrase form did not return focus to the panel header');
   indicator._quickPhrases.toggleForm();
   indicator._quickPhrases.entry.set_text('New smoke-test phrase');
   indicator._quickPhrases.save();

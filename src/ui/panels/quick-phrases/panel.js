@@ -170,11 +170,8 @@ export class QuickPhrasesPanel {
   }
 
   focus() {
-    const target = this._formVisible ? this.entry.clutter_text : this._buttons[0] ?? this.addButton;
+    const target = this._formVisible ? this.entry.clutter_text : this.backButton;
     target.grab_key_focus();
-    const row = target._clipboardXPhraseRow;
-    if (row?.mapped)
-      AnimationUtils.ensureActorVisibleInScrollView(this.scroll, row);
   }
 
   setGeometry({height}) {
