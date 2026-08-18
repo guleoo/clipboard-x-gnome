@@ -151,6 +151,10 @@
       <default>false</default>
       <summary>Pause clipboard capture</summary>
     </key>
+    <key name="trim-whitespace" type="b">
+      <default>false</default>
+      <summary>Trim surrounding whitespace from newly captured plain text</summary>
+    </key>
     <key name="capture-size-limit-mib" type="i">
       <default>128</default>
       <range min="1" max="256"/>

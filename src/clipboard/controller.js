@@ -9,6 +9,7 @@ import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTyp
 import {search as searchHistory} from './history/search.js';
 import {order as orderHistory} from './history/order.js';
 import {HistoryStore} from './history/store.js';
+import {trimRepresentations} from './text.js';
 import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
@@ -131,13 +132,16 @@ export class ClipboardController extends EventEmitter {
           continue;
         seenMimeTypes.add(normalizedMimeType);
         hasImage ||= normalizedMimeType.startsWith('image/');
-        values.push({mimeType, bytes});
+        values.push({mimeType: normalizedMimeType, bytes});
       }
-      if (values.length === 0)
+      const capturedValues = this._settings.get_boolean('trim-whitespace')
+        ? trimRepresentations(values)
+        : values;
+      if (capturedValues.length === 0)
         return null;
 
       const identity = ensureDeviceIdentity(this._settings);
-      const item = ClipboardItem.fromRepresentations(values, {
+      const item = ClipboardItem.fromRepresentations(capturedValues, {
         textPreviewLimit: this._settings.get_uint('text-preview-limit'),
         originDeviceId: identity.deviceId,
         originDeviceTag: identity.deviceTag,

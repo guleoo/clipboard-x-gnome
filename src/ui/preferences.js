@@ -319,6 +319,12 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     history.add(this._spin(settings, 'cache-size-mib', _('Cache size'), 16, 16384, 16, _('MB')));
     history.add(this._spin(settings, 'history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
     history.add(this._spin(settings, 'capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MB')));
+    history.add(this._switch(
+      settings,
+      'trim-whitespace',
+      _('Trim surrounding whitespace'),
+      _('Remove leading and trailing whitespace from newly captured text'),
+    ));
 
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
