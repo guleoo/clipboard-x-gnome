@@ -70,9 +70,9 @@ export async function run() {
   const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
   indicator._settings.set_int('panel-text-vertical-offset', -1);
   assert(indicator._search.clutter_text.translation_y === -1
-      && indicator._search.get_hint_actor().translation_y === -1
+      && indicator._search.get_hint_actor().translation_y === -2
       && indicator._tooltip.translation_y === -1,
-  'Configured text vertical offset was not applied to input, placeholder and panel text');
+  'Configured text offset did not preserve the placeholder baseline correction');
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');

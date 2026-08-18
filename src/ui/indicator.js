@@ -19,6 +19,7 @@ import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js'
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
+const SEARCH_HINT_BASELINE_OFFSET = -1;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
 ].map(color => `clipboard-x-accent-${color}`));
@@ -412,7 +413,7 @@ class Indicator extends PanelMenu.Button {
         actor.clutter_text.translation_y = offset;
         const hintActor = actor.get_hint_actor();
         if (hintActor)
-          hintActor.translation_y = offset;
+          hintActor.translation_y = offset + SEARCH_HINT_BASELINE_OFFSET;
       } else if (actor instanceof St.Label) {
         actor.translation_y = offset;
       }
