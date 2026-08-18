@@ -296,6 +296,10 @@
   spacing: 4px;
 }
 
+.clipboard-x-menu .clipboard-x-phrase-host {
+  padding: 0;
+}
+
 .clipboard-x-phrase-header {
   spacing: 0;
   padding: 1px 2px;
