@@ -8,6 +8,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {MAX_PHRASE_LENGTH, PhraseStore} from '../../../clipboard/phrases/store.js';
 import {ContentItem} from '../../controls/content-item.js';
+import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelHeader} from '../../controls/panel-header.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 
@@ -31,6 +32,11 @@ export class QuickPhrasesPanel {
       style_class: 'clipboard-x-phrase-panel',
       x_expand: true,
     });
+    this.focusAnchor = new FocusAnchor({
+      onNavigate: () => this._focusFirstPhrase(),
+      onKeyPress: event => this._handleKey(event),
+    });
+    this.actor.add_child(this.focusAnchor);
     this.backButton = createIconButton(
       'go-previous-symbolic',
       _('Back to clipboard history'),
@@ -174,7 +180,15 @@ export class QuickPhrasesPanel {
     target.grab_key_focus();
   }
 
-  focusInitial() {
+  focusStart() {
+    this.focusAnchor.focus();
+  }
+
+  leave() {
+    this.focusAnchor.cancel();
+  }
+
+  _focusFirstPhrase() {
     for (const target of [...this._buttons, this.addButton]) {
       const focused = this.focusGrid.focusAt(this.focusGrid.location(target));
       if (focused)

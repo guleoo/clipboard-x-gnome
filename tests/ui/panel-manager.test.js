@@ -16,7 +16,6 @@ const manager = new PanelManager({
 });
 manager.register('history', {
   focusGrid: historyFocusGrid,
-  focusInitial: () => 'history-initial',
   captureView: () => ({offset: historyOffset}),
   restoreView: view => events.push(`restore-history:${view?.offset ?? 'none'}`),
   enter: () => events.push('enter-history'),
@@ -26,7 +25,6 @@ manager.register('history', {
 manager.register('tokenizer', {
   geometry: {width: 420, height: 280},
   focusGrid: tokenizerFocusGrid,
-  focusInitial: () => 'tokenizer-initial',
   captureView: state => ({source: state.source}),
   restoreView: view => events.push(`restore-tokenizer:${view?.source ?? 'none'}`),
   enter: state => events.push(`enter-tokenizer:${state.source}`),
@@ -40,14 +38,10 @@ assert(events.includes('geometry-tokenizer:420x280'),
 
 manager.show('history');
 assert(manager.focusGrid === historyFocusGrid, 'active panel should expose its focus grid');
-assert(manager.focusInitial() === 'history-initial',
-  'active panel should expose its lazy initial-focus action');
 manager.show('tokenizer', {source: 'hello'});
 assert(events.includes('container:420x280'),
   'switching panels should apply the resolved geometry to the shared container');
 assert(manager.focusGrid === tokenizerFocusGrid, 'switching panels should switch focus grids');
-assert(manager.focusInitial() === 'tokenizer-initial',
-  'switching panels should switch the lazy initial-focus action');
 assert(manager.is('tokenizer'), 'show should activate the requested panel');
 assert(manager.state.source === 'hello', 'show should retain panel state');
 assert(events.indexOf('clear-tooltips') < events.indexOf('leave-history'),

@@ -7,6 +7,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {composeTokens, tokenizeText} from '../../../clipboard/tokenizer/processors.js';
+import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {PanelHeader} from '../../controls/panel-header.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
@@ -39,6 +40,11 @@ export class TokenizerPanel {
       style_class: 'clipboard-x-token-panel',
       x_expand: true,
     });
+    this.focusAnchor = new FocusAnchor({
+      onNavigate: () => this._focusFirstToken(),
+      onKeyPress: event => this._handlePanelKey(event),
+    });
+    this.actor.add_child(this.focusAnchor);
     this.backButton = createIconButton(
       'go-previous-symbolic',
       _('Back to clipboard history'),
@@ -229,10 +235,15 @@ export class TokenizerPanel {
   }
 
   leave() {
+    this.focusAnchor.cancel();
     this.endSelectionDrag();
   }
 
-  focusInitial() {
+  focusStart() {
+    this.focusAnchor.focus();
+  }
+
+  _focusFirstToken() {
     for (const button of this._buttons) {
       const focused = this.focusGrid.focusAt(this.focusGrid.location(button));
       if (focused)

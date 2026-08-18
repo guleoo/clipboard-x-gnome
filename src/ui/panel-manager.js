@@ -44,13 +44,6 @@ export class PanelManager {
     return this._current ? this._resolveGeometry(this._current.name) : null;
   }
 
-  focusInitial() {
-    if (!this._current)
-      return null;
-    const panel = this._panels.get(this._current.name);
-    return panel?.focusInitial?.() ?? null;
-  }
-
   is(name) {
     return this.currentName === name;
   }
