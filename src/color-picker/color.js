@@ -1,5 +1,17 @@
 const DEFAULT_LENS_RADIUS = 5;
 
+export function parse(value) {
+  if (typeof value !== 'string')
+    return null;
+  const source = value.trim();
+  if (!source)
+    return null;
+  return parseHex(source)
+    ?? parseRgb(source)
+    ?? parseHsl(source)
+    ?? parseOklch(source);
+}
+
 export function sampleRegion(x, y, scale, textureWidth, textureHeight, radius = DEFAULT_LENS_RADIUS) {
   const pixelX = clamp(Math.round(x * scale), 0, textureWidth - 1);
   const pixelY = clamp(Math.round(y * scale), 0, textureHeight - 1);
@@ -71,6 +83,178 @@ function rgbToOklch([red, green, blue]) {
   const chroma = Math.hypot(a, bAxis);
   const hue = chroma < 1e-7 ? 0 : (Math.atan2(bAxis, a) * 180 / Math.PI + 360) % 360;
   return [lightness, chroma, hue];
+}
+
+function parseHex(source) {
+  const match = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/iu.exec(source);
+  if (!match)
+    return null;
+  const expanded = match[1].length <= 4
+    ? [...match[1]].map(value => value.repeat(2)).join('')
+    : match[1];
+  return color(
+    Number.parseInt(expanded.slice(0, 2), 16),
+    Number.parseInt(expanded.slice(2, 4), 16),
+    Number.parseInt(expanded.slice(4, 6), 16),
+    expanded.length === 8 ? Number.parseInt(expanded.slice(6, 8), 16) / 255 : 1,
+  );
+}
+
+function parseRgb(source) {
+  const body = functionBody(source, ['rgb', 'rgba']);
+  if (body === null)
+    return null;
+  const values = functionValues(body);
+  if (!values)
+    return null;
+  const channels = values.components.map(parseRgbChannel);
+  const alpha = parseAlpha(values.alpha);
+  if (channels.some(value => value === null) || alpha === null)
+    return null;
+  return color(...channels, alpha);
+}
+
+function parseHsl(source) {
+  const body = functionBody(source, ['hsl', 'hsla']);
+  if (body === null)
+    return null;
+  const values = functionValues(body);
+  if (!values)
+    return null;
+  const hue = parseHue(values.components[0]);
+  const saturation = parsePercentage(values.components[1]);
+  const lightness = parsePercentage(values.components[2]);
+  const alpha = parseAlpha(values.alpha);
+  if ([hue, saturation, lightness, alpha].some(value => value === null))
+    return null;
+  return color(...hslToRgb(hue, saturation, lightness), alpha);
+}
+
+function parseOklch(source) {
+  const body = functionBody(source, ['oklch']);
+  if (body === null || body.includes(','))
+    return null;
+  const values = functionValues(body);
+  if (!values)
+    return null;
+  const lightness = parseUnitInterval(values.components[0]);
+  const chroma = parseNumber(values.components[1], 0);
+  const hue = parseHue(values.components[2]);
+  const alpha = parseAlpha(values.alpha);
+  if ([lightness, chroma, hue, alpha].some(value => value === null))
+    return null;
+  return color(...oklchToRgb(lightness, chroma, hue), alpha);
+}
+
+function functionBody(source, names) {
+  const match = new RegExp(`^(?:${names.join('|')})\\((.*)\\)$`, 'iu').exec(source);
+  return match?.[1]?.trim() ?? null;
+}
+
+function functionValues(body) {
+  if (body.includes(',')) {
+    if (body.includes('/'))
+      return null;
+    const components = body.split(',').map(value => value.trim());
+    if (![3, 4].includes(components.length) || components.some(value => !value))
+      return null;
+    return {components: components.slice(0, 3), alpha: components[3] ?? null};
+  }
+  const alphaParts = body.split('/').map(value => value.trim());
+  if (alphaParts.length > 2 || alphaParts.some(value => !value))
+    return null;
+  const components = alphaParts[0].split(/\s+/u);
+  if (components.length !== 3)
+    return null;
+  return {components, alpha: alphaParts[1] ?? null};
+}
+
+function parseRgbChannel(source) {
+  if (source.endsWith('%')) {
+    const percentage = parseNumber(source.slice(0, -1), 0, 100);
+    return percentage === null ? null : percentage * 255 / 100;
+  }
+  return parseNumber(source, 0, 255);
+}
+
+function parseAlpha(source) {
+  if (source === null)
+    return 1;
+  if (source.endsWith('%')) {
+    const percentage = parseNumber(source.slice(0, -1), 0, 100);
+    return percentage === null ? null : percentage / 100;
+  }
+  return parseNumber(source, 0, 1);
+}
+
+function parsePercentage(source) {
+  if (!source.endsWith('%'))
+    return null;
+  const percentage = parseNumber(source.slice(0, -1), 0, 100);
+  return percentage === null ? null : percentage / 100;
+}
+
+function parseUnitInterval(source) {
+  if (source.endsWith('%'))
+    return parsePercentage(source);
+  return parseNumber(source, 0, 1);
+}
+
+function parseHue(source) {
+  const match = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:deg)?$/iu.exec(source);
+  if (!match)
+    return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? ((value % 360) + 360) % 360 : null;
+}
+
+function parseNumber(source, minimum = -Infinity, maximum = Infinity) {
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/u.test(source))
+    return null;
+  const value = Number(source);
+  return Number.isFinite(value) && value >= minimum && value <= maximum ? value : null;
+}
+
+function hslToRgb(hue, saturation, lightness) {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const segment = hue / 60;
+  const secondary = chroma * (1 - Math.abs(segment % 2 - 1));
+  const [red, green, blue] = segment < 1 ? [chroma, secondary, 0]
+    : segment < 2 ? [secondary, chroma, 0]
+      : segment < 3 ? [0, chroma, secondary]
+        : segment < 4 ? [0, secondary, chroma]
+          : segment < 5 ? [secondary, 0, chroma]
+            : [chroma, 0, secondary];
+  const match = lightness - chroma / 2;
+  return [red, green, blue].map(value => (value + match) * 255);
+}
+
+function oklchToRgb(lightness, chroma, hue) {
+  const angle = hue * Math.PI / 180;
+  const a = chroma * Math.cos(angle);
+  const b = chroma * Math.sin(angle);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ].map(linear => {
+    const value = linear <= 0.0031308
+      ? 12.92 * linear
+      : 1.055 * linear ** (1 / 2.4) - 0.055;
+    return clamp(value, 0, 1) * 255;
+  });
+}
+
+function color(red, green, blue, alpha = 1) {
+  return {
+    red: Math.round(clamp(red, 0, 255)),
+    green: Math.round(clamp(green, 0, 255)),
+    blue: Math.round(clamp(blue, 0, 255)),
+    alpha: clamp(alpha, 0, 1),
+  };
 }
 
 function clamp(value, minimum, maximum) {

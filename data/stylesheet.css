@@ -144,6 +144,15 @@
   margin-right: 2px;
 }
 
+.clipboard-x-color-swatch {
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  margin-right: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 3px;
+}
+
 .clipboard-x-image-content {
   spacing: 5px;
 }

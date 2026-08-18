@@ -306,7 +306,9 @@ export async function run() {
   const capturedRow = history.entry(capturedText);
   assert(capturedRow._clipboardXControlType === 'content-item'
       && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length
-      && capturedRow.focusActors[0].has_style_class_name('clipboard-x-entry-content'),
+      && capturedRow.focusActors[0].has_style_class_name('clipboard-x-entry-content')
+      && !capturedRow.get_children().some(child =>
+        child.has_style_class_name?.('clipboard-x-color-swatch')),
     'Clipboard history did not use the shared content-item control');
   capturedRow.destroy();
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
@@ -711,6 +713,14 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.startsWith('#')),
     'Picked color did not enter clipboard history');
   const colorItem = indicator._controller.items.find(item => item.text.startsWith('#'));
+  const colorRow = history.entry(colorItem);
+  const colorSwatch = colorRow.get_children().find(child =>
+    child.has_style_class_name?.('clipboard-x-color-swatch'));
+  assert(colorSwatch?.get_style().includes('background-color: rgba(')
+      && !colorSwatch.can_focus
+      && !colorSwatch.reactive,
+  'Color clipboard content did not render its decorative leading swatch');
+  colorRow.destroy();
   indicator._controller.toggleFavorite(colorItem.id);
   indicator._controller.clear();
   assert(indicator._controller.items.length === 1 && indicator._controller.items[0] === colorItem,

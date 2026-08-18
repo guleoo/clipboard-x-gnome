@@ -5,6 +5,7 @@ import St from 'gi://St';
 
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {parse as parseColor} from '../../../color-picker/color.js';
 import {ContentItem} from '../../controls/content-item.js';
 
 export function create({
@@ -18,6 +19,9 @@ export function create({
   const row = new ContentItem();
   if (leading)
     row.addLeading(leading);
+  const swatch = colorSwatch(item);
+  if (swatch)
+    row.addLeading(swatch);
 
   const content = new St.Button({
     can_focus: true,
@@ -87,6 +91,24 @@ export function create({
     actor._clipboardXHistoryRow = row;
   row.connect('key-press-event', (_row, event) => actions.handleKey(event));
   return row;
+}
+
+function colorSwatch(item) {
+  if (!item.isText || item.preview?.truncated)
+    return null;
+  const color = parseColor(item.text);
+  if (!color)
+    return null;
+  const swatch = new St.Widget({
+    style_class: 'clipboard-x-color-swatch',
+    reactive: false,
+    can_focus: false,
+    y_align: Clutter.ActorAlign.CENTER,
+  });
+  swatch.set_style(
+    `background-color: rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha});`,
+  );
+  return swatch;
 }
 
 function textPreview(item) {
