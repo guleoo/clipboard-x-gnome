@@ -79,13 +79,21 @@ export async function run() {
     'Search placeholder did not retain its configured left margin');
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
+  const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
+  const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
+  indicator._settings.set_strv(
+    'panel-toolbar-actions', ['screenshot', 'color-picker', 'quick-phrases']);
+  indicator._settings.set_strv(
+    'panel-footer-actions', ['private-mode', 'sync', 'clear-history', 'preferences']);
   assert(indicator._toolbar.get_children().length === 3,
-    'Top toolbar must contain only screenshot, color picker and privacy actions');
+    'Top toolbar must contain only screenshot, color picker and quick-phrase actions');
   assert(indicator._search.get_parent() === indicator._toolbar.get_parent(),
     'Search and the three primary tools must share one row');
-  assert(indicator._privateButton.get_parent() === indicator._toolbar
-      && indicator._syncToolButton.get_parent() === indicator._footer,
-    'Privacy and synchronization buttons were not swapped');
+  assert(indicator._phrasesToolButton.get_parent() === indicator._toolbar
+      && indicator._privateButton.get_parent() === indicator._footer,
+    'Quick-phrase and privacy buttons were not swapped');
+  indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
+  indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
   const originalPhrases = indicator._settings.get_strv('saved-phrases');
   indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
   indicator._openPhrases();
@@ -95,6 +103,12 @@ export async function run() {
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   'Saved-phrase panel did not render its local phrase and delete action');
   indicator._showPhraseForm();
+  assert(indicator._phraseForm.get_children().length === 1,
+    'Quick-phrase form must contain only the text entry');
+  indicator._togglePhraseForm();
+  assert(!indicator._phraseForm.visible,
+    'Activating the add action again did not collapse the quick-phrase form');
+  indicator._togglePhraseForm();
   indicator._phraseEntry.set_text('New smoke-test phrase');
   indicator._savePhrase();
   assert(indicator._phraseStore.all[0] === 'New smoke-test phrase'

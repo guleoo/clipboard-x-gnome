@@ -138,6 +138,14 @@
       <range min="-4" max="4"/>
       <summary>Vertical translation applied to panel text in logical pixels</summary>
     </key>
+    <key name="panel-toolbar-actions" type="as">
+      <default>['screenshot', 'color-picker', 'quick-phrases']</default>
+      <summary>Actions displayed in the search toolbar, in order</summary>
+    </key>
+    <key name="panel-footer-actions" type="as">
+      <default>['private-mode', 'sync', 'clear-history', 'preferences']</default>
+      <summary>Actions displayed in the panel footer, in order</summary>
+    </key>
     <key name="preserve-panel-state" type="b">
       <default>false</default>
       <summary>Reopen the clipboard panel in its previous view</summary>
@@ -162,7 +170,20 @@
     </key>
     <key name="saved-phrases" type="as">
       <default>[]</default>
-      <summary>Local collection of user-defined phrases</summary>
+      <summary>Local collection of user-defined quick phrases</summary>
+    </key>
+    <key name="saved-phrase-limit" type="i">
+      <default>200</default>
+      <range min="1" max="1000"/>
+      <summary>Maximum number of locally stored quick phrases</summary>
+    </key>
+    <key name="saved-phrase-newest-first" type="b">
+      <default>true</default>
+      <summary>Place newly added quick phrases at the beginning</summary>
+    </key>
+    <key name="phrase-close-after-copy" type="b">
+      <default>true</default>
+      <summary>Close the panel after copying a quick phrase</summary>
     </key>
     <key name="capture-size-limit-mib" type="i">
       <default>128</default>

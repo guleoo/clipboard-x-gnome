@@ -28,6 +28,8 @@ export async function run() {
     return /Clipboard X|Extension Manager|Extensions/iu.test(`${title} ${wmClass}`);
   });
   assert(preferences, 'Clipboard X preferences window did not open');
+  assert(preferences.get_title() === 'Clipboard X',
+    `Clipboard X preferences opened an error page (${preferences.get_title()})`);
   preferences.delete(global.get_current_time());
   await Scripting.sleep(300);
 }

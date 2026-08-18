@@ -14,6 +14,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {PanelManager} from './panel-manager.js';
 import {FocusGrid} from './focus-grid.js';
+import {normalize as normalizePanelActions} from './panel-actions.js';
 import {matches as matchesShortcut} from './shortcut.js';
 import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
 import {MAX_PHRASE_LENGTH, PhraseStore} from '../clipboard/phrases/store.js';
@@ -218,6 +219,21 @@ class Indicator extends PanelMenu.Button {
     this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
     this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
     this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
+    this._toolbarActionsSignal = settings.connect(
+      'changed::panel-toolbar-actions',
+      () => this._updatePanelActions(),
+    );
+    this._footerActionsSignal = settings.connect(
+      'changed::panel-footer-actions',
+      () => this._updatePanelActions(),
+    );
+    this._savedPhrasesSignal = settings.connect('changed::saved-phrases', () => {
+      if (this._panelManager.is('phrases'))
+        this._panelManager.refresh();
+    });
+    this._phraseLimitSignal = settings.connect('changed::saved-phrase-limit', () => {
+      this._phraseStore.trim();
+    });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
       if (!this.menu.actor.visible)
         this._panelManager.hidden();
@@ -310,7 +326,12 @@ class Indicator extends PanelMenu.Button {
       },
       {iconSize: 14, stateful: true},
     );
-    toolbar.add_child(this._privateButton);
+    this._phrasesToolButton = this._iconButton(
+      'starred-symbolic',
+      _('Quick phrases'),
+      () => this._openPhrases(),
+      {iconSize: 14},
+    );
     searchToolbar.add_child(toolbar);
     searchItem.add_child(searchToolbar);
     this.menu.addMenuItem(searchItem);
@@ -418,7 +439,7 @@ class Indicator extends PanelMenu.Button {
     );
     phraseHeader.add_child(this._phraseBack);
     phraseHeader.add_child(new St.Label({
-      text: _('Saved phrases'),
+      text: _('Quick phrases'),
       style_class: 'clipboard-x-phrase-title',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
@@ -426,7 +447,7 @@ class Indicator extends PanelMenu.Button {
     this._phraseAdd = this._iconButton(
       'list-add-symbolic',
       _('Add custom phrase'),
-      () => this._showPhraseForm(),
+      () => this._togglePhraseForm(),
       {tooltipScope: 'panel'},
     );
     phraseHeader.add_child(this._phraseAdd);
@@ -458,13 +479,6 @@ class Indicator extends PanelMenu.Button {
       return this._handleMenuKey(event);
     });
     this._phraseForm.add_child(this._phraseEntry);
-    this._phraseSave = this._iconButton(
-      'list-add-symbolic',
-      _('Save phrase'),
-      () => this._savePhrase(),
-      {showTooltip: false},
-    );
-    this._phraseForm.add_child(this._phraseSave);
     this._phrasePanel.add_child(this._phraseForm);
 
     this._phraseSection = new PopupMenu.PopupMenuSection();
@@ -486,25 +500,27 @@ class Indicator extends PanelMenu.Button {
     this._footerItem = footerItem;
     const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this._footer = footer;
-    footer.add_child(new St.Widget({x_expand: true}));
-    this._phrasesToolButton = this._iconButton(
-      'starred-symbolic',
-      _('Saved phrases'),
-      () => this._openPhrases(),
-    );
-    footer.add_child(this._phrasesToolButton);
+    this._footerSpacer = new St.Widget({x_expand: true});
+    footer.add_child(this._footerSpacer);
     this._syncToolButton = this._iconButton(
       'network-offline-symbolic',
       _('Synchronization settings'),
       () => this._runAndClose(() => this._actions.openPreferences()),
     );
-    footer.add_child(this._syncToolButton);
     this._clearButton = this._iconButton(
       'user-trash-symbolic', _('Clear unpinned history'), () => this._controller.clear());
-    footer.add_child(this._clearButton);
     this._preferencesButton = this._iconButton(
       'emblem-system-symbolic', _('Preferences'), () => this._runAndClose(() => this._actions.openPreferences()));
-    footer.add_child(this._preferencesButton);
+    this._panelActionButtons = new Map([
+      ['screenshot', this._screenshotButton],
+      ['color-picker', this._colorButton],
+      ['quick-phrases', this._phrasesToolButton],
+      ['private-mode', this._privateButton],
+      ['sync', this._syncToolButton],
+      ['clear-history', this._clearButton],
+      ['preferences', this._preferencesButton],
+    ]);
+    this._updatePanelActions();
     footerItem.add_child(footer);
     this.menu.addMenuItem(footerItem);
     this._updatePrivateButton();
@@ -518,6 +534,26 @@ class Indicator extends PanelMenu.Button {
     this._footerItem.visible = history;
     this._tokenPanelItem.visible = panel === 'tokenizer';
     this._phrasePanelItem.visible = panel === 'phrases';
+  }
+
+  _updatePanelActions() {
+    if (!this._panelActionButtons)
+      return;
+    const layout = normalizePanelActions(
+      this._settings.get_strv('panel-toolbar-actions'),
+      this._settings.get_strv('panel-footer-actions'),
+    );
+    for (const button of this._panelActionButtons.values()) {
+      const parent = button.get_parent();
+      if (parent)
+        parent.remove_child(button);
+    }
+    for (const action of layout.toolbar)
+      this._toolbar.add_child(this._panelActionButtons.get(action));
+    for (const action of layout.footer)
+      this._footer.add_child(this._panelActionButtons.get(action));
+    if (this._panelManager?.is('history'))
+      this._panelManager.refresh();
   }
 
   _applyTextVerticalOffset() {
@@ -642,9 +678,9 @@ class Indicator extends PanelMenu.Button {
 
   _setHistoryFocusRows(rows) {
     this._historyFocusGrid.setRows([
-      [this._search.clutter_text, this._screenshotButton, this._colorButton, this._privateButton],
+      [this._search.clutter_text, ...this._toolbar.get_children()],
       ...rows,
-      [this._phrasesToolButton, this._syncToolButton, this._clearButton, this._preferencesButton],
+      this._footer.get_children().filter(actor => actor !== this._footerSpacer),
     ]);
   }
 
@@ -947,7 +983,6 @@ class Indicator extends PanelMenu.Button {
       row.add_style_class_name('clipboard-x-entry');
       row.track_hover = true;
       const content = new St.Button({
-        label: phrase,
         can_focus: true,
         track_hover: true,
         clip_to_allocation: true,
@@ -955,19 +990,22 @@ class Indicator extends PanelMenu.Button {
         x_expand: true,
         x_align: Clutter.ActorAlign.FILL,
       });
-      const label = content.get_child();
-      label.add_style_class_name('clipboard-x-entry-preview');
-      label.x_expand = true;
-      label.x_align = Clutter.ActorAlign.FILL;
+      const label = new St.Label({
+        text: phrase,
+        style_class: 'clipboard-x-entry-preview',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.FILL,
+      });
       label.clutter_text.single_line_mode = true;
       label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-      content.accessible_name = _('Copy saved phrase');
+      content.set_child(label);
+      content.accessible_name = _('Copy quick phrase');
       content.connect('key-press-event', (_actor, event) => this._handleMenuKey(event));
-      content.connect('clicked', () => this._runAndClose(() => this._actions.copyText(phrase)));
+      content.connect('clicked', () => this._copyPhrase(phrase));
       row.add_child(content);
       const remove = this._iconButton(
         'user-trash-symbolic',
-        _('Delete saved phrase'),
+        _('Delete quick phrase'),
         () => this._deletePhrase(phrase),
         {showTooltip: false},
       );
@@ -982,14 +1020,14 @@ class Indicator extends PanelMenu.Button {
     if (phrases.length === 0) {
       const empty = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
       empty.add_child(new St.Label({
-        text: _('No saved phrases'),
+        text: _('No quick phrases'),
         style_class: 'clipboard-x-empty',
       }));
       this._phraseSection.addMenuItem(empty);
     }
     this._phrasesFocusGrid.setRows([
       [this._phraseBack, this._phraseAdd],
-      ...(this._phraseFormVisible ? [[this._phraseEntry.clutter_text, this._phraseSave]] : []),
+      ...(this._phraseFormVisible ? [[this._phraseEntry.clutter_text]] : []),
       ...focusRows,
     ]);
   }
@@ -1008,6 +1046,13 @@ class Indicator extends PanelMenu.Button {
     this._phraseEntry.set_text('');
     this._panelManager.refresh();
     this._focusPhrasePanel();
+  }
+
+  _togglePhraseForm() {
+    if (this._phraseFormVisible)
+      this._hidePhraseForm();
+    else
+      this._showPhraseForm();
   }
 
   _hidePhraseForm() {
@@ -1032,6 +1077,13 @@ class Indicator extends PanelMenu.Button {
       return;
     this._panelManager.refresh();
     this._focusPhrasePanel();
+  }
+
+  _copyPhrase(phrase) {
+    if (this._settings.get_boolean('phrase-close-after-copy'))
+      return this._runAndClose(() => this._actions.copyText(phrase));
+    return Promise.resolve(this._actions.copyText(phrase))
+      .catch(error => this._actions.reportError(error));
   }
 
   _handleTokenKey(button, token, state, event) {
@@ -1453,6 +1505,7 @@ class Indicator extends PanelMenu.Button {
 
   _setHint(actor, text) {
     actor.accessible_name = text;
+    actor._hintText = text;
     if (actor._clipboardXShowTooltip)
       this._attachHint(actor, text, {scope: actor._clipboardXTooltipScope});
   }
@@ -1665,6 +1718,10 @@ class Indicator extends PanelMenu.Button {
       this._syncEnabledSignal,
       this._deviceTagSignal,
       this._deviceIconSignal,
+      this._toolbarActionsSignal,
+      this._footerActionsSignal,
+      this._savedPhrasesSignal,
+      this._phraseLimitSignal,
     ]) {
       if (signal)
         this._settings.disconnect(signal);
@@ -1681,6 +1738,10 @@ class Indicator extends PanelMenu.Button {
     this._syncEnabledSignal = 0;
     this._deviceTagSignal = 0;
     this._deviceIconSignal = 0;
+    this._toolbarActionsSignal = 0;
+    this._footerActionsSignal = 0;
+    this._savedPhrasesSignal = 0;
+    this._phraseLimitSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;

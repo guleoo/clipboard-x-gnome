@@ -2,6 +2,7 @@ import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -10,6 +11,7 @@ import {buildEditorArgv} from '../screenshot/editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../sync/constants.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 import {effectiveCapabilities} from '../sync/policy.js';
+import {move as movePanelAction, normalize as normalizePanelActions} from './panel-actions.js';
 
 const THEME_COLORS = Object.freeze([
   ['blue', '#3584e4'],
@@ -27,10 +29,14 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const {deviceId} = ensureDeviceIdentity(settings);
     window.set_title('Clipboard X');
     window.set_default_size(900, 700);
+    // GNOME's preferences host requires at least one registered page even when
+    // the extension supplies its own split-view navigation as the window content.
+    window.add(new Adw.PreferencesPage({title: 'Clipboard X'}));
 
     const pages = [
       ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings)],
       ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings)],
+      ['quick-phrases', 'starred-symbolic', this._phrasesPage(settings)],
       ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
@@ -131,7 +137,134 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Keep keyboard focus in panel'),
       _('At the edge, arrow keys do not move focus outside the extension panel'),
     ));
+
+    const actions = new Adw.PreferencesGroup({
+      title: _('Panel actions'),
+      description: _('Drag actions to change their placement and order.'),
+    });
+    page.add(actions);
+    actions.add(this._panelActionsRow(settings));
     return page;
+  }
+
+  _panelActionsRow(settings) {
+    const row = new Adw.PreferencesRow({activatable: false});
+    const content = new Gtk.Box({
+      orientation: Gtk.Orientation.VERTICAL,
+      spacing: 12,
+      margin_top: 12,
+      margin_bottom: 12,
+      margin_start: 12,
+      margin_end: 12,
+    });
+    const sections = new Map();
+    for (const [region, title] of [
+      ['toolbar', _('Top toolbar')],
+      ['footer', _('Footer')],
+    ]) {
+      const section = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL, spacing: 6});
+      section.append(new Gtk.Label({label: title, xalign: 0, css_classes: ['heading']}));
+      const list = new Gtk.ListBox({
+        selection_mode: Gtk.SelectionMode.NONE,
+        css_classes: ['boxed-list'],
+      });
+      section.append(list);
+      content.append(section);
+      sections.set(region, list);
+    }
+    row.set_child(content);
+
+    let updating = false;
+    const current = () => normalizePanelActions(
+      settings.get_strv('panel-toolbar-actions'),
+      settings.get_strv('panel-footer-actions'),
+    );
+    const save = layout => {
+      updating = true;
+      settings.set_strv('panel-toolbar-actions', layout.toolbar);
+      settings.set_strv('panel-footer-actions', layout.footer);
+      updating = false;
+      render();
+    };
+    const move = (action, region, index) => save(movePanelAction(current(), action, region, index));
+    const render = () => {
+      const layout = current();
+      for (const [region, list] of sections) {
+        while (list.get_first_child())
+          list.remove(list.get_first_child());
+        layout[region].forEach((action, index) => {
+          const descriptor = panelActionDescriptor(action);
+          const item = new Gtk.ListBoxRow({activatable: false});
+          const box = new Gtk.Box({spacing: 8, margin_start: 8, margin_end: 4});
+          box.append(new Gtk.Image({icon_name: 'list-drag-handle-symbolic', pixel_size: 16}));
+          box.append(new Gtk.Image({icon_name: descriptor.icon, pixel_size: 16}));
+          box.append(new Gtk.Label({label: descriptor.title, xalign: 0, hexpand: true}));
+          const up = new Gtk.Button({
+            icon_name: 'go-up-symbolic',
+            css_classes: ['flat'],
+            tooltip_text: _('Move up'),
+            sensitive: index > 0,
+          });
+          up.connect('clicked', () => move(action, region, index - 1));
+          box.append(up);
+          const down = new Gtk.Button({
+            icon_name: 'go-down-symbolic',
+            css_classes: ['flat'],
+            tooltip_text: _('Move down'),
+            sensitive: index < layout[region].length - 1,
+          });
+          down.connect('clicked', () => move(action, region, index + 2));
+          box.append(down);
+          const otherRegion = region === 'toolbar' ? 'footer' : 'toolbar';
+          const transfer = new Gtk.Button({
+            icon_name: region === 'toolbar' ? 'go-down-symbolic' : 'go-up-symbolic',
+            css_classes: ['flat'],
+            tooltip_text: region === 'toolbar' ? _('Move to footer') : _('Move to top toolbar'),
+          });
+          transfer.connect('clicked', () => move(action, otherRegion, layout[otherRegion].length));
+          box.append(transfer);
+          item.set_child(box);
+
+          const drag = new Gtk.DragSource({actions: Gdk.DragAction.MOVE});
+          drag.connect('prepare', () => {
+            const value = new GObject.Value();
+            value.init(GObject.TYPE_STRING);
+            value.set_string(action);
+            return Gdk.ContentProvider.new_for_value(value);
+          });
+          item.add_controller(drag);
+          list.append(item);
+        });
+      }
+    };
+    for (const [region, list] of sections) {
+      const drop = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.MOVE);
+      drop.connect('drop', (_target, action, _x, y) => {
+        if (!action)
+          return false;
+        const target = list.get_row_at_y(Math.floor(y));
+        let index = target?.get_index() ?? current()[region].length;
+        if (target && y > target.get_allocated_height() / 2 + target.get_allocation().y)
+          index++;
+        move(action, region, index);
+        return true;
+      });
+      list.add_controller(drop);
+    }
+    const toolbarSignal = settings.connect('changed::panel-toolbar-actions', () => {
+      if (!updating)
+        render();
+    });
+    const footerSignal = settings.connect('changed::panel-footer-actions', () => {
+      if (!updating)
+        render();
+    });
+    disconnectWhenUnrooted(row, () => {
+      settings.disconnect(toolbarSignal);
+      settings.disconnect(footerSignal);
+    });
+    render();
+    return row;
   }
 
   _themeColorRow(settings) {
@@ -352,6 +485,31 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       'excluded-apps',
       _('Excluded applications'),
       _('Comma-separated window classes'),
+    ));
+    return page;
+  }
+
+  _phrasesPage(settings) {
+    const page = new Adw.PreferencesPage({
+      title: _('Quick phrases'),
+      icon_name: 'starred-symbolic',
+    });
+    const behavior = new Adw.PreferencesGroup({
+      title: _('Behavior'),
+      description: _('Quick phrases are stored only on this device.'),
+    });
+    page.add(behavior);
+    behavior.add(this._spin(settings, 'saved-phrase-limit', _('Maximum quick phrases'), 1, 1000, 1));
+    behavior.add(this._switch(
+      settings,
+      'saved-phrase-newest-first',
+      _('Place new phrases first'),
+      _('When disabled, new phrases are added at the end'),
+    ));
+    behavior.add(this._switch(
+      settings,
+      'phrase-close-after-copy',
+      _('Close panel after copying'),
     ));
     return page;
   }
@@ -823,6 +981,33 @@ function uniqueColors(colors) {
   return [...new Set(colors
     .map(color => color.toLowerCase())
     .filter(color => HEX_COLOR_PATTERN.test(color)))];
+}
+
+function panelActionDescriptor(action) {
+  return {
+    screenshot: {title: _('Screenshot'), icon: 'camera-photo-symbolic'},
+    'color-picker': {title: _('Color picker'), icon: 'color-select-symbolic'},
+    'quick-phrases': {title: _('Quick phrases'), icon: 'starred-symbolic'},
+    'private-mode': {title: _('Privacy mode'), icon: 'security-high-symbolic'},
+    sync: {title: _('Synchronization'), icon: 'folder-remote-symbolic'},
+    'clear-history': {title: _('Clear history'), icon: 'user-trash-symbolic'},
+    preferences: {title: _('Preferences'), icon: 'emblem-system-symbolic'},
+  }[action];
+}
+
+function disconnectWhenUnrooted(widget, callback) {
+  let wasRooted = false;
+  let disconnected = false;
+  widget.connect('notify::root', () => {
+    if (widget.get_root()) {
+      wasRooted = true;
+      return;
+    }
+    if (!wasRooted || disconnected)
+      return;
+    disconnected = true;
+    callback();
+  });
 }
 
 function formatBytes(bytes) {
