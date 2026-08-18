@@ -162,8 +162,7 @@ class Indicator extends PanelMenu.Button {
       isActive: () => this._panelManager?.is('history') ?? false,
       isMenuOpen: () => this.menu.isOpen,
     });
-    this.menu.addMenuItem(this._historyPanel.searchItem);
-    this.menu.addMenuItem(this._historyPanel.scrollItem);
+    this.menu.addMenuItem(this._historyPanel.item);
 
     this._tokenizer = new TokenizerPanel({
       settings: this._settings,
@@ -187,8 +186,6 @@ class Indicator extends PanelMenu.Button {
       refresh: () => this._panelManager.refresh(),
     });
     this.menu.addMenuItem(this._quickPhrases.item);
-
-    this.menu.addMenuItem(this._historyPanel.footerItem);
   }
 
   _showPanelChrome(panel) {

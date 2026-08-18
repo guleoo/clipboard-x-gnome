@@ -57,6 +57,14 @@ export class HistoryPanel {
     this._focusIdleId = 0;
     this._pendingViewState = null;
 
+    this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    this.item.add_style_class_name('clipboard-x-panel-host');
+    this.actor = new St.BoxLayout({
+      vertical: true,
+      style_class: 'clipboard-x-history-panel',
+      x_expand: true,
+    });
+
     this.searchItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     const searchToolbar = new St.BoxLayout({
       style_class: 'clipboard-x-search-toolbar',
@@ -114,9 +122,13 @@ export class HistoryPanel {
     this.scroll = new St.ScrollView({
       overlay_scrollbars: true,
       style_class: 'clipboard-x-history',
+      x_expand: true,
+      y_expand: true,
     });
     this.scroll.add_child(this._section.actor);
     this.scrollItem = new PopupMenu.PopupMenuSection();
+    this.scrollItem.actor.x_expand = true;
+    this.scrollItem.actor.y_expand = true;
     this.scrollItem.actor.add_child(this.scroll);
 
     this.footerItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
@@ -155,6 +167,11 @@ export class HistoryPanel {
     this.footerItem.add_child(this.footer);
     this._updatePrivateButton();
 
+    this.actor.add_child(this.searchItem);
+    this.actor.add_child(this.scrollItem.actor);
+    this.actor.add_child(this.footerItem);
+    this.item.add_child(this.actor);
+
     this.focusGrid = new FocusGrid({
       ensureVisible: actor => {
         const row = actor._clipboardXHistoryRow;
@@ -174,14 +191,8 @@ export class HistoryPanel {
     ];
   }
 
-  get items() {
-    return [this.searchItem, this.scrollItem, this.footerItem];
-  }
-
   set visible(value) {
-    this.searchItem.visible = value;
-    this.scrollItem.actor.visible = value;
-    this.footerItem.visible = value;
+    this.item.visible = value;
   }
 
   render() {
@@ -320,7 +331,7 @@ export class HistoryPanel {
   setGeometry({width, height}) {
     this._searchWidth = Math.max(140, width - 140);
     this._updateSearchStyle();
-    this.scroll.set_style(`height: ${height}px; max-height: ${height}px;`);
+    this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);
   }
 
   setAccent(color) {

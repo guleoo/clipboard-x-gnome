@@ -113,6 +113,10 @@ export async function run() {
   const resizedPanelHeight = Math.min(800, originalPanelHeight + 40);
   indicator._settings.set_int('panel-width', resizedPanelWidth);
   indicator._settings.set_int('panel-height', resizedPanelHeight);
+  await Scripting.sleep(300);
+  const resizedHistoryMenuHeight = Math.round(indicator.menu.actor.height);
+  assert(Math.round(history.actor.height) === resizedPanelHeight,
+    'Configured panel height was not applied to the complete history panel');
   const originalPhrases = indicator._settings.get_strv('saved-phrases');
   indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
   indicator._openPhrases();
@@ -121,6 +125,7 @@ export async function run() {
       && indicator._panelManager.geometry.width === resizedPanelWidth
       && indicator._panelManager.geometry.height === resizedPanelHeight
       && Math.round(indicator.menu.actor.width) === resizedPanelWidth
+      && Math.abs(Math.round(indicator.menu.actor.height) - resizedHistoryMenuHeight) <= 1
       && Math.round(indicator._quickPhrases.actor.height) === resizedPanelHeight
       && indicator._quickPhrases.buttons.length === 1
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
@@ -128,7 +133,7 @@ export async function run() {
       && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
-  'Saved-phrase panel did not render its local phrase and delete action');
+  `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
   indicator._quickPhrases.showForm();
   assert(indicator._quickPhrases.form.get_children().length === 1,
     'Quick-phrase form must contain only the text entry');
@@ -314,17 +319,18 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(100);
   await indicator._openTokenizer(capturedText);
+  await Scripting.sleep(100);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
       && indicator._panelManager.geometry.width === resizedPanelWidth
       && indicator._panelManager.geometry.height === resizedPanelHeight
       && Math.round(indicator.menu.actor.width) === resizedPanelWidth
+      && Math.abs(Math.round(indicator.menu.actor.height) - resizedHistoryMenuHeight) <= 1
       && Math.round(indicator._tokenizer.actor.height) === resizedPanelHeight
-      && !history.searchItem.visible
-      && !history.scrollItem.actor.visible
-      && !history.footerItem.visible
+      && !history.item.visible
       && indicator._tokenizer.item.visible,
-    'Text segmentation did not switch the current panel to the token selection view');
+    `Text segmentation did not match history geometry (`
+      + `${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
   await Scripting.sleep(100);
   const tokenButtons = indicator._tokenizer.tokenBox.get_children()
     .flatMap(row => row.get_children());
@@ -421,9 +427,7 @@ export async function run() {
   indicator._settings.set_int('panel-height', originalPanelHeight);
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history')
-      && history.searchItem.visible
-      && history.scrollItem.actor.visible
-      && history.footerItem.visible
+      && history.item.visible
       && !indicator._tokenizer.item.visible,
     'Returning from text segmentation did not restore clipboard history');
   indicator.menu.close();
