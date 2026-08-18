@@ -5,13 +5,13 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {buildEditorArgv} from '../screenshot/editor-launcher.js';
-import {SYNC_API_VERSION, SYNC_INTERFACE} from '../sync/constants.js';
-import {ensureDeviceIdentity} from '../sync/device.js';
-import {effectiveCapabilities} from '../sync/policy.js';
-import {create as createPanelActionsRow} from './preferences/panel-actions.js';
-import {PreferenceRows} from './preferences/rows.js';
-import {create as createThemeColorRow} from './preferences/theme-color.js';
+import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
+import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
+import {ensureDeviceIdentity} from '../../sync/device.js';
+import {effectiveCapabilities} from '../../sync/policy.js';
+import {create as createPanelActionsRow} from './panel-actions.js';
+import {PreferenceRows} from './rows.js';
+import {create as createThemeColorRow} from './theme-color.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {

@@ -9,8 +9,8 @@
 - `ui/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
 - `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
 - `ui/panels/`：可独立切换的 Shell 面板。面板拥有自己的 actor、滚动区域、状态、焦点矩阵和领域交互。
-- `ui/preferences.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
-- `ui/preferences/`：可复用的 GTK/Libadwaita 设置组件。
+- `ui/preferences/window.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
+- `ui/preferences/`：设置窗口与可复用的 GTK/Libadwaita 设置组件。
 
 ## 2. 已有组件
 
