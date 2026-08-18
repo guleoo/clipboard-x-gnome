@@ -34,6 +34,7 @@ export class TokenizerPanel {
     this._focusIdleId = 0;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    this.item.add_style_class_name('clipboard-x-panel-host');
     this.actor = new St.BoxLayout({
       vertical: true,
       style_class: 'clipboard-x-token-panel',
@@ -48,8 +49,6 @@ export class TokenizerPanel {
     this.header = new PanelHeader({
       title: _('Segment text'),
       backButton: this.backButton,
-      styleClass: 'clipboard-x-token-header',
-      titleStyleClass: 'clipboard-x-token-title',
       titleOffset: OPTICAL_BASELINE_OFFSET,
     });
     this.titleLabel = this.header.titleLabel;

@@ -68,6 +68,7 @@ export async function run() {
       && history.screenshotButton._clipboardXControlType === 'icon-button',
     'Shared search or icon controls were not used by the history panel');
   assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
+      && indicator._tokenizer.header.divider !== null
       && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
     'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
@@ -107,6 +108,7 @@ export async function run() {
   assert(indicator._panelManager.is('phrases')
       && indicator._quickPhrases.buttons.length === 1
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
+      && indicator._quickPhrases.header.divider !== null
       && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),

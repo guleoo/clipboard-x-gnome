@@ -25,7 +25,7 @@ export class QuickPhrasesPanel {
     this._rows = [];
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this.item.add_style_class_name('clipboard-x-phrase-host');
+    this.item.add_style_class_name('clipboard-x-panel-host');
     this.actor = new St.BoxLayout({
       vertical: true,
       style_class: 'clipboard-x-phrase-panel',
@@ -47,8 +47,6 @@ export class QuickPhrasesPanel {
       title: _('Quick phrases'),
       backButton: this.backButton,
       actions: [this.addButton],
-      styleClass: 'clipboard-x-phrase-header',
-      titleStyleClass: 'clipboard-x-phrase-title',
     });
     this.actor.add_child(this.header);
 

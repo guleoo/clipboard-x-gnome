@@ -19,26 +19,41 @@ class PanelHeader extends St.BoxLayout {
     super._init({
       style_class: styleClasses,
       x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
+      vertical: true,
     });
     this._clipboardXControlType = 'panel-header';
+    this.row = new St.BoxLayout({
+      style_class: 'clipboard-x-panel-header-row',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    this.add_child(this.row);
     this.backButton = backButton;
     if (backButton)
-      this.add_child(backButton);
+      this.row.add_child(backButton);
+    const titleStyleClasses = [
+      'clipboard-x-panel-header-title',
+      titleStyleClass,
+    ].filter(Boolean).join(' ');
     this.titleLabel = new St.Label({
       text: title,
-      style_class: titleStyleClass,
+      style_class: titleStyleClasses,
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
     this.titleLabel._clipboardXTextBaselineOffset = titleOffset;
-    this.add_child(this.titleLabel);
+    this.row.add_child(this.titleLabel);
     for (const actor of actions)
       this.addAction(actor);
+    this.divider = new St.Widget({
+      style_class: 'clipboard-x-panel-divider',
+      x_expand: true,
+    });
+    this.add_child(this.divider);
   }
 
   addAction(actor) {
-    this.add_child(actor);
+    this.row.add_child(actor);
     return actor;
   }
 });
