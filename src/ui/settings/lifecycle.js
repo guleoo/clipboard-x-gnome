@@ -1,3 +1,4 @@
+// GTK settings widget lifecycle helpers.
 export function disconnectWhenUnrooted(widget, callback) {
   let wasRooted = false;
   let disconnected = false;

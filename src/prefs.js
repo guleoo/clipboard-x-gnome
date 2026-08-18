@@ -1,3 +1,3 @@
-import ClipboardXPreferences from './ui/preferences/window.js';
+import ClipboardXPreferences from './ui/settings/window.js';
 
 export default ClipboardXPreferences;

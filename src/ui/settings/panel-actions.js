@@ -1,3 +1,4 @@
+// Panel action ordering editor used by the settings window.
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import GObject from 'gi://GObject';

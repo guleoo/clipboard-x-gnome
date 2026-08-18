@@ -1,3 +1,4 @@
+// Reusable GTK settings rows.
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';

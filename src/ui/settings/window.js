@@ -1,3 +1,4 @@
+// Clipboard X settings window composition.
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';

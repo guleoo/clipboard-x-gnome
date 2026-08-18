@@ -10,8 +10,8 @@
 - `ui/layouts/panel-actions.js`：顶栏与底栏动作的布局模型和校正规则，不依赖 Shell actor。
 - `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
 - `ui/panels/`：可独立切换的 Shell 面板。面板拥有自己的 actor、滚动区域、状态、焦点矩阵和领域交互。
-- `ui/preferences/window.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
-- `ui/preferences/`：设置窗口与可复用的 GTK/Libadwaita 设置组件。
+- `ui/settings/window.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
+- `ui/settings/`：设置窗口与可复用的 GTK/Libadwaita 设置组件。
 
 ## 2. 已有组件
 
@@ -25,8 +25,8 @@
 - `IconButton`：统一图标尺寸、可访问名称和异步动作错误处理；`selected` 仅表达可选中按钮的状态。
 - `Tooltip`：持有插件唯一的浮动提示控件，负责关联目标、延迟显示、定位、输入方式切换和信号清理。
 - `PreferenceRows`：开关、文本、数字、容量、下拉框、图标下拉框、快捷键和字符串列表设置行。
-- `preferences/theme-color.js`：主题色选择器及自定义颜色流程。
-- `preferences/panel-actions.js`：顶栏与底栏动作的拖动、排序和跨区域移动。
+- `settings/theme-color.js`：主题色选择器及自定义颜色流程。
+- `settings/panel-actions.js`：顶栏与底栏动作的拖动、排序和跨区域移动。
 - `panels/quick-phrases/panel.js`：快捷语句面板的视图、表单、列表和焦点状态。
 
 公共 API 采用“上下文承载领域、成员表达动作”的命名方式。例如 `PreferenceRows.spin()`、`QuickPhrasesPanel.render()`；成员名称不重复类型已经表达的语义。
