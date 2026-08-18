@@ -456,6 +456,7 @@ class Indicator extends PanelMenu.Button {
     const content = new St.Button({
       can_focus: true,
       track_hover: true,
+      clip_to_allocation: true,
       style_class: 'clipboard-x-entry-content',
       x_expand: true,
       x_align: Clutter.ActorAlign.FILL,
@@ -943,6 +944,7 @@ class Indicator extends PanelMenu.Button {
     const searchWidth = Math.max(140, panelWidth - 140);
     this._searchWidth = searchWidth;
     this._tokenContentWidth = Math.max(260, panelWidth - 40);
+    this.menu.actor.set_width(panelWidth);
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
     this._updateSearchStyle();
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
