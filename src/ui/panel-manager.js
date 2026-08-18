@@ -25,6 +25,12 @@ export class PanelManager {
     return this._current?.state ?? null;
   }
 
+  get focusGrid() {
+    if (!this._current)
+      return null;
+    return this._panels.get(this._current.name)?.focusGrid ?? null;
+  }
+
   is(name) {
     return this.currentName === name;
   }
@@ -36,8 +42,11 @@ export class PanelManager {
 
     this._clearPanelTooltips();
     const previous = this._current;
-    if (previous)
-      this._panels.get(previous.name)?.leave?.(previous.state, name);
+    if (previous) {
+      const previousPanel = this._panels.get(previous.name);
+      previousPanel?.focusGrid?.clear();
+      previousPanel?.leave?.(previous.state, name);
+    }
 
     this._current = {name, state};
     this._resetWhenHidden = false;
@@ -83,6 +92,8 @@ export class PanelManager {
     this._clearPanelTooltips();
     if (this._current)
       this._panels.get(this._current.name)?.leave?.(this._current.state, null);
+    for (const panel of this._panels.values())
+      panel.focusGrid?.clear();
     this._current = null;
     this._panels.clear();
     this._resetWhenHidden = false;

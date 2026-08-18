@@ -216,9 +216,8 @@ export async function run() {
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = indicator._entry(capturedText);
-  assert(pinnedRow.get_children().filter(child => child.can_focus)
-    .every(child => Boolean(child._clipboardXHistoryFocusSignal)),
-  'Clipboard history entry controls did not register focus-driven scrolling');
+  assert(pinnedRow._clipboardXFocusRow.every(child => child._clipboardXHistoryRow === pinnedRow),
+    'Clipboard history entry controls did not retain their focus matrix row');
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
       && child.get_child()?.icon_name === 'view-pin-symbolic'
       && child.has_style_class_name('clipboard-x-pinned')),
@@ -261,7 +260,9 @@ export async function run() {
     tokenState.tokens[0],
     tokenState,
     entryEvent(Clutter.KEY_Right),
-  ) === Clutter.EVENT_STOP && global.stage.get_key_focus() === tokenButtons[1],
+  ) === Clutter.EVENT_PROPAGATE
+      && indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === tokenButtons[1],
   'Right Arrow did not move focus to the next token');
   const lastTokenButton = tokenButtons.at(-1);
   lastTokenButton.grab_key_focus();
@@ -313,10 +314,9 @@ export async function run() {
       && indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === indicator._tokenCopy,
   'Down Arrow did not move from the final token to the copy button');
-  global.stage.set_key_focus(indicator);
-  await Scripting.sleep(10);
-  assert(global.stage.get_key_focus() === indicator._tokenCopy,
-    'Tokenizer copy button focus escaped the confined extension panel');
+  assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === indicator._tokenCopy,
+  'Tokenizer copy button did not stop at the focus matrix boundary');
   tokenState.keyboardSelection = null;
   tokenButtons[0].grab_key_focus();
   indicator._handleTokenKey(

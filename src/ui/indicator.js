@@ -13,6 +13,7 @@ import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelManager} from './panel-manager.js';
+import {FocusGrid} from './focus-grid.js';
 import {matches as matchesShortcut} from './shortcut.js';
 import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
 
@@ -38,22 +39,16 @@ const TOKEN_SELECTION_SHORTCUTS = Object.freeze([
   ['tokenizer-select-below-shortcut', Clutter.KEY_Down],
 ]);
 const NAVIGATION_KEYS = new Map([
-  [Clutter.KEY_Left, Clutter.KEY_Left],
-  [Clutter.KEY_Right, Clutter.KEY_Right],
-  [Clutter.KEY_Up, Clutter.KEY_Up],
-  [Clutter.KEY_Down, Clutter.KEY_Down],
-  [Clutter.KEY_KP_Left, Clutter.KEY_Left],
-  [Clutter.KEY_KP_Right, Clutter.KEY_Right],
-  [Clutter.KEY_KP_Up, Clutter.KEY_Up],
-  [Clutter.KEY_KP_Down, Clutter.KEY_Down],
+  [Clutter.KEY_Left, 'left'],
+  [Clutter.KEY_Right, 'right'],
+  [Clutter.KEY_Up, 'up'],
+  [Clutter.KEY_Down, 'down'],
+  [Clutter.KEY_KP_Left, 'left'],
+  [Clutter.KEY_KP_Right, 'right'],
+  [Clutter.KEY_KP_Up, 'up'],
+  [Clutter.KEY_KP_Down, 'down'],
 ]);
-const FOCUS_DIRECTIONS = new Map([
-  [Clutter.KEY_Left, St.DirectionType.LEFT],
-  [Clutter.KEY_Right, St.DirectionType.RIGHT],
-  [Clutter.KEY_Up, St.DirectionType.UP],
-  [Clutter.KEY_Down, St.DirectionType.DOWN],
-]);
-const TOKEN_NAVIGATION_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
+const NAVIGATION_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.CONTROL_MASK
   | Clutter.ModifierType.MOD1_MASK
   | Clutter.ModifierType.MOD4_MASK
@@ -119,8 +114,6 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
-    this._focusBoundaryIdleId = 0;
-    this._lastMenuFocus = null;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
     this._tooltipFromKeyboard = false;
@@ -142,16 +135,31 @@ class Indicator extends PanelMenu.Button {
     }));
     this.menu.actor.add_style_class_name('clipboard-x-menu');
     this._buildMenu();
+    this._historyFocusGrid = new FocusGrid({
+      ensureVisible: actor => {
+        const row = actor._clipboardXHistoryRow;
+        if (row?.mapped)
+          AnimationUtils.ensureActorVisibleInScrollView(this._scroll, row);
+      },
+    });
+    this._tokenizerFocusGrid = new FocusGrid({
+      ensureVisible: actor => {
+        if (actor._clipboardXToken)
+          AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, actor);
+      },
+    });
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
       clearPanelTooltips: () => this._clearHints('panel'),
       hideTooltip: () => this._hideTooltip(),
     });
     this._panelManager.register('history', {
+      focusGrid: this._historyFocusGrid,
       enter: () => this._showPanelChrome('history'),
       render: () => this._renderHistory(),
     });
     this._panelManager.register('tokenizer', {
+      focusGrid: this._tokenizerFocusGrid,
       enter: () => this._showPanelChrome('tokenizer'),
       leave: () => this._endTokenSelectionDrag(),
       render: state => this._renderTokenizer(state),
@@ -182,8 +190,6 @@ class Indicator extends PanelMenu.Button {
     });
     this._stageCapturedSignal = global.stage.connect('captured-event', (_stage, event) =>
       this._handleStageCapturedEvent(event));
-    this._stageFocusSignal = global.stage.connect('notify::key-focus', () =>
-      this._handleStageFocusChanged());
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
@@ -243,18 +249,20 @@ class Indicator extends PanelMenu.Button {
       y_align: Clutter.ActorAlign.CENTER,
     });
     this._toolbar = toolbar;
-    toolbar.add_child(this._iconButton(
+    this._screenshotButton = this._iconButton(
       'camera-photo-symbolic',
       _('Screenshot'),
       () => this._runAndClose(() => this._actions.screenshot()),
       {iconSize: 14},
-    ));
-    toolbar.add_child(this._iconButton(
+    );
+    toolbar.add_child(this._screenshotButton);
+    this._colorButton = this._iconButton(
       'color-select-symbolic',
       _('Pick color'),
       () => this._runAndClose(() => this._actions.pickColor()),
       {iconSize: 14},
-    ));
+    );
+    toolbar.add_child(this._colorButton);
     this._privateButton = this._iconButton(
       'security-high-symbolic',
       _('Privacy mode'),
@@ -363,9 +371,12 @@ class Indicator extends PanelMenu.Button {
       () => this._runAndClose(() => this._actions.openPreferences()),
     );
     footer.add_child(this._syncToolButton);
-    footer.add_child(this._iconButton('user-trash-symbolic', _('Clear unpinned history'), () => this._controller.clear()));
-    footer.add_child(this._iconButton(
-      'emblem-system-symbolic', _('Preferences'), () => this._runAndClose(() => this._actions.openPreferences())));
+    this._clearButton = this._iconButton(
+      'user-trash-symbolic', _('Clear unpinned history'), () => this._controller.clear());
+    footer.add_child(this._clearButton);
+    this._preferencesButton = this._iconButton(
+      'emblem-system-symbolic', _('Preferences'), () => this._runAndClose(() => this._actions.openPreferences()));
+    footer.add_child(this._preferencesButton);
     footerItem.add_child(footer);
     this.menu.addMenuItem(footerItem);
     this._updatePrivateButton();
@@ -416,12 +427,15 @@ class Indicator extends PanelMenu.Button {
   _renderHistory() {
     this._history.removeAll();
     this._syncButtons.clear();
+    const focusRows = [];
     if (this._controller.loading) {
       this._addState(_('Loading clipboard history…'), 'content-loading-symbolic');
+      this._setHistoryFocusRows(focusRows);
       return;
     }
     if (this._controller.error && this._controller.items.length === 0) {
       this._addState(_('Clipboard history could not be loaded'), 'dialog-error-symbolic');
+      this._setHistoryFocusRows(focusRows);
       return;
     }
     const visibleItemLimit = this._settings.get_int('panel-visible-item-limit');
@@ -435,17 +449,30 @@ class Indicator extends PanelMenu.Button {
         style_class: 'clipboard-x-empty',
       }));
       this._history.addMenuItem(empty);
+      this._setHistoryFocusRows(focusRows);
       return;
     }
 
-    for (const item of items.slice(0, visibleItemLimit))
-      this._history.addMenuItem(this._entry(item));
+    for (const item of items.slice(0, visibleItemLimit)) {
+      const row = this._entry(item);
+      this._history.addMenuItem(row);
+      focusRows.push(row._clipboardXFocusRow);
+    }
     if (items.length > visibleItemLimit) {
       this._history.addMenuItem(new PopupMenu.PopupMenuItem(
         _('More entries are available; refine the search to see others'),
         {reactive: false},
       ));
     }
+    this._setHistoryFocusRows(focusRows);
+  }
+
+  _setHistoryFocusRows(rows) {
+    this._historyFocusGrid.setRows([
+      [this._search.clutter_text, this._screenshotButton, this._colorButton, this._privateButton],
+      ...rows,
+      [this._syncToolButton, this._clearButton, this._preferencesButton],
+    ]);
   }
 
   _entry(item) {
@@ -541,12 +568,9 @@ class Indicator extends PanelMenu.Button {
       row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
       'user-trash-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
-    for (const actor of row.get_children()) {
-      if (!actor.can_focus)
-        continue;
-      actor._clipboardXHistoryFocusSignal = actor.connect('key-focus-in', () =>
-        AnimationUtils.ensureActorVisibleInScrollView(this._scroll, row));
-    }
+    row._clipboardXFocusRow = row.get_children().filter(actor => actor.can_focus);
+    for (const actor of row._clipboardXFocusRow)
+      actor._clipboardXHistoryRow = row;
     row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
     return row;
   }
@@ -656,6 +680,8 @@ class Indicator extends PanelMenu.Button {
     const maximumRowWidth = this._tokenContentWidth - 2;
     const spacing = 6;
     let tokenRow = null;
+    let tokenFocusRow = null;
+    const tokenFocusRows = [];
     let rowWidth = 0;
     const startRow = () => {
       tokenRow = new St.BoxLayout({
@@ -663,6 +689,8 @@ class Indicator extends PanelMenu.Button {
         x_align: Clutter.ActorAlign.START,
       });
       tokenBox.add_child(tokenRow);
+      tokenFocusRow = [];
+      tokenFocusRows.push(tokenFocusRow);
       rowWidth = 0;
     };
     for (const token of state.tokens) {
@@ -721,10 +749,16 @@ class Indicator extends PanelMenu.Button {
         startRow();
         tokenRow.add_child(button);
       }
+      tokenFocusRow.push(button);
       rowWidth += (rowWidth > 0 ? spacing : 0) + buttonWidth;
     }
     if (state.tokens.length === 0)
       tokenBox.add_child(new St.Label({text: _('No words found'), style_class: 'clipboard-x-empty'}));
+    this._tokenizerFocusGrid.setRows([
+      [this._tokenBack],
+      ...tokenFocusRows,
+      [this._tokenCopy],
+    ]);
     this._updateTokenResult();
   }
 
@@ -747,18 +781,6 @@ class Indicator extends PanelMenu.Button {
       this._runTokenAction('typeText', token);
       return Clutter.EVENT_STOP;
     }
-    const direction = NAVIGATION_KEYS.get(event.get_key_symbol());
-    const modifiers = event.get_state() & TOKEN_NAVIGATION_MODIFIER_MASK;
-    if (direction && modifiers === 0) {
-      state.keyboardSelection = null;
-      const target = this._tokenTarget(button, direction);
-      if (target) {
-        target.grab_key_focus();
-        AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, target);
-        return Clutter.EVENT_STOP;
-      }
-      return Clutter.EVENT_PROPAGATE;
-    }
     state.keyboardSelection = null;
     return Clutter.EVENT_PROPAGATE;
   }
@@ -773,7 +795,7 @@ class Indicator extends PanelMenu.Button {
       state.keyboardSelection = {
         anchorPosition: position,
         baseSelected: new Set(state.selected),
-        targetSelected: !state.selected.has(token.index),
+        targetSelected: !state.selected.has(button._clipboardXToken.index),
       };
     }
     const {anchorPosition, baseSelected, targetSelected} = state.keyboardSelection;
@@ -1246,56 +1268,19 @@ class Indicator extends PanelMenu.Button {
       global.stage.set_key_focus(this._search.clutter_text);
       return Clutter.EVENT_STOP;
     }
-    const directionKey = NAVIGATION_KEYS.get(event.get_key_symbol());
-    if (!directionKey || !this._settings.get_boolean('panel-confine-focus'))
+    const direction = NAVIGATION_KEYS.get(event.get_key_symbol());
+    const modifiers = event.get_state() & NAVIGATION_MODIFIER_MASK;
+    if (!direction || modifiers !== 0)
       return Clutter.EVENT_PROPAGATE;
-    const stageFocus = global.stage.get_key_focus();
-    const focus = stageFocus === this._search.clutter_text ? this._search : stageFocus;
-    this.menu.actor.navigate_focus(focus, FOCUS_DIRECTIONS.get(directionKey), false);
-    return Clutter.EVENT_STOP;
-  }
-
-  _handleStageFocusChanged() {
     const focus = global.stage.get_key_focus();
-    if (this._isMenuActor(focus)) {
-      this._lastMenuFocus = focus;
-      return;
-    }
-    if (!this.menu.isOpen || !this._settings.get_boolean('panel-confine-focus'))
-      return;
-    this._scheduleFocusBoundaryRestore();
-  }
-
-  _scheduleFocusBoundaryRestore() {
-    if (this._focusBoundaryIdleId)
-      return;
-    this._focusBoundaryIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusBoundaryIdleId = 0;
-      if (!this.menu.isOpen || !this._settings.get_boolean('panel-confine-focus')
-          || this._isMenuActor(global.stage.get_key_focus()))
-        return GLib.SOURCE_REMOVE;
-      const fallback = this._panelManager.is('tokenizer')
-        ? this._tokenButtons.find(button => button.mapped)
-        : this._search.clutter_text;
-      let target = fallback;
-      try {
-        if (this._lastMenuFocus?.mapped)
-          target = this._lastMenuFocus;
-      } catch (_error) {
-        // A history refresh may have destroyed the previously focused actor.
-      }
-      if (target?.mapped)
-        global.stage.set_key_focus(target);
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  _isMenuActor(actor) {
-    for (let current = actor; current; current = current.get_parent()) {
-      if (current === this.menu.actor)
-        return true;
-    }
-    return false;
+    const focusGrid = this._panelManager.focusGrid;
+    if (!focusGrid?.contains(focus))
+      return Clutter.EVENT_PROPAGATE;
+    if (focusGrid.move(focus, direction))
+      return Clutter.EVENT_STOP;
+    return this._settings.get_boolean('panel-confine-focus')
+      ? Clutter.EVENT_STOP
+      : Clutter.EVENT_PROPAGATE;
   }
 
   _cancelTooltipTimeout() {
@@ -1374,9 +1359,6 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelPendingFocus();
-    if (this._focusBoundaryIdleId)
-      GLib.Source.remove(this._focusBoundaryIdleId);
-    this._focusBoundaryIdleId = 0;
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
@@ -1414,9 +1396,6 @@ class Indicator extends PanelMenu.Button {
     if (this._stageCapturedSignal)
       global.stage.disconnect(this._stageCapturedSignal);
     this._stageCapturedSignal = 0;
-    if (this._stageFocusSignal)
-      global.stage.disconnect(this._stageFocusSignal);
-    this._stageFocusSignal = 0;
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;
