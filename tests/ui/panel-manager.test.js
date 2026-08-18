@@ -6,6 +6,7 @@ function assert(condition, message) {
 }
 
 const events = [];
+let historyOffset = 11;
 const historyFocusGrid = {clear: () => events.push('clear-history-focus')};
 const tokenizerFocusGrid = {clear: () => events.push('clear-tokenizer-focus')};
 const manager = new PanelManager({
@@ -14,12 +15,16 @@ const manager = new PanelManager({
 });
 manager.register('history', {
   focusGrid: historyFocusGrid,
+  captureView: () => ({offset: historyOffset}),
+  restoreView: view => events.push(`restore-history:${view?.offset ?? 'none'}`),
   enter: () => events.push('enter-history'),
   leave: () => events.push('leave-history'),
   render: () => events.push('render-history'),
 });
 manager.register('tokenizer', {
   focusGrid: tokenizerFocusGrid,
+  captureView: state => ({source: state.source}),
+  restoreView: view => events.push(`restore-tokenizer:${view?.source ?? 'none'}`),
   enter: state => events.push(`enter-tokenizer:${state.source}`),
   leave: () => events.push('leave-tokenizer'),
   render: state => events.push(`render-tokenizer:${state.source}`),
@@ -35,6 +40,17 @@ assert(events.indexOf('clear-tooltips') < events.indexOf('leave-history'),
   'tooltips should be cleared before leaving a panel');
 assert(events.indexOf('clear-history-focus') < events.indexOf('leave-history'),
   'focus grid should be cleared before leaving a panel');
+assert(events.includes('restore-tokenizer:none'),
+  'a panel without saved view state should receive an empty restoration');
+
+historyOffset = 0;
+manager.show('history');
+assert(events.includes('restore-history:11'),
+  'returning to a panel should restore the view state captured when leaving it');
+manager.refresh();
+assert(events.filter(event => event === 'restore-history:0').length === 1,
+  'refreshing a panel should preserve its current view state');
+manager.show('tokenizer', {source: 'hello'});
 
 manager.close({preserve: true});
 manager.hidden();

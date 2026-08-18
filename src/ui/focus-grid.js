@@ -33,6 +33,22 @@ export class FocusGrid {
     return this._locate(actor) !== null;
   }
 
+  location(actor) {
+    return this._locate(actor);
+  }
+
+  focusAt(location) {
+    if (!location)
+      return null;
+    const row = this._rows[location.row];
+    const actor = row?.[location.column];
+    if (!actor || !this._eligible(actor))
+      return null;
+    this._focus(actor);
+    this._ensureVisible(actor);
+    return actor;
+  }
+
   move(actor, direction) {
     if (!DIRECTIONS.has(direction))
       throw new Error(`Unknown focus direction: ${direction}`);

@@ -38,6 +38,10 @@ grid.setRows([
 ]);
 
 assert(grid.contains(firstPin), 'grid should contain registered controls');
+assert(grid.location(firstPin).row === 1 && grid.location(firstPin).column === 1,
+  'grid should report the registered control location');
+assert(grid.focusAt({row: 2, column: 0}) === secondContent,
+  'grid should restore focus at a saved location');
 assert(grid.move(firstPin, 'right') === firstDelete,
   'horizontal navigation should skip ineligible controls');
 assert(grid.move(firstPin, 'down') === secondDelete,
@@ -48,7 +52,7 @@ assert(grid.move(secondDelete, 'down') === copy,
   'navigation should reach a single-control footer row');
 assert(grid.move(copy, 'down') === null,
   'navigation should stop at the matrix boundary');
-assert(focused.join(',') === 'first-delete,second-delete,first-content,copy',
+assert(focused.join(',') === 'second-content,first-delete,second-delete,first-content,copy',
   'focus callback received unexpected controls');
 assert(revealed.join(',') === focused.join(','),
   'each focus move should reveal its target');

@@ -7,6 +7,7 @@ export class PanelManager {
     this._clearPanelTooltips = clearPanelTooltips;
     this._hideTooltip = hideTooltip;
     this._panels = new Map();
+    this._viewStates = new Map();
     this._current = null;
     this._resetWhenHidden = false;
   }
@@ -44,6 +45,7 @@ export class PanelManager {
     const previous = this._current;
     if (previous) {
       const previousPanel = this._panels.get(previous.name);
+      this._captureView(previous.name, previousPanel, previous.state);
       previousPanel?.focusGrid?.clear();
       previousPanel?.leave?.(previous.state, name);
     }
@@ -52,13 +54,21 @@ export class PanelManager {
     this._resetWhenHidden = false;
     next.enter?.(state, previous?.name ?? null);
     next.render?.(state);
+    next.restoreView?.(this._viewStates.get(name), state, previous?.name ?? null);
   }
 
   refresh() {
     if (!this._current)
       return;
     this._clearPanelTooltips();
-    this._panels.get(this._current.name)?.render?.(this._current.state);
+    const panel = this._panels.get(this._current.name);
+    this._captureView(this._current.name, panel, this._current.state);
+    panel?.render?.(this._current.state);
+    panel?.restoreView?.(
+      this._viewStates.get(this._current.name),
+      this._current.state,
+      this._current.name,
+    );
   }
 
   close({preserve = false} = {}) {
@@ -96,6 +106,15 @@ export class PanelManager {
       panel.focusGrid?.clear();
     this._current = null;
     this._panels.clear();
+    this._viewStates.clear();
     this._resetWhenHidden = false;
+  }
+
+  _captureView(name, panel, state) {
+    if (!panel?.captureView)
+      return;
+    const viewState = panel.captureView(state);
+    if (viewState !== undefined)
+      this._viewStates.set(name, viewState);
   }
 }

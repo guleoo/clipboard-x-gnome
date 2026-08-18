@@ -114,6 +114,7 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
+    this._pendingHistoryViewState = null;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
     this._tooltipFromKeyboard = false;
@@ -155,6 +156,8 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('history', {
       focusGrid: this._historyFocusGrid,
+      captureView: () => this._captureHistoryView(),
+      restoreView: viewState => this._restoreHistoryView(viewState),
       enter: () => this._showPanelChrome('history'),
       render: () => this._renderHistory(),
     });
@@ -389,6 +392,35 @@ class Indicator extends PanelMenu.Button {
     this._footerSeparator.visible = history;
     this._footerItem.visible = history;
     this._tokenPanelItem.visible = !history;
+  }
+
+  _captureHistoryView() {
+    if (this._pendingHistoryViewState)
+      return this._pendingHistoryViewState;
+    return {
+      focusLocation: this._historyFocusGrid.location(global.stage.get_key_focus()),
+      scrollValue: this._scroll.vscroll.adjustment.value,
+    };
+  }
+
+  _restoreHistoryView(viewState) {
+    if (!viewState)
+      return;
+    this._cancelPendingFocus();
+    this._pendingHistoryViewState = viewState;
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      this._pendingHistoryViewState = null;
+      if (!this.menu.isOpen || !this._panelManager.is('history'))
+        return GLib.SOURCE_REMOVE;
+      this._historyFocusGrid.focusAt(viewState.focusLocation);
+      const adjustment = this._scroll.vscroll.adjustment;
+      adjustment.value = Math.max(
+        adjustment.lower,
+        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size),
+      );
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   setSyncStatus(status, capabilities = null) {
@@ -1038,7 +1070,6 @@ class Indicator extends PanelMenu.Button {
 
   _closeTokenizer() {
     this._panelManager.show('history');
-    this._focusSearch();
   }
 
   _focusSearch() {
@@ -1072,10 +1103,10 @@ class Indicator extends PanelMenu.Button {
   }
 
   _cancelPendingFocus() {
-    if (!this._focusIdleId)
-      return;
-    GLib.Source.remove(this._focusIdleId);
+    if (this._focusIdleId)
+      GLib.Source.remove(this._focusIdleId);
     this._focusIdleId = 0;
+    this._pendingHistoryViewState = null;
   }
 
   _displayIdentity(item) {
