@@ -1,3 +1,7 @@
 src/entry/extension.js
 src/ui/indicator.js
+src/ui/panels/quick-phrases.js
 src/ui/preferences.js
+src/ui/preferences/panel-actions.js
+src/ui/preferences/rows.js
+src/ui/preferences/theme-color.js

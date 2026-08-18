@@ -98,24 +98,24 @@ export async function run() {
   indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
   indicator._openPhrases();
   assert(indicator._panelManager.is('phrases')
-      && indicator._phraseButtons.length === 1
-      && indicator._phraseRows[0].get_children().some(child =>
+      && indicator._quickPhrases.buttons.length === 1
+      && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   'Saved-phrase panel did not render its local phrase and delete action');
-  indicator._showPhraseForm();
-  assert(indicator._phraseForm.get_children().length === 1,
+  indicator._quickPhrases.showForm();
+  assert(indicator._quickPhrases.form.get_children().length === 1,
     'Quick-phrase form must contain only the text entry');
-  indicator._togglePhraseForm();
-  assert(!indicator._phraseForm.visible,
+  indicator._quickPhrases.toggleForm();
+  assert(!indicator._quickPhrases.form.visible,
     'Activating the add action again did not collapse the quick-phrase form');
-  indicator._togglePhraseForm();
-  indicator._phraseEntry.set_text('New smoke-test phrase');
-  indicator._savePhrase();
-  assert(indicator._phraseStore.all[0] === 'New smoke-test phrase'
-      && !indicator._phraseForm.visible,
+  indicator._quickPhrases.toggleForm();
+  indicator._quickPhrases.entry.set_text('New smoke-test phrase');
+  indicator._quickPhrases.save();
+  assert(indicator._quickPhrases.phrases[0] === 'New smoke-test phrase'
+      && !indicator._quickPhrases.form.visible,
   'Saved-phrase panel did not add a custom phrase');
-  indicator._deletePhrase('New smoke-test phrase');
-  assert(!indicator._phraseStore.all.includes('New smoke-test phrase'),
+  indicator._quickPhrases.remove('New smoke-test phrase');
+  assert(!indicator._quickPhrases.phrases.includes('New smoke-test phrase'),
     'Saved-phrase panel did not delete a phrase');
   indicator._settings.set_strv('saved-phrases', originalPhrases);
   indicator._closePhrases();
