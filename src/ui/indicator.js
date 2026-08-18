@@ -16,6 +16,7 @@ import {PanelManager} from './panel-manager.js';
 import {FocusGrid} from './focus-grid.js';
 import {matches as matchesShortcut} from './shortcut.js';
 import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js';
+import {MAX_PHRASE_LENGTH, PhraseStore} from '../clipboard/phrases/store.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
@@ -110,6 +111,9 @@ class Indicator extends PanelMenu.Button {
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;
+    this._phraseStore = new PhraseStore(settings);
+    this._phraseFormVisible = false;
+    this._phraseButtons = [];
     this._query = '';
     this._transfers = new Map();
     this._syncButtons = new Map();
@@ -151,6 +155,13 @@ class Indicator extends PanelMenu.Button {
           AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, actor);
       },
     });
+    this._phrasesFocusGrid = new FocusGrid({
+      ensureVisible: actor => {
+        const row = actor._clipboardXPhraseRow;
+        if (row?.mapped)
+          AnimationUtils.ensureActorVisibleInScrollView(this._phraseScroll, row);
+      },
+    });
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
       clearPanelTooltips: () => this._clearHints('panel'),
@@ -172,6 +183,14 @@ class Indicator extends PanelMenu.Button {
       leave: () => this._endTokenSelectionDrag(),
       render: state => {
         this._renderTokenizer(state);
+        this._applyTextVerticalOffset();
+      },
+    });
+    this._panelManager.register('phrases', {
+      focusGrid: this._phrasesFocusGrid,
+      enter: () => this._showPanelChrome('phrases'),
+      render: () => {
+        this._renderPhrases();
         this._applyTextVerticalOffset();
       },
     });
@@ -217,6 +236,8 @@ class Indicator extends PanelMenu.Button {
           this._focusSearch();
         } else if (this._panelManager.is('tokenizer'))
           this._focusFirstToken();
+        else if (this._panelManager.is('phrases'))
+          this._focusPhrasePanel();
       } else {
         this._cancelPendingFocus();
         this._hideTooltip();
@@ -246,7 +267,9 @@ class Indicator extends PanelMenu.Button {
       y_align: Clutter.ActorAlign.CENTER,
       primary_icon: new St.Icon({icon_name: 'edit-find-symbolic', icon_size: 14}),
     });
-    this._search.get_hint_actor()._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    const searchHint = this._search.get_hint_actor();
+    searchHint._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    searchHint.margin_left = 2;
     this._search.clutter_text.connect('text-changed', () => {
       this._query = this._search.get_text();
       if (this._panelManager?.is('history'))
@@ -375,6 +398,87 @@ class Indicator extends PanelMenu.Button {
     tokenPanelItem.add_child(tokenPanel);
     this.menu.addMenuItem(tokenPanelItem);
 
+    const phrasePanelItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+    this._phrasePanelItem = phrasePanelItem;
+    this._phrasePanel = new St.BoxLayout({
+      vertical: true,
+      style_class: 'clipboard-x-phrase-panel',
+      x_expand: true,
+    });
+    const phraseHeader = new St.BoxLayout({
+      style_class: 'clipboard-x-phrase-header',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    });
+    this._phraseBack = this._iconButton(
+      'go-previous-symbolic',
+      _('Back to clipboard history'),
+      () => this._closePhrases(),
+      {showTooltip: false},
+    );
+    phraseHeader.add_child(this._phraseBack);
+    phraseHeader.add_child(new St.Label({
+      text: _('Saved phrases'),
+      style_class: 'clipboard-x-phrase-title',
+      x_expand: true,
+      y_align: Clutter.ActorAlign.CENTER,
+    }));
+    this._phraseAdd = this._iconButton(
+      'list-add-symbolic',
+      _('Add custom phrase'),
+      () => this._showPhraseForm(),
+      {tooltipScope: 'panel'},
+    );
+    phraseHeader.add_child(this._phraseAdd);
+    this._phrasePanel.add_child(phraseHeader);
+
+    this._phraseForm = new St.BoxLayout({
+      style_class: 'clipboard-x-phrase-form',
+      x_expand: true,
+      visible: false,
+    });
+    this._phraseEntry = new St.Entry({
+      style_class: 'clipboard-x-search clipboard-x-phrase-entry',
+      hint_text: _('Enter a custom phrase…'),
+      can_focus: true,
+      x_expand: true,
+    });
+    this._phraseEntry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
+    this._phraseEntry.get_hint_actor()._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    this._phraseEntry.clutter_text.connect('key-press-event', (_actor, event) => {
+      const key = event.get_key_symbol();
+      if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
+        this._savePhrase();
+        return Clutter.EVENT_STOP;
+      }
+      if (key === Clutter.KEY_Escape) {
+        this._hidePhraseForm();
+        return Clutter.EVENT_STOP;
+      }
+      return this._handleMenuKey(event);
+    });
+    this._phraseForm.add_child(this._phraseEntry);
+    this._phraseSave = this._iconButton(
+      'list-add-symbolic',
+      _('Save phrase'),
+      () => this._savePhrase(),
+      {showTooltip: false},
+    );
+    this._phraseForm.add_child(this._phraseSave);
+    this._phrasePanel.add_child(this._phraseForm);
+
+    this._phraseSection = new PopupMenu.PopupMenuSection();
+    this._phraseScroll = new St.ScrollView({
+      overlay_scrollbars: true,
+      style_class: 'clipboard-x-phrase-scroll',
+      x_expand: true,
+      y_expand: true,
+    });
+    this._phraseScroll.add_child(this._phraseSection.actor);
+    this._phrasePanel.add_child(this._phraseScroll);
+    phrasePanelItem.add_child(this._phrasePanel);
+    this.menu.addMenuItem(phrasePanelItem);
+
     this._footerSeparator = new PopupMenu.PopupSeparatorMenuItem();
     this.menu.addMenuItem(this._footerSeparator);
 
@@ -383,6 +487,12 @@ class Indicator extends PanelMenu.Button {
     const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
     this._footer = footer;
     footer.add_child(new St.Widget({x_expand: true}));
+    this._phrasesToolButton = this._iconButton(
+      'starred-symbolic',
+      _('Saved phrases'),
+      () => this._openPhrases(),
+    );
+    footer.add_child(this._phrasesToolButton);
     this._syncToolButton = this._iconButton(
       'network-offline-symbolic',
       _('Synchronization settings'),
@@ -406,7 +516,8 @@ class Indicator extends PanelMenu.Button {
     this._historyScrollItem.actor.visible = history;
     this._footerSeparator.visible = history;
     this._footerItem.visible = history;
-    this._tokenPanelItem.visible = !history;
+    this._tokenPanelItem.visible = panel === 'tokenizer';
+    this._phrasePanelItem.visible = panel === 'phrases';
   }
 
   _applyTextVerticalOffset() {
@@ -533,7 +644,7 @@ class Indicator extends PanelMenu.Button {
     this._historyFocusGrid.setRows([
       [this._search.clutter_text, this._screenshotButton, this._colorButton, this._privateButton],
       ...rows,
-      [this._syncToolButton, this._clearButton, this._preferencesButton],
+      [this._phrasesToolButton, this._syncToolButton, this._clearButton, this._preferencesButton],
     ]);
   }
 
@@ -824,6 +935,105 @@ class Indicator extends PanelMenu.Button {
     this._updateTokenResult();
   }
 
+  _renderPhrases() {
+    this._phraseSection.removeAll();
+    this._phraseButtons = [];
+    this._phraseRows = [];
+    this._phraseForm.visible = this._phraseFormVisible;
+    const focusRows = [];
+    const phrases = this._phraseStore.all;
+    for (const phrase of phrases) {
+      const row = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+      row.add_style_class_name('clipboard-x-entry');
+      row.track_hover = true;
+      const content = new St.Button({
+        label: phrase,
+        can_focus: true,
+        track_hover: true,
+        clip_to_allocation: true,
+        style_class: 'clipboard-x-entry-content clipboard-x-phrase-content',
+        x_expand: true,
+        x_align: Clutter.ActorAlign.FILL,
+      });
+      const label = content.get_child();
+      label.add_style_class_name('clipboard-x-entry-preview');
+      label.x_expand = true;
+      label.x_align = Clutter.ActorAlign.FILL;
+      label.clutter_text.single_line_mode = true;
+      label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+      content.accessible_name = _('Copy saved phrase');
+      content.connect('key-press-event', (_actor, event) => this._handleMenuKey(event));
+      content.connect('clicked', () => this._runAndClose(() => this._actions.copyText(phrase)));
+      row.add_child(content);
+      const remove = this._iconButton(
+        'user-trash-symbolic',
+        _('Delete saved phrase'),
+        () => this._deletePhrase(phrase),
+        {showTooltip: false},
+      );
+      row.add_child(remove);
+      for (const actor of [content, remove])
+        actor._clipboardXPhraseRow = row;
+      this._phraseButtons.push(content);
+      this._phraseRows.push(row);
+      focusRows.push([content, remove]);
+      this._phraseSection.addMenuItem(row);
+    }
+    if (phrases.length === 0) {
+      const empty = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+      empty.add_child(new St.Label({
+        text: _('No saved phrases'),
+        style_class: 'clipboard-x-empty',
+      }));
+      this._phraseSection.addMenuItem(empty);
+    }
+    this._phrasesFocusGrid.setRows([
+      [this._phraseBack, this._phraseAdd],
+      ...(this._phraseFormVisible ? [[this._phraseEntry.clutter_text, this._phraseSave]] : []),
+      ...focusRows,
+    ]);
+  }
+
+  _openPhrases() {
+    this._panelManager.show('phrases');
+    this._focusPhrasePanel();
+  }
+
+  _closePhrases() {
+    this._panelManager.show('history');
+  }
+
+  _showPhraseForm() {
+    this._phraseFormVisible = true;
+    this._phraseEntry.set_text('');
+    this._panelManager.refresh();
+    this._focusPhrasePanel();
+  }
+
+  _hidePhraseForm() {
+    this._phraseFormVisible = false;
+    this._phraseEntry.set_text('');
+    this._panelManager.refresh();
+    this._focusPhrasePanel();
+  }
+
+  _savePhrase() {
+    if (!this._phraseEntry.get_text().trim())
+      return;
+    this._phraseStore.add(this._phraseEntry.get_text());
+    this._phraseFormVisible = false;
+    this._phraseEntry.set_text('');
+    this._panelManager.refresh();
+    this._focusPhrasePanel();
+  }
+
+  _deletePhrase(phrase) {
+    if (!this._phraseStore.remove(phrase))
+      return;
+    this._panelManager.refresh();
+    this._focusPhrasePanel();
+  }
+
   _handleTokenKey(button, token, state, event) {
     for (const [setting, direction] of TOKEN_SELECTION_SHORTCUTS) {
       if (matchesShortcut(this._settings, setting, event)) {
@@ -1043,6 +1253,7 @@ class Indicator extends PanelMenu.Button {
     this._updateSearchStyle();
     this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
     this._tokenPanel.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this._phrasePanel.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
     this._tokenSource.set_style(`max-width: ${this._tokenContentWidth}px;`);
     this._tokenResult.set_style(`max-width: ${Math.max(200, this._tokenContentWidth - 32)}px;`);
     if (this._panelManager)
@@ -1123,6 +1334,23 @@ class Indicator extends PanelMenu.Button {
         first.grab_key_focus();
         AnimationUtils.ensureActorVisibleInScrollView(this._tokenScroll, first);
       }
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _focusPhrasePanel() {
+    this._cancelPendingFocus();
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      if (!this.menu.isOpen || !this._panelManager.is('phrases'))
+        return GLib.SOURCE_REMOVE;
+      const target = this._phraseFormVisible
+        ? this._phraseEntry.clutter_text
+        : this._phraseButtons[0] ?? this._phraseAdd;
+      target.grab_key_focus();
+      const row = target._clipboardXPhraseRow;
+      if (row?.mapped)
+        AnimationUtils.ensureActorVisibleInScrollView(this._phraseScroll, row);
       return GLib.SOURCE_REMOVE;
     });
   }

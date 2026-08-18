@@ -75,6 +75,8 @@ export async function run() {
       && indicator._tooltip.translation_y === -1,
   'Configured text offset did not preserve special optical baseline corrections');
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
+  assert(indicator._search.get_hint_actor().margin_left === 2,
+    'Search placeholder did not retain its configured left margin');
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
   assert(indicator._toolbar.get_children().length === 3,
@@ -84,6 +86,27 @@ export async function run() {
   assert(indicator._privateButton.get_parent() === indicator._toolbar
       && indicator._syncToolButton.get_parent() === indicator._footer,
     'Privacy and synchronization buttons were not swapped');
+  const originalPhrases = indicator._settings.get_strv('saved-phrases');
+  indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
+  indicator._openPhrases();
+  assert(indicator._panelManager.is('phrases')
+      && indicator._phraseButtons.length === 1
+      && indicator._phraseRows[0].get_children().some(child =>
+        child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
+  'Saved-phrase panel did not render its local phrase and delete action');
+  indicator._showPhraseForm();
+  indicator._phraseEntry.set_text('New smoke-test phrase');
+  indicator._savePhrase();
+  assert(indicator._phraseStore.all[0] === 'New smoke-test phrase'
+      && !indicator._phraseForm.visible,
+  'Saved-phrase panel did not add a custom phrase');
+  indicator._deletePhrase('New smoke-test phrase');
+  assert(!indicator._phraseStore.all.includes('New smoke-test phrase'),
+    'Saved-phrase panel did not delete a phrase');
+  indicator._settings.set_strv('saved-phrases', originalPhrases);
+  indicator._closePhrases();
+  assert(indicator._panelManager.is('history'),
+    'Saved-phrase panel did not return to clipboard history');
   indicator._privateButton.grab_key_focus();
   indicator._showTooltip(indicator._privateButton, true);
   assert(indicator._tooltip.visible && indicator._tooltip.get_parent() === Main.uiGroup,

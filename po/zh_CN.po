@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-18 10:42+0800\n"
+"POT-Creation-Date: 2026-08-18 11:39+0800\n"
 "PO-Revision-Date: 2026-08-14 21:35+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
@@ -26,180 +26,208 @@ msgid ""
 "keyboard is idle."
 msgstr "模拟键盘输入期间请勿按下其他按键；键盘空闲后将继续输入。"
 
-#: src/ui/indicator.js:115 src/ui/indicator.js:455
+#: src/ui/indicator.js:120 src/ui/indicator.js:571
 msgid "Sync disabled"
 msgstr "同步已禁用"
 
-#: src/ui/indicator.js:242
+#: src/ui/indicator.js:264
 msgid "Search clipboard history…"
 msgstr "搜索剪切板历史…"
 
-#: src/ui/indicator.js:268 src/ui/preferences.js:482 src/ui/preferences.js:483
+#: src/ui/indicator.js:293 src/ui/preferences.js:482 src/ui/preferences.js:483
 #: src/ui/preferences.js:569
 msgid "Screenshot"
 msgstr "截图"
 
-#: src/ui/indicator.js:275 src/ui/preferences.js:567
+#: src/ui/indicator.js:300 src/ui/preferences.js:567
 msgid "Pick color"
 msgstr "取色"
 
-#: src/ui/indicator.js:282 src/ui/indicator.js:1351
+#: src/ui/indicator.js:307 src/ui/indicator.js:1584
 msgid "Privacy mode"
 msgstr "隐私模式"
 
-#: src/ui/indicator.js:318
+#: src/ui/indicator.js:343 src/ui/indicator.js:415
 msgid "Back to clipboard history"
 msgstr "返回剪切板历史"
 
-#: src/ui/indicator.js:324 src/ui/indicator.js:605
+#: src/ui/indicator.js:349 src/ui/indicator.js:721
 msgid "Segment text"
 msgstr "分词"
 
-#: src/ui/indicator.js:354 src/ui/indicator.js:1007
+#: src/ui/indicator.js:381 src/ui/indicator.js:1222
 msgid "Select one or more words"
 msgstr "请选择一个或多个词"
 
-#: src/ui/indicator.js:363
+#: src/ui/indicator.js:390
 msgid "Copy selected words"
 msgstr "复制所选词语"
 
-#: src/ui/indicator.js:384
+#: src/ui/indicator.js:421 src/ui/indicator.js:492
+msgid "Saved phrases"
+msgstr "语句收藏"
+
+#: src/ui/indicator.js:428
+msgid "Add custom phrase"
+msgstr "添加自定义语句"
+
+#: src/ui/indicator.js:442
+msgid "Enter a custom phrase…"
+msgstr "输入自定义语句…"
+
+#: src/ui/indicator.js:463
+msgid "Save phrase"
+msgstr "保存语句"
+
+#: src/ui/indicator.js:498
 msgid "Synchronization settings"
 msgstr "同步设置"
 
-#: src/ui/indicator.js:389 src/ui/preferences.js:531
+#: src/ui/indicator.js:503 src/ui/preferences.js:531
 msgid "Clear unpinned history"
 msgstr "清空未固定的历史"
 
-#: src/ui/indicator.js:392
+#: src/ui/indicator.js:506
 msgid "Preferences"
 msgstr "设置"
 
-#: src/ui/indicator.js:458
+#: src/ui/indicator.js:574
 msgid "Sync Service offline"
 msgstr "同步服务离线"
 
-#: src/ui/indicator.js:461
+#: src/ui/indicator.js:577
 msgid "Sync protocol error"
 msgstr "同步协议错误"
 
-#: src/ui/indicator.js:467
+#: src/ui/indicator.js:583
 msgid "Sync Service online"
 msgstr "同步服务在线"
 
-#: src/ui/indicator.js:489
+#: src/ui/indicator.js:605
 msgid "Loading clipboard history…"
 msgstr "正在加载剪切板历史…"
 
-#: src/ui/indicator.js:494
+#: src/ui/indicator.js:610
 msgid "Clipboard history could not be loaded"
 msgstr "无法加载剪切板历史"
 
-#: src/ui/indicator.js:505
+#: src/ui/indicator.js:621
 msgid "No matching entries"
 msgstr "没有匹配的条目"
 
-#: src/ui/indicator.js:505
+#: src/ui/indicator.js:621
 msgid "Clipboard history is empty"
 msgstr "剪切板历史为空"
 
-#: src/ui/indicator.js:520
+#: src/ui/indicator.js:636
 msgid "More entries are available; refine the search to see others"
 msgstr "还有更多条目；请缩小搜索范围以查看"
 
-#: src/ui/indicator.js:553 src/ui/preferences.js:449
+#: src/ui/indicator.js:669 src/ui/preferences.js:449
 msgid "Text"
 msgstr "文本"
 
-#: src/ui/indicator.js:574
+#: src/ui/indicator.js:690
 msgid "Image"
 msgstr "图片"
 
-#: src/ui/indicator.js:599
+#: src/ui/indicator.js:715
 msgid "Download original and copy"
 msgstr "下载原始内容并复制"
 
-#: src/ui/indicator.js:600
+#: src/ui/indicator.js:716
 msgid "Copy original"
 msgstr "复制原文"
 
-#: src/ui/indicator.js:608
+#: src/ui/indicator.js:724
 msgid "Edit image"
 msgstr "编辑图片"
 
-#: src/ui/indicator.js:612
+#: src/ui/indicator.js:728
 msgid "Unpin"
 msgstr "取消固定"
 
-#: src/ui/indicator.js:612
+#: src/ui/indicator.js:728
 msgid "Pin"
 msgstr "固定"
 
-#: src/ui/indicator.js:627
+#: src/ui/indicator.js:743
 msgid "Delete from local history"
 msgstr "从本地历史中删除"
 
-#: src/ui/indicator.js:638
+#: src/ui/indicator.js:754
 msgid "Synchronize"
 msgstr "同步"
 
-#: src/ui/indicator.js:653
+#: src/ui/indicator.js:769
 msgid "Uploading"
 msgstr "正在上传"
 
-#: src/ui/indicator.js:653
+#: src/ui/indicator.js:769
 msgid "Downloading"
 msgstr "正在下载"
 
-#: src/ui/indicator.js:656
+#: src/ui/indicator.js:772
 msgid "Waiting for peer device"
 msgstr "正在等待对端设备"
 
-#: src/ui/indicator.js:656
+#: src/ui/indicator.js:772
 msgid "Preparing transfer"
 msgstr "正在准备传输"
 
-#: src/ui/indicator.js:662
+#: src/ui/indicator.js:778
 msgid "Transfer failed; activate to retry"
 msgstr "传输失败；点击重试"
 
-#: src/ui/indicator.js:667
+#: src/ui/indicator.js:783
 msgid "Upload completed"
 msgstr "上传完成"
 
-#: src/ui/indicator.js:667
+#: src/ui/indicator.js:783
 msgid "Original downloaded"
 msgstr "原始内容已下载"
 
-#: src/ui/indicator.js:672
+#: src/ui/indicator.js:788
 msgid "Synchronization is disabled"
 msgstr "同步已禁用"
 
-#: src/ui/indicator.js:678
+#: src/ui/indicator.js:794
 msgid "Retry original download"
 msgstr "重试下载原始内容"
 
-#: src/ui/indicator.js:678
+#: src/ui/indicator.js:794
 msgid "Download original"
 msgstr "下载原始内容"
 
-#: src/ui/indicator.js:682
+#: src/ui/indicator.js:798
 msgid "Original is available locally"
 msgstr "原始内容已在本机就绪"
 
-#: src/ui/indicator.js:682
+#: src/ui/indicator.js:798
 msgid "Send to synchronization Service"
 msgstr "发送到同步服务"
 
-#: src/ui/indicator.js:704
+#: src/ui/indicator.js:820
 msgid "This text is too large for interactive processing"
 msgstr "此文本过大，无法进行交互式处理"
 
-#: src/ui/indicator.js:813
+#: src/ui/indicator.js:929
 msgid "No words found"
 msgstr "未找到可分词内容"
 
-#: src/ui/indicator.js:1146
+#: src/ui/indicator.js:964
+msgid "Copy saved phrase"
+msgstr "复制收藏语句"
+
+#: src/ui/indicator.js:970
+msgid "Delete saved phrase"
+msgstr "删除收藏语句"
+
+#: src/ui/indicator.js:985
+msgid "No saved phrases"
+msgstr "暂无收藏语句"
+
+#: src/ui/indicator.js:1379
 msgid "Unknown device"
 msgstr "未知设备"
 

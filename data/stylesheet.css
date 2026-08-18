@@ -207,6 +207,7 @@
 .clipboard-x-token-header {
   spacing: 0;
   padding: 1px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .clipboard-x-token-source {
@@ -289,6 +290,34 @@
 
 .clipboard-x-token-number {
   color: #f6d32d;
+}
+
+.clipboard-x-phrase-panel {
+  spacing: 4px;
+}
+
+.clipboard-x-phrase-header {
+  spacing: 0;
+  padding: 1px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.clipboard-x-phrase-title {
+  font-weight: bold;
+}
+
+.clipboard-x-phrase-form {
+  spacing: 3px;
+  padding: 2px;
+}
+
+.clipboard-x-phrase-entry,
+.clipboard-x-phrase-content {
+  min-width: 0;
+}
+
+.clipboard-x-phrase-scroll {
+  padding: 0;
 }
 
 .clipboard-x-color-overlay {

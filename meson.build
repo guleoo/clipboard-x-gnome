@@ -72,6 +72,7 @@ test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() /
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
+test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])
 test('clipboard-history-order', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/order.test.js'])
 test('clipboard-storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/storage.test.js'])
 test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tests/color-picker/color.test.js'])

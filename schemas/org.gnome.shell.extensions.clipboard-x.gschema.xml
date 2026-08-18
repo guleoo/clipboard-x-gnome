@@ -160,6 +160,10 @@
       <default>false</default>
       <summary>Trim surrounding whitespace from newly captured plain text</summary>
     </key>
+    <key name="saved-phrases" type="as">
+      <default>[]</default>
+      <summary>Local collection of user-defined phrases</summary>
+    </key>
     <key name="capture-size-limit-mib" type="i">
       <default>128</default>
       <range min="1" max="256"/>
