@@ -20,6 +20,7 @@
 - `PanelFooter`：带顶部分割线的自由内容容器。
 - `SearchEntry`：统一搜索图标、placeholder 光学偏移、左间距以及搜索框事件接入。
 - `IconButton`：统一图标尺寸、可访问名称和异步动作错误处理；`selected` 仅表达可选中按钮的状态。
+- `Tooltip`：持有插件唯一的浮动提示控件，负责关联目标、延迟显示、定位、输入方式切换和信号清理。
 - `PreferenceRows`：开关、文本、数字、容量、下拉框、图标下拉框、快捷键和字符串列表设置行。
 - `preferences/theme-color.js`：主题色选择器及自定义颜色流程。
 - `preferences/panel-actions.js`：顶栏与底栏动作的拖动、排序和跨区域移动。

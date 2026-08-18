@@ -8,7 +8,6 @@ import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -19,6 +18,7 @@ import {IconButton} from './controls/icon-button.js';
 import {PanelFooter} from './controls/panel-footer.js';
 import {PanelHeader} from './controls/panel-header.js';
 import {SearchEntry} from './controls/search-entry.js';
+import {Tooltip} from './controls/tooltip.js';
 import {normalize as normalizePanelActions} from './panel-actions.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases.js';
 import {matches as matchesShortcut} from './shortcut.js';
@@ -123,20 +123,11 @@ class Indicator extends PanelMenu.Button {
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
     this._pendingHistoryViewState = null;
-    this._tooltipTimeoutId = 0;
-    this._tooltipSource = null;
-    this._tooltipFromKeyboard = false;
     this._tokenSelectionDrag = null;
     this._tokenDragCaptureId = 0;
     this._tokenButtons = [];
     this._stateHoverTransfer = false;
-    this._hintConnections = new Map();
-    this._tooltip = new St.Label({
-      style_class: 'clipboard-x-tooltip',
-      visible: false,
-      reactive: false,
-    });
-    Main.uiGroup.add_child(this._tooltip);
+    this._tooltip = new Tooltip();
 
     this.add_child(new St.Icon({
       icon_name: 'edit-paste-symbolic',
@@ -160,8 +151,8 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
-      clearPanelTooltips: () => this._clearHints('panel'),
-      hideTooltip: () => this._hideTooltip(),
+      clearPanelTooltips: () => this._tooltip.clear('panel'),
+      hideTooltip: () => this._tooltip.hide(),
     });
     this._panelManager.register('history', {
       focusGrid: this._historyFocusGrid,
@@ -233,8 +224,6 @@ class Indicator extends PanelMenu.Button {
       if (!this.menu.actor.visible)
         this._panelManager.hidden();
     });
-    this._stageCapturedSignal = global.stage.connect('captured-event', (_stage, event) =>
-      this._handleStageCapturedEvent(event));
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
@@ -251,7 +240,7 @@ class Indicator extends PanelMenu.Button {
           this._focusPhrasePanel();
       } else {
         this._cancelPendingFocus();
-        this._hideTooltip();
+        this._tooltip.hide();
         this._panelManager.close({
           preserve: this._settings.get_boolean('preserve-panel-state'),
         });
@@ -482,7 +471,7 @@ class Indicator extends PanelMenu.Button {
         apply(child);
     };
     apply(this.menu.actor);
-    apply(this._tooltip);
+    apply(this._tooltip.actor);
   }
 
   _captureHistoryView() {
@@ -1247,7 +1236,7 @@ class Indicator extends PanelMenu.Button {
       style_class: 'clipboard-x-device-icon',
       track_hover: true,
     });
-    this._attachHint(icon, tag, {scope: 'panel'});
+    this._tooltip.attach(icon, tag, {scope: 'panel'});
     return icon;
   }
 
@@ -1314,98 +1303,7 @@ class Indicator extends PanelMenu.Button {
       actor._hintText = text;
     }
     if (actor._clipboardXShowTooltip)
-      this._attachHint(actor, text, {scope: actor._clipboardXTooltipScope});
-  }
-
-  _attachHint(actor, text, {scope = 'global'} = {}) {
-    actor._hintText = text;
-    if (!actor._clipboardXHintConnected) {
-      actor._clipboardXHintConnected = true;
-      const signals = [];
-      signals.push(actor.connect('notify::hover', () => {
-        if (actor.hover)
-          this._showTooltip(actor, false);
-        else if (!actor.has_key_focus?.())
-          this._hideTooltip(actor);
-      }));
-      signals.push(actor.connect('key-focus-in', () => this._showTooltip(actor, true)));
-      signals.push(actor.connect('key-focus-out', () => {
-        if (!actor.hover)
-          this._hideTooltip(actor);
-      }));
-      this._hintConnections.set(actor, {scope, signals});
-    }
-    actor.accessible_name = text;
-    if (this._tooltipSource === actor && this._tooltip.visible)
-      this._tooltip.text = text;
-  }
-
-  _clearHints(scope = null) {
-    this._hideTooltip();
-    for (const [actor, connection] of this._hintConnections) {
-      if (scope && connection.scope !== scope)
-        continue;
-      for (const signal of connection.signals) {
-        try {
-          actor.disconnect(signal);
-        } catch (_error) {
-          // The actor may already have been destroyed by a panel refresh.
-        }
-      }
-      actor._clipboardXHintConnected = false;
-      this._hintConnections.delete(actor);
-    }
-  }
-
-  _showTooltip(actor, immediate) {
-    this._cancelTooltipTimeout();
-    const show = () => {
-      this._tooltipTimeoutId = 0;
-      if (!actor.mapped || (!actor.hover && !actor.has_key_focus?.()))
-        return GLib.SOURCE_REMOVE;
-      this._tooltipSource = actor;
-      this._tooltipFromKeyboard = immediate;
-      this._tooltip.text = actor._hintText;
-      this._tooltip.show();
-      Main.uiGroup.set_child_above_sibling(this._tooltip, null);
-      const [actorX, actorY] = actor.get_transformed_position();
-      const [actorWidth, actorHeight] = actor.get_transformed_size();
-      const [, tooltipWidth] = this._tooltip.get_preferred_width(-1);
-      const [, tooltipHeight] = this._tooltip.get_preferred_height(tooltipWidth);
-      const x = Math.max(8, Math.min(
-        global.stage.width - tooltipWidth - 8,
-        actorX + (actorWidth - tooltipWidth) / 2,
-      ));
-      const below = actorY + actorHeight + 8;
-      const y = below + tooltipHeight <= global.stage.height - 8
-        ? below
-        : Math.max(8, actorY - tooltipHeight - 8);
-      this._tooltip.set_position(Math.round(x), Math.round(y));
-      return GLib.SOURCE_REMOVE;
-    };
-    if (immediate) {
-      show();
-      return;
-    }
-    this._tooltipTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 350, show);
-  }
-
-  _hideTooltip(actor = null) {
-    if (actor && this._tooltipSource && actor !== this._tooltipSource)
-      return;
-    this._cancelTooltipTimeout();
-    this._tooltipSource = null;
-    this._tooltipFromKeyboard = false;
-    this._tooltip.hide();
-  }
-
-  _handleStageCapturedEvent(event) {
-    const type = event.type();
-    if (type === Clutter.EventType.MOTION && this._tooltipFromKeyboard) {
-      this._hideTooltip();
-      return Clutter.EVENT_PROPAGATE;
-    }
-    return Clutter.EVENT_PROPAGATE;
+      this._tooltip.attach(actor, text, {scope: actor._clipboardXTooltipScope});
   }
 
   _handleMenuKey(event) {
@@ -1430,13 +1328,6 @@ class Indicator extends PanelMenu.Button {
     return this._settings.get_boolean('panel-confine-focus')
       ? Clutter.EVENT_STOP
       : Clutter.EVENT_PROPAGATE;
-  }
-
-  _cancelTooltipTimeout() {
-    if (!this._tooltipTimeoutId)
-      return;
-    GLib.Source.remove(this._tooltipTimeoutId);
-    this._tooltipTimeoutId = 0;
   }
 
   _updatePrivateButton() {
@@ -1510,7 +1401,7 @@ class Indicator extends PanelMenu.Button {
     this._cancelPendingFocus();
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
-    this._clearHints();
+    this._tooltip.clear();
     if (this._changedSignal)
       this._controller.disconnect(this._changedSignal);
     for (const signal of [
@@ -1552,9 +1443,6 @@ class Indicator extends PanelMenu.Button {
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;
-    if (this._stageCapturedSignal)
-      global.stage.disconnect(this._stageCapturedSignal);
-    this._stageCapturedSignal = 0;
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;

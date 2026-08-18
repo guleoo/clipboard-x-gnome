@@ -78,7 +78,7 @@ export async function run() {
   assert(indicator._search.clutter_text.translation_y === -1
       && indicator._search.get_hint_actor().translation_y === -2
       && indicator._tokenTitle.translation_y === -2
-      && indicator._tooltip.translation_y === -1,
+      && indicator._tooltip.actor.translation_y === -1,
   'Configured text offset did not preserve special optical baseline corrections');
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
   assert(indicator._search.get_hint_actor().margin_left === 2,
@@ -130,11 +130,11 @@ export async function run() {
   assert(indicator._panelManager.is('history'),
     'Saved-phrase panel did not return to clipboard history');
   indicator._privateButton.grab_key_focus();
-  indicator._showTooltip(indicator._privateButton, true);
-  assert(indicator._tooltip.visible && indicator._tooltip.get_parent() === Main.uiGroup,
+  indicator._tooltip.show(indicator._privateButton, {immediate: true});
+  assert(indicator._tooltip.actor.visible && indicator._tooltip.actor.get_parent() === Main.uiGroup,
     'Icon help must use a floating Shell tooltip');
-  indicator._handleStageCapturedEvent({type: () => Clutter.EventType.MOTION});
-  assert(!indicator._tooltip.visible,
+  indicator._tooltip._handleCapturedEvent({type: () => Clutter.EventType.MOTION});
+  assert(!indicator._tooltip.actor.visible,
     'Moving the mouse did not dismiss a keyboard-triggered tooltip');
   const originalSearchShortcut = indicator._settings.get_strv('history-search-shortcut');
   indicator._settings.set_strv('history-search-shortcut', ['<Control>f']);
