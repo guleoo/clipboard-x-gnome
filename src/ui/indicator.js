@@ -119,6 +119,8 @@ class Indicator extends PanelMenu.Button {
     this._syncButtons = new Map();
     this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
+    this._focusBoundaryIdleId = 0;
+    this._lastMenuFocus = null;
     this._tooltipTimeoutId = 0;
     this._tooltipSource = null;
     this._tooltipFromKeyboard = false;
@@ -180,6 +182,8 @@ class Indicator extends PanelMenu.Button {
     });
     this._stageCapturedSignal = global.stage.connect('captured-event', (_stage, event) =>
       this._handleStageCapturedEvent(event));
+    this._stageFocusSignal = global.stage.connect('notify::key-focus', () =>
+      this._handleStageFocusChanged());
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
@@ -1251,6 +1255,49 @@ class Indicator extends PanelMenu.Button {
     return Clutter.EVENT_STOP;
   }
 
+  _handleStageFocusChanged() {
+    const focus = global.stage.get_key_focus();
+    if (this._isMenuActor(focus)) {
+      this._lastMenuFocus = focus;
+      return;
+    }
+    if (!this.menu.isOpen || !this._settings.get_boolean('panel-confine-focus'))
+      return;
+    this._scheduleFocusBoundaryRestore();
+  }
+
+  _scheduleFocusBoundaryRestore() {
+    if (this._focusBoundaryIdleId)
+      return;
+    this._focusBoundaryIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusBoundaryIdleId = 0;
+      if (!this.menu.isOpen || !this._settings.get_boolean('panel-confine-focus')
+          || this._isMenuActor(global.stage.get_key_focus()))
+        return GLib.SOURCE_REMOVE;
+      const fallback = this._panelManager.is('tokenizer')
+        ? this._tokenButtons.find(button => button.mapped)
+        : this._search.clutter_text;
+      let target = fallback;
+      try {
+        if (this._lastMenuFocus?.mapped)
+          target = this._lastMenuFocus;
+      } catch (_error) {
+        // A history refresh may have destroyed the previously focused actor.
+      }
+      if (target?.mapped)
+        global.stage.set_key_focus(target);
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _isMenuActor(actor) {
+    for (let current = actor; current; current = current.get_parent()) {
+      if (current === this.menu.actor)
+        return true;
+    }
+    return false;
+  }
+
   _cancelTooltipTimeout() {
     if (!this._tooltipTimeoutId)
       return;
@@ -1327,6 +1374,9 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._cancelPendingFocus();
+    if (this._focusBoundaryIdleId)
+      GLib.Source.remove(this._focusBoundaryIdleId);
+    this._focusBoundaryIdleId = 0;
     this._endTokenSelectionDrag();
     this._panelManager?.destroy();
     this._clearHints();
@@ -1364,6 +1414,9 @@ class Indicator extends PanelMenu.Button {
     if (this._stageCapturedSignal)
       global.stage.disconnect(this._stageCapturedSignal);
     this._stageCapturedSignal = 0;
+    if (this._stageFocusSignal)
+      global.stage.disconnect(this._stageFocusSignal);
+    this._stageFocusSignal = 0;
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;

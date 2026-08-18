@@ -313,6 +313,10 @@ export async function run() {
       && indicator._handleMenuKey(entryEvent(Clutter.KEY_Down)) === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === indicator._tokenCopy,
   'Down Arrow did not move from the final token to the copy button');
+  global.stage.set_key_focus(indicator);
+  await Scripting.sleep(10);
+  assert(global.stage.get_key_focus() === indicator._tokenCopy,
+    'Tokenizer copy button focus escaped the confined extension panel');
   tokenState.keyboardSelection = null;
   tokenButtons[0].grab_key_focus();
   indicator._handleTokenKey(
