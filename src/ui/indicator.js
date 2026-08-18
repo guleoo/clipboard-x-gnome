@@ -14,6 +14,11 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {PanelManager} from './panel-manager.js';
 import {FocusGrid} from './focus-grid.js';
+import {ContentItem} from './controls/content-item.js';
+import {IconButton} from './controls/icon-button.js';
+import {PanelFooter} from './controls/panel-footer.js';
+import {PanelHeader} from './controls/panel-header.js';
+import {SearchEntry} from './controls/search-entry.js';
 import {normalize as normalizePanelActions} from './panel-actions.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases.js';
 import {matches as matchesShortcut} from './shortcut.js';
@@ -265,28 +270,20 @@ class Indicator extends PanelMenu.Button {
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
-    this._search = new St.Entry({
-      style_class: 'clipboard-x-search',
-      hint_text: _('Search clipboard history…'),
-      can_focus: true,
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-      primary_icon: new St.Icon({icon_name: 'edit-find-symbolic', icon_size: 14}),
-    });
-    const searchHint = this._search.get_hint_actor();
-    searchHint._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
-    searchHint.margin_left = 2;
-    this._search.clutter_text.connect('text-changed', () => {
-      this._query = this._search.get_text();
-      if (this._panelManager?.is('history'))
-        this._refresh();
-    });
-    this._search.clutter_text.connect('key-focus-in', () => this._updateSearchStyle());
-    this._search.clutter_text.connect('key-focus-out', () => this._updateSearchStyle());
-    this._search.clutter_text.connect('key-press-event', (_actor, event) => {
-      if (matchesShortcut(this._settings, 'history-search-shortcut', event))
-        return Clutter.EVENT_STOP;
-      return Clutter.EVENT_PROPAGATE;
+    this._search = new SearchEntry({
+      placeholder: _('Search clipboard history…'),
+      placeholderOffset: OPTICAL_BASELINE_OFFSET,
+      onChanged: () => {
+        this._query = this._search.get_text();
+        if (this._panelManager?.is('history'))
+          this._refresh();
+      },
+      onFocusChanged: () => this._updateSearchStyle(),
+      onKeyPress: event => {
+        if (matchesShortcut(this._settings, 'history-search-shortcut', event))
+          return Clutter.EVENT_STOP;
+        return Clutter.EVENT_PROPAGATE;
+      },
     });
     searchToolbar.add_child(this._search);
     const toolbar = new St.BoxLayout({
@@ -345,26 +342,21 @@ class Indicator extends PanelMenu.Button {
       x_expand: true,
     });
     this._tokenPanel = tokenPanel;
-    const tokenHeader = new St.BoxLayout({
-      style_class: 'clipboard-x-token-header',
-      x_expand: true,
-    });
     this._tokenBack = this._iconButton(
       'go-previous-symbolic',
       _('Back to clipboard history'),
       () => this._closeTokenizer(),
       {showTooltip: false},
     );
-    tokenHeader.add_child(this._tokenBack);
-    this._tokenTitle = new St.Label({
-      text: _('Segment text'),
-      style_class: 'clipboard-x-token-title',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
+    this._tokenHeader = new PanelHeader({
+      title: _('Segment text'),
+      backButton: this._tokenBack,
+      styleClass: 'clipboard-x-token-header',
+      titleStyleClass: 'clipboard-x-token-title',
+      titleOffset: OPTICAL_BASELINE_OFFSET,
     });
-    this._tokenTitle._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
-    tokenHeader.add_child(this._tokenTitle);
-    tokenPanel.add_child(tokenHeader);
+    this._tokenTitle = this._tokenHeader.titleLabel;
+    tokenPanel.add_child(this._tokenHeader);
     this._tokenSource = new St.Label({
       style_class: 'clipboard-x-token-source',
       x_expand: true,
@@ -383,11 +375,7 @@ class Indicator extends PanelMenu.Button {
     this._tokenScroll.add_child(this._tokenSection.actor);
     tokenPanel.add_child(this._tokenScroll);
 
-    const tokenResultRow = new St.BoxLayout({
-      style_class: 'clipboard-x-token-result-row',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    });
+    this._tokenFooter = new PanelFooter();
     this._tokenResult = new St.Label({
       text: _('Select one or more words'),
       style_class: 'clipboard-x-token-result',
@@ -395,7 +383,7 @@ class Indicator extends PanelMenu.Button {
       y_align: Clutter.ActorAlign.CENTER,
     });
     this._tokenResult.clutter_text.single_line_mode = true;
-    tokenResultRow.add_child(this._tokenResult);
+    this._tokenFooter.addContent(this._tokenResult);
     this._tokenCopy = this._iconButton(
       'edit-copy-symbolic',
       _('Copy selected words'),
@@ -404,8 +392,8 @@ class Indicator extends PanelMenu.Button {
     );
     this._tokenCopy.reactive = false;
     this._tokenCopy.opacity = 128;
-    tokenResultRow.add_child(this._tokenCopy);
-    tokenPanel.add_child(tokenResultRow);
+    this._tokenFooter.addContent(this._tokenCopy);
+    tokenPanel.add_child(this._tokenFooter);
     tokenPanelItem.add_child(tokenPanel);
     this.menu.addMenuItem(tokenPanelItem);
 
@@ -611,12 +599,10 @@ class Indicator extends PanelMenu.Button {
   }
 
   _entry(item) {
-    const row = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    row.add_style_class_name('clipboard-x-entry');
-    row.track_hover = true;
+    const row = new ContentItem();
     if (this._multipleDevices) {
       const identity = this._displayIdentity(item);
-      row.add_child(this._deviceIcon(identity.iconKind, identity.tag));
+      row.addLeading(this._deviceIcon(identity.iconKind, identity.tag));
     }
 
     const content = new St.Button({
@@ -676,13 +662,13 @@ class Indicator extends PanelMenu.Button {
     content.accessible_name = item.remote && item.availability !== 'ready'
       ? _('Download original and copy')
       : _('Copy original');
-    row.add_child(content);
+    row.setContent(content);
 
     if (item.isText) {
-      row.add_child(this._iconButton(
+      row.addAction(this._iconButton(
         'format-text-plaintext-symbolic', _('Segment text'), () => this._openTokenizer(item), {showTooltip: false}));
     } else {
-      row.add_child(this._iconButton(
+      row.addAction(this._iconButton(
         'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item), {showTooltip: false}));
     }
     const pinButton = this._iconButton(
@@ -692,18 +678,18 @@ class Indicator extends PanelMenu.Button {
       {showTooltip: false, stateful: true},
     );
     pinButton.toggle_mode = true;
-    pinButton.checked = item.favorite;
+    pinButton.selected = item.favorite;
     if (item.favorite)
       pinButton.add_style_class_name('clipboard-x-pinned');
     if (item.favorite && this._customAccentColor) {
       pinButton.set_style(`color: ${this._customAccentColor};`);
     }
-    row.add_child(pinButton);
+    row.addAction(pinButton);
     if (this._settings.get_boolean('sync-enabled'))
-      row.add_child(this._syncButton(item));
-    row.add_child(this._iconButton(
+      row.addAction(this._syncButton(item));
+    row.addAction(this._iconButton(
       'user-trash-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
-    row._clipboardXFocusRow = row.get_children().filter(actor => actor.can_focus);
+    row._clipboardXFocusRow = row.focusActors;
     for (const actor of row._clipboardXFocusRow)
       actor._clipboardXHistoryRow = row;
     row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
@@ -1272,36 +1258,28 @@ class Indicator extends PanelMenu.Button {
       tooltipScope = 'global',
       stateful = false,
     } = options;
-    const button = new St.Button({
-      can_focus: true,
-      track_hover: true,
-      style_class: 'clipboard-x-icon-button',
-      accessible_name: hintText,
+    const button = new IconButton({
+      iconName,
+      label: hintText,
+      iconSize,
+      selectable: stateful,
+      onKeyPress: event => this._handleMenuKey(event),
+      onError: error => this._actions.reportError(error),
+      onActivate: () => {
+        if (stateful)
+          this._stateHoverTransfer = true;
+        try {
+          return callback();
+        } finally {
+          this._stateHoverTransfer = false;
+        }
+      },
     });
-    if (stateful)
-      button.add_style_class_name('clipboard-x-state-icon');
     if (stateful && this._stateHoverTransfer)
       this._skipStateHoverTransition(button);
-    button._clipboardXIconSize = iconSize;
-    this._setButtonIcon(button, iconName);
     button._clipboardXShowTooltip = showTooltip;
     button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
-    button.connect('key-press-event', (_actor, event) => this._handleMenuKey(event));
-    button.connect('clicked', () => {
-      if (stateful)
-        this._stateHoverTransfer = true;
-      let result;
-      try {
-        result = callback();
-      } catch (error) {
-        this._actions.reportError(error);
-        return;
-      } finally {
-        this._stateHoverTransfer = false;
-      }
-      Promise.resolve(result).catch(error => this._actions.reportError(error));
-    });
     return button;
   }
 
@@ -1318,6 +1296,10 @@ class Indicator extends PanelMenu.Button {
   }
 
   _setButtonIcon(button, iconName) {
+    if (button.setIcon) {
+      button.setIcon(iconName);
+      return;
+    }
     button.set_child(new St.Icon({
       icon_name: iconName,
       icon_size: button._clipboardXIconSize ?? ICON_SIZE,
@@ -1325,8 +1307,12 @@ class Indicator extends PanelMenu.Button {
   }
 
   _setHint(actor, text) {
-    actor.accessible_name = text;
-    actor._hintText = text;
+    if (actor.setHint)
+      actor.setHint(text);
+    else {
+      actor.accessible_name = text;
+      actor._hintText = text;
+    }
     if (actor._clipboardXShowTooltip)
       this._attachHint(actor, text, {scope: actor._clipboardXTooltipScope});
   }
@@ -1458,7 +1444,7 @@ class Indicator extends PanelMenu.Button {
     const text = _('Privacy mode');
     this._setButtonIcon(this._privateButton, 'security-high-symbolic');
     this._setHint(this._privateButton, text);
-    this._privateButton.checked = paused;
+    this._privateButton.selected = paused;
     this._privateButton.remove_style_class_name(
       paused ? 'clipboard-x-private-inactive' : 'clipboard-x-private-active',
     );

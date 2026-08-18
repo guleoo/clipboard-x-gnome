@@ -63,6 +63,12 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(200);
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
+  assert(indicator._search._clipboardXControlType === 'search-entry'
+      && indicator._screenshotButton._clipboardXControlType === 'icon-button',
+    'Shared search or icon controls were not used by the history panel');
+  assert(indicator._tokenHeader._clipboardXControlType === 'panel-header'
+      && indicator._tokenFooter._clipboardXControlType === 'panel-footer',
+    'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
   assert(Number.isFinite(indicator._captureHistoryView().scrollValue),
@@ -99,6 +105,8 @@ export async function run() {
   indicator._openPhrases();
   assert(indicator._panelManager.is('phrases')
       && indicator._quickPhrases.buttons.length === 1
+      && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
+      && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   'Saved-phrase panel did not render its local phrase and delete action');
@@ -223,6 +231,11 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
     'Clipboard X did not capture a text clipboard change');
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
+  const capturedRow = indicator._entry(capturedText);
+  assert(capturedRow._clipboardXControlType === 'content-item'
+      && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length,
+    'Clipboard history did not use the shared content-item control');
+  capturedRow.destroy();
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
     'Case-insensitive clipboard history search did not find the expected entry');
   const originalTypeItem = indicator._actions.typeItem;

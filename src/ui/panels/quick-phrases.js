@@ -7,6 +7,8 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {MAX_PHRASE_LENGTH, PhraseStore} from '../../clipboard/phrases/store.js';
+import {ContentItem} from '../controls/content-item.js';
+import {PanelHeader} from '../controls/panel-header.js';
 import {FocusGrid} from '../focus-grid.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;
@@ -28,32 +30,26 @@ export class QuickPhrasesPanel {
       style_class: 'clipboard-x-phrase-panel',
       x_expand: true,
     });
-    const header = new St.BoxLayout({
-      style_class: 'clipboard-x-phrase-header',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    });
     this.backButton = createIconButton(
       'go-previous-symbolic',
       _('Back to clipboard history'),
       onBack,
       {showTooltip: false},
     );
-    header.add_child(this.backButton);
-    header.add_child(new St.Label({
-      text: _('Quick phrases'),
-      style_class: 'clipboard-x-phrase-title',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
-    }));
     this.addButton = createIconButton(
       'list-add-symbolic',
       _('Add custom phrase'),
       () => this.toggleForm(),
       {tooltipScope: 'panel'},
     );
-    header.add_child(this.addButton);
-    this.actor.add_child(header);
+    this.header = new PanelHeader({
+      title: _('Quick phrases'),
+      backButton: this.backButton,
+      actions: [this.addButton],
+      styleClass: 'clipboard-x-phrase-header',
+      titleStyleClass: 'clipboard-x-phrase-title',
+    });
+    this.actor.add_child(this.header);
 
     this.form = new St.BoxLayout({
       style_class: 'clipboard-x-phrase-form',
@@ -126,9 +122,7 @@ export class QuickPhrasesPanel {
     this.form.visible = this._formVisible;
     const focusRows = [];
     for (const phrase of this._store.all) {
-      const row = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-      row.add_style_class_name('clipboard-x-entry');
-      row.track_hover = true;
+      const row = new ContentItem();
       const content = new St.Button({
         can_focus: true,
         track_hover: true,
@@ -149,15 +143,15 @@ export class QuickPhrasesPanel {
       content.accessible_name = _('Copy quick phrase');
       content.connect('key-press-event', (_actor, event) => this._handleKey(event));
       content.connect('clicked', () => this._onCopy(phrase));
-      row.add_child(content);
+      row.setContent(content);
       const remove = this._createIconButton(
         'user-trash-symbolic',
         _('Delete quick phrase'),
         () => this.remove(phrase),
         {showTooltip: false},
       );
-      row.add_child(remove);
-      for (const actor of [content, remove])
+      row.addAction(remove);
+      for (const actor of row.focusActors)
         actor._clipboardXPhraseRow = row;
       this._buttons.push(content);
       this._rows.push(row);

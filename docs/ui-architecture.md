@@ -7,6 +7,7 @@
 - `ui/indicator.js`：GNOME 顶栏入口和面板编排层。目标职责是系统级动作、菜单开关、面板注册、主题与 tooltip 协调；当前历史与分词内部状态仍暂存在这里，按第 5 节继续拆分。
 - `ui/panel-manager.js`：面板生命周期与现场管理。负责 `enter`、`leave`、`render`、视图捕获和恢复。
 - `ui/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
+- `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
 - `ui/panels/`：可独立切换的 Shell 面板。面板拥有自己的 actor、滚动区域、状态、焦点矩阵和领域交互。
 - `ui/preferences.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
 - `ui/preferences/`：可复用的 GTK/Libadwaita 设置组件。
@@ -14,12 +15,19 @@
 ## 2. 已有组件
 
 - `QuickPhrasesPanel`：快捷语句标题栏、输入表单、列表、本地存储操作和焦点矩阵。
+- `ContentItem`：统一的“左侧前导标识 + 可伸展内容 + 右侧动作”条目。`focusActors` 按实际显示顺序提供给面板焦点矩阵。
+- `PanelHeader`：返回按钮、标题和可选右侧动作；标题占据剩余空间，组件本身提供底部分割线。
+- `PanelFooter`：带顶部分割线的自由内容容器。
+- `SearchEntry`：统一搜索图标、placeholder 光学偏移、左间距以及搜索框事件接入。
+- `IconButton`：统一图标尺寸、可访问名称和异步动作错误处理；`selected` 仅表达可选中按钮的状态。
 - `PreferenceRows`：开关、文本、数字、容量、下拉框、图标下拉框、快捷键和字符串列表设置行。
 - `preferences/theme-color.js`：主题色选择器及自定义颜色流程。
 - `preferences/panel-actions.js`：顶栏与底栏动作的拖动、排序和跨区域移动。
 - `panel-actions.js`：与 UI 无关的动作布局模型和校正规则。
 
 公共 API 采用“上下文承载领域、成员表达动作”的命名方式。例如 `PreferenceRows.spin()`、`QuickPhrasesPanel.render()`；成员名称不重复类型已经表达的语义。
+
+控件不管理面板生命周期、tooltip 或业务快捷键。面板通过构造参数接入动作，并继续用自己的 `FocusGrid` 组织键盘导航；全局 tooltip 由 `Indicator` 协调，防止控件切换时遗留悬浮提示。
 
 ## 3. Shell 面板约定
 
@@ -42,9 +50,9 @@
 ## 5. 后续拆分顺序
 
 1. 将分词视图拆成 `TokenizerPanel`，收拢换行布局、鼠标连续选择和键盘选择状态。
-2. 将历史列表拆成 `HistoryPanel`，再把文本/图片内容与右侧动作抽成条目组件。
+2. 将历史列表拆成 `HistoryPanel`，并在 `ContentItem` 之上拆分文本、图片内容呈现。
 3. 将 tooltip 生命周期从 `Indicator` 拆成控制器。
-4. 在重复模式稳定后再抽取 Shell 图标按钮工厂和通用面板标题栏，避免过早形成参数过多的“万能组件”。
+4. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
 
 ## 6. 验证要求
 
