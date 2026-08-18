@@ -1,4 +1,4 @@
-import {FocusGrid} from '../../src/ui/focus-grid.js';
+import {FocusGrid} from '../../src/ui/navigation/focus-grid.js';
 
 function assert(condition, message) {
   if (!condition)

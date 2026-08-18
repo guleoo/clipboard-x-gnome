@@ -1,3 +1,4 @@
+// Keeps directional focus navigation inside a panel-owned actor matrix.
 const DIRECTIONS = new Set(['left', 'right', 'up', 'down']);
 
 export class FocusGrid {

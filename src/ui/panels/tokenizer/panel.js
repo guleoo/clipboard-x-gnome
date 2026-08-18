@@ -9,7 +9,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 import {composeTokens, tokenizeText} from '../../../clipboard/tokenizer/processors.js';
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {PanelHeader} from '../../controls/panel-header.js';
-import {FocusGrid} from '../../focus-grid.js';
+import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;

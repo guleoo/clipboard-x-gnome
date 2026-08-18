@@ -6,10 +6,10 @@ import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {MAX_PHRASE_LENGTH, PhraseStore} from '../../clipboard/phrases/store.js';
-import {ContentItem} from '../controls/content-item.js';
-import {PanelHeader} from '../controls/panel-header.js';
-import {FocusGrid} from '../focus-grid.js';
+import {MAX_PHRASE_LENGTH, PhraseStore} from '../../../clipboard/phrases/store.js';
+import {ContentItem} from '../../controls/content-item.js';
+import {PanelHeader} from '../../controls/panel-header.js';
+import {FocusGrid} from '../../navigation/focus-grid.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;
 

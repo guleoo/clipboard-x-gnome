@@ -1,3 +1,4 @@
+// Pure layout model shared by Shell UI and preferences.
 export const ACTIONS = Object.freeze([
   'screenshot',
   'color-picker',

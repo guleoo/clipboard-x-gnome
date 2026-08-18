@@ -6,7 +6,8 @@
 
 - `ui/indicator.js`：GNOME 顶栏入口和面板编排层。负责系统级动作、菜单开关、面板注册与主题协调，不实现具体面板内部视图。
 - `ui/panel-manager.js`：面板生命周期与现场管理。负责 `enter`、`leave`、`render`、视图捕获和恢复。
-- `ui/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
+- `ui/navigation/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
+- `ui/layouts/panel-actions.js`：顶栏与底栏动作的布局模型和校正规则，不依赖 Shell actor。
 - `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
 - `ui/panels/`：可独立切换的 Shell 面板。面板拥有自己的 actor、滚动区域、状态、焦点矩阵和领域交互。
 - `ui/preferences/window.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
@@ -26,7 +27,7 @@
 - `PreferenceRows`：开关、文本、数字、容量、下拉框、图标下拉框、快捷键和字符串列表设置行。
 - `preferences/theme-color.js`：主题色选择器及自定义颜色流程。
 - `preferences/panel-actions.js`：顶栏与底栏动作的拖动、排序和跨区域移动。
-- `panel-actions.js`：与 UI 无关的动作布局模型和校正规则。
+- `panels/quick-phrases/panel.js`：快捷语句面板的视图、表单、列表和焦点状态。
 
 公共 API 采用“上下文承载领域、成员表达动作”的命名方式。例如 `PreferenceRows.spin()`、`QuickPhrasesPanel.render()`；成员名称不重复类型已经表达的语义。
 
@@ -52,9 +53,8 @@
 
 ## 5. 后续拆分顺序
 
-1. 将快捷语句面板调整为与其他领域面板一致的目录结构。
-2. 继续压缩设置窗口编排层，把页面定义按领域拆分，但保持设置绑定集中复用。
-3. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
+1. 继续压缩设置窗口编排层，把页面定义按领域拆分，但保持设置绑定集中复用。
+2. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
 
 ## 6. 验证要求
 

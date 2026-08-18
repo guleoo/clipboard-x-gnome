@@ -7,8 +7,8 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {SearchEntry} from '../../controls/search-entry.js';
-import {FocusGrid} from '../../focus-grid.js';
-import {normalize as normalizeActions} from '../../panel-actions.js';
+import {normalize as normalizeActions} from '../../layouts/panel-actions.js';
+import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 import {create as createItem} from './item.js';
 import {SyncAction} from './sync-action.js';

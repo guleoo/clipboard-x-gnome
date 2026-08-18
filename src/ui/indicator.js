@@ -10,7 +10,7 @@ import {PanelManager} from './panel-manager.js';
 import {IconButton} from './controls/icon-button.js';
 import {Tooltip} from './controls/tooltip.js';
 import {HistoryPanel} from './panels/history/panel.js';
-import {QuickPhrasesPanel} from './panels/quick-phrases.js';
+import {QuickPhrasesPanel} from './panels/quick-phrases/panel.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
 import {matches as matchesShortcut} from './shortcut.js';
 

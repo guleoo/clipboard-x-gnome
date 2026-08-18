@@ -5,7 +5,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {move, normalize} from '../panel-actions.js';
+import {move, normalize} from '../layouts/panel-actions.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
 
 export function create(settings) {

@@ -1,4 +1,4 @@
-import {ACTIONS, DEFAULT_FOOTER, DEFAULT_TOOLBAR, move, normalize} from '../../src/ui/panel-actions.js';
+import {ACTIONS, DEFAULT_FOOTER, DEFAULT_TOOLBAR, move, normalize} from '../../src/ui/layouts/panel-actions.js';
 
 function assert(condition, message) {
   if (!condition)
