@@ -50,12 +50,13 @@ export async function run() {
   }
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
   assert(indicator, `Clipboard X indicator was not added to the panel (${extension.error ?? 'no extension error'})`);
+  const history = indicator._historyPanel;
   for (const item of indicator._controller.items)
     indicator._controller.remove(item.id);
   await Scripting.sleep(200);
   if (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1') {
-    assert(indicator._search.hint_text === '搜索剪切板历史…',
-      `Clipboard X translation was not loaded (${indicator._search.hint_text})`);
+    assert(history.searchEntry.hint_text === '搜索剪切板历史…',
+      `Clipboard X translation was not loaded (${history.searchEntry.hint_text})`);
     if (GLib.getenv('CLIPBOARD_X_TRANSLATION_ONLY') === '1')
       return;
   }
@@ -63,27 +64,27 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(200);
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
-  assert(indicator._search._clipboardXControlType === 'search-entry'
-      && indicator._screenshotButton._clipboardXControlType === 'icon-button',
+  assert(history.searchEntry._clipboardXControlType === 'search-entry'
+      && history.screenshotButton._clipboardXControlType === 'icon-button',
     'Shared search or icon controls were not used by the history panel');
   assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
       && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
     'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
-  assert(Number.isFinite(indicator._captureHistoryView().scrollValue),
+  assert(Number.isFinite(history.captureView().scrollValue),
     'Clipboard history view state could not read the GNOME 50 scroll adjustment');
   const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
   indicator._settings.set_int('panel-text-vertical-offset', -1);
-  assert(indicator._search.clutter_text.translation_y === -1
-      && indicator._search.get_hint_actor().translation_y === -2
+  assert(history.searchEntry.clutter_text.translation_y === -1
+      && history.searchEntry.get_hint_actor().translation_y === -2
       && indicator._tokenizer.titleLabel.translation_y === -2
       && indicator._tooltip.actor.translation_y === -1,
   'Configured text offset did not preserve special optical baseline corrections');
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
-  assert(indicator._search.get_hint_actor().margin_left === 2,
+  assert(history.searchEntry.get_hint_actor().margin_left === 2,
     'Search placeholder did not retain its configured left margin');
-  assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
+  assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
   const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
   const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
@@ -91,12 +92,12 @@ export async function run() {
     'panel-toolbar-actions', ['screenshot', 'color-picker', 'quick-phrases']);
   indicator._settings.set_strv(
     'panel-footer-actions', ['private-mode', 'sync', 'clear-history', 'preferences']);
-  assert(indicator._toolbar.get_children().length === 3,
+  assert(history.toolbar.get_children().length === 3,
     'Top toolbar must contain only screenshot, color picker and quick-phrase actions');
-  assert(indicator._search.get_parent() === indicator._toolbar.get_parent(),
+  assert(history.searchEntry.get_parent() === history.toolbar.get_parent(),
     'Search and the three primary tools must share one row');
-  assert(indicator._phrasesToolButton.get_parent() === indicator._toolbar
-      && indicator._privateButton.get_parent() === indicator._footer,
+  assert(history.phrasesButton.get_parent() === history.toolbar
+      && history.privateButton.get_parent() === history.footer,
     'Quick-phrase and privacy buttons were not swapped');
   indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
   indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
@@ -129,8 +130,8 @@ export async function run() {
   indicator._closePhrases();
   assert(indicator._panelManager.is('history'),
     'Saved-phrase panel did not return to clipboard history');
-  indicator._privateButton.grab_key_focus();
-  indicator._tooltip.show(indicator._privateButton, {immediate: true});
+  history.privateButton.grab_key_focus();
+  indicator._tooltip.show(history.privateButton, {immediate: true});
   assert(indicator._tooltip.actor.visible && indicator._tooltip.actor.get_parent() === Main.uiGroup,
     'Icon help must use a floating Shell tooltip');
   indicator._tooltip._handleCapturedEvent({type: () => Clutter.EventType.MOTION});
@@ -142,12 +143,12 @@ export async function run() {
     get_key_symbol: () => Clutter.KEY_f,
     get_state: () => Clutter.ModifierType.CONTROL_MASK,
   }) === Clutter.EVENT_STOP, 'Clipboard search shortcut was not consumed');
-  assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
+  assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
     'Clipboard search shortcut did not focus the search entry');
   indicator._settings.set_strv('history-search-shortcut', originalSearchShortcut);
   const originalPanelConfineFocus = indicator._settings.get_boolean('panel-confine-focus');
   indicator._settings.set_boolean('panel-confine-focus', true);
-  indicator._privateButton.grab_key_focus();
+  history.privateButton.grab_key_focus();
   assert(indicator._handleMenuKey({
     get_key_symbol: () => Clutter.KEY_Down,
     get_state: () => 0,
@@ -231,7 +232,7 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
     'Clipboard X did not capture a text clipboard change');
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
-  const capturedRow = indicator._entry(capturedText);
+  const capturedRow = history.entry(capturedText);
   assert(capturedRow._clipboardXControlType === 'content-item'
       && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length,
     'Clipboard history did not use the shared content-item control');
@@ -247,11 +248,11 @@ export async function run() {
     get_key_symbol: () => key,
     get_state: () => modifiers,
   });
-  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_STOP,
+  assert(history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_STOP,
     'Clipboard entry paste shortcut was not consumed');
-  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_STOP,
+  assert(history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_STOP,
     'Clipboard entry typing shortcut was not consumed');
-  assert(indicator._handleEntryKey(
+  assert(history.handleEntryKey(
     capturedText,
     entryEvent(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK),
   ) === Clutter.EVENT_STOP, 'Ctrl+Enter did not invoke clipboard entry typing');
@@ -259,9 +260,9 @@ export async function run() {
   assert(itemCommands.join(',') === `paste:${capturedText.id},type:${capturedText.id},type:${capturedText.id}`,
     'Clipboard entry keyboard commands invoked the wrong actions');
   indicator._settings.set_strv('history-paste-shortcut', ['x']);
-  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_PROPAGATE,
+  assert(history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_PROPAGATE,
     'Reconfigured clipboard entry shortcut kept its old binding');
-  assert(indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_x)) === Clutter.EVENT_STOP,
+  assert(history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_x)) === Clutter.EVENT_STOP,
     'Reconfigured clipboard entry shortcut did not use its new binding');
   await Scripting.sleep(10);
   assert(itemCommands.at(-1) === `paste:${capturedText.id}`,
@@ -269,13 +270,13 @@ export async function run() {
   indicator._settings.set_strv('history-paste-shortcut', ['v']);
   indicator._actions.typeItem = originalTypeItem;
   indicator._actions.pasteItem = originalPasteItem;
-  indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
+  history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(capturedText.favorite, 'Clipboard entry p shortcut did not pin the entry');
-  indicator._handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
+  history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(!capturedText.favorite, 'Clipboard entry p shortcut did not unpin the entry');
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
-  const pinnedRow = indicator._entry(capturedText);
+  const pinnedRow = history.entry(capturedText);
   assert(pinnedRow._clipboardXFocusRow.every(child => child._clipboardXHistoryRow === pinnedRow),
     'Clipboard history entry controls did not retain their focus matrix row');
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
@@ -297,9 +298,9 @@ export async function run() {
   await indicator._openTokenizer(capturedText);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
-      && !indicator._searchItem.visible
-      && !indicator._historyScrollItem.actor.visible
-      && !indicator._footerItem.visible
+      && !history.searchItem.visible
+      && !history.scrollItem.actor.visible
+      && !history.footerItem.visible
       && indicator._tokenizer.item.visible,
     'Text segmentation did not switch the current panel to the token selection view');
   await Scripting.sleep(100);
@@ -395,9 +396,9 @@ export async function run() {
   indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history')
-      && indicator._searchItem.visible
-      && indicator._historyScrollItem.actor.visible
-      && indicator._footerItem.visible
+      && history.searchItem.visible
+      && history.scrollItem.actor.visible
+      && history.footerItem.visible
       && !indicator._tokenizer.item.visible,
     'Returning from text segmentation did not restore clipboard history');
   indicator.menu.close();
@@ -408,23 +409,23 @@ export async function run() {
     'Programmatic clipboard activation was captured again instead of being loop-suppressed');
 
   indicator._settings.set_boolean('private-mode', true);
-  assert(indicator._privateButton.checked
-      && indicator._privateButton.has_style_class_name('clipboard-x-private-active'),
+  assert(history.privateButton.checked
+      && history.privateButton.has_style_class_name('clipboard-x-private-active'),
   'Privacy mode button did not expose its selected visual state');
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'private clipboard value must not be recorded');
   await Scripting.sleep(300);
   assert(!indicator._controller.items.some(item => item.text.includes('private clipboard value')),
     'Private mode did not pause clipboard capture');
   indicator._settings.set_boolean('private-mode', false);
-  assert(!indicator._privateButton.checked
-      && indicator._privateButton.has_style_class_name('clipboard-x-private-inactive'),
+  assert(!history.privateButton.checked
+      && history.privateButton.has_style_class_name('clipboard-x-private-inactive'),
   'Privacy mode button did not return to its inactive visual state');
 
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'disposable clipboard history entry');
   await Scripting.sleep(300);
   const disposable = indicator._controller.items.find(item => item.text === 'disposable clipboard history entry');
   assert(disposable, 'Disposable history fixture was not captured');
-  indicator._handleEntryKey(disposable, entryEvent(Clutter.KEY_Delete));
+  history.handleEntryKey(disposable, entryEvent(Clutter.KEY_Delete));
   assert(!indicator._controller.items.includes(disposable), 'Clipboard history entry could not be deleted');
 
   if (GLib.getenv('CLIPBOARD_X_SKIP_EXTERNAL_SOURCES') !== '1') {
@@ -501,17 +502,17 @@ export async function run() {
 
   indicator._settings.set_boolean('sync-enabled', true);
   indicator._settings.set_string('sync-send-mode', 'manual');
-  const imageRow = indicator._entry(imageItem);
+  const imageRow = history.entry(imageItem);
   assert(imageRow.get_children().filter(child => child instanceof St.Button).length === 5,
     'Image history row must expose content, edit, pin, synchronization and delete actions');
   imageRow.destroy();
   imageItem.remote = true;
   imageItem.availability = 'preview';
-  const remoteButton = indicator._syncButton(imageItem);
+  const remoteButton = history._sync.button(imageItem);
   assert(remoteButton.get_child().icon_name === 'folder-download-symbolic',
     'Remote image preview did not expose its lazy download action');
   imageItem.availability = 'failed';
-  indicator._updateSyncButton(imageItem, remoteButton);
+  history._sync._update(imageItem, remoteButton);
   assert(remoteButton.get_child().icon_name === 'view-refresh-symbolic',
     'Retryable remote image failure did not expose a retry action');
   remoteButton.destroy();
@@ -534,7 +535,7 @@ export async function run() {
     errorCode: '',
     errorMessage: '',
   };
-  const progressButton = indicator._syncButton(imageItem);
+  const progressButton = history._sync.button(imageItem);
   indicator.setTransfer(transfer);
   assert(progressButton.get_child() instanceof St.DrawingArea && progressButton._hintText.includes('50%'),
     'Exact per-item transfer progress was not rendered as a ring');
@@ -565,7 +566,7 @@ export async function run() {
   indicator._settings.set_boolean('sync-favorites-only', false);
   indicator._settings.set_string('sync-send-mode', 'manual');
   indicator._settings.set_boolean('sync-enabled', false);
-  const syncDisabledRow = indicator._entry(imageItem);
+  const syncDisabledRow = history.entry(imageItem);
   assert(syncDisabledRow.get_children().filter(child => child instanceof St.Button).length === 4,
     'Per-item synchronization UI remained visible while synchronization was disabled');
   syncDisabledRow.destroy();

@@ -1,0 +1,132 @@
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import Pango from 'gi://Pango';
+import St from 'gi://St';
+
+import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+import {ContentItem} from '../../controls/content-item.js';
+
+export function create({
+  item,
+  leading = null,
+  accentColor = null,
+  syncButton = null,
+  createIconButton,
+  actions,
+}) {
+  const row = new ContentItem();
+  if (leading)
+    row.addLeading(leading);
+
+  const content = new St.Button({
+    can_focus: true,
+    track_hover: true,
+    clip_to_allocation: true,
+    style_class: 'clipboard-x-entry-content',
+    x_expand: true,
+    x_align: Clutter.ActorAlign.FILL,
+  });
+  content.set_child(item.isText ? textPreview(item) : imagePreview(item));
+  content._clipboardXTypeOnClick = false;
+  content.connect('button-press-event', (_button, event) => {
+    content._clipboardXTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
+      && Boolean(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
+    return Clutter.EVENT_PROPAGATE;
+  });
+  content.connect('key-press-event', (_button, event) => {
+    content._clipboardXTypeOnClick = false;
+    const result = actions.handleKey(event);
+    return result === Clutter.EVENT_PROPAGATE ? actions.handlePanelKey(event) : result;
+  });
+  content.connect('clicked', () => {
+    const type = content._clipboardXTypeOnClick;
+    content._clipboardXTypeOnClick = false;
+    if (type)
+      actions.type();
+    else
+      actions.activate();
+  });
+  content.accessible_name = item.remote && item.availability !== 'ready'
+    ? _('Download original and copy')
+    : _('Copy original');
+  row.setContent(content);
+
+  row.addAction(item.isText
+    ? createIconButton(
+      'format-text-plaintext-symbolic',
+      _('Segment text'),
+      actions.tokenize,
+      {showTooltip: false},
+    )
+    : createIconButton(
+      'document-edit-symbolic',
+      _('Edit image'),
+      actions.edit,
+      {showTooltip: false},
+    ));
+  const pinButton = createIconButton(
+    'view-pin-symbolic',
+    item.favorite ? _('Unpin') : _('Pin'),
+    actions.togglePin,
+    {showTooltip: false, stateful: true},
+  );
+  pinButton.toggle_mode = true;
+  pinButton.selected = item.favorite;
+  if (item.favorite)
+    pinButton.add_style_class_name('clipboard-x-pinned');
+  if (item.favorite && accentColor)
+    pinButton.set_style(`color: ${accentColor};`);
+  row.addAction(pinButton);
+  if (syncButton)
+    row.addAction(syncButton);
+  row.addAction(createIconButton(
+    'user-trash-symbolic',
+    _('Delete from local history'),
+    actions.remove,
+    {showTooltip: false},
+  ));
+  row._clipboardXFocusRow = row.focusActors;
+  for (const actor of row._clipboardXFocusRow)
+    actor._clipboardXHistoryRow = row;
+  row.connect('key-press-event', (_row, event) => actions.handleKey(event));
+  return row;
+}
+
+function textPreview(item) {
+  const title = item.preview?.text?.replaceAll('\n', ' ') || _('Text');
+  const preview = new St.Label({
+    text: title.slice(0, 240),
+    style_class: 'clipboard-x-entry-preview',
+    x_expand: true,
+    x_align: Clutter.ActorAlign.FILL,
+    y_align: Clutter.ActorAlign.CENTER,
+  });
+  preview.clutter_text.single_line_mode = true;
+  preview.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+  return preview;
+}
+
+function imagePreview(item) {
+  const box = new St.BoxLayout({
+    style_class: 'clipboard-x-image-content',
+    x_expand: true,
+    x_align: Clutter.ActorAlign.START,
+  });
+  box.add_child(item.preview?.path
+    ? new St.Icon({gicon: Gio.icon_new_for_string(item.preview.path), icon_size: 32})
+    : new St.Icon({icon_name: 'image-x-generic-symbolic', icon_size: 24}));
+  box.add_child(new St.Label({
+    text: [item.primary?.mimeType ?? _('Image'), formatBytes(item.primary?.size ?? 0)].join(' · '),
+    y_align: Clutter.ActorAlign.CENTER,
+  }));
+  return box;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024)
+    return `${bytes} B`;
+  if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

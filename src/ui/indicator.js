@@ -1,43 +1,25 @@
-import Cairo from 'cairo';
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
-import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
-import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelManager} from './panel-manager.js';
-import {FocusGrid} from './focus-grid.js';
-import {ContentItem} from './controls/content-item.js';
 import {IconButton} from './controls/icon-button.js';
-import {SearchEntry} from './controls/search-entry.js';
 import {Tooltip} from './controls/tooltip.js';
-import {normalize as normalizePanelActions} from './panel-actions.js';
+import {HistoryPanel} from './panels/history/panel.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
 import {matches as matchesShortcut} from './shortcut.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
-const OPTICAL_BASELINE_OFFSET = -1;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
 ].map(color => `clipboard-x-accent-${color}`));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
-const DEVICE_ICON_NAMES = Object.freeze({
-  desktop: 'video-display-symbolic',
-  laptop: 'computer-symbolic',
-  phone: 'phone-symbolic',
-  tablet: 'input-tablet-symbolic',
-  server: 'network-server-symbolic',
-  other: 'avatar-default-symbolic',
-});
-const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_Left, 'left'],
   [Clutter.KEY_Right, 'right'],
@@ -56,51 +38,6 @@ const NAVIGATION_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.HYPER_MASK
   | Clutter.ModifierType.META_MASK;
 
-const ProgressRing = GObject.registerClass(
-class ProgressRing extends St.DrawingArea {
-  _init(progress = 0) {
-    super._init({
-      style_class: 'clipboard-x-progress-ring',
-      width: 18,
-      height: 18,
-    });
-    this._progress = progress;
-    this.connect('repaint', area => this._repaint(area));
-  }
-
-  set progress(value) {
-    this._progress = Math.max(0, Math.min(1, Number(value) || 0));
-    this.queue_repaint();
-  }
-
-  _repaint(area) {
-    const context = area.get_context();
-    const [width, height] = area.get_surface_size();
-    const color = area.get_theme_node().get_foreground_color();
-    const red = color.red / 255;
-    const green = color.green / 255;
-    const blue = color.blue / 255;
-    const radius = Math.max(1, Math.min(width, height) / 2 - 2);
-    const centerX = width / 2;
-    const centerY = height / 2;
-    context.setLineWidth(2);
-    context.setLineCap(Cairo.LineCap.ROUND);
-    context.setSourceRGBA(red, green, blue, 0.22);
-    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    context.stroke();
-    context.setSourceRGBA(red, green, blue, 1);
-    context.arc(
-      centerX,
-      centerY,
-      radius,
-      -Math.PI / 2,
-      -Math.PI / 2 + Math.PI * 2 * this._progress,
-    );
-    context.stroke();
-    context.$dispose();
-  }
-});
-
 export const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
   _init(settings, controller, actions) {
@@ -109,12 +46,7 @@ class Indicator extends PanelMenu.Button {
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;
-    this._query = '';
-    this._transfers = new Map();
-    this._syncButtons = new Map();
-    this._syncStatusText = _('Sync disabled');
     this._focusIdleId = 0;
-    this._pendingHistoryViewState = null;
     this._stateHoverTransfer = false;
     this._tooltip = new Tooltip();
 
@@ -125,32 +57,25 @@ class Indicator extends PanelMenu.Button {
     this.menu.actor.add_style_class_name('clipboard-x-menu');
     this._buildMenu();
     this._applyTextVerticalOffset();
-    this._historyFocusGrid = new FocusGrid({
-      ensureVisible: actor => {
-        const row = actor._clipboardXHistoryRow;
-        if (row?.mapped)
-          AnimationUtils.ensureActorVisibleInScrollView(this._scroll, row);
-      },
-    });
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
       clearPanelTooltips: () => this._tooltip.clear('panel'),
       hideTooltip: () => this._tooltip.hide(),
     });
     this._panelManager.register('history', {
-      focusGrid: this._historyFocusGrid,
-      captureView: () => this._captureHistoryView(),
-      restoreView: viewState => this._restoreHistoryView(viewState),
+      focusGrid: this._historyPanel.focusGrid,
+      captureView: () => this._historyPanel.captureView(),
+      restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
+      leave: () => this._historyPanel.leave(),
       render: () => {
-        this._renderHistory();
+        this._historyPanel.render();
         this._applyTextVerticalOffset();
       },
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizer.focusGrid,
       enter: () => {
-        this._syncButtons.clear();
         this._showPanelChrome('tokenizer');
       },
       leave: () => this._tokenizer.leave(),
@@ -170,8 +95,6 @@ class Indicator extends PanelMenu.Button {
     this._updatePanelGeometry();
     this._updateThemeColor();
 
-    this._changedSignal = controller.connect('changed', () => this._refresh());
-    this._privateSignal = settings.connect('changed::private-mode', () => this._updatePrivateButton());
     this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
@@ -179,21 +102,9 @@ class Indicator extends PanelMenu.Button {
       'changed::panel-text-vertical-offset',
       () => this._applyTextVerticalOffset(),
     );
-    this._visibleItemLimitSignal = settings.connect('changed::panel-visible-item-limit', () => this._refresh());
     this._preservePanelStateSignal = settings.connect(
       'changed::preserve-panel-state',
       () => this._updatePanelStateRetention(),
-    );
-    this._syncEnabledSignal = settings.connect('changed::sync-enabled', () => this._refresh());
-    this._deviceTagSignal = settings.connect('changed::device-tag', () => this._refresh());
-    this._deviceIconSignal = settings.connect('changed::device-icon-kind', () => this._refresh());
-    this._toolbarActionsSignal = settings.connect(
-      'changed::panel-toolbar-actions',
-      () => this._updatePanelActions(),
-    );
-    this._footerActionsSignal = settings.connect(
-      'changed::panel-footer-actions',
-      () => this._updatePanelActions(),
     );
     this._savedPhrasesSignal = settings.connect('changed::saved-phrases', () => {
       if (this._panelManager.is('phrases'))
@@ -214,8 +125,7 @@ class Indicator extends PanelMenu.Button {
         this._panelManager.open();
         this._actions.ensureIdentity();
         if (this._panelManager.is('history')) {
-          this._search.set_text('');
-          this._focusSearch();
+          this._historyPanel.focusSearch({reset: true});
         } else if (this._panelManager.is('tokenizer'))
           this._tokenizer.focus();
         else if (this._panelManager.is('phrases'))
@@ -234,76 +144,22 @@ class Indicator extends PanelMenu.Button {
   }
 
   _buildMenu() {
-    const searchItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this._searchItem = searchItem;
-    const searchToolbar = new St.BoxLayout({
-      style_class: 'clipboard-x-search-toolbar',
-      x_expand: true,
-      y_align: Clutter.ActorAlign.CENTER,
+    this._historyPanel = new HistoryPanel({
+      settings: this._settings,
+      controller: this._controller,
+      actions: this._actions,
+      tooltip: this._tooltip,
+      createIconButton: (...args) => this._iconButton(...args),
+      handlePanelKey: event => this._handleMenuKey(event),
+      closeMenu: () => this.menu.close(),
+      openTokenizer: item => this._openTokenizer(item),
+      openPhrases: () => this._openPhrases(),
+      requestRefresh: () => this._refresh(),
+      isActive: () => this._panelManager?.is('history') ?? false,
+      isMenuOpen: () => this.menu.isOpen,
     });
-    this._search = new SearchEntry({
-      placeholder: _('Search clipboard history…'),
-      placeholderOffset: OPTICAL_BASELINE_OFFSET,
-      onChanged: () => {
-        this._query = this._search.get_text();
-        if (this._panelManager?.is('history'))
-          this._refresh();
-      },
-      onFocusChanged: () => this._updateSearchStyle(),
-      onKeyPress: event => {
-        if (matchesShortcut(this._settings, 'history-search-shortcut', event))
-          return Clutter.EVENT_STOP;
-        return Clutter.EVENT_PROPAGATE;
-      },
-    });
-    searchToolbar.add_child(this._search);
-    const toolbar = new St.BoxLayout({
-      style_class: 'clipboard-x-toolbar',
-      y_align: Clutter.ActorAlign.CENTER,
-    });
-    this._toolbar = toolbar;
-    this._screenshotButton = this._iconButton(
-      'camera-photo-symbolic',
-      _('Screenshot'),
-      () => this._runAndClose(() => this._actions.screenshot()),
-      {iconSize: 14},
-    );
-    toolbar.add_child(this._screenshotButton);
-    this._colorButton = this._iconButton(
-      'color-select-symbolic',
-      _('Pick color'),
-      () => this._runAndClose(() => this._actions.pickColor()),
-      {iconSize: 14},
-    );
-    toolbar.add_child(this._colorButton);
-    this._privateButton = this._iconButton(
-      'security-high-symbolic',
-      _('Privacy mode'),
-      () => {
-        this._settings.set_boolean('private-mode', !this._settings.get_boolean('private-mode'));
-      },
-      {iconSize: 14, stateful: true},
-    );
-    this._phrasesToolButton = this._iconButton(
-      'starred-symbolic',
-      _('Quick phrases'),
-      () => this._openPhrases(),
-      {iconSize: 14},
-    );
-    searchToolbar.add_child(toolbar);
-    searchItem.add_child(searchToolbar);
-    this.menu.addMenuItem(searchItem);
-
-    this._history = new PopupMenu.PopupMenuSection();
-    this._scroll = new St.ScrollView({
-      overlay_scrollbars: true,
-      style_class: 'clipboard-x-history',
-    });
-    this._scroll.add_child(this._history.actor);
-    const scrollItem = new PopupMenu.PopupMenuSection();
-    this._historyScrollItem = scrollItem;
-    scrollItem.actor.add_child(this._scroll);
-    this.menu.addMenuItem(scrollItem);
+    this.menu.addMenuItem(this._historyPanel.searchItem);
+    this.menu.addMenuItem(this._historyPanel.scrollItem);
 
     this._tokenizer = new TokenizerPanel({
       settings: this._settings,
@@ -328,67 +184,15 @@ class Indicator extends PanelMenu.Button {
     });
     this.menu.addMenuItem(this._quickPhrases.item);
 
-    this._footerSeparator = new PopupMenu.PopupSeparatorMenuItem();
-    this.menu.addMenuItem(this._footerSeparator);
-
-    const footerItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this._footerItem = footerItem;
-    const footer = new St.BoxLayout({style_class: 'clipboard-x-footer', x_expand: true});
-    this._footer = footer;
-    this._footerSpacer = new St.Widget({x_expand: true});
-    footer.add_child(this._footerSpacer);
-    this._syncToolButton = this._iconButton(
-      'network-offline-symbolic',
-      _('Synchronization settings'),
-      () => this._runAndClose(() => this._actions.openPreferences()),
-    );
-    this._clearButton = this._iconButton(
-      'user-trash-symbolic', _('Clear unpinned history'), () => this._controller.clear());
-    this._preferencesButton = this._iconButton(
-      'emblem-system-symbolic', _('Preferences'), () => this._runAndClose(() => this._actions.openPreferences()));
-    this._panelActionButtons = new Map([
-      ['screenshot', this._screenshotButton],
-      ['color-picker', this._colorButton],
-      ['quick-phrases', this._phrasesToolButton],
-      ['private-mode', this._privateButton],
-      ['sync', this._syncToolButton],
-      ['clear-history', this._clearButton],
-      ['preferences', this._preferencesButton],
-    ]);
-    this._updatePanelActions();
-    footerItem.add_child(footer);
-    this.menu.addMenuItem(footerItem);
-    this._updatePrivateButton();
+    this.menu.addMenuItem(this._historyPanel.footerSeparator);
+    this.menu.addMenuItem(this._historyPanel.footerItem);
   }
 
   _showPanelChrome(panel) {
     const history = panel === 'history';
-    this._searchItem.visible = history;
-    this._historyScrollItem.actor.visible = history;
-    this._footerSeparator.visible = history;
-    this._footerItem.visible = history;
+    this._historyPanel.visible = history;
     this._tokenizer.item.visible = panel === 'tokenizer';
     this._quickPhrases.item.visible = panel === 'phrases';
-  }
-
-  _updatePanelActions() {
-    if (!this._panelActionButtons)
-      return;
-    const layout = normalizePanelActions(
-      this._settings.get_strv('panel-toolbar-actions'),
-      this._settings.get_strv('panel-footer-actions'),
-    );
-    for (const button of this._panelActionButtons.values()) {
-      const parent = button.get_parent();
-      if (parent)
-        parent.remove_child(button);
-    }
-    for (const action of layout.toolbar)
-      this._toolbar.add_child(this._panelActionButtons.get(action));
-    for (const action of layout.footer)
-      this._footer.add_child(this._panelActionButtons.get(action));
-    if (this._panelManager?.is('history'))
-      this._panelManager.refresh();
   }
 
   _applyTextVerticalOffset() {
@@ -406,281 +210,16 @@ class Indicator extends PanelMenu.Button {
     apply(this._tooltip.actor);
   }
 
-  _captureHistoryView() {
-    if (this._pendingHistoryViewState)
-      return this._pendingHistoryViewState;
-    return {
-      focusLocation: this._historyFocusGrid.location(global.stage.get_key_focus()),
-      scrollValue: this._scroll.get_vadjustment().value,
-    };
-  }
-
-  _restoreHistoryView(viewState) {
-    if (!viewState)
-      return;
-    this._cancelPendingFocus();
-    this._pendingHistoryViewState = viewState;
-    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusIdleId = 0;
-      this._pendingHistoryViewState = null;
-      if (!this.menu.isOpen || !this._panelManager.is('history'))
-        return GLib.SOURCE_REMOVE;
-      this._historyFocusGrid.focusAt(viewState.focusLocation);
-      const adjustment = this._scroll.get_vadjustment();
-      adjustment.value = Math.max(
-        adjustment.lower,
-        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size),
-      );
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
   setSyncStatus(status, capabilities = null) {
-    let iconName;
-    if (!this._settings.get_boolean('sync-enabled')) {
-      iconName = 'network-offline-symbolic';
-      this._syncStatusText = _('Sync disabled');
-    } else if (status === 'offline') {
-      iconName = 'network-offline-symbolic';
-      this._syncStatusText = _('Sync Service offline');
-    } else if (status === 'error') {
-      iconName = 'dialog-error-symbolic';
-      this._syncStatusText = capabilities?.error ?? _('Sync protocol error');
-    } else {
-      iconName = 'network-transmit-receive-symbolic';
-      const implementation = capabilities?.implementationName;
-      this._syncStatusText = implementation
-        ? `${implementation} · ${status}`
-        : _('Sync Service online');
-    }
-    this._setButtonIcon(this._syncToolButton, iconName);
-    this._setHint(this._syncToolButton, this._syncStatusText);
+    this._historyPanel.setSyncStatus(status, capabilities);
   }
 
   setTransfer(transfer) {
-    this._transfers.set(transfer.itemId, {...transfer});
-    const button = this._syncButtons.get(transfer.itemId);
-    if (button)
-      this._updateSyncButton(button._clipboardItem, button);
+    this._historyPanel.setTransfer(transfer);
   }
 
   _refresh() {
     this._panelManager?.refresh();
-  }
-
-  _renderHistory() {
-    this._history.removeAll();
-    this._syncButtons.clear();
-    const focusRows = [];
-    if (this._controller.loading) {
-      this._addState(_('Loading clipboard history…'), 'content-loading-symbolic');
-      this._setHistoryFocusRows(focusRows);
-      return;
-    }
-    if (this._controller.error && this._controller.items.length === 0) {
-      this._addState(_('Clipboard history could not be loaded'), 'dialog-error-symbolic');
-      this._setHistoryFocusRows(focusRows);
-      return;
-    }
-    const visibleItemLimit = this._settings.get_int('panel-visible-item-limit');
-    const items = this._controller.search(this._query, visibleItemLimit + 1);
-    const currentDeviceId = this._actions.ensureIdentity().deviceId;
-    this._multipleDevices = new Set(this._controller.items.map(item => item.originDeviceId || currentDeviceId)).size > 1;
-    if (items.length === 0) {
-      const empty = new PopupMenu.PopupBaseMenuItem({reactive: false});
-      empty.add_child(new St.Label({
-        text: this._query ? _('No matching entries') : _('Clipboard history is empty'),
-        style_class: 'clipboard-x-empty',
-      }));
-      this._history.addMenuItem(empty);
-      this._setHistoryFocusRows(focusRows);
-      return;
-    }
-
-    for (const item of items.slice(0, visibleItemLimit)) {
-      const row = this._entry(item);
-      this._history.addMenuItem(row);
-      focusRows.push(row._clipboardXFocusRow);
-    }
-    if (items.length > visibleItemLimit) {
-      this._history.addMenuItem(new PopupMenu.PopupMenuItem(
-        _('More entries are available; refine the search to see others'),
-        {reactive: false},
-      ));
-    }
-    this._setHistoryFocusRows(focusRows);
-  }
-
-  _setHistoryFocusRows(rows) {
-    this._historyFocusGrid.setRows([
-      [this._search.clutter_text, ...this._toolbar.get_children()],
-      ...rows,
-      this._footer.get_children().filter(actor => actor !== this._footerSpacer),
-    ]);
-  }
-
-  _entry(item) {
-    const row = new ContentItem();
-    if (this._multipleDevices) {
-      const identity = this._displayIdentity(item);
-      row.addLeading(this._deviceIcon(identity.iconKind, identity.tag));
-    }
-
-    const content = new St.Button({
-      can_focus: true,
-      track_hover: true,
-      clip_to_allocation: true,
-      style_class: 'clipboard-x-entry-content',
-      x_expand: true,
-      x_align: Clutter.ActorAlign.FILL,
-    });
-    if (item.isText) {
-      const title = item.preview?.text?.replaceAll('\n', ' ') || _('Text');
-      const preview = new St.Label({
-        text: title.slice(0, 240),
-        style_class: 'clipboard-x-entry-preview',
-        x_expand: true,
-        x_align: Clutter.ActorAlign.FILL,
-        y_align: Clutter.ActorAlign.CENTER,
-      });
-      preview.clutter_text.single_line_mode = true;
-      preview.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-      content.set_child(preview);
-    } else {
-      const box = new St.BoxLayout({
-        style_class: 'clipboard-x-image-content',
-        x_expand: true,
-        x_align: Clutter.ActorAlign.START,
-      });
-      box.add_child(item.preview?.path
-        ? new St.Icon({gicon: Gio.icon_new_for_string(item.preview.path), icon_size: 32})
-        : new St.Icon({icon_name: 'image-x-generic-symbolic', icon_size: 24}));
-      box.add_child(new St.Label({
-        text: [item.primary?.mimeType ?? _('Image'), formatBytes(item.primary?.size ?? 0)].join(' · '),
-        y_align: Clutter.ActorAlign.CENTER,
-      }));
-      content.set_child(box);
-    }
-    content._clipboardXTypeOnClick = false;
-    content.connect('button-press-event', (_button, event) => {
-      content._clipboardXTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
-        && Boolean(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
-      return Clutter.EVENT_PROPAGATE;
-    });
-    content.connect('key-press-event', (_button, event) => {
-      content._clipboardXTypeOnClick = false;
-      const result = this._handleEntryKey(item, event);
-      return result === Clutter.EVENT_PROPAGATE ? this._handleMenuKey(event) : result;
-    });
-    content.connect('clicked', () => {
-      const type = content._clipboardXTypeOnClick;
-      content._clipboardXTypeOnClick = false;
-      if (type)
-        this._type(item);
-      else
-        this._activate(item);
-    });
-    content.accessible_name = item.remote && item.availability !== 'ready'
-      ? _('Download original and copy')
-      : _('Copy original');
-    row.setContent(content);
-
-    if (item.isText) {
-      row.addAction(this._iconButton(
-        'format-text-plaintext-symbolic', _('Segment text'), () => this._openTokenizer(item), {showTooltip: false}));
-    } else {
-      row.addAction(this._iconButton(
-        'document-edit-symbolic', _('Edit image'), () => this._actions.editItem(item), {showTooltip: false}));
-    }
-    const pinButton = this._iconButton(
-      'view-pin-symbolic',
-      item.favorite ? _('Unpin') : _('Pin'),
-      () => this._controller.toggleFavorite(item.id),
-      {showTooltip: false, stateful: true},
-    );
-    pinButton.toggle_mode = true;
-    pinButton.selected = item.favorite;
-    if (item.favorite)
-      pinButton.add_style_class_name('clipboard-x-pinned');
-    if (item.favorite && this._customAccentColor) {
-      pinButton.set_style(`color: ${this._customAccentColor};`);
-    }
-    row.addAction(pinButton);
-    if (this._settings.get_boolean('sync-enabled'))
-      row.addAction(this._syncButton(item));
-    row.addAction(this._iconButton(
-      'user-trash-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
-    row._clipboardXFocusRow = row.focusActors;
-    for (const actor of row._clipboardXFocusRow)
-      actor._clipboardXHistoryRow = row;
-    row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
-    return row;
-  }
-
-  _syncButton(item) {
-    const button = this._iconButton(
-      'folder-remote-symbolic',
-      _('Synchronize'),
-      () => this._activateSync(item),
-      {showTooltip: false},
-    );
-    button._clipboardItem = item;
-    this._syncButtons.set(item.id, button);
-    this._updateSyncButton(item, button);
-    return button;
-  }
-
-  _updateSyncButton(item, button) {
-    const transfer = this._transfers.get(item.id);
-    if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
-      if (transfer.totalBytes > 0) {
-        button.set_child(new ProgressRing(transfer.completedBytes / transfer.totalBytes));
-        this._setHint(button, `${transfer.direction === 'upload' ? _('Uploading') : _('Downloading')} · ${Math.round(transfer.completedBytes / transfer.totalBytes * 100)}%`);
-      } else {
-        this._setButtonIcon(button, 'content-loading-symbolic');
-        this._setHint(button, transfer.state === 'waiting-for-peer' ? _('Waiting for peer device') : _('Preparing transfer'));
-      }
-      return;
-    }
-    if (transfer?.state === 'failed' || transfer?.state === 'expired') {
-      this._setButtonIcon(button, 'view-refresh-symbolic');
-      this._setHint(button, transfer.errorMessage || _('Transfer failed; activate to retry'));
-      return;
-    }
-    if (transfer?.state === 'completed') {
-      this._setButtonIcon(button, 'emblem-ok-symbolic');
-      this._setHint(button, transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
-      return;
-    }
-    if (!this._settings.get_boolean('sync-enabled')) {
-      this._setButtonIcon(button, 'network-offline-symbolic');
-      this._setHint(button, _('Synchronization is disabled'));
-      return;
-    }
-    if (item.remote && item.availability !== 'ready') {
-      const failed = item.availability === 'failed';
-      this._setButtonIcon(button, failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
-      this._setHint(button, failed ? _('Retry original download') : _('Download original'));
-      return;
-    }
-    this._setButtonIcon(button, 'folder-remote-symbolic');
-    this._setHint(button, item.remote ? _('Original is available locally') : _('Send to synchronization Service'));
-  }
-
-  async _activateSync(item) {
-    const transfer = this._transfers.get(item.id);
-    if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
-      await this._actions.cancelTransfer(transfer.transferId);
-      return;
-    }
-    if (!this._settings.get_boolean('sync-enabled')) {
-      this._runAndClose(() => this._actions.openPreferences());
-      return;
-    }
-    if (item.remote && item.availability !== 'ready')
-      await this._actions.materializeItem(item);
-    else if (!item.remote)
-      await this._actions.publish(item);
   }
 
   async _openTokenizer(item) {
@@ -715,12 +254,9 @@ class Indicator extends PanelMenu.Button {
   _updatePanelGeometry() {
     const panelWidth = this._settings.get_int('panel-width');
     const panelHeight = this._settings.get_int('panel-height');
-    const searchWidth = Math.max(140, panelWidth - 140);
-    this._searchWidth = searchWidth;
     this.menu.actor.set_width(panelWidth);
     this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
-    this._updateSearchStyle();
-    this._scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this._historyPanel.setGeometry(panelWidth, panelHeight);
     this._tokenizer.setGeometry(panelWidth, panelHeight);
     this._quickPhrases.setHeight(panelHeight);
     if (this._panelManager)
@@ -735,23 +271,9 @@ class Indicator extends PanelMenu.Button {
       this.menu.actor.add_style_class_name(configured);
     const selected = this._settings.get_string('theme-color');
     this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
+    this._historyPanel.setAccent(this._customAccentColor);
     this._tokenizer.setAccent(this._customAccentColor);
-    this._updateSearchStyle();
-    this._updatePrivateButton();
     this._refresh();
-  }
-
-  _updateSearchStyle() {
-    if (!this._search || !this._searchWidth)
-      return;
-    const styles = [
-      `width: ${this._searchWidth}px`,
-      'min-width: 0',
-      `max-width: ${this._searchWidth}px`,
-    ];
-    if (this._customAccentColor && this._search.clutter_text.has_key_focus())
-      styles.push(`border-color: ${this._customAccentColor}`);
-    this._search.set_style(`${styles.join('; ')};`);
   }
 
   _updatePanelStateRetention() {
@@ -770,16 +292,6 @@ class Indicator extends PanelMenu.Button {
     this._panelManager.show('history');
   }
 
-  _focusSearch() {
-    this._cancelPendingFocus();
-    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusIdleId = 0;
-      if (this.menu.isOpen && this._panelManager.is('history'))
-        global.stage.set_key_focus(this._search.clutter_text);
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
   _focusPhrasePanel() {
     this._cancelPendingFocus();
     this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
@@ -795,32 +307,6 @@ class Indicator extends PanelMenu.Button {
     if (this._focusIdleId)
       GLib.Source.remove(this._focusIdleId);
     this._focusIdleId = 0;
-    this._pendingHistoryViewState = null;
-  }
-
-  _displayIdentity(item) {
-    const current = this._actions.ensureIdentity();
-    if (!item.originDeviceId || item.originDeviceId === current.deviceId) {
-      return {
-        tag: current.deviceTag,
-        iconKind: current.deviceIconKind,
-      };
-    }
-    return {
-      tag: item.originDeviceTag || _('Unknown device'),
-      iconKind: item.originDeviceIconKind || 'other',
-    };
-  }
-
-  _deviceIcon(iconKind, tag) {
-    const icon = new St.Icon({
-      icon_name: DEVICE_ICON_NAMES[iconKind] ?? DEVICE_ICON_NAMES.other,
-      icon_size: 14,
-      style_class: 'clipboard-x-device-icon',
-      track_hover: true,
-    });
-    this._tooltip.attach(icon, tag, {scope: 'panel'});
-    return icon;
   }
 
   _iconButton(iconName, hintText, callback, options = {}) {
@@ -867,17 +353,6 @@ class Indicator extends PanelMenu.Button {
     });
   }
 
-  _setButtonIcon(button, iconName) {
-    if (button.setIcon) {
-      button.setIcon(iconName);
-      return;
-    }
-    button.set_child(new St.Icon({
-      icon_name: iconName,
-      icon_size: button._clipboardXIconSize ?? ICON_SIZE,
-    }));
-  }
-
   _setHint(actor, text) {
     if (actor.setHint)
       actor.setHint(text);
@@ -895,7 +370,7 @@ class Indicator extends PanelMenu.Button {
     if (this._panelManager.is('history')
         && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
       this._cancelPendingFocus();
-      global.stage.set_key_focus(this._search.clutter_text);
+      this._historyPanel.focusSearch({immediate: true});
       return Clutter.EVENT_STOP;
     }
     const direction = NAVIGATION_KEYS.get(event.get_key_symbol());
@@ -913,112 +388,34 @@ class Indicator extends PanelMenu.Button {
       : Clutter.EVENT_PROPAGATE;
   }
 
-  _updatePrivateButton() {
-    const paused = this._settings.get_boolean('private-mode');
-    const text = _('Privacy mode');
-    this._setButtonIcon(this._privateButton, 'security-high-symbolic');
-    this._setHint(this._privateButton, text);
-    this._privateButton.selected = paused;
-    this._privateButton.remove_style_class_name(
-      paused ? 'clipboard-x-private-inactive' : 'clipboard-x-private-active',
-    );
-    this._privateButton.add_style_class_name(
-      paused ? 'clipboard-x-private-active' : 'clipboard-x-private-inactive',
-    );
-    this._privateButton.set_style(paused && this._customAccentColor
-      ? `color: ${this._customAccentColor};`
-      : '');
-  }
-
   _runAndClose(callback) {
     this.menu.close();
     return callback();
   }
 
-  _addState(text, iconName) {
-    const state = new PopupMenu.PopupBaseMenuItem({reactive: false});
-    state.add_child(new St.Icon({icon_name: iconName, icon_size: ICON_SIZE}));
-    state.add_child(new St.Label({text, style_class: 'clipboard-x-empty'}));
-    this._history.addMenuItem(state);
-  }
-
-  _activate(item) {
-    this.menu.close();
-    this._actions.activateItem(item).catch(error => this._actions.reportError(error));
-  }
-
-  _paste(item) {
-    this.menu.close();
-    this._actions.pasteItem(item).catch(error => this._actions.reportError(error));
-  }
-
-  _type(item) {
-    if (!item.isText) {
-      this._activate(item);
-      return;
-    }
-    this.menu.close();
-    this._actions.typeItem(item).catch(error => this._actions.reportError(error));
-  }
-
-  _handleEntryKey(item, event) {
-    if (matchesShortcut(this._settings, 'history-type-activation-shortcut', event)) {
-      this._type(item);
-      return Clutter.EVENT_STOP;
-    }
-    if (matchesShortcut(this._settings, 'history-paste-shortcut', event)) {
-      this._paste(item);
-    } else if (matchesShortcut(this._settings, 'history-pin-shortcut', event)) {
-      this._controller.toggleFavorite(item.id);
-    } else if (matchesShortcut(this._settings, 'history-delete-shortcut', event)) {
-      this._controller.remove(item.id);
-    } else if (matchesShortcut(this._settings, 'history-type-shortcut', event)) {
-      this._type(item);
-    } else {
-      return Clutter.EVENT_PROPAGATE;
-    }
-    return Clutter.EVENT_STOP;
-  }
-
   destroy() {
     this._cancelPendingFocus();
     this._panelManager?.destroy();
+    this._historyPanel.destroy();
     this._tokenizer.destroy();
     this._tooltip.clear();
-    if (this._changedSignal)
-      this._controller.disconnect(this._changedSignal);
     for (const signal of [
-      this._privateSignal,
       this._themeColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
       this._textVerticalOffsetSignal,
-      this._visibleItemLimitSignal,
       this._preservePanelStateSignal,
-      this._syncEnabledSignal,
-      this._deviceTagSignal,
-      this._deviceIconSignal,
-      this._toolbarActionsSignal,
-      this._footerActionsSignal,
       this._savedPhrasesSignal,
       this._phraseLimitSignal,
     ]) {
       if (signal)
         this._settings.disconnect(signal);
     }
-    this._changedSignal = 0;
-    this._privateSignal = 0;
     this._themeColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
     this._textVerticalOffsetSignal = 0;
-    this._visibleItemLimitSignal = 0;
     this._preservePanelStateSignal = 0;
-    this._syncEnabledSignal = 0;
-    this._deviceTagSignal = 0;
-    this._deviceIconSignal = 0;
-    this._toolbarActionsSignal = 0;
-    this._footerActionsSignal = 0;
     this._savedPhrasesSignal = 0;
     this._phraseLimitSignal = 0;
     if (this._menuVisibilitySignal)
@@ -1031,11 +428,3 @@ class Indicator extends PanelMenu.Button {
     super.destroy();
   }
 });
-
-function formatBytes(bytes) {
-  if (bytes < 1024)
-    return `${bytes} B`;
-  if (bytes < 1024 * 1024)
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
