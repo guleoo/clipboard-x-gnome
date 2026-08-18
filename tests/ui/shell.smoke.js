@@ -304,12 +304,24 @@ export async function run() {
   indicator.menu.close();
   await Scripting.sleep(100);
   const capturedRow = history.entry(capturedText);
+  const capturedContentBody = capturedRow.focusActors[0].get_child();
   assert(capturedRow._clipboardXControlType === 'content-item'
       && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length
       && capturedRow.focusActors[0].has_style_class_name('clipboard-x-entry-content')
-      && !capturedRow.get_children().some(child =>
+      && capturedContentBody.has_style_class_name('clipboard-x-entry-body')
+      && !capturedContentBody.get_children().some(child =>
         child.has_style_class_name?.('clipboard-x-color-swatch')),
-    'Clipboard history did not use the shared content-item control');
+    'Clipboard history did not group its leading content inside the shared content action');
+  history._multipleDevices = true;
+  const deviceRow = history.entry(capturedText);
+  const deviceContentBody = deviceRow.focusActors[0].get_child();
+  assert(!deviceRow.get_children().some(child =>
+    child.has_style_class_name?.('clipboard-x-device-icon'))
+      && deviceContentBody.get_children().some(child =>
+        child.has_style_class_name?.('clipboard-x-device-icon')),
+  'Clipboard device identity was not grouped with the entry content');
+  deviceRow.destroy();
+  history._multipleDevices = false;
   capturedRow.destroy();
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
     'Case-insensitive clipboard history search did not find the expected entry');
@@ -714,12 +726,15 @@ export async function run() {
     'Picked color did not enter clipboard history');
   const colorItem = indicator._controller.items.find(item => item.text.startsWith('#'));
   const colorRow = history.entry(colorItem);
-  const colorSwatch = colorRow.get_children().find(child =>
+  const colorContentBody = colorRow.focusActors[0].get_child();
+  const colorSwatch = colorContentBody.get_children().find(child =>
     child.has_style_class_name?.('clipboard-x-color-swatch'));
   assert(colorSwatch?.get_style().includes('background-color: rgba(')
       && !colorSwatch.can_focus
-      && !colorSwatch.reactive,
-  'Color clipboard content did not render its decorative leading swatch');
+      && !colorSwatch.reactive
+      && !colorRow.get_children().some(child =>
+        child.has_style_class_name?.('clipboard-x-color-swatch')),
+  'Color swatch was not grouped inside the clipboard content action');
   colorRow.destroy();
   indicator._controller.toggleFavorite(colorItem.id);
   indicator._controller.clear();

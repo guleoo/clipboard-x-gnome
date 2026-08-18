@@ -103,16 +103,17 @@
   transition-duration: 120ms;
 }
 
-.clipboard-x-entry:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
 .clipboard-x-entry-content {
   color: inherit;
   padding: 4px 5px;
   min-width: 0;
   border-radius: 6px;
   text-align: left;
+}
+
+.clipboard-x-entry-body {
+  spacing: 2px;
+  min-width: 0;
 }
 
 .clipboard-x-entry-content:hover,

@@ -17,17 +17,24 @@ export function create({
   actions,
 }) {
   const row = new ContentItem();
-  if (leading)
-    row.addLeading(leading);
   const swatch = colorSwatch(item);
-  if (swatch)
-    row.addLeading(swatch);
 
   const content = new St.Button({
     can_focus: true,
     track_hover: true,
   });
-  content.set_child(item.isText ? textPreview(item) : imagePreview(item));
+  const contentBody = new St.BoxLayout({
+    style_class: 'clipboard-x-entry-body',
+    x_expand: true,
+    x_align: Clutter.ActorAlign.FILL,
+    y_align: Clutter.ActorAlign.CENTER,
+  });
+  if (leading)
+    contentBody.add_child(leading);
+  if (swatch)
+    contentBody.add_child(swatch);
+  contentBody.add_child(item.isText ? textPreview(item) : imagePreview(item));
+  content.set_child(contentBody);
   content._clipboardXTypeOnClick = false;
   content.connect('button-press-event', (_button, event) => {
     content._clipboardXTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
