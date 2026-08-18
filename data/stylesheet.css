@@ -317,7 +317,16 @@
 
 .clipboard-x-panel-header-title {
   font-weight: bold;
-  padding-left: 2px;
+  text-align: center;
+}
+
+.clipboard-x-panel-header-side {
+  spacing: 1px;
+}
+
+.clipboard-x-panel-header-balance {
+  min-width: 26px;
+  min-height: 26px;
 }
 
 .clipboard-x-panel-divider {

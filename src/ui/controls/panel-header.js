@@ -22,15 +22,20 @@ class PanelHeader extends St.BoxLayout {
       vertical: true,
     });
     this._clipboardXControlType = 'panel-header';
+    this._actions = [];
+    this._balanceActors = [];
     this.row = new St.BoxLayout({
       style_class: 'clipboard-x-panel-header-row',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
     this.add_child(this.row);
+    this.leading = new St.BoxLayout({style_class: 'clipboard-x-panel-header-side'});
+    this.trailing = new St.BoxLayout({style_class: 'clipboard-x-panel-header-side'});
+    this.row.add_child(this.leading);
     this.backButton = backButton;
     if (backButton)
-      this.row.add_child(backButton);
+      this.leading.add_child(backButton);
     const titleStyleClasses = [
       'clipboard-x-panel-header-title',
       titleStyleClass,
@@ -43,8 +48,10 @@ class PanelHeader extends St.BoxLayout {
     });
     this.titleLabel._clipboardXTextBaselineOffset = titleOffset;
     this.row.add_child(this.titleLabel);
+    this.row.add_child(this.trailing);
     for (const actor of actions)
       this.addAction(actor);
+    this._updateBalance();
     this.divider = new St.Widget({
       style_class: 'clipboard-x-panel-divider',
       x_expand: true,
@@ -53,7 +60,23 @@ class PanelHeader extends St.BoxLayout {
   }
 
   addAction(actor) {
-    this.row.add_child(actor);
+    this._actions.push(actor);
+    this.trailing.add_child(actor);
+    this._updateBalance();
     return actor;
+  }
+
+  _updateBalance() {
+    for (const actor of this._balanceActors)
+      actor.get_parent()?.remove_child(actor);
+    this._balanceActors = [];
+    const leadingCount = this.backButton ? 1 : 0;
+    const trailingCount = this._actions.length;
+    const container = leadingCount < trailingCount ? this.leading : this.trailing;
+    for (let index = 0; index < Math.abs(leadingCount - trailingCount); index++) {
+      const actor = new St.Widget({style_class: 'clipboard-x-panel-header-balance'});
+      container.add_child(actor);
+      this._balanceActors.push(actor);
+    }
   }
 });
