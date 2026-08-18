@@ -15,7 +15,6 @@ export class PanelManager {
     this._panels = new Map();
     this._viewStates = new Map();
     this._geometry = null;
-    this._geometryOverrides = {};
     this._current = null;
     this._resetWhenHidden = false;
   }
@@ -49,9 +48,8 @@ export class PanelManager {
     return this.currentName === name;
   }
 
-  setGeometry(defaults, overrides = {}) {
+  setGeometry(defaults) {
     this._geometry = {...defaults};
-    this._geometryOverrides = {...overrides};
     for (const [name, panel] of this._panels)
       this._applyGeometry(name, panel);
     this._publishGeometry();
@@ -130,7 +128,6 @@ export class PanelManager {
     this._panels.clear();
     this._viewStates.clear();
     this._geometry = null;
-    this._geometryOverrides = {};
     this._resetWhenHidden = false;
   }
 
@@ -153,7 +150,7 @@ export class PanelManager {
       return null;
     return {
       ...this._geometry,
-      ...(this._geometryOverrides[name] ?? {}),
+      ...(this._panels.get(name)?.geometry ?? {}),
     };
   }
 

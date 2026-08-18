@@ -107,13 +107,21 @@ export async function run() {
     'Quick-phrase and privacy buttons were not swapped');
   indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
   indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
+  const originalPanelWidth = indicator._settings.get_int('panel-width');
+  const originalPanelHeight = indicator._settings.get_int('panel-height');
+  const resizedPanelWidth = Math.min(800, originalPanelWidth + 40);
+  const resizedPanelHeight = Math.min(800, originalPanelHeight + 40);
+  indicator._settings.set_int('panel-width', resizedPanelWidth);
+  indicator._settings.set_int('panel-height', resizedPanelHeight);
   const originalPhrases = indicator._settings.get_strv('saved-phrases');
   indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
   indicator._openPhrases();
+  await Scripting.sleep(100);
   assert(indicator._panelManager.is('phrases')
-      && indicator._panelManager.geometry.height === indicator._settings.get_int('panel-height')
-      && indicator._quickPhrases.actor.get_style().includes(
-        `height: ${indicator._settings.get_int('panel-height')}px`)
+      && indicator._panelManager.geometry.width === resizedPanelWidth
+      && indicator._panelManager.geometry.height === resizedPanelHeight
+      && Math.round(indicator.menu.actor.width) === resizedPanelWidth
+      && Math.round(indicator._quickPhrases.actor.height) === resizedPanelHeight
       && indicator._quickPhrases.buttons.length === 1
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
       && indicator._quickPhrases.header.divider !== null
@@ -308,9 +316,10 @@ export async function run() {
   await indicator._openTokenizer(capturedText);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
-      && indicator._panelManager.geometry.height === indicator._settings.get_int('panel-height')
-      && indicator._tokenizer.actor.get_style().includes(
-        `height: ${indicator._settings.get_int('panel-height')}px`)
+      && indicator._panelManager.geometry.width === resizedPanelWidth
+      && indicator._panelManager.geometry.height === resizedPanelHeight
+      && Math.round(indicator.menu.actor.width) === resizedPanelWidth
+      && Math.round(indicator._tokenizer.actor.height) === resizedPanelHeight
       && !history.searchItem.visible
       && !history.scrollItem.actor.visible
       && !history.footerItem.visible
@@ -408,6 +417,8 @@ export async function run() {
     'Selected-token preview is not fixed outside the scrolling token area');
   indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
   indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);
+  indicator._settings.set_int('panel-width', originalPanelWidth);
+  indicator._settings.set_int('panel-height', originalPanelHeight);
   indicator._closeTokenizer();
   assert(indicator._panelManager.is('history')
       && history.searchItem.visible

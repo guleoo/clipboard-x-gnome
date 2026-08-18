@@ -23,6 +23,7 @@ manager.register('history', {
   render: () => events.push('render-history'),
 });
 manager.register('tokenizer', {
+  geometry: {width: 420, height: 280},
   focusGrid: tokenizerFocusGrid,
   captureView: state => ({source: state.source}),
   restoreView: view => events.push(`restore-tokenizer:${view?.source ?? 'none'}`),
@@ -31,10 +32,7 @@ manager.register('tokenizer', {
   render: state => events.push(`render-tokenizer:${state.source}`),
   setGeometry: geometry => events.push(`geometry-tokenizer:${geometry.width}x${geometry.height}`),
 });
-manager.setGeometry(
-  {width: 360, height: 300},
-  {tokenizer: {width: 420, height: 280}},
-);
+manager.setGeometry({width: 360, height: 300});
 assert(events.includes('geometry-tokenizer:420x280'),
   'panel geometry should merge per-panel overrides with defaults');
 
