@@ -537,6 +537,12 @@ class Indicator extends PanelMenu.Button {
       row.add_child(this._syncButton(item));
     row.add_child(this._iconButton(
       'user-trash-symbolic', _('Delete from local history'), () => this._controller.remove(item.id), {showTooltip: false}));
+    for (const actor of row.get_children()) {
+      if (!actor.can_focus)
+        continue;
+      actor._clipboardXHistoryFocusSignal = actor.connect('key-focus-in', () =>
+        AnimationUtils.ensureActorVisibleInScrollView(this._scroll, row));
+    }
     row.connect('key-press-event', (_row, event) => this._handleEntryKey(item, event));
     return row;
   }

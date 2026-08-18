@@ -216,6 +216,9 @@ export async function run() {
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = indicator._entry(capturedText);
+  assert(pinnedRow.get_children().filter(child => child.can_focus)
+    .every(child => Boolean(child._clipboardXHistoryFocusSignal)),
+  'Clipboard history entry controls did not register focus-driven scrolling');
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
       && child.get_child()?.icon_name === 'view-pin-symbolic'
       && child.has_style_class_name('clipboard-x-pinned')),
