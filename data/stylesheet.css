@@ -198,7 +198,6 @@
 
 .clipboard-x-token-title {
   font-weight: bold;
-  padding-left: 6px;
 }
 
 .clipboard-x-token-panel {
@@ -206,7 +205,7 @@
 }
 
 .clipboard-x-token-header {
-  spacing: 2px;
+  spacing: 0;
   padding: 1px 2px;
 }
 
