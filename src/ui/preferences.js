@@ -109,6 +109,15 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     panel.add(this._switch(settings, 'show-indicator', _('Show panel indicator')));
     panel.add(this._spin(settings, 'panel-width', _('Panel width'), 300, 800, 10, _('px')));
     panel.add(this._spin(settings, 'panel-height', _('Panel height'), 160, 800, 10, _('px')));
+    panel.add(this._spin(
+      settings,
+      'panel-text-vertical-offset',
+      _('Text vertical offset'),
+      -4,
+      4,
+      1,
+      _('px; negative moves up, positive moves down'),
+    ));
     panel.add(this._spin(settings, 'panel-visible-item-limit', _('Maximum entries shown in panel'), 1, 200, 1));
     panel.add(this._switch(
       settings,

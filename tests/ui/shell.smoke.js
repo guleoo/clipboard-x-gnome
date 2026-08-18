@@ -67,6 +67,12 @@ export async function run() {
     'Configured panel width was not enforced on the popup actor');
   assert(Number.isFinite(indicator._captureHistoryView().scrollValue),
     'Clipboard history view state could not read the GNOME 50 scroll adjustment');
+  const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
+  indicator._settings.set_int('panel-text-vertical-offset', -1);
+  assert(indicator._search.clutter_text.translation_y === -1
+      && indicator._tooltip.translation_y === -1,
+  'Configured text vertical offset was not applied to panel text');
+  indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
   assert([indicator._search, indicator._search.clutter_text].includes(global.stage.get_key_focus()),
     'Opening the panel must focus its keyboard-search entry');
   assert(indicator._toolbar.get_children().length === 3,

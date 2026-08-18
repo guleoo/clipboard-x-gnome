@@ -136,6 +136,7 @@ class Indicator extends PanelMenu.Button {
     }));
     this.menu.actor.add_style_class_name('clipboard-x-menu');
     this._buildMenu();
+    this._applyTextVerticalOffset();
     this._historyFocusGrid = new FocusGrid({
       ensureVisible: actor => {
         const row = actor._clipboardXHistoryRow;
@@ -159,13 +160,19 @@ class Indicator extends PanelMenu.Button {
       captureView: () => this._captureHistoryView(),
       restoreView: viewState => this._restoreHistoryView(viewState),
       enter: () => this._showPanelChrome('history'),
-      render: () => this._renderHistory(),
+      render: () => {
+        this._renderHistory();
+        this._applyTextVerticalOffset();
+      },
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizerFocusGrid,
       enter: () => this._showPanelChrome('tokenizer'),
       leave: () => this._endTokenSelectionDrag(),
-      render: state => this._renderTokenizer(state),
+      render: state => {
+        this._renderTokenizer(state);
+        this._applyTextVerticalOffset();
+      },
     });
     this._updatePanelGeometry();
     this._updateThemeColor();
@@ -175,6 +182,10 @@ class Indicator extends PanelMenu.Button {
     this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
+    this._textVerticalOffsetSignal = settings.connect(
+      'changed::panel-text-vertical-offset',
+      () => this._applyTextVerticalOffset(),
+    );
     this._visibleItemLimitSignal = settings.connect('changed::panel-visible-item-limit', () => this._refresh());
     this._preservePanelStateSignal = settings.connect(
       'changed::preserve-panel-state',
@@ -392,6 +403,20 @@ class Indicator extends PanelMenu.Button {
     this._footerSeparator.visible = history;
     this._footerItem.visible = history;
     this._tokenPanelItem.visible = !history;
+  }
+
+  _applyTextVerticalOffset() {
+    const offset = this._settings.get_int('panel-text-vertical-offset');
+    const apply = actor => {
+      if (actor instanceof St.Entry)
+        actor.clutter_text.translation_y = offset;
+      else if (actor instanceof St.Label)
+        actor.translation_y = offset;
+      for (const child of actor.get_children?.() ?? [])
+        apply(child);
+    };
+    apply(this.menu.actor);
+    apply(this._tooltip);
   }
 
   _captureHistoryView() {
@@ -1400,6 +1425,7 @@ class Indicator extends PanelMenu.Button {
       this._themeColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
+      this._textVerticalOffsetSignal,
       this._visibleItemLimitSignal,
       this._preservePanelStateSignal,
       this._tokenSourcePreviewSignal,
@@ -1415,6 +1441,7 @@ class Indicator extends PanelMenu.Button {
     this._themeColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
+    this._textVerticalOffsetSignal = 0;
     this._visibleItemLimitSignal = 0;
     this._preservePanelStateSignal = 0;
     this._tokenSourcePreviewSignal = 0;
