@@ -95,8 +95,14 @@ export async function run() {
   indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
   assert(history.searchEntry.get_hint_actor().margin_left === 2,
     'Search placeholder did not retain its configured left margin');
-  assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
-    'Opening the panel must focus its keyboard-search entry');
+  assert(!history.focusGrid.contains(global.stage.get_key_focus()),
+    'Opening the panel must not claim keyboard focus before keyboard navigation');
+  assert(indicator._handleMenuKey({
+    get_key_symbol: () => Clutter.KEY_Down,
+    get_state: () => 0,
+  }) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === history.searchEntry.clutter_text,
+  'The first navigation key did not lazily focus the first history control');
   const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
   const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
   indicator._settings.set_strv(
@@ -140,9 +146,15 @@ export async function run() {
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
-  assert(global.stage.get_key_focus() === indicator._quickPhrases.backButton
+  assert(!indicator._quickPhrases.focusGrid.contains(global.stage.get_key_focus()),
+    'Opening quick phrases claimed a control before keyboard navigation');
+  assert(indicator._handleMenuKey({
+    get_key_symbol: () => Clutter.KEY_Down,
+    get_state: () => 0,
+  }) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === indicator._quickPhrases.addButton
       && !indicator._quickPhrases.buttons[0].has_key_focus(),
-    'Opening quick phrases left the first content item in a persistent focus background');
+  'Quick phrases did not lazily focus the first non-return control');
   const phraseForeground = foreground(indicator._quickPhrases.buttons[0]);
   assert(phraseForeground[3] >= 240
       && indicator._quickPhrases.rows[0].focusActors.every(actor =>
@@ -154,8 +166,8 @@ export async function run() {
   indicator._quickPhrases.toggleForm();
   assert(!indicator._quickPhrases.form.visible,
     'Activating the add action again did not collapse the quick-phrase form');
-  assert(global.stage.get_key_focus() === indicator._quickPhrases.backButton,
-    'Closing the quick-phrase form did not return focus to the panel header');
+  assert(global.stage.get_key_focus() === indicator._quickPhrases.addButton,
+    'Closing the quick-phrase form did not return focus to its initiating action');
   indicator._quickPhrases.toggleForm();
   indicator._quickPhrases.entry.set_text('New smoke-test phrase');
   indicator._quickPhrases.save();
@@ -364,8 +376,11 @@ export async function run() {
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
-  assert(global.stage.get_key_focus() === tokenButtons[0],
-    'Opening the tokenizer did not focus the first token');
+  assert(!indicator._tokenizer.focusGrid.contains(global.stage.get_key_focus()),
+    'Opening the tokenizer claimed a control before keyboard navigation');
+  assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === tokenButtons[0],
+  'The first navigation key did not lazily focus the first token');
   assert(!indicator._tokenizer.sourceLabel.visible,
     'Disabled source preview remained visible in the tokenizer');
   assert(tokenButtons.every(button => !button._clipboardXHintConnected),

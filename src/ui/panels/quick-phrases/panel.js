@@ -170,7 +170,7 @@ export class QuickPhrasesPanel {
   }
 
   focus() {
-    const target = this._formVisible ? this.entry.clutter_text : this.backButton;
+    const target = this._formVisible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
   }
 

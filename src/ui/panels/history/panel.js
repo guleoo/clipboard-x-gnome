@@ -310,7 +310,7 @@ export class HistoryPanel {
   focusSearch({immediate = false, reset = false} = {}) {
     this._cancelFocus();
     if (reset)
-      this.searchEntry.set_text('');
+      this.resetSearch();
     if (immediate) {
       global.stage.set_key_focus(this.searchEntry.clutter_text);
       return;
@@ -321,6 +321,10 @@ export class HistoryPanel {
         global.stage.set_key_focus(this.searchEntry.clutter_text);
       return GLib.SOURCE_REMOVE;
     });
+  }
+
+  resetSearch() {
+    this.searchEntry.set_text('');
   }
 
   leave() {

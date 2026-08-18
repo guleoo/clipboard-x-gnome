@@ -46,7 +46,6 @@ class Indicator extends PanelMenu.Button {
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;
-    this._focusIdleId = 0;
     this._stateHoverTransfer = false;
     this._tooltip = new Tooltip();
 
@@ -65,6 +64,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('history', {
       focusGrid: this._historyPanel.focusGrid,
+      focusInitial: () => this._historyPanel.focusGrid.focusFirst(),
       captureView: () => this._historyPanel.captureView(),
       restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
@@ -77,6 +77,9 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizer.focusGrid,
+      focusInitial: () => this._tokenizer.focusGrid.focusFirst({
+        exclude: [this._tokenizer.backButton],
+      }),
       enter: () => {
         this._showPanelChrome('tokenizer');
       },
@@ -89,6 +92,9 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('phrases', {
       focusGrid: this._quickPhrases.focusGrid,
+      focusInitial: () => this._quickPhrases.focusGrid.focusFirst({
+        exclude: [this._quickPhrases.backButton],
+      }),
       enter: () => this._showPanelChrome('phrases'),
       setGeometry: geometry => this._quickPhrases.setGeometry(geometry),
       render: () => {
@@ -128,14 +134,9 @@ class Indicator extends PanelMenu.Button {
         this._actions.rememberInputTarget();
         this._panelManager.open();
         this._actions.ensureIdentity();
-        if (this._panelManager.is('history')) {
-          this._historyPanel.focusSearch({reset: true});
-        } else if (this._panelManager.is('tokenizer'))
-          this._tokenizer.focus();
-        else if (this._panelManager.is('phrases'))
-          this._focusPhrasePanel();
+        if (this._panelManager.is('history'))
+          this._historyPanel.resetSearch();
       } else {
-        this._cancelPendingFocus();
         this._tooltip.hide();
         this._panelManager.close({
           preserve: this._settings.get_boolean('preserve-panel-state'),
@@ -229,7 +230,6 @@ class Indicator extends PanelMenu.Button {
       await this._actions.materializeItem(item);
       const source = item.text;
       this._panelManager.show('tokenizer', this._tokenizer.createState(item, source));
-      this._tokenizer.focus();
     } catch (error) {
       this._actions.reportError(error);
     }
@@ -237,7 +237,6 @@ class Indicator extends PanelMenu.Button {
 
   _openPhrases() {
     this._panelManager.show('phrases');
-    this._focusPhrasePanel();
   }
 
   _closePhrases() {
@@ -291,23 +290,6 @@ class Indicator extends PanelMenu.Button {
 
   _closeTokenizer() {
     this._panelManager.show('history');
-  }
-
-  _focusPhrasePanel() {
-    this._cancelPendingFocus();
-    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusIdleId = 0;
-      if (!this.menu.isOpen || !this._panelManager.is('phrases'))
-        return GLib.SOURCE_REMOVE;
-      this._quickPhrases.focus();
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  _cancelPendingFocus() {
-    if (this._focusIdleId)
-      GLib.Source.remove(this._focusIdleId);
-    this._focusIdleId = 0;
   }
 
   _iconButton(iconName, hintText, callback, options = {}) {
@@ -370,7 +352,6 @@ class Indicator extends PanelMenu.Button {
       return Clutter.EVENT_PROPAGATE;
     if (this._panelManager.is('history')
         && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
-      this._cancelPendingFocus();
       this._historyPanel.focusSearch({immediate: true});
       return Clutter.EVENT_STOP;
     }
@@ -380,8 +361,15 @@ class Indicator extends PanelMenu.Button {
       return Clutter.EVENT_PROPAGATE;
     const focus = global.stage.get_key_focus();
     const focusGrid = this._panelManager.focusGrid;
-    if (!focusGrid?.contains(focus))
+    if (!focusGrid)
       return Clutter.EVENT_PROPAGATE;
+    if (!focusGrid.contains(focus)) {
+      if (this._panelManager.focusInitial())
+        return Clutter.EVENT_STOP;
+      return this._settings.get_boolean('panel-confine-focus')
+        ? Clutter.EVENT_STOP
+        : Clutter.EVENT_PROPAGATE;
+    }
     if (focusGrid.move(focus, direction))
       return Clutter.EVENT_STOP;
     return this._settings.get_boolean('panel-confine-focus')
@@ -395,7 +383,6 @@ class Indicator extends PanelMenu.Button {
   }
 
   destroy() {
-    this._cancelPendingFocus();
     this._panelManager?.destroy();
     this._historyPanel.destroy();
     this._tokenizer.destroy();

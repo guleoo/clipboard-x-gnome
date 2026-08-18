@@ -31,7 +31,6 @@ export class TokenizerPanel {
     this._accentColor = null;
     this._selectionDrag = null;
     this._dragCaptureId = 0;
-    this._focusIdleId = 0;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('clipboard-x-panel-host');
@@ -229,21 +228,7 @@ export class TokenizerPanel {
     this.updateResult();
   }
 
-  focus() {
-    this._cancelFocus();
-    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      this._focusIdleId = 0;
-      const first = this._buttons[0];
-      if (first?.mapped) {
-        first.grab_key_focus();
-        AnimationUtils.ensureActorVisibleInScrollView(this.scroll, first);
-      }
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
   leave() {
-    this._cancelFocus();
     this.endSelectionDrag();
   }
 
@@ -494,11 +479,5 @@ export class TokenizerPanel {
       styles.push(`color: ${this._accentColor}`);
     }
     button.set_style(`${styles.join('; ')};`);
-  }
-
-  _cancelFocus() {
-    if (this._focusIdleId)
-      GLib.Source.remove(this._focusIdleId);
-    this._focusIdleId = 0;
   }
 }
