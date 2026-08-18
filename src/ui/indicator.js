@@ -408,10 +408,14 @@ class Indicator extends PanelMenu.Button {
   _applyTextVerticalOffset() {
     const offset = this._settings.get_int('panel-text-vertical-offset');
     const apply = actor => {
-      if (actor instanceof St.Entry)
+      if (actor instanceof St.Entry) {
         actor.clutter_text.translation_y = offset;
-      else if (actor instanceof St.Label)
+        const hintActor = actor.get_hint_actor();
+        if (hintActor)
+          hintActor.translation_y = offset;
+      } else if (actor instanceof St.Label) {
         actor.translation_y = offset;
+      }
       for (const child of actor.get_children?.() ?? [])
         apply(child);
     };
