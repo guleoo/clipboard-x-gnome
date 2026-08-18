@@ -50,20 +50,6 @@ export class FocusGrid {
     return actor;
   }
 
-  focusFirst({exclude = []} = {}) {
-    const excluded = new Set(exclude);
-    for (const row of this._rows) {
-      const actor = row.find(candidate =>
-        !excluded.has(candidate) && this._eligible(candidate));
-      if (!actor)
-        continue;
-      this._focus(actor);
-      this._ensureVisible(actor);
-      return actor;
-    }
-    return null;
-  }
-
   move(actor, direction) {
     if (!DIRECTIONS.has(direction))
       throw new Error(`Unknown focus direction: ${direction}`);

@@ -47,6 +47,7 @@ class Indicator extends PanelMenu.Button {
     this._controller = controller;
     this._actions = actions;
     this._stateHoverTransfer = false;
+    this._stageKeyPressSignal = 0;
     this._tooltip = new Tooltip();
 
     this.add_child(new St.Icon({
@@ -64,7 +65,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('history', {
       focusGrid: this._historyPanel.focusGrid,
-      focusInitial: () => this._historyPanel.focusGrid.focusFirst(),
+      focusInitial: () => this._historyPanel.focusInitial(),
       captureView: () => this._historyPanel.captureView(),
       restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
@@ -77,9 +78,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizer.focusGrid,
-      focusInitial: () => this._tokenizer.focusGrid.focusFirst({
-        exclude: [this._tokenizer.backButton],
-      }),
+      focusInitial: () => this._tokenizer.focusInitial(),
       enter: () => {
         this._showPanelChrome('tokenizer');
       },
@@ -92,9 +91,7 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('phrases', {
       focusGrid: this._quickPhrases.focusGrid,
-      focusInitial: () => this._quickPhrases.focusGrid.focusFirst({
-        exclude: [this._quickPhrases.backButton],
-      }),
+      focusInitial: () => this._quickPhrases.focusInitial(),
       enter: () => this._showPanelChrome('phrases'),
       setGeometry: geometry => this._quickPhrases.setGeometry(geometry),
       render: () => {
@@ -131,12 +128,14 @@ class Indicator extends PanelMenu.Button {
       this._handleMenuKey(event));
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
+        this._startKeyCapture();
         this._actions.rememberInputTarget();
         this._panelManager.open();
         this._actions.ensureIdentity();
         if (this._panelManager.is('history'))
           this._historyPanel.resetSearch();
       } else {
+        this._stopKeyCapture();
         this._tooltip.hide();
         this._panelManager.close({
           preserve: this._settings.get_boolean('preserve-panel-state'),
@@ -377,6 +376,34 @@ class Indicator extends PanelMenu.Button {
       : Clutter.EVENT_PROPAGATE;
   }
 
+  _captureMenuKey(event) {
+    if (!this.menu.isOpen || event.type() !== Clutter.EventType.KEY_PRESS)
+      return Clutter.EVENT_PROPAGATE;
+    const focusGrid = this._panelManager.focusGrid;
+    if (!focusGrid || focusGrid.contains(global.stage.get_key_focus()))
+      return Clutter.EVENT_PROPAGATE;
+    const searchShortcut = this._panelManager.is('history')
+      && matchesShortcut(this._settings, 'history-search-shortcut', event);
+    const direction = NAVIGATION_KEYS.get(event.get_key_symbol());
+    const modifiers = event.get_state() & NAVIGATION_MODIFIER_MASK;
+    if (!searchShortcut && (!direction || modifiers !== 0))
+      return Clutter.EVENT_PROPAGATE;
+    return this._handleMenuKey(event);
+  }
+
+  _startKeyCapture() {
+    if (this._stageKeyPressSignal)
+      return;
+    this._stageKeyPressSignal = global.stage.connect('captured-event', (_stage, event) =>
+      this._captureMenuKey(event));
+  }
+
+  _stopKeyCapture() {
+    if (this._stageKeyPressSignal)
+      global.stage.disconnect(this._stageKeyPressSignal);
+    this._stageKeyPressSignal = 0;
+  }
+
   _runAndClose(callback) {
     this.menu.close();
     return callback();
@@ -412,6 +439,7 @@ class Indicator extends PanelMenu.Button {
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;
+    this._stopKeyCapture();
     this._tooltip.destroy();
     super.destroy();
   }

@@ -232,6 +232,15 @@ export class TokenizerPanel {
     this.endSelectionDrag();
   }
 
+  focusInitial() {
+    for (const button of this._buttons) {
+      const focused = this.focusGrid.focusAt(this.focusGrid.location(button));
+      if (focused)
+        return focused;
+    }
+    return null;
+  }
+
   setGeometry({width, height}) {
     this._contentWidth = Math.max(260, width - 40);
     this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);

@@ -323,6 +323,12 @@ export class HistoryPanel {
     });
   }
 
+  focusInitial() {
+    return this.focusGrid.focusAt(
+      this.focusGrid.location(this.searchEntry.clutter_text),
+    );
+  }
+
   resetSearch() {
     this.searchEntry.set_text('');
   }

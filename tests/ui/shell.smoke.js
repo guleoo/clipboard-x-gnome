@@ -30,6 +30,14 @@ function foreground(actor) {
   return [color.red, color.green, color.blue, color.alpha];
 }
 
+function capturedKeyEvent(key, modifiers = 0) {
+  return {
+    type: () => Clutter.EventType.KEY_PRESS,
+    get_key_symbol: () => key,
+    get_state: () => modifiers,
+  };
+}
+
 async function waitUntil(predicate, timeoutMilliseconds = 2000) {
   const deadline = GLib.get_monotonic_time() + timeoutMilliseconds * 1000;
   while (!predicate() && GLib.get_monotonic_time() < deadline)
@@ -68,7 +76,8 @@ export async function run() {
 
   indicator.menu.open();
   await Scripting.sleep(200);
-  assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
+  assert(indicator.menu.isOpen && indicator._stageKeyPressSignal !== 0,
+    'Clipboard X menu did not open its scoped Stage key capture');
   assert(history.searchEntry._clipboardXControlType === 'search-entry'
       && history.screenshotButton._clipboardXControlType === 'icon-button'
       && history.footer._clipboardXControlType === 'panel-footer'
@@ -97,12 +106,12 @@ export async function run() {
     'Search placeholder did not retain its configured left margin');
   assert(!history.focusGrid.contains(global.stage.get_key_focus()),
     'Opening the panel must not claim keyboard focus before keyboard navigation');
-  assert(indicator._handleMenuKey({
-    get_key_symbol: () => Clutter.KEY_Down,
-    get_state: () => 0,
-  }) === Clutter.EVENT_STOP
+  assert(indicator._captureMenuKey(capturedKeyEvent(Clutter.KEY_Left)) === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === history.searchEntry.clutter_text,
-  'The first navigation key did not lazily focus the first history control');
+  'An unfocused Left key escaped instead of focusing the history search control');
+  assert(indicator._captureMenuKey(capturedKeyEvent(Clutter.KEY_Right))
+      === Clutter.EVENT_PROPAGATE,
+  'Stage capture did not release navigation after history acquired focus');
   const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
   const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
   indicator._settings.set_strv(
@@ -148,13 +157,9 @@ export async function run() {
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
   assert(!indicator._quickPhrases.focusGrid.contains(global.stage.get_key_focus()),
     'Opening quick phrases claimed a control before keyboard navigation');
-  assert(indicator._handleMenuKey({
-    get_key_symbol: () => Clutter.KEY_Down,
-    get_state: () => 0,
-  }) === Clutter.EVENT_STOP
-      && global.stage.get_key_focus() === indicator._quickPhrases.addButton
-      && !indicator._quickPhrases.buttons[0].has_key_focus(),
-  'Quick phrases did not lazily focus the first non-return control');
+  assert(indicator._captureMenuKey(capturedKeyEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
+      && global.stage.get_key_focus() === indicator._quickPhrases.buttons[0],
+  'An unfocused Right key escaped instead of focusing the first quick phrase');
   const phraseForeground = foreground(indicator._quickPhrases.buttons[0]);
   assert(phraseForeground[3] >= 240
       && indicator._quickPhrases.rows[0].focusActors.every(actor =>
@@ -177,6 +182,10 @@ export async function run() {
   indicator._quickPhrases.remove('New smoke-test phrase');
   assert(!indicator._quickPhrases.phrases.includes('New smoke-test phrase'),
     'Saved-phrase panel did not delete a phrase');
+  indicator._settings.set_strv('saved-phrases', []);
+  assert(indicator._quickPhrases.buttons.length === 0
+      && indicator._quickPhrases.focusInitial() === indicator._quickPhrases.addButton,
+  'An empty quick-phrase panel did not fall back to the add action');
   indicator._settings.set_strv('saved-phrases', originalPhrases);
   indicator._closePhrases();
   assert(indicator._panelManager.is('history'),
@@ -215,7 +224,8 @@ export async function run() {
 
   indicator.menu.close();
   await Scripting.sleep(100);
-  assert(!indicator.menu.isOpen, 'Clipboard X menu did not close');
+  assert(!indicator.menu.isOpen && indicator._stageKeyPressSignal === 0,
+    'Clipboard X menu did not release its scoped Stage key capture');
   indicator._settings.set_string('theme-color', '#123456');
   await Scripting.sleep(50);
   assert(indicator._customAccentColor === '#123456',
@@ -378,9 +388,9 @@ export async function run() {
     'Text segmentation rendered token buttons outside the visible layout');
   assert(!indicator._tokenizer.focusGrid.contains(global.stage.get_key_focus()),
     'Opening the tokenizer claimed a control before keyboard navigation');
-  assert(indicator._handleMenuKey(entryEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
+  assert(indicator._captureMenuKey(capturedKeyEvent(Clutter.KEY_Right)) === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === tokenButtons[0],
-  'The first navigation key did not lazily focus the first token');
+  'An unfocused Right key escaped instead of focusing the first token');
   assert(!indicator._tokenizer.sourceLabel.visible,
     'Disabled source preview remained visible in the tokenizer');
   assert(tokenButtons.every(button => !button._clipboardXHintConnected),

@@ -48,7 +48,7 @@ export class PanelManager {
     if (!this._current)
       return null;
     const panel = this._panels.get(this._current.name);
-    return panel?.focusInitial?.() ?? panel?.focusGrid?.focusFirst?.() ?? null;
+    return panel?.focusInitial?.() ?? null;
   }
 
   is(name) {

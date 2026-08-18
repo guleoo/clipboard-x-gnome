@@ -174,6 +174,15 @@ export class QuickPhrasesPanel {
     target.grab_key_focus();
   }
 
+  focusInitial() {
+    for (const target of [...this._buttons, this.addButton]) {
+      const focused = this.focusGrid.focusAt(this.focusGrid.location(target));
+      if (focused)
+        return focused;
+    }
+    return null;
+  }
+
   setGeometry({height}) {
     this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);
   }
