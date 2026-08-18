@@ -247,9 +247,9 @@ export class TokenizerPanel {
     this.endSelectionDrag();
   }
 
-  setGeometry(panelWidth, panelHeight) {
-    this._contentWidth = Math.max(260, panelWidth - 40);
-    this.actor.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+  setGeometry({width, height}) {
+    this._contentWidth = Math.max(260, width - 40);
+    this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);
     this.sourceLabel.set_style(`max-width: ${this._contentWidth}px;`);
     this.resultLabel.set_style(`max-width: ${Math.max(200, this._contentWidth - 32)}px;`);
   }

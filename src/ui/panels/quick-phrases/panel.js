@@ -180,7 +180,7 @@ export class QuickPhrasesPanel {
       AnimationUtils.ensureActorVisibleInScrollView(this.scroll, row);
   }
 
-  setHeight(height) {
+  setGeometry({height}) {
     this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);
   }
 

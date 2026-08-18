@@ -5,7 +5,7 @@
 ## 1. 职责边界
 
 - `ui/indicator.js`：GNOME 顶栏入口和面板编排层。负责系统级动作、菜单开关、面板注册与主题协调，不实现具体面板内部视图。
-- `ui/panel-manager.js`：面板生命周期与现场管理。负责 `enter`、`leave`、`render`、视图捕获和恢复。
+- `ui/panel-manager.js`：面板生命周期、现场和几何管理。默认尺寸分发给所有面板，单面板可局部覆盖宽高；切换时同步更新共享 popup 容器。
 - `ui/navigation/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
 - `ui/layouts/panel-actions.js`：顶栏与底栏动作的布局模型和校正规则，不依赖 Shell actor。
 - `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。

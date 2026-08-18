@@ -126,12 +126,12 @@
     <key name="panel-width" type="i">
       <default>360</default>
       <range min="300" max="800"/>
-      <summary>Clipboard panel width in logical pixels</summary>
+      <summary>Default panel width in logical pixels</summary>
     </key>
     <key name="panel-height" type="i">
-      <default>220</default>
+      <default>300</default>
       <range min="160" max="800"/>
-      <summary>Clipboard history viewport height in logical pixels</summary>
+      <summary>Default panel height in logical pixels</summary>
     </key>
     <key name="panel-text-vertical-offset" type="i">
       <default>0</default>

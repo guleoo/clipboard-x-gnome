@@ -317,10 +317,10 @@ export class HistoryPanel {
     this._sync.clearButtons();
   }
 
-  setGeometry(panelWidth, panelHeight) {
-    this._searchWidth = Math.max(140, panelWidth - 140);
+  setGeometry({width, height}) {
+    this._searchWidth = Math.max(140, width - 140);
     this._updateSearchStyle();
-    this.scroll.set_style(`height: ${panelHeight}px; max-height: ${panelHeight}px;`);
+    this.scroll.set_style(`height: ${height}px; max-height: ${height}px;`);
   }
 
   setAccent(color) {

@@ -1,13 +1,21 @@
 export class PanelManager {
-  constructor({defaultPanel, clearPanelTooltips = () => {}, hideTooltip = clearPanelTooltips}) {
+  constructor({
+    defaultPanel,
+    clearPanelTooltips = () => {},
+    hideTooltip = clearPanelTooltips,
+    onGeometry = () => {},
+  }) {
     if (!defaultPanel)
       throw new Error('A default panel is required');
 
     this._defaultPanel = defaultPanel;
     this._clearPanelTooltips = clearPanelTooltips;
     this._hideTooltip = hideTooltip;
+    this._onGeometry = onGeometry;
     this._panels = new Map();
     this._viewStates = new Map();
+    this._geometry = null;
+    this._geometryOverrides = {};
     this._current = null;
     this._resetWhenHidden = false;
   }
@@ -16,6 +24,7 @@ export class PanelManager {
     if (!name || this._panels.has(name))
       throw new Error(`Panel already registered: ${name}`);
     this._panels.set(name, lifecycle);
+    this._applyGeometry(name, lifecycle);
   }
 
   get currentName() {
@@ -32,8 +41,20 @@ export class PanelManager {
     return this._panels.get(this._current.name)?.focusGrid ?? null;
   }
 
+  get geometry() {
+    return this._current ? this._resolveGeometry(this._current.name) : null;
+  }
+
   is(name) {
     return this.currentName === name;
+  }
+
+  setGeometry(defaults, overrides = {}) {
+    this._geometry = {...defaults};
+    this._geometryOverrides = {...overrides};
+    for (const [name, panel] of this._panels)
+      this._applyGeometry(name, panel);
+    this._publishGeometry();
   }
 
   show(name, state = null) {
@@ -52,6 +73,7 @@ export class PanelManager {
 
     this._current = {name, state};
     this._resetWhenHidden = false;
+    this._publishGeometry();
     next.enter?.(state, previous?.name ?? null);
     next.render?.(state);
     next.restoreView?.(this._viewStates.get(name), state, previous?.name ?? null);
@@ -107,6 +129,8 @@ export class PanelManager {
     this._current = null;
     this._panels.clear();
     this._viewStates.clear();
+    this._geometry = null;
+    this._geometryOverrides = {};
     this._resetWhenHidden = false;
   }
 
@@ -116,5 +140,26 @@ export class PanelManager {
     const viewState = panel.captureView(state);
     if (viewState !== undefined)
       this._viewStates.set(name, viewState);
+  }
+
+  _applyGeometry(name, panel) {
+    if (!this._geometry || !panel?.setGeometry)
+      return;
+    panel.setGeometry(this._resolveGeometry(name));
+  }
+
+  _resolveGeometry(name) {
+    if (!this._geometry)
+      return null;
+    return {
+      ...this._geometry,
+      ...(this._geometryOverrides[name] ?? {}),
+    };
+  }
+
+  _publishGeometry() {
+    const geometry = this.geometry;
+    if (geometry)
+      this._onGeometry(geometry);
   }
 }

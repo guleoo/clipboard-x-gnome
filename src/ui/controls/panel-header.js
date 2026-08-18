@@ -11,6 +11,7 @@ class PanelHeader extends St.BoxLayout {
     styleClass = '',
     titleStyleClass = '',
     titleOffset = 0,
+    backIconOffset = 1,
   } = {}) {
     const styleClasses = [
       'clipboard-x-panel-header',
@@ -34,8 +35,12 @@ class PanelHeader extends St.BoxLayout {
     this.trailing = new St.BoxLayout({style_class: 'clipboard-x-panel-header-side'});
     this.row.add_child(this.leading);
     this.backButton = backButton;
-    if (backButton)
+    if (backButton) {
       this.leading.add_child(backButton);
+      const icon = backButton.get_child?.();
+      if (icon)
+        icon.translation_x = backIconOffset;
+    }
     const titleStyleClasses = [
       'clipboard-x-panel-header-title',
       titleStyleClass,

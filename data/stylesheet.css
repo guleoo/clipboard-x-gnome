@@ -331,11 +331,8 @@
 
 .clipboard-x-panel-divider {
   min-height: 1px;
+  margin: 2px 0;
   background-color: rgba(255, 255, 255, 0.12);
-}
-
-.clipboard-x-panel-header .clipboard-x-panel-divider {
-  margin-top: 2px;
 }
 
 .clipboard-x-panel-footer {

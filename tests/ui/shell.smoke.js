@@ -71,10 +71,13 @@ export async function run() {
     'Shared search, icon or footer controls were not used by the history panel');
   assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
       && indicator._tokenizer.header.divider !== null
+      && indicator._tokenizer.backButton.get_child().translation_x === 1
       && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
     'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
+  assert(indicator._settings.get_default_value('panel-height').deepUnpack() === 300,
+    'Default panel height must be 300 logical pixels');
   assert(Number.isFinite(history.captureView().scrollValue),
     'Clipboard history view state could not read the GNOME 50 scroll adjustment');
   const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
@@ -108,6 +111,9 @@ export async function run() {
   indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
   indicator._openPhrases();
   assert(indicator._panelManager.is('phrases')
+      && indicator._panelManager.geometry.height === indicator._settings.get_int('panel-height')
+      && indicator._quickPhrases.actor.get_style().includes(
+        `height: ${indicator._settings.get_int('panel-height')}px`)
       && indicator._quickPhrases.buttons.length === 1
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
       && indicator._quickPhrases.header.divider !== null
@@ -302,6 +308,9 @@ export async function run() {
   await indicator._openTokenizer(capturedText);
   const tokenState = indicator._panelManager.state;
   assert(indicator._panelManager.is('tokenizer') && tokenState?.tokens.length > 1
+      && indicator._panelManager.geometry.height === indicator._settings.get_int('panel-height')
+      && indicator._tokenizer.actor.get_style().includes(
+        `height: ${indicator._settings.get_int('panel-height')}px`)
       && !history.searchItem.visible
       && !history.scrollItem.actor.visible
       && !history.footerItem.visible

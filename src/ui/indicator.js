@@ -61,6 +61,7 @@ class Indicator extends PanelMenu.Button {
       defaultPanel: 'history',
       clearPanelTooltips: () => this._tooltip.clear('panel'),
       hideTooltip: () => this._tooltip.hide(),
+      onGeometry: geometry => this._setMenuGeometry(geometry),
     });
     this._panelManager.register('history', {
       focusGrid: this._historyPanel.focusGrid,
@@ -68,6 +69,7 @@ class Indicator extends PanelMenu.Button {
       restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
       leave: () => this._historyPanel.leave(),
+      setGeometry: geometry => this._historyPanel.setGeometry(geometry),
       render: () => {
         this._historyPanel.render();
         this._applyTextVerticalOffset();
@@ -79,6 +81,7 @@ class Indicator extends PanelMenu.Button {
         this._showPanelChrome('tokenizer');
       },
       leave: () => this._tokenizer.leave(),
+      setGeometry: geometry => this._tokenizer.setGeometry(geometry),
       render: state => {
         this._tokenizer.render(state);
         this._applyTextVerticalOffset();
@@ -87,6 +90,7 @@ class Indicator extends PanelMenu.Button {
     this._panelManager.register('phrases', {
       focusGrid: this._quickPhrases.focusGrid,
       enter: () => this._showPanelChrome('phrases'),
+      setGeometry: geometry => this._quickPhrases.setGeometry(geometry),
       render: () => {
         this._quickPhrases.render();
         this._applyTextVerticalOffset();
@@ -253,13 +257,14 @@ class Indicator extends PanelMenu.Button {
   _updatePanelGeometry() {
     const panelWidth = this._settings.get_int('panel-width');
     const panelHeight = this._settings.get_int('panel-height');
-    this.menu.actor.set_width(panelWidth);
-    this.menu.actor.set_style(`width: ${panelWidth}px; max-width: ${panelWidth}px;`);
-    this._historyPanel.setGeometry(panelWidth, panelHeight);
-    this._tokenizer.setGeometry(panelWidth, panelHeight);
-    this._quickPhrases.setHeight(panelHeight);
+    this._panelManager.setGeometry({width: panelWidth, height: panelHeight});
     if (this._panelManager)
       this._refresh();
+  }
+
+  _setMenuGeometry({width}) {
+    this.menu.actor.set_width(width);
+    this.menu.actor.set_style(`width: ${width}px; max-width: ${width}px;`);
   }
 
   _updateThemeColor() {
