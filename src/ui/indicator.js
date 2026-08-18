@@ -19,7 +19,7 @@ import {composeTokens, tokenizeText} from '../clipboard/tokenizer/processors.js'
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
-const SEARCH_HINT_BASELINE_OFFSET = -1;
+const OPTICAL_BASELINE_OFFSET = -1;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
 ].map(color => `clipboard-x-accent-${color}`));
@@ -246,6 +246,7 @@ class Indicator extends PanelMenu.Button {
       y_align: Clutter.ActorAlign.CENTER,
       primary_icon: new St.Icon({icon_name: 'edit-find-symbolic', icon_size: 14}),
     });
+    this._search.get_hint_actor()._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
     this._search.clutter_text.connect('text-changed', () => {
       this._query = this._search.get_text();
       if (this._panelManager?.is('history'))
@@ -321,12 +322,14 @@ class Indicator extends PanelMenu.Button {
       {showTooltip: false},
     );
     tokenHeader.add_child(this._tokenBack);
-    tokenHeader.add_child(new St.Label({
+    this._tokenTitle = new St.Label({
       text: _('Segment text'),
       style_class: 'clipboard-x-token-title',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
-    }));
+    });
+    this._tokenTitle._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    tokenHeader.add_child(this._tokenTitle);
     tokenPanel.add_child(tokenHeader);
     this._tokenSource = new St.Label({
       style_class: 'clipboard-x-token-source',
@@ -409,14 +412,11 @@ class Indicator extends PanelMenu.Button {
   _applyTextVerticalOffset() {
     const offset = this._settings.get_int('panel-text-vertical-offset');
     const apply = actor => {
-      if (actor instanceof St.Entry) {
+      const actorOffset = actor._clipboardXTextBaselineOffset ?? 0;
+      if (actor instanceof St.Entry)
         actor.clutter_text.translation_y = offset;
-        const hintActor = actor.get_hint_actor();
-        if (hintActor)
-          hintActor.translation_y = offset + SEARCH_HINT_BASELINE_OFFSET;
-      } else if (actor instanceof St.Label) {
-        actor.translation_y = offset;
-      }
+      else if (actor instanceof St.Label)
+        actor.translation_y = offset + actorOffset;
       for (const child of actor.get_children?.() ?? [])
         apply(child);
     };
