@@ -174,7 +174,7 @@ export default class ClipboardXExtension extends Extension {
           throw new Error('The screenshot is not available in the local cache');
         editorUri = Gio.File.new_for_path(path).get_uri();
       }
-      await this._launchEditor(editorUri);
+      await this._launchEditor(editorUri, item.primary?.bytes);
     }
   }
 
@@ -197,7 +197,7 @@ export default class ClipboardXExtension extends Extension {
     const path = item.primary?.path;
     if (!path)
       throw new Error('The original image is not available locally');
-    await this._launchEditor(Gio.File.new_for_path(path).get_uri());
+    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes);
   }
 
   async _activateItem(item) {
@@ -257,11 +257,12 @@ export default class ClipboardXExtension extends Extension {
       await this._activateItem(item);
   }
 
-  _launchEditor(uri) {
+  _launchEditor(uri, bytes = null) {
     return launchEditor({
       appId: this._settings.get_string('editor-app-id'),
       command: this._settings.get_string('editor-command'),
       uri,
+      bytes,
       launchContext: global.create_app_launch_context(0, -1),
     });
   }

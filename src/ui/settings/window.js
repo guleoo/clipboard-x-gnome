@@ -333,7 +333,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     editor.add(this._rows.entry(
       'editor-command',
       _('Advanced command'),
-      _('%u is the URI, %f is a local path and %% is a percent sign'),
+      _('%u is the URI, %f is a local path, %i is standard input and %% is a percent sign'),
       value => {
         try {
           buildEditorArgv(value, 'file:///tmp/clipboard-x.png', '/tmp/clipboard-x.png');

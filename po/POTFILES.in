@@ -1,7 +1,11 @@
 src/entry/extension.js
 src/ui/indicator.js
-src/ui/panels/quick-phrases.js
-src/ui/preferences.js
-src/ui/preferences/panel-actions.js
-src/ui/preferences/rows.js
-src/ui/preferences/theme-color.js
+src/ui/panels/history/item.js
+src/ui/panels/history/panel.js
+src/ui/panels/history/sync-action.js
+src/ui/panels/quick-phrases/panel.js
+src/ui/panels/tokenizer/panel.js
+src/ui/settings/panel-actions.js
+src/ui/settings/rows.js
+src/ui/settings/theme-color.js
+src/ui/settings/window.js

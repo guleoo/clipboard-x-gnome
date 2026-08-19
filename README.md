@@ -52,10 +52,11 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 - `%u`：图片 URI；
 - `%f`：本地文件路径；
+- `%i`：通过标准输入传递图片字节，该占位符必须是独立参数；
 - `%%`：字面量 `%`。
 
 命令按 argv 解析，不经 `sh -c`，因此不支持管道、重定向或 Shell 展开。例如
-`gradia %f`、`gimp %f` 和 `flatpak run be.alexandervanhee.gradia %u`。
+`gradia %i`、`gimp %f` 和 `flatpak run be.alexandervanhee.gradia %u`。
 
 截图目标取决于本机 Portal 版本。Portal v2 通常支持交互选择和全屏；窗口、区域和
 活动窗口需要实现 `AvailableTargets` 的 Portal v3 后端。扩展会拒绝后端未声明的目标。

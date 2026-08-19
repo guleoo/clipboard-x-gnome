@@ -1,3 +1,4 @@
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {buildEditorArgv, launchEditor} from '../../src/screenshot/editor-launcher.js';
@@ -27,6 +28,8 @@ assertEqual(buildEditorArgv('gradia %u', 'file:///tmp/a b.png', '/tmp/a b.png'),
   ['gradia', 'file:///tmp/a b.png'], 'URI placeholder');
 assertEqual(buildEditorArgv('gradia %f', 'file:///tmp/a b.png', '/tmp/a b.png'),
   ['gradia', '/tmp/a b.png'], 'Gradia local-file placeholder');
+assertEqual(buildEditorArgv('gradia %i', 'file:///tmp/a b.png', '/tmp/a b.png'),
+  ['gradia'], 'standard-input placeholder');
 assertEqual(buildEditorArgv('gimp %f', 'file:///tmp/a.png', '/tmp/a.png'),
   ['gimp', '/tmp/a.png'], 'file placeholder');
 assertEqual(buildEditorArgv('editor --label=100%%', 'file:///tmp/a.png', '/tmp/a.png'),
@@ -51,6 +54,13 @@ try {
   rejected = true;
 }
 assert(rejected, 'local-path placeholder must reject a non-local URI');
+rejected = false;
+try {
+  buildEditorArgv('editor --input=%i', 'file:///tmp/a.png', '/tmp/a.png');
+} catch (_error) {
+  rejected = true;
+}
+assert(rejected, 'standard-input placeholder must be a separate argument');
 
 class FakePortalConnection {
   constructor({mode = 'success', version = 3, targets = 15} = {}) {
@@ -183,7 +193,7 @@ const oldPortal = new ScreenshotPortal({
 });
 await assertRejects(oldPortal.capture('window'), /does not support/u, 'Portal v2 target negotiation');
 
-const editorProcess = launchEditor({
+const editorProcess = await launchEditor({
   appId: '',
   command: "/usr/bin/test %f = '/tmp/截图 editor test.png'",
   uri: 'file:///tmp/%E6%88%AA%E5%9B%BE%20editor%20test.png',
@@ -199,9 +209,41 @@ await new Promise((resolve, reject) => {
   });
 });
 
+const standardInputBytes = new GLib.Bytes(new TextEncoder().encode('editor standard input'));
+const [standardInputFile, standardInputStream] = Gio.File.new_tmp('cbx-editor-stdin-XXXXXX');
+standardInputStream.get_output_stream().write_all(standardInputBytes.get_data(), null);
+standardInputStream.close(null);
+const standardInputProcess = await launchEditor({
+  appId: '',
+  command: `/usr/bin/cmp - %i '${standardInputFile.get_path()}'`,
+  uri: standardInputFile.get_uri(),
+  bytes: standardInputBytes,
+});
+await new Promise((resolve, reject) => {
+  standardInputProcess.wait_check_async(null, (process, result) => {
+    try {
+      process.wait_check_finish(result);
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+});
+standardInputFile.delete(null);
+
+await assertRejects(
+  launchEditor({
+    appId: '',
+    command: 'gradia %i',
+    uri: 'file:///tmp/image.png',
+  }),
+  /requires image data/u,
+  'standard-input command without image bytes',
+);
+
 let missingEditorRejected = false;
 try {
-  launchEditor({
+  await launchEditor({
     appId: '',
     command: '/definitely/missing/clipboard-x-editor %u',
     uri: 'file:///tmp/image.png',
@@ -213,7 +255,7 @@ assert(missingEditorRejected, 'missing custom editor executable must be reported
 
 let missingApplicationRejected = false;
 try {
-  launchEditor({
+  await launchEditor({
     appId: 'io.github.guleo.ClipboardX.Missing.desktop',
     command: '',
     uri: 'file:///tmp/image.png',
