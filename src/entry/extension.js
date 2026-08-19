@@ -11,7 +11,6 @@ import {TerminalInput} from '../clipboard/terminal/input.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
-import {save as saveScreenshot} from '../screenshot/storage.js';
 import {SyncClient} from '../sync/client.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 import {Indicator} from '../ui/indicator.js';
@@ -159,11 +158,7 @@ export default class ClipboardXExtension extends Extension {
   }
 
   async _takeScreenshot() {
-    const portalUri = await this._portal.capture(this._settings.get_string('screenshot-target'));
-    const uri = await saveScreenshot(
-      portalUri,
-      this._settings.get_string('screenshot-directory'),
-    );
+    const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
     const addToHistory = this._settings.get_boolean('screenshot-add-history');
     const item = addToHistory
       ? await this._controller.addFromUri(uri, 'screenshot')

@@ -722,11 +722,6 @@ export async function run() {
   syncDisabledRow.destroy();
 
   indicator._controller.remove(imageItem.id);
-  assert(indicator._settings.get_default_value('screenshot-directory').deepUnpack()
-      === '~/Pictures/screenshot',
-  'Default screenshot directory changed unexpectedly');
-  const screenshotDirectory = GLib.dir_make_tmp('cbx-screenshot-output-XXXXXX');
-  indicator._settings.set_string('screenshot-directory', screenshotDirectory);
   const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-screenshot-pipeline-XXXXXX.png');
   screenshotStream.get_output_stream().write_all(png, null);
   screenshotStream.close(null);
@@ -752,8 +747,8 @@ export async function run() {
   const screenshotItem = indicator._controller.items.find(item => item.isImage);
   assert(screenshotItem?.primary.path,
     'Screenshot pipeline did not add and persist the image history snapshot');
-  assert(Gio.File.new_for_uri(launchedEditorUri).get_parent().get_path() === screenshotDirectory,
-    'Screenshot editor did not receive the configured persistent screenshot path');
+  assert(launchedEditorUri === screenshotFile.get_uri(),
+    'Screenshot editor did not receive the URI returned by the portal');
   assert(indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
     'Screenshot pipeline did not write the image to the clipboard');
 
@@ -767,7 +762,6 @@ export async function run() {
   extensionObject._launchEditor = launchEditor;
   extensionObject._portal = screenshotPortal;
   screenshotFile.delete(null);
-  deleteTree(Gio.File.new_for_path(screenshotDirectory));
 
   extensionObject._pickColor();
   await Scripting.sleep(500);

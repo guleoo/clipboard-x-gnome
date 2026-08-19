@@ -3,7 +3,6 @@ import GLib from 'gi://GLib';
 
 import {buildEditorArgv, launchEditor} from '../../src/screenshot/editor-launcher.js';
 import {ScreenshotPortal} from '../../src/screenshot/portal.js';
-import {resolveDirectory, save as saveScreenshot} from '../../src/screenshot/storage.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -249,25 +248,3 @@ try {
   missingEditorRejected = /No such file|not found|Failed to execute/iu.test(error.message);
 }
 assert(missingEditorRejected, 'missing custom editor executable must be reported');
-
-assert(resolveDirectory('~/Pictures/screenshot', '/home/test') === '/home/test/Pictures/screenshot',
-  'home-relative screenshot directory was not expanded');
-await assertRejects(
-  Promise.resolve().then(() => resolveDirectory('Pictures/screenshot', '/home/test')),
-  /absolute path/u,
-  'relative screenshot directory',
-);
-const screenshotDirectory = GLib.dir_make_tmp('cbx-screenshot-storage-XXXXXX');
-const [storedSource, storedSourceStream] = Gio.File.new_tmp('cbx-screenshot-source-XXXXXX.png');
-storedSourceStream.get_output_stream().write_all(new TextEncoder().encode('stored screenshot'), null);
-storedSourceStream.close(null);
-const storedUri = await saveScreenshot(storedSource.get_uri(), screenshotDirectory);
-const storedFile = Gio.File.new_for_uri(storedUri);
-assert(storedFile.get_parent().get_path() === screenshotDirectory
-    && storedFile.query_exists(null)
-    && storedFile.get_basename().startsWith('Screenshot_')
-    && storedFile.get_basename().endsWith('.png'),
-  'Screenshot was not copied to its configured directory');
-storedFile.delete(null);
-storedSource.delete(null);
-Gio.File.new_for_path(screenshotDirectory).delete(null);

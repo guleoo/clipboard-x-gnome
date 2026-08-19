@@ -331,10 +331,6 @@
       <default>false</default>
       <summary>Open screenshots in the configured image editor</summary>
     </key>
-    <key name="screenshot-directory" type="s">
-      <default>'~/Pictures/screenshot'</default>
-      <summary>Directory used for persistent screenshot files</summary>
-    </key>
     <key name="editor-command" type="s">
       <default>'gradia %i'</default>
       <summary>Advanced image editor argv template</summary>
