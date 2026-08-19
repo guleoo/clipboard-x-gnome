@@ -6,7 +6,7 @@ export const PanelFooter = GObject.registerClass(
 class PanelFooter extends St.BoxLayout {
   _init({content = [], styleClass = ''} = {}) {
     const styleClasses = [
-      'clipboard-x-panel-footer',
+      'cbx-panel-footer',
       styleClass,
     ].filter(Boolean).join(' ');
     super._init({
@@ -16,12 +16,12 @@ class PanelFooter extends St.BoxLayout {
     });
     this._clipboardXControlType = 'panel-footer';
     this.divider = new St.Widget({
-      style_class: 'clipboard-x-panel-divider clipboard-x-panel-footer-divider',
+      style_class: 'cbx-panel-divider cbx-panel-footer-divider',
       x_expand: true,
     });
     this.add_child(this.divider);
     this.row = new St.BoxLayout({
-      style_class: 'clipboard-x-panel-footer-row',
+      style_class: 'cbx-panel-footer-row',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });

@@ -6,7 +6,7 @@ export const ProgressRing = GObject.registerClass(
 class ProgressRing extends St.DrawingArea {
   _init(progress = 0) {
     super._init({
-      style_class: 'clipboard-x-progress-ring',
+      style_class: 'cbx-progress-ring',
       width: 18,
       height: 18,
     });

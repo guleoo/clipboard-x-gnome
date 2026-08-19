@@ -17,14 +17,14 @@ class IconButton extends St.Button {
     super._init({
       can_focus: true,
       track_hover: true,
-      style_class: 'clipboard-x-icon-button',
+      style_class: 'cbx-icon-button',
       accessible_name: label,
     });
     this._clipboardXControlType = 'icon-button';
     this._clipboardXIconSize = iconSize;
     this._selectable = selectable;
     if (selectable)
-      this.add_style_class_name('clipboard-x-state-icon');
+      this.add_style_class_name('cbx-state-icon');
     this.setIcon(iconName);
     this.setHint(label);
 

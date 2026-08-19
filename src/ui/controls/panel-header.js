@@ -14,7 +14,7 @@ class PanelHeader extends St.BoxLayout {
     backIconOffset = 1,
   } = {}) {
     const styleClasses = [
-      'clipboard-x-panel-header',
+      'cbx-panel-header',
       styleClass,
     ].filter(Boolean).join(' ');
     super._init({
@@ -26,13 +26,13 @@ class PanelHeader extends St.BoxLayout {
     this._actions = [];
     this._balanceActors = [];
     this.row = new St.BoxLayout({
-      style_class: 'clipboard-x-panel-header-row',
+      style_class: 'cbx-panel-header-row',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
     this.add_child(this.row);
-    this.leading = new St.BoxLayout({style_class: 'clipboard-x-panel-header-side'});
-    this.trailing = new St.BoxLayout({style_class: 'clipboard-x-panel-header-side'});
+    this.leading = new St.BoxLayout({style_class: 'cbx-panel-header-side'});
+    this.trailing = new St.BoxLayout({style_class: 'cbx-panel-header-side'});
     this.row.add_child(this.leading);
     this.backButton = backButton;
     if (backButton) {
@@ -42,7 +42,7 @@ class PanelHeader extends St.BoxLayout {
         icon.translation_x = backIconOffset;
     }
     const titleStyleClasses = [
-      'clipboard-x-panel-header-title',
+      'cbx-panel-header-title',
       titleStyleClass,
     ].filter(Boolean).join(' ');
     this.titleLabel = new St.Label({
@@ -58,7 +58,7 @@ class PanelHeader extends St.BoxLayout {
       this.addAction(actor);
     this._updateBalance();
     this.divider = new St.Widget({
-      style_class: 'clipboard-x-panel-divider',
+      style_class: 'cbx-panel-divider',
       x_expand: true,
     });
     this.add_child(this.divider);
@@ -79,7 +79,7 @@ class PanelHeader extends St.BoxLayout {
     const trailingCount = this._actions.length;
     const container = leadingCount < trailingCount ? this.leading : this.trailing;
     for (let index = 0; index < Math.abs(leadingCount - trailingCount); index++) {
-      const actor = new St.Widget({style_class: 'clipboard-x-panel-header-balance'});
+      const actor = new St.Widget({style_class: 'cbx-panel-header-balance'});
       container.add_child(actor);
       this._balanceActors.push(actor);
     }

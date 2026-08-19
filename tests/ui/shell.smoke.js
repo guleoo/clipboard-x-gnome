@@ -144,7 +144,7 @@ export async function run() {
       && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
       && indicator._quickPhrases.header.divider !== null
       && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
-      && indicator._quickPhrases.buttons[0].has_style_class_name('clipboard-x-entry-content')
+      && indicator._quickPhrases.buttons[0].has_style_class_name('cbx-entry-content')
       && indicator._quickPhrases.rows[0].get_children().some(child =>
         child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
@@ -307,18 +307,18 @@ export async function run() {
   const capturedContentBody = capturedRow.focusActors[0].get_child();
   assert(capturedRow._clipboardXControlType === 'content-item'
       && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length
-      && capturedRow.focusActors[0].has_style_class_name('clipboard-x-entry-content')
-      && capturedContentBody.has_style_class_name('clipboard-x-entry-body')
+      && capturedRow.focusActors[0].has_style_class_name('cbx-entry-content')
+      && capturedContentBody.has_style_class_name('cbx-entry-body')
       && !capturedContentBody.get_children().some(child =>
-        child.has_style_class_name?.('clipboard-x-color-swatch')),
+        child.has_style_class_name?.('cbx-color-swatch')),
     'Clipboard history did not group its leading content inside the shared content action');
   history._multipleDevices = true;
   const deviceRow = history.entry(capturedText);
   const deviceContentBody = deviceRow.focusActors[0].get_child();
   assert(!deviceRow.get_children().some(child =>
-    child.has_style_class_name?.('clipboard-x-device-icon'))
+    child.has_style_class_name?.('cbx-device-icon'))
       && deviceContentBody.get_children().some(child =>
-        child.has_style_class_name?.('clipboard-x-device-icon')),
+        child.has_style_class_name?.('cbx-device-icon')),
   'Clipboard device identity was not grouped with the entry content');
   deviceRow.destroy();
   history._multipleDevices = false;
@@ -367,7 +367,7 @@ export async function run() {
     'Clipboard history entry controls did not retain their focus matrix row');
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
       && child.get_child()?.icon_name === 'view-pin-symbolic'
-      && child.has_style_class_name('clipboard-x-pinned')),
+      && child.has_style_class_name('cbx-pinned')),
   'Pinned history entry did not keep the pin icon with a distinct color class');
   assert(pinnedRow.get_children().some(child => child instanceof St.Button
       && child.get_child()?.icon_name === 'user-trash-symbolic'),
@@ -509,7 +509,7 @@ export async function run() {
 
   indicator._settings.set_boolean('private-mode', true);
   assert(history.privateButton.checked
-      && history.privateButton.has_style_class_name('clipboard-x-private-active'),
+      && history.privateButton.has_style_class_name('cbx-private-active'),
   'Privacy mode button did not expose its selected visual state');
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'private clipboard value must not be recorded');
   await Scripting.sleep(300);
@@ -517,7 +517,7 @@ export async function run() {
     'Private mode did not pause clipboard capture');
   indicator._settings.set_boolean('private-mode', false);
   assert(!history.privateButton.checked
-      && history.privateButton.has_style_class_name('clipboard-x-private-inactive'),
+      && history.privateButton.has_style_class_name('cbx-private-inactive'),
   'Privacy mode button did not return to its inactive visual state');
 
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'disposable clipboard history entry');
@@ -728,12 +728,12 @@ export async function run() {
   const colorRow = history.entry(colorItem);
   const colorContentBody = colorRow.focusActors[0].get_child();
   const colorSwatch = colorContentBody.get_children().find(child =>
-    child.has_style_class_name?.('clipboard-x-color-swatch'));
+    child.has_style_class_name?.('cbx-color-swatch'));
   assert(colorSwatch?.get_style().includes('background-color: rgba(')
       && !colorSwatch.can_focus
       && !colorSwatch.reactive
       && !colorRow.get_children().some(child =>
-        child.has_style_class_name?.('clipboard-x-color-swatch')),
+        child.has_style_class_name?.('cbx-color-swatch')),
   'Color swatch was not grouped inside the clipboard content action');
   colorRow.destroy();
   indicator._controller.toggleFavorite(colorItem.id);

@@ -19,7 +19,7 @@ class ColorLens extends St.DrawingArea {
     super._init({
       width: cells * LENS_CELL_SIZE + 2,
       height: cells * LENS_CELL_SIZE + 2,
-      style_class: 'clipboard-x-color-lens',
+      style_class: 'cbx-color-lens',
     });
     this._sample = null;
   }
@@ -89,7 +89,7 @@ class ColorPicker extends St.Widget {
     super._init({
       reactive: true,
       can_focus: true,
-      style_class: 'clipboard-x-color-overlay',
+      style_class: 'cbx-color-overlay',
     });
     this._onPicked = onPicked;
     this._previewFormat = previewFormat;
@@ -107,7 +107,7 @@ class ColorPicker extends St.Widget {
 
     this._preview = new St.BoxLayout({
       vertical: true,
-      style_class: 'clipboard-x-color-preview',
+      style_class: 'cbx-color-preview',
     });
     this._lens = new ColorLens();
     this._label = new St.Label({text: '…', x_align: Clutter.ActorAlign.CENTER});

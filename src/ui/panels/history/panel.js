@@ -58,16 +58,16 @@ export class HistoryPanel {
     this._pendingViewState = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this.item.add_style_class_name('clipboard-x-panel-host');
+    this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
       vertical: true,
-      style_class: 'clipboard-x-history-panel',
+      style_class: 'cbx-history-panel',
       x_expand: true,
     });
 
     this.searchItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     const searchToolbar = new St.BoxLayout({
-      style_class: 'clipboard-x-search-toolbar',
+      style_class: 'cbx-search-toolbar',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -88,7 +88,7 @@ export class HistoryPanel {
     });
     searchToolbar.add_child(this.searchEntry);
     this.toolbar = new St.BoxLayout({
-      style_class: 'clipboard-x-toolbar',
+      style_class: 'cbx-toolbar',
       y_align: Clutter.ActorAlign.CENTER,
     });
     this.screenshotButton = createIconButton(
@@ -121,7 +121,7 @@ export class HistoryPanel {
     this._section = new PopupMenu.PopupMenuSection();
     this.scroll = new St.ScrollView({
       overlay_scrollbars: true,
-      style_class: 'clipboard-x-history',
+      style_class: 'cbx-history',
       x_expand: true,
       y_expand: true,
     });
@@ -218,7 +218,7 @@ export class HistoryPanel {
       const empty = new PopupMenu.PopupBaseMenuItem({reactive: false});
       empty.add_child(new St.Label({
         text: this._query ? _('No matching entries') : _('Clipboard history is empty'),
-        style_class: 'clipboard-x-empty',
+        style_class: 'cbx-empty',
       }));
       this._section.addMenuItem(empty);
       this._setFocusRows(focusRows);
@@ -411,10 +411,10 @@ export class HistoryPanel {
     this._setHint(this.privateButton, _('Privacy mode'));
     this.privateButton.selected = paused;
     this.privateButton.remove_style_class_name(
-      paused ? 'clipboard-x-private-inactive' : 'clipboard-x-private-active',
+      paused ? 'cbx-private-inactive' : 'cbx-private-active',
     );
     this.privateButton.add_style_class_name(
-      paused ? 'clipboard-x-private-active' : 'clipboard-x-private-inactive',
+      paused ? 'cbx-private-active' : 'cbx-private-inactive',
     );
     this.privateButton.set_style(paused && this._accentColor
       ? `color: ${this._accentColor};`
@@ -436,7 +436,7 @@ export class HistoryPanel {
     const icon = new St.Icon({
       icon_name: DEVICE_ICON_NAMES[iconKind] ?? DEVICE_ICON_NAMES.other,
       icon_size: 14,
-      style_class: 'clipboard-x-device-icon',
+      style_class: 'cbx-device-icon',
       track_hover: true,
     });
     this._tooltip.attach(icon, tag, {scope: 'panel'});
@@ -492,7 +492,7 @@ export class HistoryPanel {
   _addState(text, iconName) {
     const state = new PopupMenu.PopupBaseMenuItem({reactive: false});
     state.add_child(new St.Icon({icon_name: iconName, icon_size: ICON_SIZE}));
-    state.add_child(new St.Label({text, style_class: 'clipboard-x-empty'}));
+    state.add_child(new St.Label({text, style_class: 'cbx-empty'}));
     this._section.addMenuItem(state);
   }
 

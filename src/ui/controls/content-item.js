@@ -8,7 +8,7 @@ class ContentItem extends PopupMenu.PopupBaseMenuItem {
   _init({leading = [], content = null, actions = []} = {}) {
     super._init({reactive: false, can_focus: false});
     this._clipboardXControlType = 'content-item';
-    this.add_style_class_name('clipboard-x-entry');
+    this.add_style_class_name('cbx-entry');
     this.track_hover = true;
     for (const actor of leading)
       this.addLeading(actor);
@@ -35,7 +35,7 @@ class ContentItem extends PopupMenu.PopupBaseMenuItem {
     if (this._content)
       this.remove_child(this._content);
     this._content = actor;
-    actor.add_style_class_name('clipboard-x-entry-content');
+    actor.add_style_class_name('cbx-entry-content');
     actor.clip_to_allocation = true;
     actor.x_expand = true;
     actor.x_align = Clutter.ActorAlign.FILL;

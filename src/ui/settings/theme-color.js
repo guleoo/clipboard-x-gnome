@@ -33,7 +33,7 @@ export function create(settings) {
     css_classes: ['heading'],
   }));
   const palette = new Gtk.FlowBox({
-    css_classes: ['clipboard-x-theme-color-palette'],
+    css_classes: ['cbx-theme-color-palette'],
     selection_mode: Gtk.SelectionMode.NONE,
     homogeneous: false,
     min_children_per_line: 1,
@@ -49,20 +49,20 @@ export function create(settings) {
   const display = row.get_display();
   const styleProvider = new Gtk.CssProvider();
   styleProvider.load_from_string(`
-    .clipboard-x-theme-color-button,
-    .clipboard-x-theme-color-button:hover,
-    .clipboard-x-theme-color-button:active,
-    .clipboard-x-theme-color-button:checked {
+    .cbx-theme-color-button,
+    .cbx-theme-color-button:hover,
+    .cbx-theme-color-button:active,
+    .cbx-theme-color-button:checked {
       background-color: transparent;
       background-image: none;
       box-shadow: none;
       border-radius: 999px;
       padding: 0;
     }
-    .clipboard-x-theme-color-palette > flowboxchild,
-    .clipboard-x-theme-color-palette > flowboxchild:hover,
-    .clipboard-x-theme-color-palette > flowboxchild:active,
-    .clipboard-x-theme-color-palette > flowboxchild:selected {
+    .cbx-theme-color-palette > flowboxchild,
+    .cbx-theme-color-palette > flowboxchild:hover,
+    .cbx-theme-color-palette > flowboxchild:active,
+    .cbx-theme-color-palette > flowboxchild:selected {
       background-color: transparent;
       background-image: none;
       box-shadow: none;
@@ -87,7 +87,7 @@ export function create(settings) {
     const button = new Gtk.ToggleButton({
       child: swatch,
       has_frame: false,
-      css_classes: ['flat', 'clipboard-x-theme-color-button'],
+      css_classes: ['flat', 'cbx-theme-color-button'],
       tooltip_text: label,
       width_request: 26,
       height_request: 26,
@@ -137,7 +137,7 @@ export function create(settings) {
     const addButton = new Gtk.Button({
       icon_name: 'list-add-symbolic',
       has_frame: false,
-      css_classes: ['flat', 'clipboard-x-theme-color-button'],
+      css_classes: ['flat', 'cbx-theme-color-button'],
       tooltip_text: _('Add custom color'),
       width_request: 26,
       height_request: 26,

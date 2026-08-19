@@ -10,7 +10,7 @@ const SCREEN_MARGIN = 8;
 export class Tooltip {
   constructor() {
     this.actor = new St.Label({
-      style_class: 'clipboard-x-tooltip',
+      style_class: 'cbx-tooltip',
       visible: false,
       reactive: false,
     });

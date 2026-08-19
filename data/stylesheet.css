@@ -1,55 +1,55 @@
-.clipboard-x-menu .popup-menu-content {
+.cbx-menu .popup-menu-content {
   padding: 4px;
 }
 
-#panel .clipboard-x-panel-button {
+#panel .cbx-panel-button {
   -natural-hpadding: 2px;
   -minimum-hpadding: 2px;
 }
 
-.clipboard-x-menu .popup-menu-item {
+.cbx-menu .popup-menu-item {
   padding: 2px 4px;
 }
 
-.clipboard-x-menu StScrollBar {
+.cbx-menu StScrollBar {
   padding: 0;
   margin: 2px 0 2px 2px;
 }
 
-.clipboard-x-menu StScrollView StScrollBar {
+.cbx-menu StScrollView StScrollBar {
   min-width: 4px;
   min-height: 4px;
 }
 
-.clipboard-x-menu StScrollBar StBin#trough {
+.cbx-menu StScrollBar StBin#trough {
   border-radius: 999px;
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-.clipboard-x-menu StScrollBar StButton#vhandle,
-.clipboard-x-menu StScrollBar StButton#hhandle {
+.cbx-menu StScrollBar StButton#vhandle,
+.cbx-menu StScrollBar StButton#hhandle {
   border-radius: 999px;
   background-color: rgba(255, 255, 255, 0.45);
   border: 0;
 }
 
-.clipboard-x-menu StScrollBar StButton#vhandle:hover,
-.clipboard-x-menu StScrollBar StButton#hhandle:hover {
+.cbx-menu StScrollBar StButton#vhandle:hover,
+.cbx-menu StScrollBar StButton#hhandle:hover {
   background-color: rgba(255, 255, 255, 0.7);
 }
 
-.clipboard-x-menu StScrollBar StButton#vhandle:active,
-.clipboard-x-menu StScrollBar StButton#hhandle:active {
+.cbx-menu StScrollBar StButton#vhandle:active,
+.cbx-menu StScrollBar StButton#hhandle:active {
   background-color: rgba(255, 255, 255, 0.9);
 }
 
-.clipboard-x-search-toolbar {
+.cbx-search-toolbar {
   spacing: 4px;
   padding: 1px 2px;
   margin-top: 4px;
 }
 
-.clipboard-x-search {
+.cbx-search {
   height: 30px;
   border-radius: 10px;
   padding: 0 7px;
@@ -60,16 +60,16 @@
   box-shadow: none;
 }
 
-.clipboard-x-search:focus {
+.cbx-search:focus {
   border-color: -st-accent-color;
   background-color: rgba(255, 255, 255, 0.11);
 }
 
-.clipboard-x-toolbar {
+.cbx-toolbar {
   spacing: 1px;
 }
 
-.clipboard-x-icon-button {
+.cbx-icon-button {
   color: inherit;
   padding: 3px;
   min-width: 26px;
@@ -78,23 +78,23 @@
   transition-duration: 120ms;
 }
 
-.clipboard-x-toolbar .clipboard-x-icon-button,
-.clipboard-x-panel-footer .clipboard-x-icon-button {
+.cbx-toolbar .cbx-icon-button,
+.cbx-panel-footer .cbx-icon-button {
   color: rgba(255, 255, 255, 0.95);
   opacity: 1;
 }
 
-.clipboard-x-icon-button:hover,
-.clipboard-x-icon-button:focus {
+.cbx-icon-button:hover,
+.cbx-icon-button:focus {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.clipboard-x-icon-button:active,
-.clipboard-x-icon-button:checked {
+.cbx-icon-button:active,
+.cbx-icon-button:checked {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
-.clipboard-x-entry {
+.cbx-entry {
   color: rgba(255, 255, 255, 0.95);
   spacing: 1px;
   padding: 2px 3px;
@@ -103,7 +103,7 @@
   transition-duration: 120ms;
 }
 
-.clipboard-x-entry-content {
+.cbx-entry-content {
   color: inherit;
   padding: 4px 5px;
   min-width: 0;
@@ -111,17 +111,17 @@
   text-align: left;
 }
 
-.clipboard-x-entry-body {
+.cbx-entry-body {
   spacing: 2px;
   min-width: 0;
 }
 
-.clipboard-x-entry-content:hover,
-.clipboard-x-entry-content:focus {
+.cbx-entry-content:hover,
+.cbx-entry-content:focus {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-.clipboard-x-entry-preview {
+.cbx-entry-preview {
   color: inherit;
   min-width: 0;
   font-size: 1em;
@@ -129,23 +129,23 @@
   text-align: left;
 }
 
-.clipboard-x-entry-meta {
+.cbx-entry-meta {
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.85em;
 }
 
-.clipboard-x-empty {
+.cbx-empty {
   padding: 18px 10px;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.clipboard-x-device-icon {
+.cbx-device-icon {
   color: inherit;
   opacity: 0.72;
   margin-right: 2px;
 }
 
-.clipboard-x-color-swatch {
+.cbx-color-swatch {
   width: 12px;
   height: 12px;
   margin-left: 4px;
@@ -154,41 +154,41 @@
   border-radius: 3px;
 }
 
-.clipboard-x-image-content {
+.cbx-image-content {
   spacing: 5px;
 }
 
-.clipboard-x-icon-button.clipboard-x-private-inactive {
+.cbx-icon-button.cbx-private-inactive {
   color: rgba(255, 255, 255, 0.95);
 }
 
-.clipboard-x-icon-button.clipboard-x-private-active {
+.cbx-icon-button.cbx-private-active {
   color: -st-accent-color;
 }
 
-.clipboard-x-pinned {
+.cbx-pinned {
   color: -st-accent-color;
   background-color: transparent;
 }
 
-.clipboard-x-icon-button.clipboard-x-state-icon:checked {
+.cbx-icon-button.cbx-state-icon:checked {
   background-color: transparent;
 }
 
-.clipboard-x-icon-button.clipboard-x-state-icon:checked:hover,
-.clipboard-x-icon-button.clipboard-x-state-icon:checked:focus {
+.cbx-icon-button.cbx-state-icon:checked:hover,
+.cbx-icon-button.cbx-state-icon:checked:focus {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.clipboard-x-icon-button.clipboard-x-state-icon:checked:active {
+.cbx-icon-button.cbx-state-icon:checked:active {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
-.clipboard-x-icon-button.clipboard-x-state-hover-immediate {
+.cbx-icon-button.cbx-state-hover-immediate {
   transition-duration: 0ms;
 }
 
-.clipboard-x-tooltip {
+.cbx-tooltip {
   color: white;
   background-color: rgba(32, 32, 32, 0.96);
   border-radius: 7px;
@@ -197,117 +197,117 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-.clipboard-x-progress-ring {
+.cbx-progress-ring {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.clipboard-x-token-panel {
+.cbx-token-panel {
   spacing: 4px;
 }
 
-.clipboard-x-token-source {
+.cbx-token-source {
   padding: 2px 8px 5px;
   color: rgba(255, 255, 255, 0.72);
 }
 
-.clipboard-x-token-scroll {
+.cbx-token-scroll {
   padding: 0 4px;
 }
 
-.clipboard-x-token-result {
+.cbx-token-result {
   padding: 4px 5px;
   color: rgba(255, 255, 255, 0.72);
 }
 
-.clipboard-x-token-box {
+.cbx-token-box {
   padding: 5px 1px;
   spacing: 6px;
 }
 
-.clipboard-x-token-row {
+.cbx-token-row {
   spacing: 6px;
 }
 
-.clipboard-x-token {
+.cbx-token {
   padding: 5px 8px;
   border-radius: 10px;
 }
 
-.clipboard-x-token:checked {
+.cbx-token:checked {
   background-color: -st-accent-color;
   color: white;
 }
 
-.clipboard-x-token-url {
+.cbx-token-url {
   color: -st-accent-color;
 }
 
-.clipboard-x-accent-blue .clipboard-x-search:focus { border-color: #3584e4; }
-.clipboard-x-accent-blue .clipboard-x-private-active,
-.clipboard-x-accent-blue .clipboard-x-pinned,
-.clipboard-x-accent-blue .clipboard-x-token-url { color: #3584e4; }
-.clipboard-x-accent-blue .clipboard-x-token:checked { background-color: #3584e4; }
+.cbx-accent-blue .cbx-search:focus { border-color: #3584e4; }
+.cbx-accent-blue .cbx-private-active,
+.cbx-accent-blue .cbx-pinned,
+.cbx-accent-blue .cbx-token-url { color: #3584e4; }
+.cbx-accent-blue .cbx-token:checked { background-color: #3584e4; }
 
-.clipboard-x-accent-teal .clipboard-x-search:focus { border-color: #2190a4; }
-.clipboard-x-accent-teal .clipboard-x-private-active,
-.clipboard-x-accent-teal .clipboard-x-pinned,
-.clipboard-x-accent-teal .clipboard-x-token-url { color: #2190a4; }
-.clipboard-x-accent-teal .clipboard-x-token:checked { background-color: #2190a4; }
+.cbx-accent-teal .cbx-search:focus { border-color: #2190a4; }
+.cbx-accent-teal .cbx-private-active,
+.cbx-accent-teal .cbx-pinned,
+.cbx-accent-teal .cbx-token-url { color: #2190a4; }
+.cbx-accent-teal .cbx-token:checked { background-color: #2190a4; }
 
-.clipboard-x-accent-green .clipboard-x-search:focus { border-color: #3a944a; }
-.clipboard-x-accent-green .clipboard-x-private-active,
-.clipboard-x-accent-green .clipboard-x-pinned,
-.clipboard-x-accent-green .clipboard-x-token-url { color: #3a944a; }
-.clipboard-x-accent-green .clipboard-x-token:checked { background-color: #3a944a; }
+.cbx-accent-green .cbx-search:focus { border-color: #3a944a; }
+.cbx-accent-green .cbx-private-active,
+.cbx-accent-green .cbx-pinned,
+.cbx-accent-green .cbx-token-url { color: #3a944a; }
+.cbx-accent-green .cbx-token:checked { background-color: #3a944a; }
 
-.clipboard-x-accent-orange .clipboard-x-search:focus { border-color: #ed5b00; }
-.clipboard-x-accent-orange .clipboard-x-private-active,
-.clipboard-x-accent-orange .clipboard-x-pinned,
-.clipboard-x-accent-orange .clipboard-x-token-url { color: #ff7800; }
-.clipboard-x-accent-orange .clipboard-x-token:checked { background-color: #ed5b00; }
+.cbx-accent-orange .cbx-search:focus { border-color: #ed5b00; }
+.cbx-accent-orange .cbx-private-active,
+.cbx-accent-orange .cbx-pinned,
+.cbx-accent-orange .cbx-token-url { color: #ff7800; }
+.cbx-accent-orange .cbx-token:checked { background-color: #ed5b00; }
 
-.clipboard-x-accent-pink .clipboard-x-search:focus { border-color: #d56199; }
-.clipboard-x-accent-pink .clipboard-x-private-active,
-.clipboard-x-accent-pink .clipboard-x-pinned,
-.clipboard-x-accent-pink .clipboard-x-token-url { color: #d56199; }
-.clipboard-x-accent-pink .clipboard-x-token:checked { background-color: #d56199; }
+.cbx-accent-pink .cbx-search:focus { border-color: #d56199; }
+.cbx-accent-pink .cbx-private-active,
+.cbx-accent-pink .cbx-pinned,
+.cbx-accent-pink .cbx-token-url { color: #d56199; }
+.cbx-accent-pink .cbx-token:checked { background-color: #d56199; }
 
-.clipboard-x-accent-slate .clipboard-x-search:focus { border-color: #6f8396; }
-.clipboard-x-accent-slate .clipboard-x-private-active,
-.clipboard-x-accent-slate .clipboard-x-pinned,
-.clipboard-x-accent-slate .clipboard-x-token-url { color: #8c9fad; }
-.clipboard-x-accent-slate .clipboard-x-token:checked { background-color: #6f8396; }
+.cbx-accent-slate .cbx-search:focus { border-color: #6f8396; }
+.cbx-accent-slate .cbx-private-active,
+.cbx-accent-slate .cbx-pinned,
+.cbx-accent-slate .cbx-token-url { color: #8c9fad; }
+.cbx-accent-slate .cbx-token:checked { background-color: #6f8396; }
 
-.clipboard-x-token-number {
+.cbx-token-number {
   color: #f6d32d;
 }
 
-.clipboard-x-phrase-panel {
+.cbx-phrase-panel {
   spacing: 4px;
 }
 
-.clipboard-x-menu .clipboard-x-panel-host {
+.cbx-menu .cbx-panel-host {
   padding: 0;
 }
 
-.clipboard-x-phrase-form {
+.cbx-phrase-form {
   spacing: 3px;
   padding: 2px;
 }
 
-.clipboard-x-phrase-entry {
+.cbx-phrase-entry {
   min-width: 0;
 }
 
-.clipboard-x-phrase-scroll {
+.cbx-phrase-scroll {
   padding: 0;
 }
 
-.clipboard-x-color-overlay {
+.cbx-color-overlay {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-.clipboard-x-color-preview {
+.cbx-color-preview {
   spacing: 6px;
   padding: 8px;
   border-radius: 10px;
@@ -315,45 +315,45 @@
 }
 
 /* Shared secondary-panel structure. */
-.clipboard-x-panel-header {
+.cbx-panel-header {
   spacing: 0;
 }
 
-.clipboard-x-panel-header-row {
+.cbx-panel-header-row {
   spacing: 1px;
   padding: 3px 6px 1px;
 }
 
-.clipboard-x-panel-header-title {
+.cbx-panel-header-title {
   font-weight: bold;
   text-align: center;
 }
 
-.clipboard-x-panel-header-side {
+.cbx-panel-header-side {
   spacing: 1px;
 }
 
-.clipboard-x-panel-header-balance {
+.cbx-panel-header-balance {
   min-width: 26px;
   min-height: 26px;
 }
 
-.clipboard-x-panel-divider {
+.cbx-panel-divider {
   min-height: 1px;
   margin: 2px 0;
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.clipboard-x-panel-footer {
+.cbx-panel-footer {
   spacing: 0;
 }
 
-.clipboard-x-panel-footer-row {
+.cbx-panel-footer-row {
   spacing: 1px;
   padding: 1px 2px;
 }
 
-.clipboard-x-color-lens {
+.cbx-color-lens {
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 6px;
 }

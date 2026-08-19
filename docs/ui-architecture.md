@@ -50,7 +50,7 @@
 
 - 尺寸和间距优先定义在结构组件上，例如菜单、标题栏、条目、工具栏和底栏。
 - 不为单个业务动作添加位置修正；确需差异时使用表达结构或状态的类名，而不是图标名称。
-- 新增规则前检查选择器优先级。当前 `.clipboard-x-menu .popup-menu-item` 的优先级高于 `.clipboard-x-entry`，通用条目 padding 可能覆盖后者。
+- 新增规则前检查选择器优先级。当前 `.cbx-menu .popup-menu-item` 的优先级高于 `.cbx-entry`，通用条目 padding 可能覆盖后者。
 - 主题色、hover、focus、active 和 checked 是不同状态，不互相替代。
 
 ## 5. 后续拆分顺序

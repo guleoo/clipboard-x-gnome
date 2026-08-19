@@ -34,10 +34,10 @@ export class TokenizerPanel {
     this._dragCaptureId = 0;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this.item.add_style_class_name('clipboard-x-panel-host');
+    this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
       vertical: true,
-      style_class: 'clipboard-x-token-panel',
+      style_class: 'cbx-token-panel',
       x_expand: true,
     });
     this.focusAnchor = new FocusAnchor({
@@ -60,7 +60,7 @@ export class TokenizerPanel {
     this.actor.add_child(this.header);
 
     this.sourceLabel = new St.Label({
-      style_class: 'clipboard-x-token-source',
+      style_class: 'cbx-token-source',
       x_expand: true,
       visible: settings.get_boolean('tokenizer-show-source-preview'),
     });
@@ -70,7 +70,7 @@ export class TokenizerPanel {
     this._section = new PopupMenu.PopupMenuSection();
     this.scroll = new St.ScrollView({
       overlay_scrollbars: true,
-      style_class: 'clipboard-x-token-scroll',
+      style_class: 'cbx-token-scroll',
       x_expand: true,
       y_expand: true,
     });
@@ -80,7 +80,7 @@ export class TokenizerPanel {
     this.footer = new PanelFooter();
     this.resultLabel = new St.Label({
       text: _('Select one or more words'),
-      style_class: 'clipboard-x-token-result',
+      style_class: 'cbx-token-result',
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
@@ -138,7 +138,7 @@ export class TokenizerPanel {
     const tokenItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.tokenBox = new St.BoxLayout({
       vertical: true,
-      style_class: 'clipboard-x-token-box',
+      style_class: 'cbx-token-box',
       style: `width: ${this._contentWidth}px; max-width: ${this._contentWidth}px;`,
       x_expand: true,
     });
@@ -152,7 +152,7 @@ export class TokenizerPanel {
     let rowWidth = 0;
     const startRow = () => {
       tokenRow = new St.BoxLayout({
-        style_class: 'clipboard-x-token-row',
+        style_class: 'cbx-token-row',
         x_align: Clutter.ActorAlign.START,
       });
       this.tokenBox.add_child(tokenRow);
@@ -167,7 +167,7 @@ export class TokenizerPanel {
         can_focus: true,
         track_hover: true,
         checked: state.selected.has(token.index),
-        style_class: `button clipboard-x-token clipboard-x-token-${token.type}`,
+        style_class: `button cbx-token cbx-token-${token.type}`,
       });
       button._clipboardXMaximumWidth = maximumRowWidth;
       button._clipboardXToken = token;
@@ -223,7 +223,7 @@ export class TokenizerPanel {
     if (state.tokens.length === 0) {
       this.tokenBox.add_child(new St.Label({
         text: _('No words found'),
-        style_class: 'clipboard-x-empty',
+        style_class: 'cbx-empty',
       }));
     }
     this.focusGrid.setRows([

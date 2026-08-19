@@ -24,7 +24,7 @@ export function create({
     track_hover: true,
   });
   const contentBody = new St.BoxLayout({
-    style_class: 'clipboard-x-entry-body',
+    style_class: 'cbx-entry-body',
     x_expand: true,
     x_align: Clutter.ActorAlign.FILL,
     y_align: Clutter.ActorAlign.CENTER,
@@ -81,7 +81,7 @@ export function create({
   pinButton.toggle_mode = true;
   pinButton.selected = item.favorite;
   if (item.favorite)
-    pinButton.add_style_class_name('clipboard-x-pinned');
+    pinButton.add_style_class_name('cbx-pinned');
   if (item.favorite && accentColor)
     pinButton.set_style(`color: ${accentColor};`);
   row.addAction(pinButton);
@@ -107,7 +107,7 @@ function colorSwatch(item) {
   if (!color)
     return null;
   const swatch = new St.Widget({
-    style_class: 'clipboard-x-color-swatch',
+    style_class: 'cbx-color-swatch',
     reactive: false,
     can_focus: false,
     y_align: Clutter.ActorAlign.CENTER,
@@ -122,7 +122,7 @@ function textPreview(item) {
   const title = item.preview?.text?.replaceAll('\n', ' ') || _('Text');
   const preview = new St.Label({
     text: title.slice(0, 240),
-    style_class: 'clipboard-x-entry-preview',
+    style_class: 'cbx-entry-preview',
     x_expand: true,
     x_align: Clutter.ActorAlign.FILL,
     y_align: Clutter.ActorAlign.CENTER,
@@ -134,7 +134,7 @@ function textPreview(item) {
 
 function imagePreview(item) {
   const box = new St.BoxLayout({
-    style_class: 'clipboard-x-image-content',
+    style_class: 'cbx-image-content',
     x_expand: true,
     x_align: Clutter.ActorAlign.START,
   });

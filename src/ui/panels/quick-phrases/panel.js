@@ -26,10 +26,10 @@ export class QuickPhrasesPanel {
     this._rows = [];
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-    this.item.add_style_class_name('clipboard-x-panel-host');
+    this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
       vertical: true,
-      style_class: 'clipboard-x-phrase-panel',
+      style_class: 'cbx-phrase-panel',
       x_expand: true,
     });
     this.focusAnchor = new FocusAnchor({
@@ -57,12 +57,12 @@ export class QuickPhrasesPanel {
     this.actor.add_child(this.header);
 
     this.form = new St.BoxLayout({
-      style_class: 'clipboard-x-phrase-form',
+      style_class: 'cbx-phrase-form',
       x_expand: true,
       visible: false,
     });
     this.entry = new St.Entry({
-      style_class: 'clipboard-x-search clipboard-x-phrase-entry',
+      style_class: 'cbx-search cbx-phrase-entry',
       hint_text: _('Enter a custom phrase…'),
       can_focus: true,
       x_expand: true,
@@ -87,7 +87,7 @@ export class QuickPhrasesPanel {
     this._section = new PopupMenu.PopupMenuSection();
     this.scroll = new St.ScrollView({
       overlay_scrollbars: true,
-      style_class: 'clipboard-x-phrase-scroll',
+      style_class: 'cbx-phrase-scroll',
       x_expand: true,
       y_expand: true,
     });
@@ -134,7 +134,7 @@ export class QuickPhrasesPanel {
       });
       const label = new St.Label({
         text: phrase,
-        style_class: 'clipboard-x-entry-preview',
+        style_class: 'cbx-entry-preview',
         x_expand: true,
         x_align: Clutter.ActorAlign.FILL,
         y_align: Clutter.ActorAlign.CENTER,
@@ -164,7 +164,7 @@ export class QuickPhrasesPanel {
       const empty = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
       empty.add_child(new St.Label({
         text: _('No quick phrases'),
-        style_class: 'clipboard-x-empty',
+        style_class: 'cbx-empty',
       }));
       this._section.addMenuItem(empty);
     }

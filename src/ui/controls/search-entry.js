@@ -15,7 +15,7 @@ class SearchEntry extends St.Entry {
     onFocusChanged = null,
     onKeyPress = null,
   } = {}) {
-    const styleClasses = ['clipboard-x-search', styleClass].filter(Boolean).join(' ');
+    const styleClasses = ['cbx-search', styleClass].filter(Boolean).join(' ');
     super._init({
       style_class: styleClasses,
       hint_text: placeholder,

@@ -18,7 +18,7 @@ const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
 const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
-].map(color => `clipboard-x-accent-${color}`));
+].map(color => `cbx-accent-${color}`));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_Left, 'left'],
@@ -42,7 +42,7 @@ export const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
   _init(settings, controller, actions) {
     super._init(0.0, 'Clipboard X');
-    this.add_style_class_name('clipboard-x-panel-button');
+    this.add_style_class_name('cbx-panel-button');
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;
@@ -53,7 +53,7 @@ class Indicator extends PanelMenu.Button {
       icon_name: 'edit-paste-symbolic',
       style_class: 'system-status-icon',
     }));
-    this.menu.actor.add_style_class_name('clipboard-x-menu');
+    this.menu.actor.add_style_class_name('cbx-menu');
     this._buildMenu();
     this._applyTextVerticalOffset();
     this._panelManager = new PanelManager({
@@ -266,7 +266,7 @@ class Indicator extends PanelMenu.Button {
   _updateThemeColor() {
     for (const styleClass of THEME_COLOR_CLASSES)
       this.menu.actor.remove_style_class_name(styleClass);
-    const configured = `clipboard-x-accent-${this._settings.get_string('theme-color')}`;
+    const configured = `cbx-accent-${this._settings.get_string('theme-color')}`;
     if (THEME_COLOR_CLASSES.includes(configured))
       this.menu.actor.add_style_class_name(configured);
     const selected = this._settings.get_string('theme-color');
@@ -325,10 +325,10 @@ class Indicator extends PanelMenu.Button {
   }
 
   _skipStateHoverTransition(button) {
-    button.add_style_class_name('clipboard-x-state-hover-immediate');
+    button.add_style_class_name('cbx-state-hover-immediate');
     GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
       try {
-        button.remove_style_class_name('clipboard-x-state-hover-immediate');
+        button.remove_style_class_name('cbx-state-hover-immediate');
       } catch (_error) {
         // A history refresh may have destroyed this button in the same frame.
       }
