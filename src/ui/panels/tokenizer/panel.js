@@ -6,7 +6,7 @@ import * as AnimationUtils from 'resource:///org/gnome/shell/misc/animationUtils
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {composeTokens, tokenizeText} from '../../../clipboard/tokenizer/processors.js';
+import {composeTokens} from '../../../clipboard/tokenizer/processors.js';
 import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {PanelHeader} from '../../controls/panel-header.js';
@@ -22,10 +22,11 @@ const SELECTION_SHORTCUTS = Object.freeze([
 ]);
 
 export class TokenizerPanel {
-  constructor({settings, createIconButton, handlePanelKey, onBack, runAction}) {
+  constructor({settings, createIconButton, handlePanelKey, onBack, runAction, tokenize}) {
     this._settings = settings;
     this._handlePanelKey = handlePanelKey;
     this._run = runAction;
+    this._tokenize = tokenize;
     this._buttons = [];
     this._state = null;
     this._contentWidth = 260;
@@ -122,7 +123,7 @@ export class TokenizerPanel {
     return {
       item,
       source,
-      tokens: tokenizeText(source),
+      tokens: this._tokenize(source),
       selected: new Set(),
       keyboardSelection: null,
     };

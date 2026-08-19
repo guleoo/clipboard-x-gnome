@@ -80,6 +80,7 @@ test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
+test('tokenizer-chinese-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/chinese-dictionary.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
 test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/terminal/sequence.test.js'])
 test('terminal-activity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/terminal/activity.test.js'])

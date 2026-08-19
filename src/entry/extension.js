@@ -1,4 +1,5 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
@@ -8,6 +9,7 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 
 import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
+import {ChineseTokenizer} from '../clipboard/tokenizer/chinese-tokenizer.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
@@ -36,6 +38,15 @@ export default class ClipboardXExtension extends Extension {
         _('Do not press other keys during simulated typing. Input will resume after the keyboard is idle.'),
       ),
     });
+    this._textTokenizer = new ChineseTokenizer({
+      dictionaryPath: GLib.build_filenamev([
+        this.path,
+        'clipboard',
+        'tokenizer',
+        'dictionaries',
+        'chinese-core.txt',
+      ]),
+    });
     this._colorPicker = null;
     this._settingsSignals = [];
     this._boundShortcuts = [];
@@ -55,6 +66,10 @@ export default class ClipboardXExtension extends Extension {
       copyText: text => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text),
       pasteText: text => this._pasteText(text),
       typeText: text => this._terminalInput.type(text),
+      tokenizeText: text => this._textTokenizer.tokenize(text, {
+        mode: this._settings.get_string('tokenizer-chinese-dictionary-mode'),
+        customWords: this._settings.get_strv('tokenizer-chinese-custom-words'),
+      }),
       rememberInputTarget: () => this._terminalInput.rememberTarget(),
       openPreferences: () => this.openPreferences(),
       reportError: error => this._reportError(error),
@@ -138,6 +153,7 @@ export default class ClipboardXExtension extends Extension {
     this._controller = null;
     this._portal = null;
     this._terminalInput = null;
+    this._textTokenizer = null;
     this._settings = null;
   }
 

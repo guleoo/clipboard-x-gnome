@@ -177,6 +177,19 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
+    tokenizer.add(this._rows.combo(
+      'tokenizer-chinese-dictionary-mode',
+      _('Chinese dictionary'),
+      [
+        ['built-in', _('Built-in compact dictionary')],
+        ['system', _('System tokenizer only')],
+      ],
+    ));
+    tokenizer.add(this._rows.stringList(
+      'tokenizer-chinese-custom-words',
+      _('Custom Chinese words'),
+      _('Comma-separated words; custom words take priority'),
+    ));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);

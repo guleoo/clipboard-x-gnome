@@ -15,10 +15,15 @@ const IDENTIFIER_BOUNDARY_PATTERN = /^[a-z0-9_]$/iu;
 const WORD_GRAPHEME_PATTERN = /^[\p{L}\p{M}\p{N}_]+$/u;
 const PUNCTUATION_PATTERN = /^\p{P}+$/u;
 const APOSTROPHES = new Set(["'", '’']);
+const HAN_RUN_PATTERN = /\p{Script=Han}+/gu;
 
-export function tokenizeText(text, locale = undefined) {
+export function tokenizeText(text, localeOrOptions = undefined) {
   if (typeof text !== 'string')
     throw new TypeError('Text to tokenize must be a string');
+  const options = localeOrOptions && typeof localeOrOptions === 'object'
+    ? localeOrOptions
+    : {locale: localeOrOptions};
+  const {locale = undefined, segmentHan = null} = options;
   const candidates = [];
   for (const rule of SPECIAL_TOKEN_RULES) {
     rule.pattern.lastIndex = 0;
@@ -57,8 +62,7 @@ export function tokenizeText(text, locale = undefined) {
   const addToken = (tokenText, start, type) => {
     tokens.push({text: tokenText, start, end: start + tokenText.length, type});
   };
-  const addOrdinaryTokens = (start, end) => {
-    const slice = text.slice(start, end);
+  const addBaselineTokens = (slice, start) => {
     for (const part of wordSegmenter.segment(slice)) {
       const partStart = start + part.index;
       const graphemes = [...graphemeSegmenter.segment(part.segment)];
@@ -96,6 +100,29 @@ export function tokenizeText(text, locale = undefined) {
       }
       flushWord();
     }
+  };
+  const addOrdinaryTokens = (start, end) => {
+    const slice = text.slice(start, end);
+    if (!segmentHan) {
+      addBaselineTokens(slice, start);
+      return;
+    }
+    let cursor = 0;
+    HAN_RUN_PATTERN.lastIndex = 0;
+    for (const match of slice.matchAll(HAN_RUN_PATTERN)) {
+      addBaselineTokens(slice.slice(cursor, match.index), start + cursor);
+      const fallback = [...wordSegmenter.segment(match[0])]
+        .map(part => part.segment)
+        .filter(Boolean);
+      const segmented = segmentHan(match[0], fallback);
+      let tokenStart = start + match.index;
+      for (const value of segmented) {
+        addToken(value, tokenStart, 'word');
+        tokenStart += value.length;
+      }
+      cursor = match.index + match[0].length;
+    }
+    addBaselineTokens(slice.slice(cursor), start + cursor);
   };
 
   let cursor = 0;

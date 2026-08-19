@@ -224,6 +224,7 @@ class Indicator extends PanelMenu.Button {
         Promise.resolve(this._actions[action](text))
           .catch(error => this._actions.reportError(error));
       },
+      tokenize: text => this._actions.tokenizeText(text),
     });
     this.menu.addMenuItem(this._tokenizer.item);
 

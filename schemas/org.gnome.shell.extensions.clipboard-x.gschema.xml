@@ -134,6 +134,18 @@
       <default>false</default>
       <summary>Show the source text preview in the tokenizer panel</summary>
     </key>
+    <key name="tokenizer-chinese-dictionary-mode" type="s">
+      <choices>
+        <choice value="built-in"/>
+        <choice value="system"/>
+      </choices>
+      <default>'built-in'</default>
+      <summary>Dictionary used to improve Chinese token boundaries</summary>
+    </key>
+    <key name="tokenizer-chinese-custom-words" type="as">
+      <default>[]</default>
+      <summary>User-defined Chinese words that take priority during tokenization</summary>
+    </key>
     <key name="panel-confine-focus" type="b">
       <default>true</default>
       <summary>Keep arrow-key focus navigation inside the extension panel at its edges</summary>
