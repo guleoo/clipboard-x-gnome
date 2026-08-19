@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fr_FR\n"
@@ -273,57 +273,65 @@ msgstr "Synchronisation"
 msgid "Clear history"
 msgstr "Effacer l'historique"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "Échec de l’importation du dictionnaire"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "L’opération sur le dictionnaire a échoué"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "Fermer"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "Dictionnaires"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Les dictionnaires correspondant à la langue d’affichage actuelle sont "
 "chargés automatiquement."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "Code de langue pour l’importation"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "Langue d’importation"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr ""
 "Utilisé lorsque le dictionnaire ne déclare pas « # locale: language-code »."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "Importer un dictionnaire"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "Texte UTF-8 ; un mot et une fréquence facultative par ligne"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "Importer…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "entrées"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "Modifier le dictionnaire"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "Ouvrir le dossier contenant"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "Supprimer le dictionnaire"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "Saisissez un code de langue valide, tel que zh, en ou pt_BR."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "Échec de l’importation du dictionnaire"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -920,6 +928,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "Saisissez un code de langue valide, tel que zh, en ou pt_BR."
 
 #~ msgid "Dictionary files"
 #~ msgstr "Fichiers de dictionnaire"

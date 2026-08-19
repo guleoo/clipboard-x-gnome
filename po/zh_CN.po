@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-14 21:35+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
@@ -271,54 +271,62 @@ msgstr "同步"
 msgid "Clear history"
 msgstr "清空历史"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "导入词库失败"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "词库操作失败"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "关闭"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "词库"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr "自动加载与当前显示语言匹配的词库。"
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "导入语言代码"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "导入语言"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "当词库未声明“# locale: 语言代码”时使用。"
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "导入词库"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "UTF-8 文本；每行一个词，可附带词频"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "导入…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "个词条"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "编辑词库"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "打开所在文件夹"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "移除词库"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "请输入有效语言代码，例如 zh、en 或 pt_BR。"
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "导入词库失败"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -915,6 +923,9 @@ msgstr "向下扩展选择范围"
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr "截图"
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "请输入有效语言代码，例如 zh、en 或 pt_BR。"
 
 #~ msgid "Dictionary files"
 #~ msgstr "词库文件"

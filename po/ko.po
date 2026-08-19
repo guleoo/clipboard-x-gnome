@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ko\n"
@@ -273,54 +273,62 @@ msgstr "동기화"
 msgid "Clear history"
 msgstr "기록 지우기"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "사전 가져오기에 실패했습니다"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "사전 작업 실패"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "닫기"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "사전"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr "현재 표시 언어와 일치하는 사전을 자동으로 불러옵니다."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "가져올 사전의 언어 코드"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "가져올 언어"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "사전에 “# locale: language-code” 선언이 없을 때 사용합니다."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "사전 가져오기"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "UTF-8 텍스트; 한 줄에 단어 하나와 선택적 빈도"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "가져오기…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "항목"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "사전 편집"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "포함된 폴더 열기"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "사전 제거"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "zh, en, pt_BR 같은 올바른 언어 코드를 입력하세요."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "사전 가져오기에 실패했습니다"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -917,6 +925,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "zh, en, pt_BR 같은 올바른 언어 코드를 입력하세요."
 
 #~ msgid "Dictionary files"
 #~ msgstr "사전 파일"

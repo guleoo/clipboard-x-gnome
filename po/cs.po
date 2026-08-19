@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: cs\n"
@@ -273,55 +273,63 @@ msgstr "Synchronizace"
 msgid "Clear history"
 msgstr "Smazat historii"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "Import slovníku se nezdařil"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "Operace se slovníkem selhala"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "Zavřít"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "Slovníky"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Slovníky odpovídající aktuálnímu jazyku zobrazení se načítají automaticky."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "Kód jazyka pro import"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "Jazyk pro import"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Použije se, pokud slovník neobsahuje „# locale: language-code“."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "Importovat slovník"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "Text UTF-8; jedno slovo a volitelná četnost na řádek"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "Importovat…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "položek"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "Upravit slovník"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "Otevřít složku se souborem"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "Odstranit slovník"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "Zadejte platný kód jazyka, například zh, en nebo pt_BR."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "Import slovníku se nezdařil"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -918,6 +926,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "Zadejte platný kód jazyka, například zh, en nebo pt_BR."
 
 #~ msgid "Dictionary files"
 #~ msgstr "Soubory slovníků"

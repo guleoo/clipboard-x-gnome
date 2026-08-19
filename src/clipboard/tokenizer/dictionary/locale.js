@@ -1,5 +1,34 @@
 const LOCALE_PATTERN = /^[a-z]{2,3}(?:[_-][a-z0-9]{2,8})*$/iu;
 
+export const DICTIONARY_LOCALES = Object.freeze([
+  'ar',
+  'bg',
+  'ca',
+  'cs',
+  'de',
+  'el',
+  'en',
+  'es',
+  'eu',
+  'fa',
+  'fi',
+  'fr_fr',
+  'hu',
+  'it',
+  'ja',
+  'kn',
+  'ko',
+  'nl',
+  'oc',
+  'pl',
+  'pt_br',
+  'ru',
+  'sk',
+  'tr',
+  'uk',
+  'zh_cn',
+]);
+
 export function normalizeLocale(value) {
   const normalized = String(value ?? '')
     .split('.')[0]
@@ -23,6 +52,18 @@ export function localeCandidates(languageNames) {
     return values;
   }
   return ['en'];
+}
+
+export function selectLocale(languageNames, locales = DICTIONARY_LOCALES) {
+  const available = locales.map(normalizeLocale).filter(Boolean);
+  const candidates = localeCandidates(languageNames);
+  for (const candidate of candidates) {
+    if (available.includes(candidate))
+      return candidate;
+  }
+  const language = candidates.at(-1);
+  const related = available.find(locale => locale.split('_')[0] === language);
+  return related ?? (available.includes('en') ? 'en' : available[0] ?? '');
 }
 
 export function inferLocale(name, fallback = '') {

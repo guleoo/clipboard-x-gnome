@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ru\n"
@@ -274,56 +274,64 @@ msgstr "Синхронизация"
 msgid "Clear history"
 msgstr "Очистить историю"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "Не удалось импортировать словарь"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "Операция со словарём не выполнена"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "Закрыть"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "Словари"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Словари, соответствующие текущему языку интерфейса, загружаются "
 "автоматически."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "Код языка для импорта"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "Язык импорта"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Используется, если в словаре не указано «# locale: language-code»."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "Импортировать словарь"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "Текст UTF-8; одно слово и необязательная частота в строке"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "Импортировать…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "записей"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "Изменить словарь"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "Открыть папку с файлом"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "Удалить словарь"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "Введите допустимый код языка, например zh, en или pt_BR."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "Не удалось импортировать словарь"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -920,6 +928,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "Введите допустимый код языка, например zh, en или pt_BR."
 
 #~ msgid "Dictionary files"
 #~ msgstr "Файлы словарей"

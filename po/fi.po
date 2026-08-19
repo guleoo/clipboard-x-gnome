@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fi\n"
@@ -273,54 +273,62 @@ msgstr "Synkronointi"
 msgid "Clear history"
 msgstr "Tyhjennä historia"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "Sanaston tuonti epäonnistui"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "Sanastotoiminto epäonnistui"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "Sulje"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "Sanastot"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr "Nykyistä näyttökieltä vastaavat sanastot ladataan automaattisesti."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "Tuonnin kielikoodi"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "Tuonnin kieli"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Käytetään, kun sanasto ei määritä riviä ”# locale: language-code”."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "Tuo sanasto"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "UTF-8-teksti; yksi sana ja valinnainen yleisyys rivillä"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "Tuo…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "tietuetta"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "Muokkaa sanastoa"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "Avaa sisältävä kansio"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "Poista sanasto"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "Anna kelvollinen kielikoodi, kuten zh, en tai pt_BR."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "Sanaston tuonti epäonnistui"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -917,6 +925,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "Anna kelvollinen kielikoodi, kuten zh, en tai pt_BR."
 
 #~ msgid "Dictionary files"
 #~ msgstr "Sanastotiedostot"

@@ -47,6 +47,12 @@ export class DictionaryStore {
     return this._root.get_path();
   }
 
+  getFile(fileName) {
+    if (!FILE_PATTERN.test(fileName))
+      throw new Error('Invalid dictionary filename');
+    return this._root.get_child(fileName);
+  }
+
   ensureSeeds() {
     if (this._seedsReady)
       return;
@@ -162,9 +168,7 @@ export class DictionaryStore {
   }
 
   remove(fileName) {
-    if (!FILE_PATTERN.test(fileName))
-      throw new Error('Invalid dictionary filename');
-    const file = this._root.get_child(fileName);
+    const file = this.getFile(fileName);
     if (file.query_exists(null))
       file.delete(null);
   }

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:09+0800\n"
+"POT-Creation-Date: 2026-08-19 19:34+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fa\n"
@@ -272,54 +272,62 @@ msgstr "هماهنگ سازی"
 msgid "Clear history"
 msgstr "پاک‌سازی تاریخچه"
 
-#: src/ui/settings/dictionaries.js:18
-msgid "Dictionary import failed"
-msgstr "درون‌ریزی واژه‌نامه شکست خورد"
+#: src/ui/settings/dictionaries.js:20
+msgid "Dictionary operation failed"
+msgstr "عملیات واژه‌نامه ناموفق بود"
 
-#: src/ui/settings/dictionaries.js:21
+#: src/ui/settings/dictionaries.js:25
 msgid "Close"
 msgstr "بستن"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:66
 msgid "Dictionaries"
 msgstr "واژه‌نامه‌ها"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:67
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr "واژه‌نامه‌های منطبق با زبان نمایش کنونی به‌طور خودکار بارگذاری می‌شوند."
 
-#: src/ui/settings/dictionaries.js:32
-msgid "Language code for import"
-msgstr "کد زبان برای درون‌ریزی"
+#: src/ui/settings/dictionaries.js:73
+msgid "Language for import"
+msgstr "زبان برای درون‌ریزی"
 
-#: src/ui/settings/dictionaries.js:35
+#: src/ui/settings/dictionaries.js:77
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "وقتی واژه‌نامه «# locale: language-code» را اعلام نکند استفاده می‌شود."
 
-#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
 msgid "Import dictionary"
 msgstr "درون‌ریزی واژه‌نامه"
 
-#: src/ui/settings/dictionaries.js:40
+#: src/ui/settings/dictionaries.js:82
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "متن UTF-8؛ در هر سطر یک واژه و بسامد اختیاری"
 
-#: src/ui/settings/dictionaries.js:43
+#: src/ui/settings/dictionaries.js:85
 msgid "Import…"
 msgstr "درون‌ریزی…"
 
-#: src/ui/settings/dictionaries.js:57
+#: src/ui/settings/dictionaries.js:99
 msgid "entries"
 msgstr "مدخل"
 
-#: src/ui/settings/dictionaries.js:61
+#: src/ui/settings/dictionaries.js:104
+msgid "Edit dictionary"
+msgstr "ویرایش واژه‌نامه"
+
+#: src/ui/settings/dictionaries.js:112
+msgid "Open containing folder"
+msgstr "باز کردن پوشهٔ دربرگیرنده"
+
+#: src/ui/settings/dictionaries.js:120
 msgid "Remove dictionary"
 msgstr "حذف واژه‌نامه"
 
-#: src/ui/settings/dictionaries.js:83
-msgid "Enter a valid language code, such as zh, en, or pt_BR."
-msgstr "یک کد زبان معتبر مانند zh، en یا pt_BR وارد کنید."
+#: src/ui/settings/dictionaries.js:159
+msgid "Dictionary import failed"
+msgstr "درون‌ریزی واژه‌نامه شکست خورد"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:311 src/ui/settings/window.js:316
@@ -916,6 +924,9 @@ msgstr ""
 #: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
+#~ msgstr "یک کد زبان معتبر مانند zh، en یا pt_BR وارد کنید."
 
 #~ msgid "Dictionary files"
 #~ msgstr "پرونده‌های واژه‌نامه"

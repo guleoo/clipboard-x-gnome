@@ -2,7 +2,12 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {parseDictionary, serializeDictionary} from '../../../src/clipboard/tokenizer/dictionary/format.js';
-import {localeCandidates, normalizeLocale} from '../../../src/clipboard/tokenizer/dictionary/locale.js';
+import {
+  DICTIONARY_LOCALES,
+  localeCandidates,
+  normalizeLocale,
+  selectLocale,
+} from '../../../src/clipboard/tokenizer/dictionary/locale.js';
 import {Lexicon, parseEntries} from '../../../src/clipboard/tokenizer/dictionary/lexicon.js';
 import {DictionaryStore} from '../../../src/clipboard/tokenizer/dictionary/store.js';
 import {tokenizeText} from '../../../src/clipboard/tokenizer/processors.js';
@@ -39,6 +44,14 @@ assertEqual(normalizeLocale('pt-BR.UTF-8'), 'pt_br', 'locale normalization');
 assertEqual(localeCandidates(['zh_CN.UTF-8', 'zh', 'C']), ['zh_cn', 'zh'], 'locale fallback order');
 assertEqual(localeCandidates(['fr_FR.UTF-8', 'de_DE']), ['fr_fr', 'fr'],
   'only the active display language should select dictionaries');
+assertEqual(selectLocale(['zh_CN.UTF-8', 'zh', 'C']), 'zh_cn',
+  'dictionary language selection should default to the exact display locale');
+assertEqual(selectLocale(['fr_CA.UTF-8', 'fr', 'C']), 'fr_fr',
+  'dictionary language selection should use a supported regional variant');
+assertEqual(selectLocale(['vi_VN.UTF-8', 'vi', 'C']), 'en',
+  'unsupported display languages should fall back to English');
+assert(DICTIONARY_LOCALES.includes('en') && DICTIONARY_LOCALES.includes('zh_cn'),
+  'dictionary language choices should include source and translated locales');
 assertEqual(parseEntries('注销 80\n# ignored\ninvalid-word 20').map(entry => entry.word), ['注销'],
   'dictionary entry parsing');
 
@@ -70,6 +83,8 @@ try {
   const initial = store.list();
   assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount === 45967,
     'pre-imported dictionary should use the regular user dictionary store');
+  assert(store.getFile(initial[0].fileName).query_exists(null),
+    'stored dictionaries should expose their editable file');
 
   const chineseTokenizer = new Tokenizer({
     store,
