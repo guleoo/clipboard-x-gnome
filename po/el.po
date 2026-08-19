@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 18:33+0800\n"
+"POT-Creation-Date: 2026-08-19 19:09+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: el\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/entry/extension.js:37
+#: src/entry/extension.js:38
 msgid "Simulated keyboard input paused"
 msgstr ""
 
-#: src/entry/extension.js:38
+#: src/entry/extension.js:39
 msgid ""
 "Do not press other keys during simulated typing. Input will resume after the "
 "keyboard is idle."
@@ -60,7 +60,7 @@ msgstr ""
 msgid "Delete from local history"
 msgstr ""
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:321
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:320
 msgid "Text"
 msgstr "Κείμενο"
 
@@ -73,12 +73,12 @@ msgid "Search clipboard history…"
 msgstr ""
 
 #: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:353 src/ui/settings/window.js:354
-#: src/ui/settings/window.js:438
+#: src/ui/settings/window.js:352 src/ui/settings/window.js:353
+#: src/ui/settings/window.js:437
 msgid "Screenshot"
 msgstr "Στιγμιότυπο"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:436
+#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:435
 msgid "Pick color"
 msgstr "Επιλογή χρώματος"
 
@@ -88,11 +88,11 @@ msgid "Privacy mode"
 msgstr "Ιδιωτική λειτουργία"
 
 #: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:212
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:211
 msgid "Quick phrases"
 msgstr "Γρήγορες φράσεις"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:400
+#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:399
 msgid "Clear unpinned history"
 msgstr "Εκκάθαρση ιστορικού"
 
@@ -260,12 +260,12 @@ msgstr ""
 msgid "Move to top toolbar"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:340
-#: src/ui/settings/window.js:434
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:339
+#: src/ui/settings/window.js:433
 msgid "Color picker"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:234
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:233
 msgid "Synchronization"
 msgstr "Συγχρονισμός"
 
@@ -273,8 +273,59 @@ msgstr "Συγχρονισμός"
 msgid "Clear history"
 msgstr "Εκκάθαρση ιστορικού"
 
+#: src/ui/settings/dictionaries.js:18
+msgid "Dictionary import failed"
+msgstr "Η εισαγωγή λεξικού απέτυχε"
+
+#: src/ui/settings/dictionaries.js:21
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: src/ui/settings/dictionaries.js:27
+msgid "Dictionaries"
+msgstr "Λεξικά"
+
+#: src/ui/settings/dictionaries.js:28
+msgid ""
+"Dictionaries matching the current display language are loaded automatically."
+msgstr ""
+"Τα λεξικά που αντιστοιχούν στην τρέχουσα γλώσσα εμφάνισης φορτώνονται "
+"αυτόματα."
+
+#: src/ui/settings/dictionaries.js:32
+msgid "Language code for import"
+msgstr "Κωδικός γλώσσας για εισαγωγή"
+
+#: src/ui/settings/dictionaries.js:35
+msgid "Used when the dictionary does not declare “# locale: language-code”."
+msgstr "Χρησιμοποιείται όταν το λεξικό δεν δηλώνει «# locale: language-code»."
+
+#: src/ui/settings/dictionaries.js:39 src/ui/settings/dictionaries.js:87
+msgid "Import dictionary"
+msgstr "Εισαγωγή λεξικού"
+
+#: src/ui/settings/dictionaries.js:40
+msgid "UTF-8 text; one word and optional frequency per line"
+msgstr "Κείμενο UTF-8· μία λέξη και προαιρετική συχνότητα ανά γραμμή"
+
+#: src/ui/settings/dictionaries.js:43
+msgid "Import…"
+msgstr "Εισαγωγή…"
+
+#: src/ui/settings/dictionaries.js:57
+msgid "entries"
+msgstr "καταχωρίσεις"
+
+#: src/ui/settings/dictionaries.js:61
+msgid "Remove dictionary"
+msgstr "Αφαίρεση λεξικού"
+
+#: src/ui/settings/dictionaries.js:83
+msgid "Enter a valid language code, such as zh, en, or pt_BR."
+msgstr "Εισαγάγετε έναν έγκυρο κωδικό γλώσσας, όπως zh, en ή pt_BR."
+
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:312 src/ui/settings/window.js:317
+#: src/ui/settings/window.js:311 src/ui/settings/window.js:316
 msgid "Disabled"
 msgstr "Απενεργοποιημένο"
 
@@ -326,565 +377,558 @@ msgstr ""
 msgid "Choose custom theme color"
 msgstr ""
 
-#: src/ui/settings/window.js:98
+#: src/ui/settings/window.js:105
 msgid "General"
 msgstr "Γενικά"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:108
 msgid "Appearance"
 msgstr "Εμφάνιση"
 
-#: src/ui/settings/window.js:105
+#: src/ui/settings/window.js:112
 msgid "Panel"
 msgstr ""
 
-#: src/ui/settings/window.js:107
+#: src/ui/settings/window.js:114
 msgid "Show panel indicator"
 msgstr ""
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:115
 msgid "Panel position when indicator is hidden"
 msgstr ""
 
-#: src/ui/settings/window.js:109
+#: src/ui/settings/window.js:116
 msgid "Top left"
 msgstr "Πάνω αριστερά"
 
-#: src/ui/settings/window.js:110
+#: src/ui/settings/window.js:117
 msgid "Top center"
 msgstr ""
 
-#: src/ui/settings/window.js:111
+#: src/ui/settings/window.js:118
 msgid "Top right"
 msgstr "Επάνω δεξιά"
 
-#: src/ui/settings/window.js:112
+#: src/ui/settings/window.js:119
 msgid "Center left"
 msgstr ""
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:120
 msgid "Center"
 msgstr "Κέντρο"
 
-#: src/ui/settings/window.js:114
+#: src/ui/settings/window.js:121
 msgid "Center right"
 msgstr ""
 
-#: src/ui/settings/window.js:115
+#: src/ui/settings/window.js:122
 msgid "Bottom left"
 msgstr "Κάτω αριστερά"
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:123
 msgid "Bottom center"
 msgstr ""
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:124
 msgid "Bottom right"
 msgstr "Κάτω δεξιά"
 
-#: src/ui/settings/window.js:121
+#: src/ui/settings/window.js:128
 msgid "Horizontal panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:125
+#: src/ui/settings/window.js:132
 msgid "px; positive moves right"
 msgstr ""
 
-#: src/ui/settings/window.js:129
+#: src/ui/settings/window.js:136
 msgid "Vertical panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:133
+#: src/ui/settings/window.js:140
 msgid "px; positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:135
+#: src/ui/settings/window.js:142
 msgid "Panel width"
 msgstr ""
 
-#: src/ui/settings/window.js:135 src/ui/settings/window.js:136
-#: src/ui/settings/window.js:333
+#: src/ui/settings/window.js:142 src/ui/settings/window.js:143
+#: src/ui/settings/window.js:332
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:143
 msgid "Panel height"
 msgstr ""
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:146
 msgid "Text vertical offset"
 msgstr ""
 
-#: src/ui/settings/window.js:143
+#: src/ui/settings/window.js:150
 msgid "px; negative moves up, positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:145
+#: src/ui/settings/window.js:152
 msgid "Maximum entries shown in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:155
 msgid "Preserve panel state"
 msgstr ""
 
-#: src/ui/settings/window.js:149
+#: src/ui/settings/window.js:156
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
 
-#: src/ui/settings/window.js:153
+#: src/ui/settings/window.js:160
 msgid "Keep keyboard focus in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:154
+#: src/ui/settings/window.js:161
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
 
-#: src/ui/settings/window.js:158
+#: src/ui/settings/window.js:165
 msgid "Icon layout"
 msgstr ""
 
-#: src/ui/settings/window.js:159
+#: src/ui/settings/window.js:166
 msgid "Use the buttons to change action placement and order."
 msgstr ""
 
-#: src/ui/settings/window.js:168 src/ui/settings/window.js:405
+#: src/ui/settings/window.js:175 src/ui/settings/window.js:404
 msgid "Clipboard"
 msgstr "Πρόχειρο"
 
-#: src/ui/settings/window.js:169
+#: src/ui/settings/window.js:176
 msgid "History"
 msgstr "Ιστορικό"
 
-#: src/ui/settings/window.js:171
+#: src/ui/settings/window.js:178
 msgid "History entries"
 msgstr ""
 
-#: src/ui/settings/window.js:172
+#: src/ui/settings/window.js:179
 msgid "Cache size"
 msgstr ""
 
-#: src/ui/settings/window.js:172 src/ui/settings/window.js:174
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:179 src/ui/settings/window.js:181
+#: src/ui/settings/window.js:331
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:173
+#: src/ui/settings/window.js:180
 msgid "Automatic cleanup"
 msgstr ""
 
-#: src/ui/settings/window.js:173
+#: src/ui/settings/window.js:180
 msgid "days; 0 disables"
 msgstr ""
 
-#: src/ui/settings/window.js:174
+#: src/ui/settings/window.js:181
 msgid "Maximum item size"
 msgstr ""
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:182
 msgid "Trim surrounding whitespace"
 msgstr ""
 
-#: src/ui/settings/window.js:177 src/ui/settings/window.js:419
+#: src/ui/settings/window.js:184 src/ui/settings/window.js:418
 msgid "Tokenizer"
 msgstr "Αναλυτής λέξεων"
 
-#: src/ui/settings/window.js:179
+#: src/ui/settings/window.js:186
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:182
-msgid "Chinese dictionary"
-msgstr "Κινεζικό λεξικό"
-
-#: src/ui/settings/window.js:184
-msgid "Built-in compact dictionary"
-msgstr "Ενσωματωμένο συμπαγές λεξικό"
-
-#: src/ui/settings/window.js:185
-msgid "System tokenizer only"
-msgstr "Μόνο ο κατατμητής του συστήματος"
-
-#: src/ui/settings/window.js:190
-msgid "Custom Chinese words"
-msgstr "Προσαρμοσμένες κινεζικές λέξεις"
-
-#: src/ui/settings/window.js:191
-msgid "Comma-separated words; custom words take priority"
-msgstr "Λέξεις χωρισμένες με κόμματα· οι προσαρμοσμένες λέξεις έχουν προτεραιότητα"
-
-#: src/ui/settings/window.js:194
+#: src/ui/settings/window.js:193
 msgid "Privacy"
 msgstr ""
 
-#: src/ui/settings/window.js:196
+#: src/ui/settings/window.js:195
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:197 src/ui/settings/window.js:324
+#: src/ui/settings/window.js:196 src/ui/settings/window.js:323
 msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:197
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:199
+#: src/ui/settings/window.js:198
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:200
+#: src/ui/settings/window.js:199
 msgid "Store like other history"
 msgstr ""
 
-#: src/ui/settings/window.js:204
+#: src/ui/settings/window.js:203
 msgid "Excluded applications"
 msgstr "Εξαιρεθείσες εφαρμογές"
 
-#: src/ui/settings/window.js:205
+#: src/ui/settings/window.js:204
 msgid "Comma-separated window classes"
 msgstr ""
 
-#: src/ui/settings/window.js:216
+#: src/ui/settings/window.js:215
 msgid "Behavior"
 msgstr "Συμπεριφορά"
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:216
 msgid "Quick phrases are stored only on this device."
 msgstr ""
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:219
 msgid "Maximum quick phrases"
 msgstr ""
 
-#: src/ui/settings/window.js:223
+#: src/ui/settings/window.js:222
 msgid "Place new phrases first"
 msgstr ""
 
-#: src/ui/settings/window.js:224
+#: src/ui/settings/window.js:223
 msgid "When disabled, new phrases are added at the end"
 msgstr ""
 
-#: src/ui/settings/window.js:228
+#: src/ui/settings/window.js:227
 msgid "Close panel after copying"
 msgstr ""
 
-#: src/ui/settings/window.js:235
+#: src/ui/settings/window.js:234
 msgid "Device"
 msgstr "Συσκευή"
 
-#: src/ui/settings/window.js:237
+#: src/ui/settings/window.js:236
 msgid "Device ID"
 msgstr "Αναγνωριστικό της συσκευής"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:241
 msgid "Device tag"
 msgstr ""
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:241
 msgid "Friendly name shown during device discovery"
 msgstr ""
 
-#: src/ui/settings/window.js:243
+#: src/ui/settings/window.js:242
 msgid "Device icon"
 msgstr ""
 
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:243
 msgid "Desktop"
 msgstr "Επιφάνεια εργασίας"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:244
 msgid "Laptop"
 msgstr ""
 
-#: src/ui/settings/window.js:246
+#: src/ui/settings/window.js:245
 msgid "Phone"
 msgstr "Τηλέφωνο"
 
-#: src/ui/settings/window.js:247
+#: src/ui/settings/window.js:246
 msgid "Tablet"
 msgstr "Tablet"
 
-#: src/ui/settings/window.js:248
+#: src/ui/settings/window.js:247
 msgid "Server"
 msgstr "Διακομιστής"
 
-#: src/ui/settings/window.js:249
+#: src/ui/settings/window.js:248
 msgid "Other"
 msgstr "Άλλο"
 
-#: src/ui/settings/window.js:252
+#: src/ui/settings/window.js:251
 msgid "Service connection"
 msgstr ""
 
-#: src/ui/settings/window.js:254
+#: src/ui/settings/window.js:253
 msgid "Enable synchronization integration"
 msgstr ""
 
-#: src/ui/settings/window.js:257
+#: src/ui/settings/window.js:256
 msgid "D-Bus name"
 msgstr ""
 
-#: src/ui/settings/window.js:263
+#: src/ui/settings/window.js:262
 msgid "Object path"
 msgstr ""
 
-#: src/ui/settings/window.js:267
+#: src/ui/settings/window.js:266
 msgid "Service status"
 msgstr ""
 
-#: src/ui/settings/window.js:267
+#: src/ui/settings/window.js:266
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/settings/window.js:268
+#: src/ui/settings/window.js:267
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/settings/window.js:271
+#: src/ui/settings/window.js:270
 msgid "Connecting…"
 msgstr "Γίνεται σύνδεση…"
 
-#: src/ui/settings/window.js:282
+#: src/ui/settings/window.js:281
 msgid "item limit"
 msgstr ""
 
-#: src/ui/settings/window.js:283
+#: src/ui/settings/window.js:282
 msgid "preview limit"
 msgstr ""
 
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:294
 msgid "Service preferences"
 msgstr ""
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:295
 msgid "Provided by the external synchronization Service"
 msgstr ""
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:297
 msgid "Open"
 msgstr "Άνοιγμα"
 
-#: src/ui/settings/window.js:309
+#: src/ui/settings/window.js:308
 msgid "Transfer policy"
 msgstr ""
 
-#: src/ui/settings/window.js:311
+#: src/ui/settings/window.js:310
 msgid "Send mode"
 msgstr ""
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:312
 msgid "Manual"
 msgstr "Χειροκίνητα"
 
-#: src/ui/settings/window.js:314
+#: src/ui/settings/window.js:313
 msgid "Automatic"
 msgstr "Αυτόματα"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:315
 msgid "Receive mode"
 msgstr ""
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:317
 msgid "History only"
 msgstr ""
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:318
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/ui/settings/window.js:322
+#: src/ui/settings/window.js:321
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:323
+#: src/ui/settings/window.js:322
 msgid "Images"
 msgstr "Εικόνες"
 
-#: src/ui/settings/window.js:324
+#: src/ui/settings/window.js:323
 msgid "Disabled by default"
 msgstr ""
 
-#: src/ui/settings/window.js:327
+#: src/ui/settings/window.js:326
 msgid "Favorites only"
 msgstr ""
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:327
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:329
 msgid "Small text sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:330 src/ui/settings/window.js:331
-#: src/ui/settings/window.js:334
+#: src/ui/settings/window.js:329 src/ui/settings/window.js:330
+#: src/ui/settings/window.js:333
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:331
+#: src/ui/settings/window.js:330
 msgid "Large text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:331
 msgid "Small images sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:333
+#: src/ui/settings/window.js:332
 msgid "Thumbnail dimension"
 msgstr ""
 
-#: src/ui/settings/window.js:334
+#: src/ui/settings/window.js:333
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/ui/settings/window.js:335
+#: src/ui/settings/window.js:334
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/ui/settings/window.js:335
+#: src/ui/settings/window.js:334
 msgid "seconds"
 msgstr "δευτερόλεπτα"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:340
 msgid "Color format"
 msgstr ""
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:342
 msgid "Default format"
 msgstr "Προεπιλεγμένη μορφή"
 
-#: src/ui/settings/window.js:356
+#: src/ui/settings/window.js:355
 msgid "Default target"
 msgstr ""
 
-#: src/ui/settings/window.js:357
+#: src/ui/settings/window.js:356
 msgid "Interactive"
 msgstr ""
 
-#: src/ui/settings/window.js:358
+#: src/ui/settings/window.js:357
 msgid "Full screen"
 msgstr ""
 
-#: src/ui/settings/window.js:359
+#: src/ui/settings/window.js:358
 msgid "Window"
 msgstr "Παράθυρο"
 
-#: src/ui/settings/window.js:360
+#: src/ui/settings/window.js:359
 msgid "Area"
 msgstr "Εμβαδόν"
 
-#: src/ui/settings/window.js:361
+#: src/ui/settings/window.js:360
 msgid "Active window"
 msgstr "Ενεργό παράθυρο"
 
-#: src/ui/settings/window.js:363
+#: src/ui/settings/window.js:362
 msgid "Add to history"
 msgstr ""
 
-#: src/ui/settings/window.js:364
+#: src/ui/settings/window.js:363
 msgid "Copy screenshot"
 msgstr ""
 
-#: src/ui/settings/window.js:365
+#: src/ui/settings/window.js:364
 msgid "Open image editor"
 msgstr ""
 
-#: src/ui/settings/window.js:367
+#: src/ui/settings/window.js:366
 msgid "Image editing"
 msgstr ""
 
-#: src/ui/settings/window.js:371
+#: src/ui/settings/window.js:370
 msgid "Command"
 msgstr "Εντολή"
 
-#: src/ui/settings/window.js:372
+#: src/ui/settings/window.js:371
 msgid ""
 "%u is the URI, %f is a local path, %i is standard input and %% is a percent "
 "sign"
 msgstr ""
 
-#: src/ui/settings/window.js:388
+#: src/ui/settings/window.js:387
 msgid "Shortcuts"
 msgstr "Συντομεύσεις"
 
-#: src/ui/settings/window.js:392
+#: src/ui/settings/window.js:391
 msgid "Global"
 msgstr "Καθολικός"
 
-#: src/ui/settings/window.js:393
+#: src/ui/settings/window.js:392
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:396
 msgid "Open clipboard panel"
 msgstr "Εμφάνιση/Απόκρυψη μενού"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:397
 msgid "Focus clipboard search"
 msgstr ""
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:398
 msgid "Pause or resume clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:406
+#: src/ui/settings/window.js:405
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:410
+#: src/ui/settings/window.js:409
 msgid "Paste entry"
 msgstr ""
 
-#: src/ui/settings/window.js:411
+#: src/ui/settings/window.js:410
 msgid "Pin or unpin entry"
 msgstr ""
 
-#: src/ui/settings/window.js:412
+#: src/ui/settings/window.js:411
 msgid "Delete entry"
 msgstr ""
 
-#: src/ui/settings/window.js:413
+#: src/ui/settings/window.js:412
 msgid "Type entry directly"
 msgstr ""
 
-#: src/ui/settings/window.js:414
+#: src/ui/settings/window.js:413
 msgid "Type entry instead of copying"
 msgstr ""
 
-#: src/ui/settings/window.js:420
+#: src/ui/settings/window.js:419
 msgid "Active while a token has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:424
+#: src/ui/settings/window.js:423
 msgid "Copy selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:424
 msgid "Paste selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:426
+#: src/ui/settings/window.js:425
 msgid "Type selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:427
+#: src/ui/settings/window.js:426
 msgid "Extend selection left"
 msgstr ""
 
-#: src/ui/settings/window.js:428
+#: src/ui/settings/window.js:427
 msgid "Extend selection right"
 msgstr ""
 
-#: src/ui/settings/window.js:429
+#: src/ui/settings/window.js:428
 msgid "Extend selection upward"
 msgstr ""
 
-#: src/ui/settings/window.js:430
+#: src/ui/settings/window.js:429
 msgid "Extend selection downward"
 msgstr ""
 
-#: src/ui/settings/window.js:440
+#: src/ui/settings/window.js:439
 msgid "Take screenshot"
 msgstr ""
+
+#~ msgid "Dictionary files"
+#~ msgstr "Αρχεία λεξικών"
+
+#~ msgid "System tokenizer only"
+#~ msgstr "Μόνο ο κατατμητής του συστήματος"
+
+#~ msgid "Custom Chinese words"
+#~ msgstr "Προσαρμοσμένες κινεζικές λέξεις"
+
+#~ msgid "Comma-separated words; custom words take priority"
+#~ msgstr ""
+#~ "Λέξεις χωρισμένες με κόμματα· οι προσαρμοσμένες λέξεις έχουν προτεραιότητα"

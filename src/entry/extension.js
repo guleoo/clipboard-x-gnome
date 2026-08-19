@@ -9,7 +9,8 @@ import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/ex
 
 import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
-import {ChineseTokenizer} from '../clipboard/tokenizer/chinese-tokenizer.js';
+import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
+import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
@@ -38,15 +39,12 @@ export default class ClipboardXExtension extends Extension {
         _('Do not press other keys during simulated typing. Input will resume after the keyboard is idle.'),
       ),
     });
-    this._textTokenizer = new ChineseTokenizer({
-      dictionaryPath: GLib.build_filenamev([
-        this.path,
-        'clipboard',
-        'tokenizer',
-        'dictionaries',
-        'chinese-core.txt',
-      ]),
+    this._dictionaryStore = new DictionaryStore({
+      seedPaths: [GLib.build_filenamev([
+        this.path, 'clipboard', 'tokenizer', 'dictionary', 'seeds', 'zh--cppjieba-core.dict',
+      ])],
     });
+    this._textTokenizer = new Tokenizer({store: this._dictionaryStore});
     this._colorPicker = null;
     this._settingsSignals = [];
     this._boundShortcuts = [];
@@ -67,8 +65,7 @@ export default class ClipboardXExtension extends Extension {
       pasteText: text => this._pasteText(text),
       typeText: text => this._terminalInput.type(text),
       tokenizeText: text => this._textTokenizer.tokenize(text, {
-        mode: this._settings.get_string('tokenizer-chinese-dictionary-mode'),
-        customWords: this._settings.get_strv('tokenizer-chinese-custom-words'),
+        revision: this._settings.get_uint('tokenizer-dictionary-revision'),
       }),
       rememberInputTarget: () => this._terminalInput.rememberTarget(),
       openPreferences: () => this.openPreferences(),
@@ -154,6 +151,7 @@ export default class ClipboardXExtension extends Extension {
     this._portal = null;
     this._terminalInput = null;
     this._textTokenizer = null;
+    this._dictionaryStore = null;
     this._settings = null;
   }
 

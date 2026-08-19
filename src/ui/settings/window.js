@@ -7,10 +7,12 @@ import Gtk from 'gi://Gtk';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
+import {DictionaryStore} from '../../clipboard/tokenizer/dictionary/store.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {effectiveCapabilities} from '../../sync/policy.js';
 import {create as createPanelActionsRow} from './panel-actions.js';
+import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
 
@@ -18,6 +20,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
     this._rows = new PreferenceRows(settings);
+    this._dictionaryStore = new DictionaryStore({
+      seedPaths: [GLib.build_filenamev([
+        this.path, 'clipboard', 'tokenizer', 'dictionary', 'seeds', 'zh--cppjieba-core.dict',
+      ])],
+    });
     const {deviceId} = ensureDeviceIdentity(settings);
     window.set_title('Clipboard X');
     window.set_default_size(900, 700);
@@ -27,7 +34,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
 
     const pages = [
       ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings)],
-      ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings)],
+      ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings, window)],
       ['quick-phrases', 'starred-symbolic', this._phrasesPage(settings)],
       ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
@@ -164,7 +171,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     return page;
   }
 
-  _clipboardPage(settings) {
+  _clipboardPage(settings, window) {
     const page = new Adw.PreferencesPage({title: _('Clipboard'), icon_name: 'edit-paste-symbolic'});
     const history = new Adw.PreferencesGroup({title: _('History')});
     page.add(history);
@@ -177,19 +184,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
-    tokenizer.add(this._rows.combo(
-      'tokenizer-chinese-dictionary-mode',
-      _('Chinese dictionary'),
-      [
-        ['built-in', _('Built-in compact dictionary')],
-        ['system', _('System tokenizer only')],
-      ],
-    ));
-    tokenizer.add(this._rows.stringList(
-      'tokenizer-chinese-custom-words',
-      _('Custom Chinese words'),
-      _('Comma-separated words; custom words take priority'),
-    ));
+    page.add(createDictionariesGroup({
+      settings,
+      store: this._dictionaryStore,
+      window,
+    }));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);

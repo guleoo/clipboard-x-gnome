@@ -1,46 +1,62 @@
 const DEFAULT_FREQUENCY = 1;
+const MAXIMUM_WORD_LENGTH = 64;
+const WORD_PATTERN = /^[\p{L}\p{M}\p{N}_]+(?:['’][\p{L}\p{M}\p{N}_]+)*$/u;
 
 function codePoints(value) {
   return [...value];
 }
-function normalizedWords(values) {
-  return [...new Set(values
-    .map(value => value.trim())
-    .filter(value => /^\p{Script=Han}{2,32}$/u.test(value)))];
+
+export function parseEntries(text) {
+  const entries = [];
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#'))
+      continue;
+    const [word, rawFrequency] = trimmed.split(/\s+/u);
+    const length = codePoints(word ?? '').length;
+    if (length < 2 || length > MAXIMUM_WORD_LENGTH || !WORD_PATTERN.test(word))
+      continue;
+    const frequency = Number.parseInt(rawFrequency, 10);
+    entries.push({
+      word,
+      frequency: Number.isFinite(frequency) && frequency > 0 ? frequency : DEFAULT_FREQUENCY,
+    });
+  }
+  return entries;
 }
 
-export class ChineseDictionary {
-  constructor(text = '') {
+export class Lexicon {
+  constructor(entries = [], maximumEntries = Number.POSITIVE_INFINITY) {
     this._frequencies = new Map();
     this._maximumLength = 1;
     this._totalFrequency = 0;
-    for (const line of text.split('\n')) {
-      const [word, rawFrequency] = line.trim().split(/\s+/u);
-      if (!word || !/^\p{Script=Han}{2,32}$/u.test(word))
-        continue;
-      const frequency = Number.parseInt(rawFrequency, 10);
-      const safeFrequency = Number.isFinite(frequency) && frequency > 0
-        ? frequency
-        : DEFAULT_FREQUENCY;
-      this._frequencies.set(word, safeFrequency);
-      this._maximumLength = Math.max(this._maximumLength, codePoints(word).length);
-      this._totalFrequency += safeFrequency;
-    }
+    this._maximumEntries = maximumEntries;
+    this.add(entries);
   }
 
   get size() {
     return this._frequencies.size;
   }
 
-  segment(text, fallback = [], customWords = []) {
-    const characters = codePoints(text);
-    if (characters.length < 2)
-      return characters;
+  add(entries) {
+    for (const {word, frequency = DEFAULT_FREQUENCY} of entries) {
+      const previous = this._frequencies.get(word) ?? 0;
+      if (previous === 0 && this.size >= this._maximumEntries)
+        continue;
+      const safeFrequency = Math.max(DEFAULT_FREQUENCY, frequency);
+      if (safeFrequency <= previous)
+        continue;
+      this._frequencies.set(word, safeFrequency);
+      this._totalFrequency += safeFrequency - previous;
+      this._maximumLength = Math.max(this._maximumLength, codePoints(word).length);
+    }
+  }
 
-    const custom = new Set(normalizedWords(customWords));
-    const maximumCustomLength = [...custom]
-      .reduce((maximum, word) => Math.max(maximum, codePoints(word).length), 1);
-    const maximumLength = Math.max(this._maximumLength, maximumCustomLength);
+  segment(text, fallback = []) {
+    const characters = codePoints(text);
+    if (characters.length < 2 || this.size === 0)
+      return fallback.length > 0 ? fallback : characters;
+
     const totalFrequency = Math.max(this._totalFrequency, 1);
     const fallbackByStart = this._fallbackCandidates(characters, fallback);
     const route = Array.from({length: characters.length + 1}, () => null);
@@ -48,12 +64,11 @@ export class ChineseDictionary {
 
     for (let start = characters.length - 1; start >= 0; start--) {
       const candidates = [];
-      const limit = Math.min(characters.length, start + maximumLength);
+      const limit = Math.min(characters.length, start + this._maximumLength);
       let word = '';
       for (let end = start + 1; end <= limit; end++) {
         word += characters[end - 1];
-        const customFrequency = custom.has(word) ? totalFrequency : 0;
-        const frequency = customFrequency || this._frequencies.get(word);
+        const frequency = this._frequencies.get(word);
         if (frequency)
           candidates.push({end, frequency});
       }
