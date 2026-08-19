@@ -161,7 +161,7 @@ class Indicator extends PanelMenu.Button {
         this._panelManager.open();
         this._actions.ensureIdentity();
         if (this._panelManager.is('history'))
-          this._historyPanel.focusStart({reset: true});
+          this._historyPanel.focusSearch({reset: true});
         else if (this._panelManager.is('tokenizer'))
           this._tokenizer.focusStart();
         else if (this._panelManager.is('phrases'))

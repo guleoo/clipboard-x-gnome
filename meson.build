@@ -85,6 +85,7 @@ test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() /
 test('terminal-activity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/terminal/activity.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])
 test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/focus-grid.test.js'])
+test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-actions.test.js'])
 test(
   'stress',
   test_runner,

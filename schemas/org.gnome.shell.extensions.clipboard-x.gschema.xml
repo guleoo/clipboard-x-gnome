@@ -163,6 +163,14 @@
       <range min="-4" max="4"/>
       <summary>Vertical translation applied to panel text in logical pixels</summary>
     </key>
+    <key name="panel-toolbar-actions" type="as">
+      <default>['screenshot', 'color-picker', 'quick-phrases']</default>
+      <summary>Actions displayed in the search toolbar, in order</summary>
+    </key>
+    <key name="panel-footer-actions" type="as">
+      <default>['private-mode', 'sync', 'clear-history', 'preferences']</default>
+      <summary>Actions displayed in the panel footer, in order</summary>
+    </key>
     <key name="preserve-panel-state" type="b">
       <default>false</default>
       <summary>Reopen the clipboard panel in its previous view</summary>

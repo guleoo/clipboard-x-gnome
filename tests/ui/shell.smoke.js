@@ -112,6 +112,21 @@ export async function run() {
   assert(history.phrasesButton.get_parent() === history.toolbar
       && history.privateButton.get_parent() === history.footer.row,
     'Quick-phrase and privacy buttons were not swapped');
+  const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
+  const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
+  indicator._settings.set_strv('panel-toolbar-actions', [
+    'color-picker', 'quick-phrases', 'screenshot',
+  ]);
+  indicator._settings.set_strv('panel-footer-actions', [
+    'sync', 'private-mode', 'clear-history', 'preferences',
+  ]);
+  const configuredFooter = history.footer.contentActors.filter(actor => actor !== history.footerSpacer);
+  assert(history.toolbar.get_children()[0] === history.colorButton
+      && configuredFooter[0] === history.syncButton
+      && configuredFooter[1] === history.privateButton,
+  'Configured panel action order was not applied');
+  indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
+  indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
   const originalPanelWidth = indicator._settings.get_int('panel-width');
   const originalPanelHeight = indicator._settings.get_int('panel-height');
   const resizedPanelWidth = Math.min(800, originalPanelWidth + 40);
@@ -311,8 +326,8 @@ export async function run() {
   await Scripting.sleep(100);
   const renderedHistoryRow = history._section.actor.get_children().find(actor =>
     actor._clipboardXControlType === 'content-item');
-  assert(global.stage.get_key_focus() === renderedHistoryRow?.focusActors[0],
-    'Opening clipboard history did not focus its first entry');
+  assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
+    'Opening clipboard history did not focus its search entry');
   assert(renderedHistoryRow?.focusActors.every(actor =>
     foreground(actor).join(',') === phraseForeground.join(',')),
   'Clipboard history content and actions did not use the shared content-item foreground');

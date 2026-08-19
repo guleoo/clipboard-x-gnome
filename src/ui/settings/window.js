@@ -10,6 +10,7 @@ import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {effectiveCapabilities} from '../../sync/policy.js';
+import {create as createPanelActionsRow} from './panel-actions.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
 
@@ -152,6 +153,13 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Keep keyboard focus in panel'),
       _('At the edge, arrow keys do not move focus outside the extension panel'),
     ));
+
+    const actions = new Adw.PreferencesGroup({
+      title: _('Icon layout'),
+      description: _('Use the buttons to change action placement and order.'),
+    });
+    page.add(actions);
+    actions.add(createPanelActionsRow(settings));
 
     return page;
   }
