@@ -55,7 +55,7 @@ gnome-extensions enable clipboard-x@guleo.github.io
 - `%%`：字面量 `%`。
 
 命令按 argv 解析，不经 `sh -c`，因此不支持管道、重定向或 Shell 展开。例如
-`gradia %u`、`gimp %f` 和 `flatpak run be.alexandervanhee.gradia %u`。
+`gradia %f`、`gimp %f` 和 `flatpak run be.alexandervanhee.gradia %u`。
 
 截图目标取决于本机 Portal 版本。Portal v2 通常支持交互选择和全屏；窗口、区域和
 活动窗口需要实现 `AvailableTargets` 的 Portal v3 后端。扩展会拒绝后端未声明的目标。

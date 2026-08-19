@@ -159,13 +159,23 @@ export default class ClipboardXExtension extends Extension {
 
   async _takeScreenshot() {
     const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
-    const item = this._settings.get_boolean('screenshot-add-history')
+    const addToHistory = this._settings.get_boolean('screenshot-add-history');
+    const item = addToHistory
       ? await this._controller.addFromUri(uri, 'screenshot')
       : await this._controller.createFromUri(uri);
     if (this._settings.get_boolean('screenshot-write-clipboard'))
       await this._controller.writeScreenshot(item);
-    if (this._settings.get_boolean('screenshot-open-editor'))
-      await this._launchEditor(uri);
+    if (this._settings.get_boolean('screenshot-open-editor')) {
+      let editorUri = uri;
+      if (addToHistory) {
+        await this._controller.persist();
+        const path = item.primary?.path;
+        if (!path)
+          throw new Error('The screenshot is not available in the local cache');
+        editorUri = Gio.File.new_for_path(path).get_uri();
+      }
+      await this._launchEditor(editorUri);
+    }
   }
 
   _pickColor() {

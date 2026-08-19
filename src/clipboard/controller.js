@@ -171,8 +171,7 @@ export class ClipboardController extends EventEmitter {
 
   async addFromUri(uri, source = 'screenshot') {
     const item = await this.createFromUri(uri);
-    this.add(item, source);
-    return item;
+    return this.add(item, source);
   }
 
   async createFromUri(uri) {

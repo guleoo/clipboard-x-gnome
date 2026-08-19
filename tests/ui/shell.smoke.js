@@ -682,6 +682,11 @@ export async function run() {
     },
     cancel() {},
   };
+  const launchEditor = extensionObject._launchEditor;
+  let launchedEditorUri = null;
+  extensionObject._launchEditor = async uri => {
+    launchedEditorUri = uri;
+  };
   indicator._settings.set_string('screenshot-target', 'screen');
   indicator._settings.set_boolean('screenshot-add-history', true);
   indicator._settings.set_boolean('screenshot-write-clipboard', true);
@@ -691,6 +696,8 @@ export async function run() {
   const screenshotItem = indicator._controller.items.find(item => item.isImage);
   assert(screenshotItem?.primary.path,
     'Screenshot pipeline did not add and persist the image history snapshot');
+  assert(Gio.File.new_for_uri(launchedEditorUri).get_path() === screenshotItem.primary.path,
+    'Screenshot editor did not receive the stable persisted image path');
   assert(indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
     'Screenshot pipeline did not write the image to the clipboard');
 
@@ -701,6 +708,7 @@ export async function run() {
   await Scripting.sleep(300);
   assert(indicator._controller.items.length === historyCount,
     'Screenshot configured without history was captured again through clipboard owner change');
+  extensionObject._launchEditor = launchEditor;
   extensionObject._portal = screenshotPortal;
   screenshotFile.delete(null);
 

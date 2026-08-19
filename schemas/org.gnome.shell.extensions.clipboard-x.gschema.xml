@@ -307,7 +307,7 @@
       <summary>Desktop application ID of the image editor</summary>
     </key>
     <key name="editor-command" type="s">
-      <default>'gradia %u'</default>
+      <default>'gradia %f'</default>
       <summary>Advanced image editor argv template</summary>
     </key>
     <key name="color-format" type="s">

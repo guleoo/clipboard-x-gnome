@@ -25,6 +25,8 @@ async function assertRejects(promise, pattern, message) {
 
 assertEqual(buildEditorArgv('gradia %u', 'file:///tmp/a b.png', '/tmp/a b.png'),
   ['gradia', 'file:///tmp/a b.png'], 'URI placeholder');
+assertEqual(buildEditorArgv('gradia %f', 'file:///tmp/a b.png', '/tmp/a b.png'),
+  ['gradia', '/tmp/a b.png'], 'Gradia local-file placeholder');
 assertEqual(buildEditorArgv('gimp %f', 'file:///tmp/a.png', '/tmp/a.png'),
   ['gimp', '/tmp/a.png'], 'file placeholder');
 assertEqual(buildEditorArgv('editor --label=100%%', 'file:///tmp/a.png', '/tmp/a.png'),
