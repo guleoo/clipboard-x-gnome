@@ -15,7 +15,6 @@ import {create as createItem} from './item.js';
 import {SyncAction} from './sync-action.js';
 
 const ICON_SIZE = 16;
-const OPTICAL_BASELINE_OFFSET = -1;
 const DEVICE_ICON_NAMES = Object.freeze({
   desktop: 'video-display-symbolic',
   laptop: 'computer-symbolic',
@@ -73,7 +72,6 @@ export class HistoryPanel {
     });
     this.searchEntry = new SearchEntry({
       placeholder: _('Search clipboard history…'),
-      placeholderOffset: OPTICAL_BASELINE_OFFSET,
       onChanged: () => {
         this._query = this.searchEntry.get_text();
         if (this._isActive())

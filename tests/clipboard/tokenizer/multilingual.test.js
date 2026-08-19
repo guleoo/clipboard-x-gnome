@@ -1,6 +1,121 @@
 import {tokenizeText} from '../../../src/clipboard/tokenizer/processors.js';
 
+const SUPPORTED_LOCALES = Object.freeze([
+  'ar', 'bg', 'ca', 'cs', 'de', 'el', 'es', 'eu', 'fa', 'fi', 'fr_FR', 'hu',
+  'it', 'ja', 'kn', 'ko', 'nl', 'oc', 'pl', 'pt_BR', 'ru', 'sk', 'tr', 'uk', 'zh_CN',
+]);
+
 const TEST_SENTENCES = Object.freeze({
+  ar: [
+    'مرحبًا بالعالم! هذا اختبارٌ بسيط.',
+    'افتح https://example.com/help، ثم أرسل رسالة إلى user@example.com.',
+    'موعد الاجتماع 09:30-11:00؛ الغرفة A-301.',
+  ],
+  bg: [
+    'Здравей, свят! Това е кратък тест.',
+    'Отворете https://example.com/help, после пишете на user@example.com.',
+    'Срещата е от 09:30 до 11:00; стая A-301.',
+  ],
+  ca: [
+    'Hola, món! Aquesta és una prova breu.',
+    'Obriu https://example.com/help i escriviu a user@example.com.',
+    'La reunió és de 09:30 a 11:00; sala A-301.',
+  ],
+  cs: [
+    'Ahoj, světe! Toto je krátká zkouška.',
+    'Otevřete https://example.com/help a napište na user@example.com.',
+    'Schůzka je od 09:30 do 11:00; místnost A-301.',
+  ],
+  de: [
+    'Hallo, Welt! Dies ist ein kurzer Test.',
+    'Öffnen Sie https://example.com/help und schreiben Sie an user@example.com.',
+    'Das Treffen ist von 09:30 bis 11:00; Raum A-301.',
+  ],
+  el: [
+    'Γεια σου, κόσμε! Αυτή είναι μια σύντομη δοκιμή.',
+    'Ανοίξτε το https://example.com/help και γράψτε στο user@example.com.',
+    'Η συνάντηση είναι 09:30-11:00· αίθουσα A-301.',
+  ],
+  es: [
+    '¡Hola, mundo! Esta es una prueba breve.',
+    'Abre https://example.com/help y escribe a user@example.com.',
+    'La reunión es de 09:30 a 11:00; sala A-301.',
+  ],
+  eu: [
+    'Kaixo, mundua! Hau proba labur bat da.',
+    'Ireki https://example.com/help eta idatzi user@example.com helbidera.',
+    'Bilera 09:30etik 11:00etara da; A-301 gela.',
+  ],
+  fa: [
+    'سلام دنیا! این یک آزمایش کوتاه است.',
+    'نشانی https://example.com/help را باز کنید و به user@example.com بنویسید.',
+    'جلسه از 09:30 تا 11:00؛ اتاق A-301 است.',
+  ],
+  fi: [
+    'Hei, maailma! Tämä on lyhyt testi.',
+    'Avaa https://example.com/help ja kirjoita osoitteeseen user@example.com.',
+    'Kokous on 09:30-11:00; huone A-301.',
+  ],
+  fr_FR: [
+    'Bonjour, le monde ! Ceci est un test court.',
+    'Ouvrez https://example.com/help et écrivez à user@example.com.',
+    'La réunion a lieu de 09:30 à 11:00 ; salle A-301.',
+  ],
+  hu: [
+    'Helló, világ! Ez egy rövid teszt.',
+    'Nyissa meg a https://example.com/help oldalt, és írjon a user@example.com címre.',
+    'A találkozó 09:30-11:00 között lesz; A-301 terem.',
+  ],
+  it: [
+    'Ciao, mondo! Questa è una breve prova.',
+    'Apri https://example.com/help e scrivi a user@example.com.',
+    'La riunione è dalle 09:30 alle 11:00; sala A-301.',
+  ],
+  kn: [
+    'ನಮಸ್ಕಾರ, ಜಗತ್ತು! ಇದು ಒಂದು ಚಿಕ್ಕ ಪರೀಕ್ಷೆ.',
+    'https://example.com/help ತೆರೆಯಿರಿ ಮತ್ತು user@example.com ಗೆ ಬರೆಯಿರಿ.',
+    'ಸಭೆಯ ಸಮಯ 09:30-11:00; ಕೊಠಡಿ A-301.',
+  ],
+  nl: [
+    'Hallo, wereld! Dit is een korte test.',
+    'Open https://example.com/help en schrijf naar user@example.com.',
+    'De vergadering is van 09:30 tot 11:00; kamer A-301.',
+  ],
+  oc: [
+    'Bonjorn, mond! Aquò es un tèst cort.',
+    'Dobritz https://example.com/help e escrivètz a user@example.com.',
+    'La reünion es de 09:30 a 11:00; sala A-301.',
+  ],
+  pl: [
+    'Witaj, świecie! To jest krótki test.',
+    'Otwórz https://example.com/help i napisz na user@example.com.',
+    'Spotkanie trwa od 09:30 do 11:00; sala A-301.',
+  ],
+  pt_BR: [
+    'Olá, mundo! Este é um teste curto.',
+    'Abra https://example.com/help e escreva para user@example.com.',
+    'A reunião será das 09:30 às 11:00; sala A-301.',
+  ],
+  ru: [
+    'Привет, мир! Это короткая проверка.',
+    'Откройте https://example.com/help и напишите на user@example.com.',
+    'Встреча пройдёт с 09:30 до 11:00; кабинет A-301.',
+  ],
+  sk: [
+    'Ahoj, svet! Toto je krátka skúška.',
+    'Otvorte https://example.com/help a napíšte na user@example.com.',
+    'Stretnutie je od 09:30 do 11:00; miestnosť A-301.',
+  ],
+  tr: [
+    'Merhaba, dünya! Bu kısa bir testtir.',
+    'https://example.com/help adresini açın ve user@example.com adresine yazın.',
+    'Toplantı 09:30-11:00 arasındadır; oda A-301.',
+  ],
+  uk: [
+    'Привіт, світе! Це коротка перевірка.',
+    'Відкрийте https://example.com/help і напишіть на user@example.com.',
+    'Зустріч триватиме з 09:30 до 11:00; кімната A-301.',
+  ],
   zh: [
     '你好，世界！',
     '今天是2026年8月17日。',
@@ -75,6 +190,12 @@ const TEST_SENTENCES = Object.freeze({
   ],
 });
 
+const TEST_LOCALES = Object.freeze({
+  fr_FR: 'fr-FR',
+  pt_BR: 'pt-BR',
+  zh: 'zh-CN',
+});
+
 const EXACT_CASES = Object.freeze([
   {
     name: 'reported adjacent English sentences',
@@ -100,10 +221,20 @@ const SPECIAL_CASES = Object.freeze([
 const failures = [];
 let sentenceCount = 0;
 
+for (const locale of SUPPORTED_LOCALES) {
+  const language = locale === 'zh_CN' ? 'zh' : locale;
+  if (!TEST_SENTENCES[language]?.length)
+    failures.push(`${locale}: supported locale has no tokenizer sentences`);
+}
+
 for (const [language, sentences] of Object.entries(TEST_SENTENCES)) {
   for (const [index, text] of sentences.entries()) {
     sentenceCount++;
-    validateSentence(`${language}-${String(index + 1).padStart(2, '0')}`, text);
+    validateSentence(
+      `${language}-${String(index + 1).padStart(2, '0')}`,
+      text,
+      TEST_LOCALES[language] ?? language,
+    );
   }
 }
 
@@ -133,8 +264,8 @@ if (failures.length > 0) {
   );
 }
 
-function validateSentence(name, source) {
-  const tokens = tokenizeText(source);
+function validateSentence(name, source, locale) {
+  const tokens = tokenizeText(source, locale);
   for (const [index, token] of tokens.entries()) {
     if (token.index !== index)
       failures.push(`${name}: token index ${token.index} is not sequential at position ${index}`);

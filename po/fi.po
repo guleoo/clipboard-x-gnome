@@ -1,21 +1,22 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# Finnish translations for clipboard-x package.
+# Copyright (C) 2026 Clipboard X contributors
 # This file is distributed under the same license as the clipboard-x package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Portions incorporate human translations from GNOME and Clipboard Indicator.
+# Clipboard X contributors, 2026.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-08-19 16:20+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2026-08-19 16:20+0800\n"
+"Last-Translator: Clipboard X contributors\n"
+"Language-Team: fi\n"
+"Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/entry/extension.js:35
 msgid "Simulated keyboard input paused"
@@ -41,7 +42,7 @@ msgstr ""
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:55
 msgid "Segment text"
-msgstr ""
+msgstr "Jaa teksti osiin"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
@@ -49,7 +50,7 @@ msgstr ""
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
-msgstr ""
+msgstr "Poista kiinnitys"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
@@ -61,11 +62,11 @@ msgstr ""
 
 #: src/ui/panels/history/item.js:125 src/ui/settings/window.js:308
 msgid "Text"
-msgstr ""
+msgstr "Teksti"
 
 #: src/ui/panels/history/item.js:185 src/ui/panels/history/item.js:187
 msgid "Image"
-msgstr ""
+msgstr "Kuva"
 
 #: src/ui/panels/history/panel.js:74
 msgid "Search clipboard history…"
@@ -75,29 +76,29 @@ msgstr ""
 #: src/ui/settings/window.js:340 src/ui/settings/window.js:341
 #: src/ui/settings/window.js:425
 msgid "Screenshot"
-msgstr ""
+msgstr "Kuvankaappaus"
 
 #: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:423
 msgid "Pick color"
-msgstr ""
+msgstr "Valitse väri"
 
 #: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:424
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
-msgstr ""
+msgstr "Yksityistila"
 
 #: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
 #: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:199
 msgid "Quick phrases"
-msgstr ""
+msgstr "Pikafraasit"
 
 #: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:387
 msgid "Clear unpinned history"
-msgstr ""
+msgstr "Tyhjennä historia"
 
 #: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
-msgstr ""
+msgstr "Asetukset"
 
 #: src/ui/panels/history/panel.js:202
 msgid "Loading clipboard history…"
@@ -113,7 +114,7 @@ msgstr ""
 
 #: src/ui/panels/history/panel.js:219
 msgid "Clipboard history is empty"
-msgstr ""
+msgstr "Leikepöydän sisältö tyhjennetty"
 
 #: src/ui/panels/history/panel.js:233
 msgid "More entries are available; refine the search to see others"
@@ -121,7 +122,7 @@ msgstr ""
 
 #: src/ui/panels/history/panel.js:443
 msgid "Unknown device"
-msgstr ""
+msgstr "Tuntematon laite"
 
 #: src/ui/panels/history/sync-action.js:21
 msgid "Synchronization settings"
@@ -149,11 +150,11 @@ msgstr ""
 
 #: src/ui/panels/history/sync-action.js:81
 msgid "Uploading"
-msgstr ""
+msgstr "Lähetys"
 
 #: src/ui/panels/history/sync-action.js:81
 msgid "Downloading"
-msgstr ""
+msgstr "Noudetaan"
 
 #: src/ui/panels/history/sync-action.js:85
 msgid "Waiting for peer device"
@@ -245,11 +246,11 @@ msgstr ""
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
-msgstr ""
+msgstr "Siirrä ylös"
 
 #: src/ui/settings/panel-actions.js:92
 msgid "Move down"
-msgstr ""
+msgstr "Siirrä alas"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
@@ -266,16 +267,16 @@ msgstr ""
 
 #: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:221
 msgid "Synchronization"
-msgstr ""
+msgstr "Synkronointi"
 
 #: src/ui/settings/panel-actions.js:139
 msgid "Clear history"
-msgstr ""
+msgstr "Tyhjennä historia"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
 #: src/ui/settings/window.js:299 src/ui/settings/window.js:304
 msgid "Disabled"
-msgstr ""
+msgstr "Ei käytössä"
 
 #: src/ui/settings/rows.js:106
 msgid "Click to set a shortcut"
@@ -295,27 +296,27 @@ msgstr ""
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
-msgstr ""
+msgstr "Sininen"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Teal"
-msgstr ""
+msgstr "Sinivihreä"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Green"
-msgstr ""
+msgstr "Vihreä"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Orange"
-msgstr ""
+msgstr "Oranssi"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Pink"
-msgstr ""
+msgstr "Pinkki"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Slate"
-msgstr ""
+msgstr "Harmaasävy"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
@@ -327,11 +328,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:98
 msgid "General"
-msgstr ""
+msgstr "Yleiset"
 
 #: src/ui/settings/window.js:101
 msgid "Appearance"
-msgstr ""
+msgstr "Ulkoasu"
 
 #: src/ui/settings/window.js:105
 msgid "Panel"
@@ -347,7 +348,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:109
 msgid "Top left"
-msgstr ""
+msgstr "Ylhäällä vasemmalla"
 
 #: src/ui/settings/window.js:110
 msgid "Top center"
@@ -355,7 +356,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:111
 msgid "Top right"
-msgstr ""
+msgstr "Oikea ylänurkka"
 
 #: src/ui/settings/window.js:112
 msgid "Center left"
@@ -363,7 +364,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:113
 msgid "Center"
-msgstr ""
+msgstr "Keskitetty"
 
 #: src/ui/settings/window.js:114
 msgid "Center right"
@@ -371,7 +372,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:115
 msgid "Bottom left"
-msgstr ""
+msgstr "Alhaalla vasemmalla"
 
 #: src/ui/settings/window.js:116
 msgid "Bottom center"
@@ -379,7 +380,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:117
 msgid "Bottom right"
-msgstr ""
+msgstr "Oikea alanurkka"
 
 #: src/ui/settings/window.js:121
 msgid "Horizontal panel offset"
@@ -404,7 +405,7 @@ msgstr ""
 #: src/ui/settings/window.js:135 src/ui/settings/window.js:136
 #: src/ui/settings/window.js:320
 msgid "px"
-msgstr ""
+msgstr "px"
 
 #: src/ui/settings/window.js:136
 msgid "Panel height"
@@ -449,11 +450,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:168 src/ui/settings/window.js:392
 msgid "Clipboard"
-msgstr ""
+msgstr "Leikepöytä"
 
 #: src/ui/settings/window.js:169
 msgid "History"
-msgstr ""
+msgstr "Historia"
 
 #: src/ui/settings/window.js:171
 msgid "History entries"
@@ -466,7 +467,7 @@ msgstr ""
 #: src/ui/settings/window.js:172 src/ui/settings/window.js:174
 #: src/ui/settings/window.js:319
 msgid "MB"
-msgstr ""
+msgstr "Mt"
 
 #: src/ui/settings/window.js:173
 msgid "Automatic cleanup"
@@ -486,7 +487,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:177 src/ui/settings/window.js:406
 msgid "Tokenizer"
-msgstr ""
+msgstr "Tekstin jäsennin"
 
 #: src/ui/settings/window.js:179
 msgid "Show source text preview"
@@ -526,7 +527,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:203
 msgid "Behavior"
-msgstr ""
+msgstr "Käyttäytyminen"
 
 #: src/ui/settings/window.js:204
 msgid "Quick phrases are stored only on this device."
@@ -550,11 +551,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:222
 msgid "Device"
-msgstr ""
+msgstr "Laite"
 
 #: src/ui/settings/window.js:224
 msgid "Device ID"
-msgstr ""
+msgstr "Laitteen tunniste"
 
 #: src/ui/settings/window.js:229
 msgid "Device tag"
@@ -570,7 +571,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:231
 msgid "Desktop"
-msgstr ""
+msgstr "Työpöytä"
 
 #: src/ui/settings/window.js:232
 msgid "Laptop"
@@ -578,19 +579,19 @@ msgstr ""
 
 #: src/ui/settings/window.js:233
 msgid "Phone"
-msgstr ""
+msgstr "Puhelin"
 
 #: src/ui/settings/window.js:234
 msgid "Tablet"
-msgstr ""
+msgstr "Piirtopöytä"
 
 #: src/ui/settings/window.js:235
 msgid "Server"
-msgstr ""
+msgstr "Palvelin"
 
 #: src/ui/settings/window.js:236
 msgid "Other"
-msgstr ""
+msgstr "Muu"
 
 #: src/ui/settings/window.js:239
 msgid "Service connection"
@@ -622,7 +623,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:258
 msgid "Connecting…"
-msgstr ""
+msgstr "Yhdistetään…"
 
 #: src/ui/settings/window.js:269
 msgid "item limit"
@@ -642,7 +643,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:285
 msgid "Open"
-msgstr ""
+msgstr "Avaa"
 
 #: src/ui/settings/window.js:296
 msgid "Transfer policy"
@@ -654,11 +655,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:300
 msgid "Manual"
-msgstr ""
+msgstr "Manuaalinen"
 
 #: src/ui/settings/window.js:301
 msgid "Automatic"
-msgstr ""
+msgstr "Automaattinen"
 
 #: src/ui/settings/window.js:303
 msgid "Receive mode"
@@ -674,11 +675,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:309
 msgid "HTML"
-msgstr ""
+msgstr "HTML"
 
 #: src/ui/settings/window.js:310
 msgid "Images"
-msgstr ""
+msgstr "Kuvat"
 
 #: src/ui/settings/window.js:311
 msgid "Disabled by default"
@@ -699,7 +700,7 @@ msgstr ""
 #: src/ui/settings/window.js:317 src/ui/settings/window.js:318
 #: src/ui/settings/window.js:321
 msgid "KB"
-msgstr ""
+msgstr "Kt"
 
 #: src/ui/settings/window.js:318
 msgid "Large text preview"
@@ -723,7 +724,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:322
 msgid "seconds"
-msgstr ""
+msgstr "sekuntia"
 
 #: src/ui/settings/window.js:328
 msgid "Color format"
@@ -731,7 +732,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:330
 msgid "Default format"
-msgstr ""
+msgstr "Oletusmuoto"
 
 #: src/ui/settings/window.js:343
 msgid "Default target"
@@ -739,7 +740,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:344
 msgid "Interactive"
-msgstr ""
+msgstr "Vuorovaikutteinen"
 
 #: src/ui/settings/window.js:345
 msgid "Full screen"
@@ -747,15 +748,15 @@ msgstr ""
 
 #: src/ui/settings/window.js:346
 msgid "Window"
-msgstr ""
+msgstr "Ikkuna"
 
 #: src/ui/settings/window.js:347
 msgid "Area"
-msgstr ""
+msgstr "Alue"
 
 #: src/ui/settings/window.js:348
 msgid "Active window"
-msgstr ""
+msgstr "Aktiivinen ikkuna"
 
 #: src/ui/settings/window.js:350
 msgid "Add to history"
@@ -775,7 +776,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:358
 msgid "Command"
-msgstr ""
+msgstr "Komento"
 
 #: src/ui/settings/window.js:359
 msgid ""
@@ -785,11 +786,11 @@ msgstr ""
 
 #: src/ui/settings/window.js:375
 msgid "Shortcuts"
-msgstr ""
+msgstr "Pikanäppäimet"
 
 #: src/ui/settings/window.js:379
 msgid "Global"
-msgstr ""
+msgstr "Yleiset"
 
 #: src/ui/settings/window.js:380
 msgid ""
@@ -798,7 +799,7 @@ msgstr ""
 
 #: src/ui/settings/window.js:384
 msgid "Open clipboard panel"
-msgstr ""
+msgstr "Näytä/piilota valikko"
 
 #: src/ui/settings/window.js:385
 msgid "Focus clipboard search"

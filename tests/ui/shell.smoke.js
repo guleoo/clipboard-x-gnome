@@ -82,8 +82,10 @@ export async function run() {
   for (const item of indicator._controller.items)
     indicator._controller.remove(item.id);
   await Scripting.sleep(200);
-  if (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1') {
-    assert(history.searchEntry.hint_text === '搜索剪切板历史…',
+  const expectedSearchTranslation = GLib.getenv('CLIPBOARD_X_EXPECT_SEARCH_TRANSLATION')
+    ?? (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1' ? '搜索剪切板历史…' : null);
+  if (expectedSearchTranslation) {
+    assert(history.searchEntry.hint_text === expectedSearchTranslation,
       `Clipboard X translation was not loaded (${history.searchEntry.hint_text})`);
     if (GLib.getenv('CLIPBOARD_X_TRANSLATION_ONLY') === '1')
       return;

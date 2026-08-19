@@ -8,7 +8,7 @@ class SearchEntry extends St.Entry {
     placeholder = '',
     iconName = 'edit-find-symbolic',
     iconSize = 14,
-    placeholderOffset = -1,
+    placeholderOffset = 0,
     placeholderMargin = 2,
     styleClass = '',
     onChanged = null,
