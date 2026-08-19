@@ -251,7 +251,7 @@ export class HistoryPanel {
         activate: () => this._activate(item),
         type: () => this._type(item),
         tokenize: () => this._openTokenizer(item),
-        edit: () => this._actions.editItem(item),
+        edit: () => this._runAndClose(() => this._actions.editItem(item)),
         togglePin: () => this._controller.toggleFavorite(item.id),
         remove: () => this._controller.remove(item.id),
         handleKey: event => this.handleEntryKey(item, event),

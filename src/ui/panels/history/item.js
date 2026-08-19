@@ -8,6 +8,9 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 import {parse as parseColor} from '../../../color-picker/color.js';
 import {ContentItem} from '../../controls/content-item.js';
 
+const IMAGE_PREVIEW_HEIGHT = 40;
+const IMAGE_PREVIEW_MAX_WIDTH = 80;
+
 export function create({
   item,
   leading = null,
@@ -137,15 +140,51 @@ function imagePreview(item) {
     style_class: 'cbx-image-content',
     x_expand: true,
     x_align: Clutter.ActorAlign.START,
+    y_align: Clutter.ActorAlign.CENTER,
   });
-  box.add_child(item.preview?.path
-    ? new St.Icon({gicon: Gio.icon_new_for_string(item.preview.path), icon_size: 32})
-    : new St.Icon({icon_name: 'image-x-generic-symbolic', icon_size: 24}));
+  if (item.preview?.path) {
+    const [width, height] = imagePreviewSize(item.preview);
+    box.add_child(new St.Icon({
+      gicon: Gio.icon_new_for_string(item.preview.path),
+      icon_size: Math.max(width, height),
+      width,
+      height,
+      y_align: Clutter.ActorAlign.CENTER,
+    }));
+  } else {
+    box.add_child(new St.Icon({
+      icon_name: 'image-x-generic-symbolic',
+      icon_size: 24,
+      y_align: Clutter.ActorAlign.CENTER,
+    }));
+  }
   box.add_child(new St.Label({
-    text: [item.primary?.mimeType ?? _('Image'), formatBytes(item.primary?.size ?? 0)].join(' · '),
+    text: [imageFormat(item.primary?.mimeType), formatBytes(item.primary?.size ?? 0)].join(' · '),
     y_align: Clutter.ActorAlign.CENTER,
   }));
   return box;
+}
+
+function imagePreviewSize(preview) {
+  const sourceWidth = Number(preview?.width);
+  const sourceHeight = Number(preview?.height);
+  if (!(sourceWidth > 0) || !(sourceHeight > 0))
+    return [IMAGE_PREVIEW_HEIGHT, IMAGE_PREVIEW_HEIGHT];
+  const scale = Math.min(
+    IMAGE_PREVIEW_MAX_WIDTH / sourceWidth,
+    IMAGE_PREVIEW_HEIGHT / sourceHeight,
+  );
+  return [
+    Math.max(1, Math.round(sourceWidth * scale)),
+    Math.max(1, Math.round(sourceHeight * scale)),
+  ];
+}
+
+function imageFormat(mimeType) {
+  if (!mimeType?.startsWith('image/'))
+    return _('Image');
+  const subtype = mimeType.slice('image/'.length).replace(/^x-/u, '').split('+', 1)[0];
+  return subtype ? subtype.toUpperCase() : _('Image');
 }
 
 function formatBytes(bytes) {

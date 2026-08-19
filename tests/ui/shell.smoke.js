@@ -652,10 +652,32 @@ export async function run() {
 
   indicator._settings.set_boolean('sync-enabled', true);
   indicator._settings.set_string('sync-send-mode', 'manual');
+  const originalPreviewWidth = imageItem.preview.width;
+  const originalPreviewHeight = imageItem.preview.height;
+  imageItem.preview.width = 200;
+  imageItem.preview.height = 100;
   const imageRow = history.entry(imageItem);
-  assert(imageRow.get_children().filter(child => child instanceof St.Button).length === 5,
+  const imageButtons = imageRow.get_children().filter(child => child instanceof St.Button);
+  assert(imageButtons.length === 5,
     'Image history row must expose content, edit, pin, synchronization and delete actions');
+  const imageBody = imageButtons[0].get_child();
+  const imageContent = imageBody.get_children().find(child =>
+    child.has_style_class_name?.('cbx-image-content'));
+  const [imageThumbnail, imageMetadata] = imageContent.get_children();
+  assert(imageThumbnail.width === 80 && imageThumbnail.height === 40,
+    'Image history thumbnail was not scaled proportionally within its fixed preview height');
+  assert(imageMetadata.text.startsWith('PNG · ') && !imageMetadata.text.includes('image/'),
+    'Image history metadata did not show only the image format and size');
+  const closeMenu = history._closeMenu;
+  let editClosedMenu = false;
+  history._closeMenu = () => editClosedMenu = true;
+  imageButtons[1].emit('clicked');
+  await Scripting.sleep(100);
+  assert(editClosedMenu, 'Editing an image history item did not close the panel');
+  history._closeMenu = closeMenu;
   imageRow.destroy();
+  imageItem.preview.width = originalPreviewWidth;
+  imageItem.preview.height = originalPreviewHeight;
   imageItem.remote = true;
   imageItem.availability = 'preview';
   const remoteButton = history._sync.button(imageItem);
