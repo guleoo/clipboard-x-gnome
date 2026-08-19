@@ -144,13 +144,18 @@ function imagePreview(item) {
   });
   if (item.preview?.path) {
     const [width, height] = imagePreviewSize(item.preview);
-    box.add_child(new St.Icon({
-      gicon: Gio.icon_new_for_string(item.preview.path),
-      icon_size: Math.max(width, height),
+    const file = Gio.File.new_for_path(item.preview.path);
+    const scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+    const texture = St.TextureCache.get_default().load_file_async(
+      file,
       width,
       height,
-      y_align: Clutter.ActorAlign.CENTER,
-    }));
+      scaleFactor,
+      1,
+    );
+    texture.set_size(width, height);
+    texture.y_align = Clutter.ActorAlign.CENTER;
+    box.add_child(texture);
   } else {
     box.add_child(new St.Icon({
       icon_name: 'image-x-generic-symbolic',

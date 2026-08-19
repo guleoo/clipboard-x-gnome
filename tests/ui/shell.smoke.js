@@ -668,6 +668,8 @@ export async function run() {
   const [imageThumbnail, imageMetadata] = imageContent.get_children();
   assert(imageThumbnail.width === 80 && imageThumbnail.height === 40,
     'Image history thumbnail was not scaled proportionally within its fixed preview height');
+  assert(!(imageThumbnail instanceof St.Icon),
+    'Image history thumbnail used a square icon renderer instead of image texture content');
   assert(imageMetadata.text.startsWith('PNG · ') && !imageMetadata.text.includes('image/'),
     'Image history metadata did not show only the image format and size');
   const closeMenu = history._closeMenu;
