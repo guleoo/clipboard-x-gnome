@@ -8,7 +8,6 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {SearchEntry} from '../../controls/search-entry.js';
-import {normalize as normalizeActions} from '../../layouts/panel-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 import {create as createItem} from './item.js';
@@ -56,6 +55,7 @@ export class HistoryPanel {
     this._accentColor = null;
     this._focusIdleId = 0;
     this._pendingViewState = null;
+    this._firstEntryFocus = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -154,16 +154,10 @@ export class HistoryPanel {
       _('Preferences'),
       () => this._runAndClose(() => actions.openPreferences()),
     );
-    this._actionButtons = new Map([
-      ['screenshot', this.screenshotButton],
-      ['color-picker', this.colorButton],
-      ['quick-phrases', this.phrasesButton],
-      ['private-mode', this.privateButton],
-      ['sync', this.syncButton],
-      ['clear-history', this.clearButton],
-      ['preferences', this.preferencesButton],
-    ]);
-    this._updateActions();
+    for (const button of [this.screenshotButton, this.colorButton, this.phrasesButton])
+      this.toolbar.add_child(button);
+    for (const button of [this.privateButton, this.syncButton, this.clearButton, this.preferencesButton])
+      this.footer.addContent(button);
     this.footerItem.add_child(this.footer);
     this._updatePrivateButton();
 
@@ -186,8 +180,6 @@ export class HistoryPanel {
       settings.connect('changed::sync-enabled', () => this._requestRefresh()),
       settings.connect('changed::device-tag', () => this._requestRefresh()),
       settings.connect('changed::device-icon-kind', () => this._requestRefresh()),
-      settings.connect('changed::panel-toolbar-actions', () => this._updateActions()),
-      settings.connect('changed::panel-footer-actions', () => this._updateActions()),
     ];
   }
 
@@ -198,6 +190,7 @@ export class HistoryPanel {
   render() {
     this._section.removeAll();
     this._sync.clearButtons();
+    this._firstEntryFocus = null;
     const focusRows = [];
     if (this._controller.loading) {
       this._addState(_('Loading clipboard history…'), 'content-loading-symbolic');
@@ -228,6 +221,7 @@ export class HistoryPanel {
       const row = this.entry(item);
       this._section.addMenuItem(row);
       focusRows.push(row._clipboardXFocusRow);
+      this._firstEntryFocus ??= row._clipboardXFocusRow[0];
     }
     if (items.length > limit) {
       this._section.addMenuItem(new PopupMenu.PopupMenuItem(
@@ -323,6 +317,18 @@ export class HistoryPanel {
     });
   }
 
+  focusStart({reset = false} = {}) {
+    this._cancelFocus();
+    if (reset)
+      this.resetSearch();
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      if (this._isMenuOpen() && this._isActive())
+        global.stage.set_key_focus(this._firstEntryFocus ?? this.searchEntry.clutter_text);
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
   resetSearch() {
     this.searchEntry.set_text('');
   }
@@ -364,24 +370,6 @@ export class HistoryPanel {
     this._settingsSignals = [];
     this.focusGrid.clear();
     this._sync.destroy();
-  }
-
-  _updateActions() {
-    const layout = normalizeActions(
-      this._settings.get_strv('panel-toolbar-actions'),
-      this._settings.get_strv('panel-footer-actions'),
-    );
-    for (const button of this._actionButtons.values()) {
-      const parent = button.get_parent();
-      if (parent)
-        parent.remove_child(button);
-    }
-    for (const action of layout.toolbar)
-      this.toolbar.add_child(this._actionButtons.get(action));
-    for (const action of layout.footer)
-      this.footer.addContent(this._actionButtons.get(action));
-    if (this.focusGrid && this._isActive())
-      this._requestRefresh();
   }
 
   _setFocusRows(rows) {

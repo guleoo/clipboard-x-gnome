@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 11:33+0800\n"
+"POT-Creation-Date: 2026-08-19 12:20+0800\n"
 "PO-Revision-Date: 2026-08-14 21:35+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
@@ -26,7 +26,7 @@ msgid ""
 "keyboard is idle."
 msgstr "模拟键盘输入期间请勿按下其他按键；键盘空闲后将继续输入。"
 
-#: src/ui/indicator.js:227
+#: src/ui/indicator.js:278
 msgid "This text is too large for interactive processing"
 msgstr "此文本过大，无法进行交互式处理"
 
@@ -58,7 +58,7 @@ msgstr "固定"
 msgid "Delete from local history"
 msgstr "从本地历史中删除"
 
-#: src/ui/panels/history/item.js:122 src/ui/settings/window.js:284
+#: src/ui/panels/history/item.js:122 src/ui/settings/window.js:304
 msgid "Text"
 msgstr "文本"
 
@@ -70,55 +70,53 @@ msgstr "图片"
 msgid "Search clipboard history…"
 msgstr "搜索剪切板历史…"
 
-#: src/ui/panels/history/panel.js:96 src/ui/settings/panel-actions.js:135
-#: src/ui/settings/window.js:316 src/ui/settings/window.js:317
-#: src/ui/settings/window.js:402
+#: src/ui/panels/history/panel.js:96 src/ui/settings/window.js:336
+#: src/ui/settings/window.js:337 src/ui/settings/window.js:422
 msgid "Screenshot"
 msgstr "截图"
 
-#: src/ui/panels/history/panel.js:102 src/ui/settings/window.js:400
+#: src/ui/panels/history/panel.js:102 src/ui/settings/window.js:420
 msgid "Pick color"
 msgstr "取色"
 
-#: src/ui/panels/history/panel.js:108 src/ui/panels/history/panel.js:411
-#: src/ui/settings/panel-actions.js:138
+#: src/ui/panels/history/panel.js:108 src/ui/panels/history/panel.js:399
 msgid "Privacy mode"
 msgstr "隐私模式"
 
 #: src/ui/panels/history/panel.js:114 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:137 src/ui/settings/window.js:175
+#: src/ui/settings/window.js:195
 msgid "Quick phrases"
 msgstr "快捷语句"
 
-#: src/ui/panels/history/panel.js:149 src/ui/settings/window.js:364
+#: src/ui/panels/history/panel.js:149 src/ui/settings/window.js:384
 msgid "Clear unpinned history"
 msgstr "清空未固定的历史"
 
-#: src/ui/panels/history/panel.js:154 src/ui/settings/panel-actions.js:141
+#: src/ui/panels/history/panel.js:154
 msgid "Preferences"
 msgstr "设置"
 
-#: src/ui/panels/history/panel.js:203
+#: src/ui/panels/history/panel.js:196
 msgid "Loading clipboard history…"
 msgstr "正在加载剪切板历史…"
 
-#: src/ui/panels/history/panel.js:208
+#: src/ui/panels/history/panel.js:201
 msgid "Clipboard history could not be loaded"
 msgstr "无法加载剪切板历史"
 
-#: src/ui/panels/history/panel.js:220
+#: src/ui/panels/history/panel.js:213
 msgid "No matching entries"
 msgstr "没有匹配的条目"
 
-#: src/ui/panels/history/panel.js:220
+#: src/ui/panels/history/panel.js:213
 msgid "Clipboard history is empty"
 msgstr "剪切板历史为空"
 
-#: src/ui/panels/history/panel.js:234
+#: src/ui/panels/history/panel.js:228
 msgid "More entries are available; refine the search to see others"
 msgstr "还有更多条目；请缩小搜索范围以查看"
 
-#: src/ui/panels/history/panel.js:430
+#: src/ui/panels/history/panel.js:418
 msgid "Unknown device"
 msgstr "未知设备"
 
@@ -230,45 +228,8 @@ msgstr "复制所选词语"
 msgid "No words found"
 msgstr "未找到可分词内容"
 
-#: src/ui/settings/panel-actions.js:24
-msgid "Top toolbar"
-msgstr "顶栏"
-
-#: src/ui/settings/panel-actions.js:25
-msgid "Footer"
-msgstr "底栏"
-
-#: src/ui/settings/panel-actions.js:67
-msgid "Move up"
-msgstr "上移"
-
-#: src/ui/settings/panel-actions.js:75
-msgid "Move down"
-msgstr "下移"
-
-#: src/ui/settings/panel-actions.js:84
-msgid "Move to footer"
-msgstr "移到底栏"
-
-#: src/ui/settings/panel-actions.js:84
-msgid "Move to top toolbar"
-msgstr "移到顶栏"
-
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:303
-#: src/ui/settings/window.js:398
-msgid "Color picker"
-msgstr "取色器"
-
-#: src/ui/settings/panel-actions.js:139 src/ui/settings/window.js:197
-msgid "Synchronization"
-msgstr "同步"
-
-#: src/ui/settings/panel-actions.js:140
-msgid "Clear history"
-msgstr "清空历史"
-
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:275 src/ui/settings/window.js:280
+#: src/ui/settings/window.js:295 src/ui/settings/window.js:300
 msgid "Disabled"
 msgstr "禁用"
 
@@ -328,496 +289,579 @@ msgstr "添加自定义颜色"
 msgid "Choose custom theme color"
 msgstr "选择自定义主题色"
 
-#: src/ui/settings/window.js:98
+#: src/ui/settings/window.js:97
 msgid "General"
 msgstr "常规"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "Appearance"
 msgstr "外观"
 
-#: src/ui/settings/window.js:105
+#: src/ui/settings/window.js:104
 msgid "Panel"
 msgstr "面板"
 
-#: src/ui/settings/window.js:107
+#: src/ui/settings/window.js:106
 msgid "Show panel indicator"
 msgstr "显示顶栏图标"
 
+#: src/ui/settings/window.js:107
+msgid "Panel position when indicator is hidden"
+msgstr "隐藏顶栏图标时的面板位置"
+
 #: src/ui/settings/window.js:108
+msgid "Top left"
+msgstr "左上"
+
+#: src/ui/settings/window.js:109
+msgid "Top center"
+msgstr "顶部居中"
+
+#: src/ui/settings/window.js:110
+msgid "Top right"
+msgstr "右上"
+
+#: src/ui/settings/window.js:111
+msgid "Center left"
+msgstr "左侧居中"
+
+#: src/ui/settings/window.js:112
+msgid "Center"
+msgstr "居中"
+
+#: src/ui/settings/window.js:113
+msgid "Center right"
+msgstr "右侧居中"
+
+#: src/ui/settings/window.js:114
+msgid "Bottom left"
+msgstr "左下"
+
+#: src/ui/settings/window.js:115
+msgid "Bottom center"
+msgstr "底部居中"
+
+#: src/ui/settings/window.js:116
+msgid "Bottom right"
+msgstr "右下"
+
+#: src/ui/settings/window.js:120
+msgid "Horizontal panel offset"
+msgstr "面板水平偏移"
+
+#: src/ui/settings/window.js:124
+msgid "px; positive moves right"
+msgstr "px；正值向右"
+
+#: src/ui/settings/window.js:128
+msgid "Vertical panel offset"
+msgstr "面板垂直偏移"
+
+#: src/ui/settings/window.js:132
+msgid "px; positive moves down"
+msgstr "px；正值向下"
+
+#: src/ui/settings/window.js:134
 msgid "Panel width"
 msgstr "面板宽度"
 
-#: src/ui/settings/window.js:108 src/ui/settings/window.js:109
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:134 src/ui/settings/window.js:135
+#: src/ui/settings/window.js:316
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:109
+#: src/ui/settings/window.js:135
 msgid "Panel height"
 msgstr "面板高度"
 
-#: src/ui/settings/window.js:112
+#: src/ui/settings/window.js:138
 msgid "Text vertical offset"
 msgstr "文字垂直偏移"
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:142
 msgid "px; negative moves up, positive moves down"
 msgstr "px；负值向上，正值向下"
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:144
 msgid "Maximum entries shown in panel"
 msgstr "面板最大显示条目数"
 
-#: src/ui/settings/window.js:121
+#: src/ui/settings/window.js:147
 msgid "Preserve panel state"
 msgstr "保留面板现场"
 
-#: src/ui/settings/window.js:122
+#: src/ui/settings/window.js:148
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr "重新打开时恢复上次视图，而不是始终返回剪切板历史"
 
-#: src/ui/settings/window.js:126
+#: src/ui/settings/window.js:152
 msgid "Keep keyboard focus in panel"
 msgstr "将键盘焦点保持在面板内"
 
-#: src/ui/settings/window.js:127
+#: src/ui/settings/window.js:153
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr "到达边缘时，方向键不会将焦点移出插件面板"
 
-#: src/ui/settings/window.js:131
-msgid "Panel actions"
-msgstr "面板操作"
-
-#: src/ui/settings/window.js:132
-msgid "Drag actions to change their placement and order."
-msgstr "拖动操作以调整其摆放位置和顺序。"
-
-#: src/ui/settings/window.js:140 src/ui/settings/window.js:369
+#: src/ui/settings/window.js:160 src/ui/settings/window.js:389
 msgid "Clipboard"
 msgstr "剪切板"
 
-#: src/ui/settings/window.js:141
+#: src/ui/settings/window.js:161
 msgid "History"
 msgstr "历史"
 
-#: src/ui/settings/window.js:143
+#: src/ui/settings/window.js:163
 msgid "History entries"
 msgstr "历史条目数"
 
-#: src/ui/settings/window.js:144
+#: src/ui/settings/window.js:164
 msgid "Cache size"
 msgstr "缓存大小"
 
-#: src/ui/settings/window.js:144 src/ui/settings/window.js:146
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:164 src/ui/settings/window.js:166
+#: src/ui/settings/window.js:315
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:145
+#: src/ui/settings/window.js:165
 msgid "Automatic cleanup"
 msgstr "自动清理"
 
-#: src/ui/settings/window.js:145
+#: src/ui/settings/window.js:165
 msgid "days; 0 disables"
 msgstr "天；0 表示禁用"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:166
 msgid "Maximum item size"
 msgstr "单个条目大小上限"
 
-#: src/ui/settings/window.js:149
+#: src/ui/settings/window.js:169
 msgid "Trim surrounding whitespace"
 msgstr "自动去除首尾空白字符"
 
-#: src/ui/settings/window.js:150
+#: src/ui/settings/window.js:170
 msgid "Remove leading and trailing whitespace from newly captured text"
 msgstr "从新记录的文本中去除开头和结尾的空白字符"
 
-#: src/ui/settings/window.js:153 src/ui/settings/window.js:383
+#: src/ui/settings/window.js:173 src/ui/settings/window.js:403
 msgid "Tokenizer"
 msgstr "分词"
 
-#: src/ui/settings/window.js:155
+#: src/ui/settings/window.js:175
 msgid "Show source text preview"
 msgstr "显示原文预览"
 
-#: src/ui/settings/window.js:157
+#: src/ui/settings/window.js:177
 msgid "Privacy"
 msgstr "隐私"
 
-#: src/ui/settings/window.js:159
+#: src/ui/settings/window.js:179
 msgid "Pause clipboard recording"
 msgstr "暂停剪切板记录"
 
-#: src/ui/settings/window.js:160 src/ui/settings/window.js:287
+#: src/ui/settings/window.js:180 src/ui/settings/window.js:307
 msgid "Sensitive content"
 msgstr "敏感内容"
 
-#: src/ui/settings/window.js:161
+#: src/ui/settings/window.js:181
 msgid "Do not record"
 msgstr "不记录"
 
-#: src/ui/settings/window.js:162
+#: src/ui/settings/window.js:182
 msgid "Keep until extension stops"
 msgstr "仅保留到扩展停止"
 
-#: src/ui/settings/window.js:163
+#: src/ui/settings/window.js:183
 msgid "Store like other history"
 msgstr "按普通历史保存"
 
-#: src/ui/settings/window.js:167
+#: src/ui/settings/window.js:187
 msgid "Excluded applications"
 msgstr "排除的应用"
 
-#: src/ui/settings/window.js:168
+#: src/ui/settings/window.js:188
 msgid "Comma-separated window classes"
 msgstr "以逗号分隔窗口类名"
 
-#: src/ui/settings/window.js:179
+#: src/ui/settings/window.js:199
 msgid "Behavior"
 msgstr "行为"
 
-#: src/ui/settings/window.js:180
+#: src/ui/settings/window.js:200
 msgid "Quick phrases are stored only on this device."
 msgstr "快捷语句仅保存在当前设备。"
 
-#: src/ui/settings/window.js:183
+#: src/ui/settings/window.js:203
 msgid "Maximum quick phrases"
 msgstr "快捷语句数量上限"
 
-#: src/ui/settings/window.js:186
+#: src/ui/settings/window.js:206
 msgid "Place new phrases first"
 msgstr "新语句置顶"
 
-#: src/ui/settings/window.js:187
+#: src/ui/settings/window.js:207
 msgid "When disabled, new phrases are added at the end"
 msgstr "关闭后，新语句将添加到末尾"
 
-#: src/ui/settings/window.js:191
+#: src/ui/settings/window.js:211
 msgid "Close panel after copying"
 msgstr "复制后关闭面板"
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:217
+msgid "Synchronization"
+msgstr "同步"
+
+#: src/ui/settings/window.js:218
 msgid "Device"
 msgstr "设备"
 
-#: src/ui/settings/window.js:200
+#: src/ui/settings/window.js:220
 msgid "Device ID"
 msgstr "设备 ID"
 
-#: src/ui/settings/window.js:205
+#: src/ui/settings/window.js:225
 msgid "Device tag"
 msgstr "设备标签"
 
-#: src/ui/settings/window.js:205
+#: src/ui/settings/window.js:225
 msgid "Friendly name shown during device discovery"
 msgstr "设备发现时显示的友好名称"
 
-#: src/ui/settings/window.js:206
+#: src/ui/settings/window.js:226
 msgid "Device icon"
 msgstr "设备图标"
 
-#: src/ui/settings/window.js:207
+#: src/ui/settings/window.js:227
 msgid "Desktop"
 msgstr "台式电脑"
 
-#: src/ui/settings/window.js:208
+#: src/ui/settings/window.js:228
 msgid "Laptop"
 msgstr "笔记本电脑"
 
-#: src/ui/settings/window.js:209
+#: src/ui/settings/window.js:229
 msgid "Phone"
 msgstr "手机"
 
-#: src/ui/settings/window.js:210
+#: src/ui/settings/window.js:230
 msgid "Tablet"
 msgstr "平板电脑"
 
-#: src/ui/settings/window.js:211
+#: src/ui/settings/window.js:231
 msgid "Server"
 msgstr "服务器"
 
-#: src/ui/settings/window.js:212
+#: src/ui/settings/window.js:232
 msgid "Other"
 msgstr "其他"
 
-#: src/ui/settings/window.js:215
+#: src/ui/settings/window.js:235
 msgid "Service connection"
 msgstr "服务连接"
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:237
 msgid "Enable synchronization integration"
 msgstr "启用同步服务集成"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:240
 msgid "D-Bus name"
 msgstr "D-Bus 名称"
 
-#: src/ui/settings/window.js:226
+#: src/ui/settings/window.js:246
 msgid "Object path"
 msgstr "对象路径"
 
-#: src/ui/settings/window.js:230
+#: src/ui/settings/window.js:250
 msgid "Service status"
 msgstr "服务状态"
 
-#: src/ui/settings/window.js:230
+#: src/ui/settings/window.js:250
 msgid "Not tested"
 msgstr "尚未测试"
 
-#: src/ui/settings/window.js:231
+#: src/ui/settings/window.js:251
 msgid "Test connection"
 msgstr "测试连接"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:254
 msgid "Connecting…"
 msgstr "正在连接…"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:265
 msgid "item limit"
 msgstr "条目上限"
 
-#: src/ui/settings/window.js:246
+#: src/ui/settings/window.js:266
 msgid "preview limit"
 msgstr "预览上限"
 
-#: src/ui/settings/window.js:258
+#: src/ui/settings/window.js:278
 msgid "Service preferences"
 msgstr "服务设置"
 
-#: src/ui/settings/window.js:259
+#: src/ui/settings/window.js:279
 msgid "Provided by the external synchronization Service"
 msgstr "由外部同步服务提供"
 
-#: src/ui/settings/window.js:261
+#: src/ui/settings/window.js:281
 msgid "Open"
 msgstr "打开"
 
-#: src/ui/settings/window.js:272
+#: src/ui/settings/window.js:292
 msgid "Transfer policy"
 msgstr "传输策略"
 
-#: src/ui/settings/window.js:274
+#: src/ui/settings/window.js:294
 msgid "Send mode"
 msgstr "发送模式"
 
-#: src/ui/settings/window.js:276
+#: src/ui/settings/window.js:296
 msgid "Manual"
 msgstr "手动"
 
-#: src/ui/settings/window.js:277
+#: src/ui/settings/window.js:297
 msgid "Automatic"
 msgstr "自动"
 
-#: src/ui/settings/window.js:279
+#: src/ui/settings/window.js:299
 msgid "Receive mode"
 msgstr "接收模式"
 
-#: src/ui/settings/window.js:281
+#: src/ui/settings/window.js:301
 msgid "History only"
 msgstr "仅加入历史"
 
-#: src/ui/settings/window.js:282
+#: src/ui/settings/window.js:302
 msgid "Activate clipboard"
 msgstr "设为当前剪切板"
 
-#: src/ui/settings/window.js:285
+#: src/ui/settings/window.js:305
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:286
+#: src/ui/settings/window.js:306
 msgid "Images"
 msgstr "图片"
 
-#: src/ui/settings/window.js:287
+#: src/ui/settings/window.js:307
 msgid "Disabled by default"
 msgstr "默认禁用"
 
-#: src/ui/settings/window.js:290
+#: src/ui/settings/window.js:310
 msgid "Favorites only"
 msgstr "仅收藏内容"
 
-#: src/ui/settings/window.js:291
+#: src/ui/settings/window.js:311
 msgid "Only applies to automatic sending"
 msgstr "仅适用于自动发送"
 
-#: src/ui/settings/window.js:293
+#: src/ui/settings/window.js:313
 msgid "Small text sent in full"
 msgstr "完整发送的小文本上限"
 
-#: src/ui/settings/window.js:293 src/ui/settings/window.js:294
-#: src/ui/settings/window.js:297
+#: src/ui/settings/window.js:313 src/ui/settings/window.js:314
+#: src/ui/settings/window.js:317
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:314
 msgid "Large text preview"
 msgstr "大文本预览大小"
 
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:315
 msgid "Small images sent in full"
 msgstr "完整发送的小图片上限"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:316
 msgid "Thumbnail dimension"
 msgstr "缩略图尺寸"
 
-#: src/ui/settings/window.js:297
+#: src/ui/settings/window.js:317
 msgid "Thumbnail size limit"
 msgstr "缩略图大小上限"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:318
 msgid "On-demand timeout"
 msgstr "按需传输超时"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:318
 msgid "seconds"
 msgstr "秒"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:323 src/ui/settings/window.js:418
+msgid "Color picker"
+msgstr "取色器"
+
+#: src/ui/settings/window.js:324
 msgid "Color format"
 msgstr "颜色格式"
 
-#: src/ui/settings/window.js:306
+#: src/ui/settings/window.js:326
 msgid "Default format"
 msgstr "默认格式"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:339
 msgid "Default target"
 msgstr "默认目标"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:340
 msgid "Interactive"
 msgstr "交互选择"
 
-#: src/ui/settings/window.js:321
+#: src/ui/settings/window.js:341
 msgid "Full screen"
 msgstr "全屏"
 
-#: src/ui/settings/window.js:322
+#: src/ui/settings/window.js:342
 msgid "Window"
 msgstr "窗口"
 
-#: src/ui/settings/window.js:323
+#: src/ui/settings/window.js:343
 msgid "Area"
 msgstr "区域"
 
-#: src/ui/settings/window.js:324
+#: src/ui/settings/window.js:344
 msgid "Active window"
 msgstr "活动窗口"
 
-#: src/ui/settings/window.js:326
+#: src/ui/settings/window.js:346
 msgid "Add to history"
 msgstr "加入历史"
 
-#: src/ui/settings/window.js:327
+#: src/ui/settings/window.js:347
 msgid "Copy screenshot"
 msgstr "复制截图"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:348
 msgid "Open image editor"
 msgstr "打开图片编辑器"
 
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:350
 msgid "Image editing"
 msgstr "图片编辑"
 
-#: src/ui/settings/window.js:335
+#: src/ui/settings/window.js:355
 msgid "Advanced command"
 msgstr "高级命令"
 
-#: src/ui/settings/window.js:336
+#: src/ui/settings/window.js:356
 msgid ""
 "%u is the URI, %f is a local path, %i is standard input and %% is a percent "
 "sign"
 msgstr "%u 表示 URI，%f 表示本地路径，%i 表示标准输入，%% 表示百分号"
 
-#: src/ui/settings/window.js:352
+#: src/ui/settings/window.js:372
 msgid "Shortcuts"
 msgstr "快捷键"
 
-#: src/ui/settings/window.js:356
+#: src/ui/settings/window.js:376
 msgid "Global"
 msgstr "全局"
 
-#: src/ui/settings/window.js:357
+#: src/ui/settings/window.js:377
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr "点击快捷键，然后按下新的组合键；按退格键可将其禁用。"
 
-#: src/ui/settings/window.js:361
+#: src/ui/settings/window.js:381
 msgid "Open clipboard panel"
 msgstr "打开剪切板面板"
 
-#: src/ui/settings/window.js:362
+#: src/ui/settings/window.js:382
 msgid "Focus clipboard search"
 msgstr "聚焦剪切板搜索框"
 
-#: src/ui/settings/window.js:363
+#: src/ui/settings/window.js:383
 msgid "Pause or resume clipboard recording"
 msgstr "暂停或恢复剪切板记录"
 
-#: src/ui/settings/window.js:370
+#: src/ui/settings/window.js:390
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr "仅在剪切板历史条目获得键盘焦点时生效。"
 
-#: src/ui/settings/window.js:374
+#: src/ui/settings/window.js:394
 msgid "Paste entry"
 msgstr "粘贴条目"
 
-#: src/ui/settings/window.js:375
+#: src/ui/settings/window.js:395
 msgid "Pin or unpin entry"
 msgstr "固定或取消固定条目"
 
-#: src/ui/settings/window.js:376
+#: src/ui/settings/window.js:396
 msgid "Delete entry"
 msgstr "删除条目"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:397
 msgid "Type entry directly"
 msgstr "直接逐字输入条目"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:398
 msgid "Type entry instead of copying"
 msgstr "逐字输入条目而非复制"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:404
 msgid "Active while a token has keyboard focus."
 msgstr "仅在分词获得键盘焦点时生效。"
 
-#: src/ui/settings/window.js:388
+#: src/ui/settings/window.js:408
 msgid "Copy selected tokens"
 msgstr "复制所选分词"
 
-#: src/ui/settings/window.js:389
+#: src/ui/settings/window.js:409
 msgid "Paste selected tokens"
 msgstr "粘贴所选分词"
 
-#: src/ui/settings/window.js:390
+#: src/ui/settings/window.js:410
 msgid "Type selected tokens"
 msgstr "逐字输入所选分词"
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:411
 msgid "Extend selection left"
 msgstr "向左扩展选择范围"
 
-#: src/ui/settings/window.js:392
+#: src/ui/settings/window.js:412
 msgid "Extend selection right"
 msgstr "向右扩展选择范围"
 
-#: src/ui/settings/window.js:393
+#: src/ui/settings/window.js:413
 msgid "Extend selection upward"
 msgstr "向上扩展选择范围"
 
-#: src/ui/settings/window.js:394
+#: src/ui/settings/window.js:414
 msgid "Extend selection downward"
 msgstr "向下扩展选择范围"
 
-#: src/ui/settings/window.js:404
+#: src/ui/settings/window.js:424
 msgid "Take screenshot"
 msgstr "截图"
+
+#~ msgid "Top toolbar"
+#~ msgstr "顶栏"
+
+#~ msgid "Footer"
+#~ msgstr "底栏"
+
+#~ msgid "Move up"
+#~ msgstr "上移"
+
+#~ msgid "Move down"
+#~ msgstr "下移"
+
+#~ msgid "Move to footer"
+#~ msgstr "移到底栏"
+
+#~ msgid "Move to top toolbar"
+#~ msgstr "移到顶栏"
+
+#~ msgid "Clear history"
+#~ msgstr "清空历史"
+
+#~ msgid "Panel actions"
+#~ msgstr "面板操作"
+
+#~ msgid "Drag actions to change their placement and order."
+#~ msgstr "拖动操作以调整其摆放位置和顺序。"
 
 #~ msgid "Save phrase"
 #~ msgstr "保存语句"

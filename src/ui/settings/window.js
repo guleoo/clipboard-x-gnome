@@ -10,7 +10,6 @@ import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {effectiveCapabilities} from '../../sync/policy.js';
-import {create as createPanelActionsRow} from './panel-actions.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
 
@@ -105,6 +104,33 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const panel = new Adw.PreferencesGroup({title: _('Panel')});
     page.add(panel);
     panel.add(this._rows.switch('show-indicator', _('Show panel indicator')));
+    panel.add(this._rows.combo('panel-anchor', _('Panel position when indicator is hidden'), [
+      ['top-left', _('Top left')],
+      ['top-center', _('Top center')],
+      ['top-right', _('Top right')],
+      ['center-left', _('Center left')],
+      ['center', _('Center')],
+      ['center-right', _('Center right')],
+      ['bottom-left', _('Bottom left')],
+      ['bottom-center', _('Bottom center')],
+      ['bottom-right', _('Bottom right')],
+    ]));
+    panel.add(this._rows.spin(
+      'panel-offset-x',
+      _('Horizontal panel offset'),
+      -4096,
+      4096,
+      1,
+      _('px; positive moves right'),
+    ));
+    panel.add(this._rows.spin(
+      'panel-offset-y',
+      _('Vertical panel offset'),
+      -4096,
+      4096,
+      1,
+      _('px; positive moves down'),
+    ));
     panel.add(this._rows.spin('panel-width', _('Panel width'), 300, 800, 10, _('px')));
     panel.add(this._rows.spin('panel-height', _('Panel height'), 160, 800, 10, _('px')));
     panel.add(this._rows.spin(
@@ -127,12 +153,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('At the edge, arrow keys do not move focus outside the extension panel'),
     ));
 
-    const actions = new Adw.PreferencesGroup({
-      title: _('Panel actions'),
-      description: _('Drag actions to change their placement and order.'),
-    });
-    page.add(actions);
-    actions.add(createPanelActionsRow(settings));
     return page;
   }
 

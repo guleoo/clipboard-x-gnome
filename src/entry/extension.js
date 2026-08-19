@@ -268,7 +268,7 @@ export default class ClipboardXExtension extends Extension {
   }
 
   _updateIndicatorVisibility() {
-    this._indicator.visible = this._settings.get_boolean('show-indicator');
+    this._indicator.setIndicatorVisible(this._settings.get_boolean('show-indicator'));
   }
 
   _bindShortcuts() {
@@ -276,7 +276,7 @@ export default class ClipboardXExtension extends Extension {
     const actions = {
       'panel-shortcut': () => {
         ensureDeviceIdentity(this._settings);
-        this._indicator.menu.toggle();
+        this._indicator.toggle();
       },
       'screenshot-shortcut': () => this._takeScreenshot().catch(error => this._reportError(error)),
       'color-picker-shortcut': () => this._pickColor(),
@@ -293,7 +293,9 @@ export default class ClipboardXExtension extends Extension {
           key,
           this._settings,
           Meta.KeyBindingFlags.NONE,
-          Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
+          Shell.ActionMode.NORMAL
+            | Shell.ActionMode.OVERVIEW
+            | (key === 'panel-shortcut' ? Shell.ActionMode.POPUP : 0),
           actions[key],
         );
         this._boundShortcuts.push(key);

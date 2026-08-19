@@ -104,13 +104,7 @@ export async function run() {
   assert(history.searchEntry.get_hint_actor().margin_left === 2,
     'Search placeholder did not retain its configured left margin');
   assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
-    'Opening the history panel must focus its keyboard-search entry');
-  const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
-  const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
-  indicator._settings.set_strv(
-    'panel-toolbar-actions', ['screenshot', 'color-picker', 'quick-phrases']);
-  indicator._settings.set_strv(
-    'panel-footer-actions', ['private-mode', 'sync', 'clear-history', 'preferences']);
+    'Opening an empty history panel must fall back to its search entry');
   assert(history.toolbar.get_children().length === 3,
     'Top toolbar must contain only screenshot, color picker and quick-phrase actions');
   assert(history.searchEntry.get_parent() === history.toolbar.get_parent(),
@@ -118,8 +112,6 @@ export async function run() {
   assert(history.phrasesButton.get_parent() === history.toolbar
       && history.privateButton.get_parent() === history.footer.row,
     'Quick-phrase and privacy buttons were not swapped');
-  indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
-  indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
   const originalPanelWidth = indicator._settings.get_int('panel-width');
   const originalPanelHeight = indicator._settings.get_int('panel-height');
   const resizedPanelWidth = Math.min(800, originalPanelWidth + 40);
@@ -281,10 +273,31 @@ export async function run() {
   terminalInput._activity.reset();
   terminalInput._onManualInput = manualInputCallback;
 
+  const originalAnchor = indicator._settings.get_string('panel-anchor');
+  const originalOffsetX = indicator._settings.get_int('panel-offset-x');
+  const originalOffsetY = indicator._settings.get_int('panel-offset-y');
+  indicator._settings.set_string('panel-anchor', 'bottom-right');
+  indicator._settings.set_int('panel-offset-x', -12);
+  indicator._settings.set_int('panel-offset-y', -18);
   indicator._settings.set_boolean('show-indicator', false);
   await Scripting.sleep(100);
-  assert(!indicator.visible, 'Panel visibility setting did not apply immediately');
+  const anchorMonitor = Main.layoutManager.currentMonitor ?? Main.layoutManager.primaryMonitor;
+  const anchorWorkArea = Main.layoutManager.getWorkAreaForMonitor(anchorMonitor.index);
+  assert(!indicator.visible
+      && indicator.menu.sourceActor === indicator._menuAnchor
+      && Math.round(indicator._menuAnchor.x) === anchorWorkArea.x + anchorWorkArea.width - 12
+      && Math.round(indicator._menuAnchor.y) === anchorWorkArea.y + anchorWorkArea.height - 18,
+  'Hidden indicator did not use the configured bottom-right panel anchor and offsets');
+  indicator.toggle();
+  await Scripting.sleep(100);
+  assert(indicator.menu.isOpen, 'Panel shortcut toggle did not open the hidden-indicator menu');
+  indicator.toggle();
+  await Scripting.sleep(100);
+  assert(!indicator.menu.isOpen, 'Invoking the panel shortcut toggle twice did not close the menu');
   indicator._settings.set_boolean('show-indicator', true);
+  indicator._settings.set_string('panel-anchor', originalAnchor);
+  indicator._settings.set_int('panel-offset-x', originalOffsetX);
+  indicator._settings.set_int('panel-offset-y', originalOffsetY);
   indicator._settings.set_strv('panel-shortcut', ['<Super>v']);
   await Scripting.sleep(100);
   assert(extensionObject._shortcutBound, 'User shortcut was not registered');
@@ -298,6 +311,8 @@ export async function run() {
   await Scripting.sleep(100);
   const renderedHistoryRow = history._section.actor.get_children().find(actor =>
     actor._clipboardXControlType === 'content-item');
+  assert(global.stage.get_key_focus() === renderedHistoryRow?.focusActors[0],
+    'Opening clipboard history did not focus its first entry');
   assert(renderedHistoryRow?.focusActors.every(actor =>
     foreground(actor).join(',') === phraseForeground.join(',')),
   'Clipboard history content and actions did not use the shared content-item foreground');

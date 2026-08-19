@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -20,6 +21,17 @@ const THEME_COLOR_CLASSES = Object.freeze([
   'blue', 'teal', 'green', 'orange', 'pink', 'slate',
 ].map(color => `cbx-accent-${color}`));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+const PANEL_ANCHORS = Object.freeze({
+  'top-left': {side: St.Side.TOP, alignment: 0, horizontal: 0, vertical: 0},
+  'top-center': {side: St.Side.TOP, alignment: 0.5, horizontal: 0.5, vertical: 0},
+  'top-right': {side: St.Side.TOP, alignment: 1, horizontal: 1, vertical: 0},
+  'center-left': {side: St.Side.LEFT, alignment: 0.5, horizontal: 0, vertical: 0.5},
+  center: {side: St.Side.TOP, alignment: 0.5, horizontal: 0.5, vertical: 0.5},
+  'center-right': {side: St.Side.RIGHT, alignment: 0.5, horizontal: 1, vertical: 0.5},
+  'bottom-left': {side: St.Side.BOTTOM, alignment: 0, horizontal: 0, vertical: 1},
+  'bottom-center': {side: St.Side.BOTTOM, alignment: 0.5, horizontal: 0.5, vertical: 1},
+  'bottom-right': {side: St.Side.BOTTOM, alignment: 1, horizontal: 1, vertical: 1},
+});
 const NAVIGATION_KEYS = new Map([
   [Clutter.KEY_Left, 'left'],
   [Clutter.KEY_Right, 'right'],
@@ -54,6 +66,15 @@ class Indicator extends PanelMenu.Button {
       style_class: 'system-status-icon',
     }));
     this.menu.actor.add_style_class_name('cbx-menu');
+    this._indicatorArrowSide = this.menu._boxPointer.arrowSide;
+    this._indicatorArrowAlignment = this.menu._arrowAlignment;
+    this._menuAnchor = new St.Widget({
+      reactive: false,
+      opacity: 0,
+      width: 1,
+      height: 1,
+    });
+    Main.layoutManager.uiGroup.add_child(this._menuAnchor);
     this._buildMenu();
     this._applyTextVerticalOffset();
     this._panelManager = new PanelManager({
@@ -102,6 +123,17 @@ class Indicator extends PanelMenu.Button {
     this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
+    this._panelAnchorSignal = settings.connect('changed::panel-anchor', () => this._updateMenuSource());
+    this._panelOffsetXSignal = settings.connect('changed::panel-offset-x', () => this._updateMenuSource());
+    this._panelOffsetYSignal = settings.connect('changed::panel-offset-y', () => this._updateMenuSource());
+    this._monitorsChangedSignal = Main.layoutManager.connect(
+      'monitors-changed',
+      () => this._updateMenuSource(),
+    );
+    this._workareasChangedSignal = global.display.connect(
+      'workareas-changed',
+      () => this._updateMenuSource(),
+    );
     this._textVerticalOffsetSignal = settings.connect(
       'changed::panel-text-vertical-offset',
       () => this._applyTextVerticalOffset(),
@@ -129,7 +161,7 @@ class Indicator extends PanelMenu.Button {
         this._panelManager.open();
         this._actions.ensureIdentity();
         if (this._panelManager.is('history'))
-          this._historyPanel.focusSearch({reset: true});
+          this._historyPanel.focusStart({reset: true});
         else if (this._panelManager.is('tokenizer'))
           this._tokenizer.focusStart();
         else if (this._panelManager.is('phrases'))
@@ -144,6 +176,25 @@ class Indicator extends PanelMenu.Button {
       }
     });
     this._panelManager.show('history');
+  }
+
+  setIndicatorVisible(visible) {
+    if (visible) {
+      this.visible = true;
+      this._updateMenuSource();
+    } else {
+      this._updateMenuSource(false);
+      this.visible = false;
+    }
+  }
+
+  toggle() {
+    if (this.menu.isOpen) {
+      this.menu.close();
+      return;
+    }
+    this._updateMenuSource();
+    this.menu.open();
   }
 
   _buildMenu() {
@@ -256,6 +307,65 @@ class Indicator extends PanelMenu.Button {
     this._panelManager.setGeometry({width: panelWidth, height: panelHeight});
     if (this._panelManager)
       this._refresh();
+    this._updateMenuSource();
+  }
+
+  _updateMenuSource(indicatorVisible = this._settings.get_boolean('show-indicator')) {
+    if (!this._menuAnchor)
+      return;
+    let sourceActor = this;
+    let side = this._indicatorArrowSide;
+    let alignment = this._indicatorArrowAlignment;
+    if (!indicatorVisible) {
+      const descriptor = PANEL_ANCHORS[this._settings.get_string('panel-anchor')]
+        ?? PANEL_ANCHORS['top-right'];
+      sourceActor = this._menuAnchor;
+      side = descriptor.side;
+      alignment = descriptor.alignment;
+      this._positionMenuAnchor(descriptor);
+    }
+    this.menu.sourceActor = sourceActor;
+    this.menu.focusActor = sourceActor;
+    this.menu._arrowAlignment = alignment;
+    this.menu._boxPointer.updateArrowSide(side);
+    if (this.menu.isOpen)
+      this.menu._boxPointer.setPosition(sourceActor, alignment);
+  }
+
+  _positionMenuAnchor(descriptor) {
+    const monitor = Main.layoutManager.currentMonitor ?? Main.layoutManager.primaryMonitor;
+    if (!monitor)
+      return;
+    const workArea = Main.layoutManager.getWorkAreaForMonitor(monitor.index);
+    const panelWidth = this._settings.get_int('panel-width');
+    const panelHeight = this._settings.get_int('panel-height');
+    const availableX = Math.max(0, workArea.width - panelWidth);
+    const availableY = Math.max(0, workArea.height - panelHeight);
+    const panelX = workArea.x + availableX * descriptor.horizontal;
+    const panelY = workArea.y + availableY * descriptor.vertical;
+    const anchorX = descriptor.side === St.Side.LEFT
+      ? panelX
+      : descriptor.side === St.Side.RIGHT
+        ? panelX + panelWidth
+        : panelX + panelWidth * descriptor.alignment;
+    const anchorY = descriptor.side === St.Side.BOTTOM
+      ? panelY + panelHeight
+      : descriptor.side === St.Side.LEFT || descriptor.side === St.Side.RIGHT
+        ? panelY + panelHeight * descriptor.alignment
+        : panelY;
+    const offsetX = this._settings.get_int('panel-offset-x');
+    const offsetY = this._settings.get_int('panel-offset-y');
+    const x = Math.clamp(
+      Math.round(anchorX + offsetX),
+      workArea.x,
+      workArea.x + workArea.width - 1,
+    );
+    const y = Math.clamp(
+      Math.round(anchorY + offsetY),
+      workArea.y,
+      workArea.y + workArea.height - 1,
+    );
+    this._menuAnchor.set_position(x, y);
   }
 
   _setMenuGeometry({width}) {
@@ -384,6 +494,9 @@ class Indicator extends PanelMenu.Button {
       this._themeColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
+      this._panelAnchorSignal,
+      this._panelOffsetXSignal,
+      this._panelOffsetYSignal,
       this._textVerticalOffsetSignal,
       this._preservePanelStateSignal,
       this._savedPhrasesSignal,
@@ -395,6 +508,9 @@ class Indicator extends PanelMenu.Button {
     this._themeColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
+    this._panelAnchorSignal = 0;
+    this._panelOffsetXSignal = 0;
+    this._panelOffsetYSignal = 0;
     this._textVerticalOffsetSignal = 0;
     this._preservePanelStateSignal = 0;
     this._savedPhrasesSignal = 0;
@@ -405,7 +521,17 @@ class Indicator extends PanelMenu.Button {
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;
+    if (this._monitorsChangedSignal)
+      Main.layoutManager.disconnect(this._monitorsChangedSignal);
+    this._monitorsChangedSignal = 0;
+    if (this._workareasChangedSignal)
+      global.display.disconnect(this._workareasChangedSignal);
+    this._workareasChangedSignal = 0;
     this._tooltip.destroy();
+    this.menu.sourceActor = this;
+    this.menu.focusActor = this;
+    this._menuAnchor.destroy();
+    this._menuAnchor = null;
     super.destroy();
   }
 });

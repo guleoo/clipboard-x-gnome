@@ -5,7 +5,6 @@ src/ui/panels/history/panel.js
 src/ui/panels/history/sync-action.js
 src/ui/panels/quick-phrases/panel.js
 src/ui/panels/tokenizer/panel.js
-src/ui/settings/panel-actions.js
 src/ui/settings/rows.js
 src/ui/settings/theme-color.js
 src/ui/settings/window.js
