@@ -44,6 +44,10 @@ export function normalize(toolbar, footer) {
   return result;
 }
 
+export function normalizeHidden(values) {
+  return [...new Set(values.filter(action => ACTIONS.includes(action)))];
+}
+
 export function move(layout, action, region, index) {
   if (!ACTIONS.includes(action) || !['toolbar', 'footer'].includes(region))
     return normalize(layout.toolbar, layout.footer);

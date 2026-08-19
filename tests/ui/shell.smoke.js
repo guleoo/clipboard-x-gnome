@@ -30,6 +30,21 @@ function foreground(actor) {
   return [color.red, color.green, color.blue, color.alpha];
 }
 
+function deleteTree(file) {
+  if (file.query_file_type(Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null) === Gio.FileType.DIRECTORY) {
+    const enumerator = file.enumerate_children(
+      Gio.FILE_ATTRIBUTE_STANDARD_NAME,
+      Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
+      null,
+    );
+    let info;
+    while ((info = enumerator.next_file(null)))
+      deleteTree(file.get_child(info.get_name()));
+    enumerator.close(null);
+  }
+  file.delete(null);
+}
+
 function capturedKeyEvent(key, modifiers = 0) {
   return {
     type: () => Clutter.EventType.KEY_PRESS,
@@ -127,6 +142,13 @@ export async function run() {
   'Configured panel action order was not applied');
   indicator._settings.set_strv('panel-toolbar-actions', originalToolbarActions);
   indicator._settings.set_strv('panel-footer-actions', originalFooterActions);
+  const originalHiddenActions = indicator._settings.get_strv('panel-hidden-actions');
+  indicator._settings.set_strv('panel-hidden-actions', ['screenshot', 'preferences']);
+  assert(history.screenshotButton.get_parent() === null
+      && history.preferencesButton.get_parent() === null
+      && history.toolbar.get_children().length === 2,
+  'Configured hidden panel icons remained visible');
+  indicator._settings.set_strv('panel-hidden-actions', originalHiddenActions);
   const originalPanelWidth = indicator._settings.get_int('panel-width');
   const originalPanelHeight = indicator._settings.get_int('panel-height');
   const resizedPanelWidth = Math.min(800, originalPanelWidth + 40);
@@ -618,7 +640,6 @@ export async function run() {
   assert(imageItem,
     'Clipboard X did not asynchronously create an image thumbnail');
   assert(imageItem.primary.delivery === 'eager', 'small clipboard image did not use eager delivery');
-  indicator._settings.set_string('editor-app-id', '');
   indicator._settings.set_string('editor-command', '/usr/bin/true %f');
   await extensionObject._editItem(imageItem);
   assert(imageItem.primary.path, 'Immediate image editing did not persist a stable original path');
@@ -701,6 +722,11 @@ export async function run() {
   syncDisabledRow.destroy();
 
   indicator._controller.remove(imageItem.id);
+  assert(indicator._settings.get_default_value('screenshot-directory').deepUnpack()
+      === '~/Pictures/screenshot',
+  'Default screenshot directory changed unexpectedly');
+  const screenshotDirectory = GLib.dir_make_tmp('cbx-screenshot-output-XXXXXX');
+  indicator._settings.set_string('screenshot-directory', screenshotDirectory);
   const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-screenshot-pipeline-XXXXXX.png');
   screenshotStream.get_output_stream().write_all(png, null);
   screenshotStream.close(null);
@@ -726,8 +752,8 @@ export async function run() {
   const screenshotItem = indicator._controller.items.find(item => item.isImage);
   assert(screenshotItem?.primary.path,
     'Screenshot pipeline did not add and persist the image history snapshot');
-  assert(Gio.File.new_for_uri(launchedEditorUri).get_path() === screenshotItem.primary.path,
-    'Screenshot editor did not receive the stable persisted image path');
+  assert(Gio.File.new_for_uri(launchedEditorUri).get_parent().get_path() === screenshotDirectory,
+    'Screenshot editor did not receive the configured persistent screenshot path');
   assert(indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
     'Screenshot pipeline did not write the image to the clipboard');
 
@@ -741,6 +767,7 @@ export async function run() {
   extensionObject._launchEditor = launchEditor;
   extensionObject._portal = screenshotPortal;
   screenshotFile.delete(null);
+  deleteTree(Gio.File.new_for_path(screenshotDirectory));
 
   extensionObject._pickColor();
   await Scripting.sleep(500);

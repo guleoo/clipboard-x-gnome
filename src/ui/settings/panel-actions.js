@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {move, normalize} from '../layouts/panel-actions.js';
+import {move, normalize, normalizeHidden} from '../layouts/panel-actions.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
 
 export function create(settings) {
@@ -39,6 +39,7 @@ export function create(settings) {
     settings.get_strv('panel-toolbar-actions'),
     settings.get_strv('panel-footer-actions'),
   );
+  const hidden = () => new Set(normalizeHidden(settings.get_strv('panel-hidden-actions')));
   const save = layout => {
     updating = true;
     settings.set_strv('panel-toolbar-actions', layout.toolbar);
@@ -47,8 +48,20 @@ export function create(settings) {
     render();
   };
   const place = (action, region, index) => save(move(current(), action, region, index));
+  const setVisible = (action, visible) => {
+    const values = hidden();
+    if (visible)
+      values.delete(action);
+    else
+      values.add(action);
+    updating = true;
+    settings.set_strv('panel-hidden-actions', [...values]);
+    updating = false;
+    render();
+  };
   const render = () => {
     const layout = current();
+    const hiddenActions = hidden();
     for (const [region, list] of sections) {
       while (list.get_first_child())
         list.remove(list.get_first_child());
@@ -58,6 +71,13 @@ export function create(settings) {
         const box = new Gtk.Box({spacing: 8, margin_start: 8, margin_end: 4});
         box.append(new Gtk.Image({icon_name: descriptor.icon, pixel_size: 16}));
         box.append(new Gtk.Label({label: descriptor.title, xalign: 0, hexpand: true}));
+        const visibility = new Gtk.Switch({
+          active: !hiddenActions.has(action),
+          valign: Gtk.Align.CENTER,
+          tooltip_text: _('Show icon'),
+        });
+        visibility.connect('notify::active', () => setVisible(action, visibility.active));
+        box.append(visibility);
         const up = new Gtk.Button({
           icon_name: 'go-up-symbolic',
           css_classes: ['flat'],
@@ -96,9 +116,14 @@ export function create(settings) {
     if (!updating)
       render();
   });
+  const hiddenSignal = settings.connect('changed::panel-hidden-actions', () => {
+    if (!updating)
+      render();
+  });
   disconnectWhenUnrooted(row, () => {
     settings.disconnect(toolbarSignal);
     settings.disconnect(footerSignal);
+    settings.disconnect(hiddenSignal);
   });
   render();
   return row;

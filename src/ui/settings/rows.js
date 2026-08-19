@@ -172,17 +172,4 @@ export class PreferenceRows {
     return row;
   }
 
-  editorApp() {
-    const applications = new Map();
-    for (const mimeType of ['image/png', 'image/jpeg', 'image/webp']) {
-      for (const app of Gio.AppInfo.get_all_for_type(mimeType)) {
-        if (app.get_id())
-          applications.set(app.get_id(), app);
-      }
-    }
-    const choices = [['', _('Custom command')], ...[...applications]
-      .sort((left, right) => left[1].get_display_name().localeCompare(right[1].get_display_name()))
-      .map(([id, app]) => [id, app.get_display_name()])];
-    return this.combo('editor-app-id', _('Application'), choices);
-  }
 }

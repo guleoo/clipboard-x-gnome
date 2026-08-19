@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import {buildEditorArgv, launchEditor} from '../../src/screenshot/editor-launcher.js';
 import {ScreenshotPortal} from '../../src/screenshot/portal.js';
+import {resolveDirectory, save as saveScreenshot} from '../../src/screenshot/storage.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -194,7 +195,6 @@ const oldPortal = new ScreenshotPortal({
 await assertRejects(oldPortal.capture('window'), /does not support/u, 'Portal v2 target negotiation');
 
 const editorProcess = await launchEditor({
-  appId: '',
   command: "/usr/bin/test %f = '/tmp/截图 editor test.png'",
   uri: 'file:///tmp/%E6%88%AA%E5%9B%BE%20editor%20test.png',
 });
@@ -214,7 +214,6 @@ const [standardInputFile, standardInputStream] = Gio.File.new_tmp('cbx-editor-st
 standardInputStream.get_output_stream().write_all(standardInputBytes.get_data(), null);
 standardInputStream.close(null);
 const standardInputProcess = await launchEditor({
-  appId: '',
   command: `/usr/bin/cmp - %i '${standardInputFile.get_path()}'`,
   uri: standardInputFile.get_uri(),
   bytes: standardInputBytes,
@@ -233,7 +232,6 @@ standardInputFile.delete(null);
 
 await assertRejects(
   launchEditor({
-    appId: '',
     command: 'gradia %i',
     uri: 'file:///tmp/image.png',
   }),
@@ -244,7 +242,6 @@ await assertRejects(
 let missingEditorRejected = false;
 try {
   await launchEditor({
-    appId: '',
     command: '/definitely/missing/clipboard-x-editor %u',
     uri: 'file:///tmp/image.png',
   });
@@ -253,14 +250,24 @@ try {
 }
 assert(missingEditorRejected, 'missing custom editor executable must be reported');
 
-let missingApplicationRejected = false;
-try {
-  await launchEditor({
-    appId: 'io.github.guleo.ClipboardX.Missing.desktop',
-    command: '',
-    uri: 'file:///tmp/image.png',
-  });
-} catch (error) {
-  missingApplicationRejected = /not installed/u.test(error.message);
-}
-assert(missingApplicationRejected, 'missing Desktop Application editor must be reported');
+assert(resolveDirectory('~/Pictures/screenshot', '/home/test') === '/home/test/Pictures/screenshot',
+  'home-relative screenshot directory was not expanded');
+await assertRejects(
+  Promise.resolve().then(() => resolveDirectory('Pictures/screenshot', '/home/test')),
+  /absolute path/u,
+  'relative screenshot directory',
+);
+const screenshotDirectory = GLib.dir_make_tmp('cbx-screenshot-storage-XXXXXX');
+const [storedSource, storedSourceStream] = Gio.File.new_tmp('cbx-screenshot-source-XXXXXX.png');
+storedSourceStream.get_output_stream().write_all(new TextEncoder().encode('stored screenshot'), null);
+storedSourceStream.close(null);
+const storedUri = await saveScreenshot(storedSource.get_uri(), screenshotDirectory);
+const storedFile = Gio.File.new_for_uri(storedUri);
+assert(storedFile.get_parent().get_path() === screenshotDirectory
+    && storedFile.query_exists(null)
+    && storedFile.get_basename().startsWith('Screenshot_')
+    && storedFile.get_basename().endsWith('.png'),
+  'Screenshot was not copied to its configured directory');
+storedFile.delete(null);
+storedSource.delete(null);
+Gio.File.new_for_path(screenshotDirectory).delete(null);

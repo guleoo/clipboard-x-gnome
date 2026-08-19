@@ -171,6 +171,10 @@
       <default>['private-mode', 'sync', 'clear-history', 'preferences']</default>
       <summary>Actions displayed in the panel footer, in order</summary>
     </key>
+    <key name="panel-hidden-actions" type="as">
+      <default>[]</default>
+      <summary>Actions hidden from the panel interface</summary>
+    </key>
     <key name="preserve-panel-state" type="b">
       <default>false</default>
       <summary>Reopen the clipboard panel in its previous view</summary>
@@ -327,9 +331,9 @@
       <default>false</default>
       <summary>Open screenshots in the configured image editor</summary>
     </key>
-    <key name="editor-app-id" type="s">
-      <default>''</default>
-      <summary>Desktop application ID of the image editor</summary>
+    <key name="screenshot-directory" type="s">
+      <default>'~/Pictures/screenshot'</default>
+      <summary>Directory used for persistent screenshot files</summary>
     </key>
     <key name="editor-command" type="s">
       <default>'gradia %i'</default>

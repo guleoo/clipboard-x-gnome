@@ -1,4 +1,11 @@
-import {ACTIONS, DEFAULT_FOOTER, DEFAULT_TOOLBAR, move, normalize} from '../../src/ui/layouts/panel-actions.js';
+import {
+  ACTIONS,
+  DEFAULT_FOOTER,
+  DEFAULT_TOOLBAR,
+  move,
+  normalize,
+  normalizeHidden,
+} from '../../src/ui/layouts/panel-actions.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -22,3 +29,6 @@ assert(!movedAcross.toolbar.includes('quick-phrases') && movedAcross.footer[1] =
 const movedWithin = move(defaults, 'screenshot', 'toolbar', 3);
 assert(movedWithin.toolbar.join(',') === 'color-picker,quick-phrases,screenshot',
   'moving an action within a region failed');
+
+assert(normalizeHidden(['screenshot', 'unknown', 'screenshot', 'sync']).join(',') === 'screenshot,sync',
+  'hidden actions were not normalized');

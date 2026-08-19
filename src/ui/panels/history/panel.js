@@ -8,7 +8,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {SearchEntry} from '../../controls/search-entry.js';
-import {normalize as normalizeActions} from '../../layouts/panel-actions.js';
+import {normalize as normalizeActions, normalizeHidden} from '../../layouts/panel-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 import {create as createItem} from './item.js';
@@ -188,6 +188,7 @@ export class HistoryPanel {
       settings.connect('changed::device-icon-kind', () => this._requestRefresh()),
       settings.connect('changed::panel-toolbar-actions', () => this._updateActions()),
       settings.connect('changed::panel-footer-actions', () => this._updateActions()),
+      settings.connect('changed::panel-hidden-actions', () => this._updateActions()),
     ];
   }
 
@@ -333,8 +334,8 @@ export class HistoryPanel {
   }
 
   setGeometry({width, height}) {
-    this._searchWidth = Math.max(140, width - 140);
-    this._updateSearchStyle();
+    this._panelWidth = width;
+    this._updateSearchWidth();
     this.actor.set_style(`height: ${height}px; max-height: ${height}px;`);
   }
 
@@ -371,17 +372,31 @@ export class HistoryPanel {
       this._settings.get_strv('panel-toolbar-actions'),
       this._settings.get_strv('panel-footer-actions'),
     );
+    const hidden = new Set(normalizeHidden(this._settings.get_strv('panel-hidden-actions')));
     for (const button of this._actionButtons.values()) {
       const parent = button.get_parent();
       if (parent)
         parent.remove_child(button);
     }
-    for (const action of layout.toolbar)
-      this.toolbar.add_child(this._actionButtons.get(action));
-    for (const action of layout.footer)
-      this.footer.addContent(this._actionButtons.get(action));
+    for (const action of layout.toolbar) {
+      if (!hidden.has(action))
+        this.toolbar.add_child(this._actionButtons.get(action));
+    }
+    for (const action of layout.footer) {
+      if (!hidden.has(action))
+        this.footer.addContent(this._actionButtons.get(action));
+    }
+    this._updateSearchWidth();
     if (this.focusGrid && this._isActive())
       this._requestRefresh();
+  }
+
+  _updateSearchWidth() {
+    if (!this._panelWidth)
+      return;
+    const toolbarWidth = this.toolbar.get_children().length * 36;
+    this._searchWidth = Math.max(140, this._panelWidth - 32 - toolbarWidth);
+    this._updateSearchStyle();
   }
 
   _setFocusRows(rows) {

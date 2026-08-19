@@ -1,21 +1,11 @@
 import Gio from 'gi://Gio';
-import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 
 export function buildEditorArgv(template, uri, localPath = null) {
   return parseEditorCommand(template, uri, localPath).argv;
 }
 
-export async function launchEditor({appId, command, uri, bytes = null, launchContext = null}) {
-  if (appId) {
-    const app = GioUnix.DesktopAppInfo.new(appId);
-    if (!app)
-      throw new Error(`Image editor is not installed: ${appId}`);
-    if (!app.launch_uris([uri], launchContext))
-      throw new Error(`Unable to launch image editor: ${appId}`);
-    return null;
-  }
-
+export async function launchEditor({command, uri, bytes = null}) {
   const file = Gio.File.new_for_uri(uri);
   const parsed = parseEditorCommand(command, uri, file.get_path());
   if (parsed.standardInput && !bytes)

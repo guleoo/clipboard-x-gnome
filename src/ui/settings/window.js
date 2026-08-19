@@ -7,6 +7,7 @@ import Gtk from 'gi://Gtk';
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
+import {resolveDirectory as resolveScreenshotDirectory} from '../../screenshot/storage.js';
 import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {effectiveCapabilities} from '../../sync/policy.js';
@@ -354,13 +355,25 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     screenshot.add(this._rows.switch('screenshot-add-history', _('Add to history')));
     screenshot.add(this._rows.switch('screenshot-write-clipboard', _('Copy screenshot')));
     screenshot.add(this._rows.switch('screenshot-open-editor', _('Open image editor')));
+    screenshot.add(this._rows.entry(
+      'screenshot-directory',
+      _('Save location'),
+      _('Absolute path or a path beginning with ~/'),
+      value => {
+        try {
+          resolveScreenshotDirectory(value);
+          return true;
+        } catch (_error) {
+          return false;
+        }
+      },
+    ));
 
     const editor = new Adw.PreferencesGroup({title: _('Image editing')});
     page.add(editor);
-    editor.add(this._rows.editorApp());
     editor.add(this._rows.entry(
       'editor-command',
-      _('Advanced command'),
+      _('Command'),
       _('%u is the URI, %f is a local path, %i is standard input and %% is a percent sign'),
       value => {
         try {
