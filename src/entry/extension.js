@@ -66,6 +66,7 @@ export default class ClipboardXExtension extends Extension {
       typeText: text => this._terminalInput.type(text),
       tokenizeText: text => this._textTokenizer.tokenize(text, {
         revision: this._settings.get_uint('tokenizer-dictionary-revision'),
+        dictionaryFiles: this._settings.get_strv('tokenizer-dictionary-files'),
       }),
       rememberInputTarget: () => this._terminalInput.rememberTarget(),
       openPreferences: () => this.openPreferences(),

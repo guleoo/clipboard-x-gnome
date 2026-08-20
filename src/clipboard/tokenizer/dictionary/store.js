@@ -119,17 +119,25 @@ export class DictionaryStore {
       || left.name.localeCompare(right.name));
   }
 
-  load(languageNames) {
+  load(languageNames, selectedFiles = []) {
     this.ensureSeeds();
     const locales = new Set(localeCandidates(languageNames));
     if (locales.size === 0)
       return new Lexicon();
     const lexicon = new Lexicon([], MAXIMUM_ACTIVE_ENTRIES);
-    for (const file of this._dictionaryFiles()
-      .sort((left, right) => left.get_basename().localeCompare(right.get_basename()))) {
+    const files = this._dictionaryFiles()
+      .sort((left, right) => left.get_basename().localeCompare(right.get_basename()))
+      .filter(file => locales.has(file.get_basename().match(FILE_PATTERN)?.[1]));
+    const enabled = new Set(selectedFiles);
+    let selected = enabled.size === 0
+      ? files
+      : files.filter(file => enabled.has(file.get_basename()));
+    if (selected.length === 0)
+      selected = files;
+    if (selected.length === 0)
+      return lexicon;
+    for (const file of selected) {
       const locale = file.get_basename().match(FILE_PATTERN)?.[1];
-      if (!locales.has(locale))
-        continue;
       try {
         lexicon.add(parseDictionary(loadText(file), {
           locale,

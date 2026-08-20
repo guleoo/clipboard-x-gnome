@@ -95,6 +95,29 @@ try {
     ['注销', '密钥'],
     'display locale should activate the matching pre-imported dictionary',
   );
+  GLib.file_set_contents(importSource.get_path(), [
+    '# locale: zh',
+    '# name: User Chinese dictionary',
+    '注销 100',
+  ].join('\n'));
+  const secondChinese = await store.importFile(importSource, 'zh');
+  const selectedTokenizer = new Tokenizer({
+    store,
+    languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
+  });
+  assertEqual(
+    selectedTokenizer.tokenize('注销密钥', {dictionaryFiles: [secondChinese.fileName]})
+      .map(token => token.text),
+    ['注销', '密', '钥'],
+    'enabling selected dictionaries should load only those files',
+  );
+  assertEqual(
+    selectedTokenizer.tokenize('注销密钥', {
+      dictionaryFiles: [initial[0].fileName, secondChinese.fileName],
+    }).map(token => token.text),
+    ['注销', '密钥'],
+    'multiple enabled dictionaries should be merged for the active language',
+  );
 
   const systemTokenizer = new Tokenizer({
     store,
@@ -113,7 +136,7 @@ try {
     '画像編集 80',
   ].join('\n'));
   const imported = await store.importFile(importSource, 'en');
-  assert(imported.locale === 'ja' && store.list().length === 2,
+  assert(imported.locale === 'ja' && store.list().length === 3,
     'import should preserve the dictionary-declared locale');
   const japaneseTokenizer = new Tokenizer({
     store,
@@ -130,6 +153,7 @@ try {
   assert(plainImported.locale === 'ko',
     'an imported dictionary without metadata should use the selected language code');
 
+  store.remove(secondChinese.fileName);
   store.remove(imported.fileName);
   store.remove(plainImported.fileName);
   assert(store.list().length === 1, 'imported dictionary removal');

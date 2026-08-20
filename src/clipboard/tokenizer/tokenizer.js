@@ -11,12 +11,12 @@ export class Tokenizer {
     this._lexicon = null;
   }
 
-  tokenize(text, {revision = 0} = {}) {
+  tokenize(text, {revision = 0, dictionaryFiles = []} = {}) {
     const languageNames = this._languageNames();
     const locales = localeCandidates(languageNames);
-    const cacheKey = `${revision}:${locales.join(',')}`;
+    const cacheKey = `${revision}:${dictionaryFiles.join(',')}:${locales.join(',')}`;
     if (cacheKey !== this._cacheKey) {
-      this._lexicon = this._store.load(languageNames);
+      this._lexicon = this._store.load(languageNames, dictionaryFiles);
       this._cacheKey = cacheKey;
     }
     if (!this._lexicon || this._lexicon.size === 0)

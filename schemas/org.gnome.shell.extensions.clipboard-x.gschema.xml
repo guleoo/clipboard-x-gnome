@@ -138,6 +138,10 @@
       <default>0</default>
       <summary>Revision used to reload imported tokenizer dictionaries</summary>
     </key>
+    <key name="tokenizer-dictionary-files" type="as">
+      <default>[]</default>
+      <summary>Enabled tokenizer dictionary files</summary>
+    </key>
     <key name="panel-confine-focus" type="b">
       <default>true</default>
       <summary>Keep arrow-key focus navigation inside the extension panel at its edges</summary>

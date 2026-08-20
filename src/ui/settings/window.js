@@ -184,11 +184,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
-    page.add(createDictionariesGroup({
-      settings,
-      store: this._dictionaryStore,
-      window,
-    }));
 
     const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
     page.add(privacy);
@@ -203,6 +198,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Excluded applications'),
       _('Comma-separated window classes'),
     ));
+    page.add(createDictionariesGroup({
+      settings,
+      store: this._dictionaryStore,
+      window,
+    }));
     return page;
   }
 

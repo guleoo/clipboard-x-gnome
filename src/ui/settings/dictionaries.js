@@ -6,6 +6,7 @@ import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions
 
 import {
   DICTIONARY_LOCALES,
+  localeCandidates,
   normalizeLocale,
   selectLocale,
 } from '../../clipboard/tokenizer/dictionary/locale.js';
@@ -90,15 +91,65 @@ export function create({settings, store, window}) {
   group.add(importRow);
 
   let dictionaryRows = [];
+  let refreshing = false;
+  const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
+  const matchingDictionaries = () => {
+    const locales = new Set(localeCandidates([selectedLocale()]));
+    return store.list().filter(dictionary => locales.has(dictionary.locale));
+  };
+  const enabledDictionaries = dictionaries => {
+    const configured = new Set(settings.get_strv('tokenizer-dictionary-files'));
+    if (configured.size === 0)
+      return new Set(dictionaries.map(dictionary => dictionary.fileName));
+    const matching = dictionaries.filter(dictionary => configured.has(dictionary.fileName));
+    return new Set((matching.length > 0 ? matching : dictionaries)
+      .map(dictionary => dictionary.fileName));
+  };
+  const setEnabledDictionaries = (dictionaries, enabled) => {
+    const allEnabled = dictionaries.length > 0
+      && dictionaries.every(dictionary => enabled.has(dictionary.fileName));
+    const next = allEnabled
+      ? []
+      : [...enabled].sort((left, right) => left.localeCompare(right));
+    if (JSON.stringify(settings.get_strv('tokenizer-dictionary-files')) === JSON.stringify(next))
+      return;
+    settings.set_strv('tokenizer-dictionary-files', next);
+    bumpRevision(settings);
+  };
   const refresh = () => {
+    refreshing = true;
     for (const row of dictionaryRows)
       group.remove(row);
-    dictionaryRows = store.list().map(dictionary => {
+    const dictionaries = matchingDictionaries();
+    const enabled = enabledDictionaries(dictionaries);
+    dictionaryRows = dictionaries.map(dictionary => {
       const row = new Adw.ActionRow({
         title: dictionary.name,
         subtitle: `${dictionary.locale} · ${dictionary.entryCount} ${_('entries')}`,
       });
       const file = store.getFile(dictionary.fileName);
+      const radio = new Gtk.CheckButton({
+        active: enabled.has(dictionary.fileName),
+        valign: Gtk.Align.CENTER,
+      });
+      radio.connect('notify::active', () => {
+        if (refreshing)
+          return;
+        const next = enabledDictionaries(dictionaries);
+        if (!radio.active && next.size === 1) {
+          refreshing = true;
+          radio.active = true;
+          refreshing = false;
+          return;
+        }
+        if (radio.active)
+          next.add(dictionary.fileName);
+        else
+          next.delete(dictionary.fileName);
+        setEnabledDictionaries(dictionaries, next);
+      });
+      row.add_prefix(radio);
+      row.activatable_widget = radio;
       const edit = new Gtk.Button({
         icon_name: 'document-edit-symbolic',
         tooltip_text: _('Edit dictionary'),
@@ -134,7 +185,10 @@ export function create({settings, store, window}) {
       group.add(row);
       return row;
     });
+    refreshing = false;
   };
+
+  localeRow.connect('notify::selected', refresh);
 
   importButton.connect('clicked', () => {
     const locale = languages[localeRow.selected]?.locale ?? currentLocale;
