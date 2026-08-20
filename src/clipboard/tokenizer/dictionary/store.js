@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 
 import {loadFile, writeFile} from '../../../common/files.js';
 import {parseDictionary, serializeDictionary} from './format.js';
-import {inferLocale, localeCandidates} from './locale.js';
+import {inferLocale, localeCandidates, SYSTEM_DICTIONARY_ID} from './locale.js';
 import {Lexicon} from './lexicon.js';
 
 const FILE_PATTERN = /^([a-z]{2,3}(?:_[a-z0-9]{2,8})*)--[a-z0-9-]+\.dict$/u;
@@ -123,19 +123,18 @@ export class DictionaryStore {
     this.ensureSeeds();
     const locales = new Set(localeCandidates(languageNames));
     if (locales.size === 0)
-      return new Lexicon();
+      return {lexicon: new Lexicon(), systemEnabled: true};
     const lexicon = new Lexicon([], MAXIMUM_ACTIVE_ENTRIES);
     const files = this._dictionaryFiles()
       .sort((left, right) => left.get_basename().localeCompare(right.get_basename()))
       .filter(file => locales.has(file.get_basename().match(FILE_PATTERN)?.[1]));
     const enabled = new Set(selectedFiles);
+    const systemEnabled = enabled.size === 0 || enabled.has(SYSTEM_DICTIONARY_ID);
     let selected = enabled.size === 0
       ? files
       : files.filter(file => enabled.has(file.get_basename()));
     if (selected.length === 0)
-      selected = files;
-    if (selected.length === 0)
-      return lexicon;
+      return {lexicon, systemEnabled};
     for (const file of selected) {
       const locale = file.get_basename().match(FILE_PATTERN)?.[1];
       try {
@@ -147,7 +146,7 @@ export class DictionaryStore {
         console.error(`Clipboard X ignored dictionary ${file.get_uri()}: ${error.message}`);
       }
     }
-    return lexicon;
+    return {lexicon, systemEnabled};
   }
 
   async importFile(file, defaultLocale) {

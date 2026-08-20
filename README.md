@@ -63,7 +63,8 @@ gnome-extensions enable clipboard-x@guleo.github.io
 直接用系统默认文本编辑器编辑，也可在文件管理器中打开其存储位置。随扩展提供的中文
 精简词库首次使用时也会导入同一目录，此后与用户词库平级，可以删除且不会自动恢复。
 设置中可以针对当前语言同时启用多个词库，分词会合并已启用词库；没有匹配项时直接
-使用系统 `Intl.Segmenter`。
+使用系统 `Intl.Segmenter`。系统 `Intl.Segmenter` 本身也作为默认启用的词库项显示在
+列表中，可以和用户词库一起开关。
 
 图片编辑器优先使用设置中选择的 Desktop Application。选择“自定义命令”时支持：
 

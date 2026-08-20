@@ -1,5 +1,7 @@
 const LOCALE_PATTERN = /^[a-z]{2,3}(?:[_-][a-z0-9]{2,8})*$/iu;
 
+export const SYSTEM_DICTIONARY_ID = 'system';
+
 export const DICTIONARY_LOCALES = Object.freeze([
   'ar',
   'bg',

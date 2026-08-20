@@ -9,6 +9,7 @@ import {
   localeCandidates,
   normalizeLocale,
   selectLocale,
+  SYSTEM_DICTIONARY_ID,
 } from '../../clipboard/tokenizer/dictionary/locale.js';
 
 function bumpRevision(settings) {
@@ -100,13 +101,18 @@ export function create({settings, store, window}) {
   const enabledDictionaries = dictionaries => {
     const configured = new Set(settings.get_strv('tokenizer-dictionary-files'));
     if (configured.size === 0)
-      return new Set(dictionaries.map(dictionary => dictionary.fileName));
+      return new Set([
+        SYSTEM_DICTIONARY_ID,
+        ...dictionaries.map(dictionary => dictionary.fileName),
+      ]);
     const matching = dictionaries.filter(dictionary => configured.has(dictionary.fileName));
-    return new Set((matching.length > 0 ? matching : dictionaries)
-      .map(dictionary => dictionary.fileName));
+    return new Set([
+      ...(configured.has(SYSTEM_DICTIONARY_ID) ? [SYSTEM_DICTIONARY_ID] : []),
+      ...matching.map(dictionary => dictionary.fileName),
+    ]);
   };
   const setEnabledDictionaries = (dictionaries, enabled) => {
-    const allEnabled = dictionaries.length > 0
+    const allEnabled = enabled.has(SYSTEM_DICTIONARY_ID)
       && dictionaries.every(dictionary => enabled.has(dictionary.fileName));
     const next = allEnabled
       ? []
@@ -122,66 +128,79 @@ export function create({settings, store, window}) {
       group.remove(row);
     const dictionaries = matchingDictionaries();
     const enabled = enabledDictionaries(dictionaries);
-    dictionaryRows = dictionaries.map(dictionary => {
+    const entries = [
+      {
+        fileName: SYSTEM_DICTIONARY_ID,
+        name: _('System tokenizer only'),
+        subtitle: '',
+        system: true,
+      },
+      ...dictionaries.map(dictionary => ({...dictionary, system: false})),
+    ];
+    dictionaryRows = entries.map(dictionary => {
       const row = new Adw.ActionRow({
         title: dictionary.name,
-        subtitle: `${dictionary.locale} · ${dictionary.entryCount} ${_('entries')}`,
+        subtitle: dictionary.system
+          ? ''
+          : `${dictionary.locale} · ${dictionary.entryCount} ${_('entries')}`,
       });
-      const file = store.getFile(dictionary.fileName);
-      const radio = new Gtk.CheckButton({
+      const checkButton = new Gtk.CheckButton({
         active: enabled.has(dictionary.fileName),
         valign: Gtk.Align.CENTER,
       });
-      radio.connect('notify::active', () => {
+      checkButton.connect('notify::active', () => {
         if (refreshing)
           return;
         const next = enabledDictionaries(dictionaries);
-        if (!radio.active && next.size === 1) {
+        if (!checkButton.active && next.size === 1) {
           refreshing = true;
-          radio.active = true;
+          checkButton.active = true;
           refreshing = false;
           return;
         }
-        if (radio.active)
+        if (checkButton.active)
           next.add(dictionary.fileName);
         else
           next.delete(dictionary.fileName);
         setEnabledDictionaries(dictionaries, next);
       });
-      row.add_prefix(radio);
-      row.activatable_widget = radio;
-      const edit = new Gtk.Button({
-        icon_name: 'document-edit-symbolic',
-        tooltip_text: _('Edit dictionary'),
-        valign: Gtk.Align.CENTER,
-        css_classes: ['flat'],
-      });
-      edit.connect('clicked', () => editDictionary(window, file, () => bumpRevision(settings)));
-      row.add_suffix(edit);
-      const show = new Gtk.Button({
-        icon_name: 'folder-open-symbolic',
-        tooltip_text: _('Open containing folder'),
-        valign: Gtk.Align.CENTER,
-        css_classes: ['flat'],
-      });
-      show.connect('clicked', () => showDictionary(window, file));
-      row.add_suffix(show);
-      const remove = new Gtk.Button({
-        icon_name: 'user-trash-symbolic',
-        tooltip_text: _('Remove dictionary'),
-        valign: Gtk.Align.CENTER,
-        css_classes: ['flat'],
-      });
-      remove.connect('clicked', () => {
-        try {
-          store.remove(dictionary.fileName);
-          bumpRevision(settings);
-          refresh();
-        } catch (error) {
-          showError(window, error);
-        }
-      });
-      row.add_suffix(remove);
+      row.add_prefix(checkButton);
+      row.activatable_widget = checkButton;
+      if (!dictionary.system) {
+        const file = store.getFile(dictionary.fileName);
+        const edit = new Gtk.Button({
+          icon_name: 'document-edit-symbolic',
+          tooltip_text: _('Edit dictionary'),
+          valign: Gtk.Align.CENTER,
+          css_classes: ['flat'],
+        });
+        edit.connect('clicked', () => editDictionary(window, file, () => bumpRevision(settings)));
+        row.add_suffix(edit);
+        const show = new Gtk.Button({
+          icon_name: 'folder-open-symbolic',
+          tooltip_text: _('Open containing folder'),
+          valign: Gtk.Align.CENTER,
+          css_classes: ['flat'],
+        });
+        show.connect('clicked', () => showDictionary(window, file));
+        row.add_suffix(show);
+        const remove = new Gtk.Button({
+          icon_name: 'user-trash-symbolic',
+          tooltip_text: _('Remove dictionary'),
+          valign: Gtk.Align.CENTER,
+          css_classes: ['flat'],
+        });
+        remove.connect('clicked', () => {
+          try {
+            store.remove(dictionary.fileName);
+            bumpRevision(settings);
+            refresh();
+          } catch (error) {
+            showError(window, error);
+          }
+        });
+        row.add_suffix(remove);
+      }
       group.add(row);
       return row;
     });

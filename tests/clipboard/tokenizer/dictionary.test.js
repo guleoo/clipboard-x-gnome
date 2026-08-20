@@ -7,6 +7,7 @@ import {
   localeCandidates,
   normalizeLocale,
   selectLocale,
+  SYSTEM_DICTIONARY_ID,
 } from '../../../src/clipboard/tokenizer/dictionary/locale.js';
 import {Lexicon, parseEntries} from '../../../src/clipboard/tokenizer/dictionary/lexicon.js';
 import {DictionaryStore} from '../../../src/clipboard/tokenizer/dictionary/store.js';
@@ -95,6 +96,12 @@ try {
     ['注销', '密钥'],
     'display locale should activate the matching pre-imported dictionary',
   );
+  const defaultLoad = store.load(['zh_CN.UTF-8', 'zh', 'C']);
+  assert(defaultLoad.systemEnabled && defaultLoad.lexicon.size > 0,
+    'the default dictionary plan should enable the system tokenizer and matching files');
+  const systemOnlyLoad = store.load(['zh_CN.UTF-8', 'zh', 'C'], [SYSTEM_DICTIONARY_ID]);
+  assert(systemOnlyLoad.systemEnabled && systemOnlyLoad.lexicon.size === 0,
+    'the system tokenizer should be selectable without loading user dictionaries');
   GLib.file_set_contents(importSource.get_path(), [
     '# locale: zh',
     '# name: User Chinese dictionary',

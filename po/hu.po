@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:34+0800\n"
+"POT-Creation-Date: 2026-08-20 21:38+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: hu\n"
@@ -273,62 +273,66 @@ msgstr "Szinkronizálás"
 msgid "Clear history"
 msgstr "Előzmények törlése"
 
-#: src/ui/settings/dictionaries.js:20
+#: src/ui/settings/dictionaries.js:22
 msgid "Dictionary operation failed"
 msgstr "A szótárművelet sikertelen"
 
-#: src/ui/settings/dictionaries.js:25
+#: src/ui/settings/dictionaries.js:27
 msgid "Close"
 msgstr "Bezárás"
 
-#: src/ui/settings/dictionaries.js:66
+#: src/ui/settings/dictionaries.js:68
 msgid "Dictionaries"
 msgstr "Szótárak"
 
-#: src/ui/settings/dictionaries.js:67
+#: src/ui/settings/dictionaries.js:69
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Az aktuális megjelenítési nyelvhez illő szótárak automatikusan betöltődnek."
 
-#: src/ui/settings/dictionaries.js:73
+#: src/ui/settings/dictionaries.js:75
 msgid "Language for import"
 msgstr "Importálási nyelv"
 
-#: src/ui/settings/dictionaries.js:77
+#: src/ui/settings/dictionaries.js:79
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr ""
 "Akkor használatos, ha a szótár nem ad meg „# locale: language-code” sort."
 
-#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
+#: src/ui/settings/dictionaries.js:83 src/ui/settings/dictionaries.js:215
 msgid "Import dictionary"
 msgstr "Szótár importálása"
 
-#: src/ui/settings/dictionaries.js:82
+#: src/ui/settings/dictionaries.js:84
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "UTF-8 szöveg; soronként egy szó és opcionális gyakoriság"
 
-#: src/ui/settings/dictionaries.js:85
+#: src/ui/settings/dictionaries.js:87
 msgid "Import…"
 msgstr "Importálás…"
 
-#: src/ui/settings/dictionaries.js:99
+#: src/ui/settings/dictionaries.js:134
+msgid "System tokenizer only"
+msgstr "Csak a rendszer szegmentálója"
+
+#: src/ui/settings/dictionaries.js:145
 msgid "entries"
 msgstr "bejegyzés"
 
-#: src/ui/settings/dictionaries.js:104
+#: src/ui/settings/dictionaries.js:173
 msgid "Edit dictionary"
 msgstr "Szótár szerkesztése"
 
-#: src/ui/settings/dictionaries.js:112
+#: src/ui/settings/dictionaries.js:181
 msgid "Open containing folder"
 msgstr "Tartalmazó mappa megnyitása"
 
-#: src/ui/settings/dictionaries.js:120
+#: src/ui/settings/dictionaries.js:189
 msgid "Remove dictionary"
 msgstr "Szótár eltávolítása"
 
-#: src/ui/settings/dictionaries.js:159
+#: src/ui/settings/dictionaries.js:232
 msgid "Dictionary import failed"
 msgstr "A szótár importálása sikertelen"
 
@@ -552,35 +556,35 @@ msgstr "Tokenizáló"
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:193
+#: src/ui/settings/window.js:188
 msgid "Privacy"
 msgstr ""
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:190
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:196 src/ui/settings/window.js:323
+#: src/ui/settings/window.js:191 src/ui/settings/window.js:323
 msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/settings/window.js:197
+#: src/ui/settings/window.js:192
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:193
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:199
+#: src/ui/settings/window.js:194
 msgid "Store like other history"
 msgstr ""
 
-#: src/ui/settings/window.js:203
+#: src/ui/settings/window.js:198
 msgid "Excluded applications"
 msgstr "Kizárt alkalmazások"
 
-#: src/ui/settings/window.js:204
+#: src/ui/settings/window.js:199
 msgid "Comma-separated window classes"
 msgstr ""
 
@@ -933,9 +937,6 @@ msgstr ""
 
 #~ msgid "Dictionary files"
 #~ msgstr "Szótárfájlok"
-
-#~ msgid "System tokenizer only"
-#~ msgstr "Csak a rendszer szegmentálója"
 
 #~ msgid "Custom Chinese words"
 #~ msgstr "Egyéni kínai szavak"

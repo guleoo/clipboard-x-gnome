@@ -9,6 +9,7 @@ export class Tokenizer {
     this._languageNames = languageNames;
     this._cacheKey = '';
     this._lexicon = null;
+    this._systemEnabled = true;
   }
 
   tokenize(text, {revision = 0, dictionaryFiles = []} = {}) {
@@ -16,13 +17,18 @@ export class Tokenizer {
     const locales = localeCandidates(languageNames);
     const cacheKey = `${revision}:${dictionaryFiles.join(',')}:${locales.join(',')}`;
     if (cacheKey !== this._cacheKey) {
-      this._lexicon = this._store.load(languageNames, dictionaryFiles);
+      const loaded = this._store.load(languageNames, dictionaryFiles);
+      this._lexicon = loaded.lexicon;
+      this._systemEnabled = loaded.systemEnabled;
       this._cacheKey = cacheKey;
     }
     if (!this._lexicon || this._lexicon.size === 0)
       return tokenizeText(text);
     return tokenizeText(text, {
-      segmentWordRun: (value, fallback) => this._lexicon.segment(value, fallback),
+      segmentWordRun: (value, fallback) => this._lexicon.segment(
+        value,
+        this._systemEnabled ? fallback : [],
+      ),
     });
   }
 }

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:34+0800\n"
+"POT-Creation-Date: 2026-08-20 21:38+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: tr\n"
@@ -273,61 +273,65 @@ msgstr "Eşleme"
 msgid "Clear history"
 msgstr "Geçmişi temizle"
 
-#: src/ui/settings/dictionaries.js:20
+#: src/ui/settings/dictionaries.js:22
 msgid "Dictionary operation failed"
 msgstr "Sözlük işlemi başarısız oldu"
 
-#: src/ui/settings/dictionaries.js:25
+#: src/ui/settings/dictionaries.js:27
 msgid "Close"
 msgstr "Kapat"
 
-#: src/ui/settings/dictionaries.js:66
+#: src/ui/settings/dictionaries.js:68
 msgid "Dictionaries"
 msgstr "Sözlükler"
 
-#: src/ui/settings/dictionaries.js:67
+#: src/ui/settings/dictionaries.js:69
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Geçerli görüntüleme diliyle eşleşen sözlükler otomatik olarak yüklenir."
 
-#: src/ui/settings/dictionaries.js:73
+#: src/ui/settings/dictionaries.js:75
 msgid "Language for import"
 msgstr "İçe aktarma dili"
 
-#: src/ui/settings/dictionaries.js:77
+#: src/ui/settings/dictionaries.js:79
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Sözlük “# locale: language-code” bildirmediğinde kullanılır."
 
-#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
+#: src/ui/settings/dictionaries.js:83 src/ui/settings/dictionaries.js:215
 msgid "Import dictionary"
 msgstr "Sözlük içe aktar"
 
-#: src/ui/settings/dictionaries.js:82
+#: src/ui/settings/dictionaries.js:84
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "UTF-8 metni; her satırda bir sözcük ve isteğe bağlı sıklık"
 
-#: src/ui/settings/dictionaries.js:85
+#: src/ui/settings/dictionaries.js:87
 msgid "Import…"
 msgstr "İçe aktar…"
 
-#: src/ui/settings/dictionaries.js:99
+#: src/ui/settings/dictionaries.js:134
+msgid "System tokenizer only"
+msgstr "Yalnızca sistem bölümleyicisi"
+
+#: src/ui/settings/dictionaries.js:145
 msgid "entries"
 msgstr "girdi"
 
-#: src/ui/settings/dictionaries.js:104
+#: src/ui/settings/dictionaries.js:173
 msgid "Edit dictionary"
 msgstr "Sözlüğü düzenle"
 
-#: src/ui/settings/dictionaries.js:112
+#: src/ui/settings/dictionaries.js:181
 msgid "Open containing folder"
 msgstr "Bulunduğu klasörü aç"
 
-#: src/ui/settings/dictionaries.js:120
+#: src/ui/settings/dictionaries.js:189
 msgid "Remove dictionary"
 msgstr "Sözlüğü kaldır"
 
-#: src/ui/settings/dictionaries.js:159
+#: src/ui/settings/dictionaries.js:232
 msgid "Dictionary import failed"
 msgstr "Sözlük içe aktarılamadı"
 
@@ -551,35 +555,35 @@ msgstr "Belirteç ayırıcı"
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:193
+#: src/ui/settings/window.js:188
 msgid "Privacy"
 msgstr ""
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:190
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:196 src/ui/settings/window.js:323
+#: src/ui/settings/window.js:191 src/ui/settings/window.js:323
 msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/settings/window.js:197
+#: src/ui/settings/window.js:192
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:193
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:199
+#: src/ui/settings/window.js:194
 msgid "Store like other history"
 msgstr ""
 
-#: src/ui/settings/window.js:203
+#: src/ui/settings/window.js:198
 msgid "Excluded applications"
 msgstr "Dışlanan Uygulamalar"
 
-#: src/ui/settings/window.js:204
+#: src/ui/settings/window.js:199
 msgid "Comma-separated window classes"
 msgstr ""
 
@@ -932,9 +936,6 @@ msgstr ""
 
 #~ msgid "Dictionary files"
 #~ msgstr "Sözlük dosyaları"
-
-#~ msgid "System tokenizer only"
-#~ msgstr "Yalnızca sistem bölümleyicisi"
 
 #~ msgid "Custom Chinese words"
 #~ msgstr "Özel Çince sözcükler"

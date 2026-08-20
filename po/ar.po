@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-19 19:34+0800\n"
+"POT-Creation-Date: 2026-08-20 21:38+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ar\n"
@@ -272,60 +272,64 @@ msgstr "المزامنة"
 msgid "Clear history"
 msgstr "محو السجل"
 
-#: src/ui/settings/dictionaries.js:20
+#: src/ui/settings/dictionaries.js:22
 msgid "Dictionary operation failed"
 msgstr "فشلت عملية القاموس"
 
-#: src/ui/settings/dictionaries.js:25
+#: src/ui/settings/dictionaries.js:27
 msgid "Close"
 msgstr "إغلاق"
 
-#: src/ui/settings/dictionaries.js:66
+#: src/ui/settings/dictionaries.js:68
 msgid "Dictionaries"
 msgstr "القواميس"
 
-#: src/ui/settings/dictionaries.js:67
+#: src/ui/settings/dictionaries.js:69
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr "تُحمّل القواميس المطابقة للغة العرض الحالية تلقائيًا."
 
-#: src/ui/settings/dictionaries.js:73
+#: src/ui/settings/dictionaries.js:75
 msgid "Language for import"
 msgstr "لغة الاستيراد"
 
-#: src/ui/settings/dictionaries.js:77
+#: src/ui/settings/dictionaries.js:79
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "يُستخدم عندما لا يعلن القاموس “# locale: language-code”."
 
-#: src/ui/settings/dictionaries.js:81 src/ui/settings/dictionaries.js:142
+#: src/ui/settings/dictionaries.js:83 src/ui/settings/dictionaries.js:215
 msgid "Import dictionary"
 msgstr "استيراد قاموس"
 
-#: src/ui/settings/dictionaries.js:82
+#: src/ui/settings/dictionaries.js:84
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "نص UTF-8؛ كلمة واحدة وتكرار اختياري في كل سطر"
 
-#: src/ui/settings/dictionaries.js:85
+#: src/ui/settings/dictionaries.js:87
 msgid "Import…"
 msgstr "استيراد…"
 
-#: src/ui/settings/dictionaries.js:99
+#: src/ui/settings/dictionaries.js:134
+msgid "System tokenizer only"
+msgstr "محلل النظام فقط"
+
+#: src/ui/settings/dictionaries.js:145
 msgid "entries"
 msgstr "مدخلات"
 
-#: src/ui/settings/dictionaries.js:104
+#: src/ui/settings/dictionaries.js:173
 msgid "Edit dictionary"
 msgstr "تحرير القاموس"
 
-#: src/ui/settings/dictionaries.js:112
+#: src/ui/settings/dictionaries.js:181
 msgid "Open containing folder"
 msgstr "فتح المجلد الحاوي"
 
-#: src/ui/settings/dictionaries.js:120
+#: src/ui/settings/dictionaries.js:189
 msgid "Remove dictionary"
 msgstr "إزالة القاموس"
 
-#: src/ui/settings/dictionaries.js:159
+#: src/ui/settings/dictionaries.js:232
 msgid "Dictionary import failed"
 msgstr "فشل استيراد القاموس"
 
@@ -549,35 +553,35 @@ msgstr "مُجزِّئ النص"
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:193
+#: src/ui/settings/window.js:188
 msgid "Privacy"
 msgstr "الخصوصية"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:190
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:196 src/ui/settings/window.js:323
+#: src/ui/settings/window.js:191 src/ui/settings/window.js:323
 msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/settings/window.js:197
+#: src/ui/settings/window.js:192
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:193
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:199
+#: src/ui/settings/window.js:194
 msgid "Store like other history"
 msgstr ""
 
-#: src/ui/settings/window.js:203
+#: src/ui/settings/window.js:198
 msgid "Excluded applications"
 msgstr ""
 
-#: src/ui/settings/window.js:204
+#: src/ui/settings/window.js:199
 msgid "Comma-separated window classes"
 msgstr ""
 
@@ -930,9 +934,6 @@ msgstr ""
 
 #~ msgid "Dictionary files"
 #~ msgstr "ملفات القاموس"
-
-#~ msgid "System tokenizer only"
-#~ msgstr "محلل النظام فقط"
 
 #~ msgid "Custom Chinese words"
 #~ msgstr "كلمات صينية مخصصة"
