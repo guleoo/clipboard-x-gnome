@@ -128,6 +128,19 @@ CLIPBOARD_X_TRANSLATION_ONLY=1` 运行同一个 Shell 冒烟脚本。
 项目不使用 ESLint；构建验收使用 Node 语法检查、GJS 测试、协议互操作测试和真实
 GNOME Shell 无头会话。
 
+词库性能对比可以使用独立 benchmark。它会在两个独立的 GJS 子进程中分别测量精简
+词库和外部完整词库的词条数、文件大小、首次加载耗时、缓存后分词耗时和 RSS 增量：
+
+```sh
+curl --fail --location \\
+  https://raw.githubusercontent.com/yanyiwu/cppjieba/master/dict/jieba.dict.utf8 \\
+  --output /tmp/jieba.dict.utf8
+gjs -m tools/benchmark-tokenizer.js /tmp/jieba.dict.utf8 2000
+```
+
+完整词库只作为 benchmark 输入，不会被提交到扩展包；脚本会复用正式的词库解析和
+分词加载路径。
+
 完整的阶段要求与自动化证据对应关系见 [开发完成审计](docs/completion-audit.md)。
 
 ## 许可证
