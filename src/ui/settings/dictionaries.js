@@ -131,7 +131,7 @@ export function create({settings, store, window}) {
     const entries = [
       {
         fileName: SYSTEM_DICTIONARY_ID,
-        name: _('System tokenizer only'),
+        name: _('System tokenizer'),
         subtitle: '',
         system: true,
       },
@@ -144,28 +144,28 @@ export function create({settings, store, window}) {
           ? ''
           : `${dictionary.locale} · ${dictionary.entryCount} ${_('entries')}`,
       });
-      const checkButton = new Gtk.CheckButton({
+      const toggle = new Gtk.Switch({
         active: enabled.has(dictionary.fileName),
         valign: Gtk.Align.CENTER,
       });
-      checkButton.connect('notify::active', () => {
+      toggle.connect('notify::active', () => {
         if (refreshing)
           return;
         const next = enabledDictionaries(dictionaries);
-        if (!checkButton.active && next.size === 1) {
+        if (!toggle.active && next.size === 1) {
           refreshing = true;
-          checkButton.active = true;
+          toggle.active = true;
           refreshing = false;
           return;
         }
-        if (checkButton.active)
+        if (toggle.active)
           next.add(dictionary.fileName);
         else
           next.delete(dictionary.fileName);
         setEnabledDictionaries(dictionaries, next);
       });
-      row.add_prefix(checkButton);
-      row.activatable_widget = checkButton;
+      row.add_suffix(toggle);
+      row.activatable_widget = toggle;
       if (!dictionary.system) {
         const file = store.getFile(dictionary.fileName);
         const edit = new Gtk.Button({

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-20 21:38+0800\n"
+"POT-Creation-Date: 2026-08-20 21:50+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fa\n"
@@ -310,8 +310,8 @@ msgid "Import…"
 msgstr "درون‌ریزی…"
 
 #: src/ui/settings/dictionaries.js:134
-msgid "System tokenizer only"
-msgstr "فقط قطعه‌بند سامانه"
+msgid "System tokenizer"
+msgstr "قطعه‌بند سامانه"
 
 #: src/ui/settings/dictionaries.js:145
 msgid "entries"

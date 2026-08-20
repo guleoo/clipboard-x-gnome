@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-20 21:38+0800\n"
+"POT-Creation-Date: 2026-08-20 21:50+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ko\n"
@@ -311,8 +311,8 @@ msgid "Import…"
 msgstr "가져오기…"
 
 #: src/ui/settings/dictionaries.js:134
-msgid "System tokenizer only"
-msgstr "시스템 분리기만 사용"
+msgid "System tokenizer"
+msgstr "시스템 분리기"
 
 #: src/ui/settings/dictionaries.js:145
 msgid "entries"
