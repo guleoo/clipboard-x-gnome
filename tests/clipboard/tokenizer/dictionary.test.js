@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import {parseDictionary, serializeDictionary} from '../../../src/clipboard/tokenizer/dictionary/format.js';
 import {
   DICTIONARY_LOCALES,
+  DICTIONARY_REQUIRED_LOCALES,
   localeCandidates,
   normalizeLocale,
   requiresDictionary,
@@ -61,6 +62,11 @@ assertEqual(selectLocale(['vi_VN.UTF-8', 'vi', 'C']), 'en',
   'unsupported display languages should fall back to English');
 assert(DICTIONARY_LOCALES.includes('en') && DICTIONARY_LOCALES.includes('zh_cn'),
   'dictionary language choices should include source and translated locales');
+assertEqual(
+  DICTIONARY_LOCALES.filter(locale => DICTIONARY_REQUIRED_LOCALES.includes(locale.split('_')[0])),
+  ['ja', 'zh_cn'],
+  'dictionary settings should only offer languages that need an external dictionary',
+);
 assertEqual(parseEntries('注销 80\n# ignored\ninvalid-word 20').map(entry => entry.word), ['注销'],
   'dictionary entry parsing');
 

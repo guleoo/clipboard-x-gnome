@@ -6,6 +6,7 @@ import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions
 
 import {
   DICTIONARY_LOCALES,
+  DICTIONARY_REQUIRED_LOCALES,
   localeCandidates,
   normalizeLocale,
   requiresDictionary,
@@ -32,7 +33,9 @@ function showError(window, error, heading = _('Dictionary operation failed')) {
 function languageChoices(languageNames) {
   const displayLocale = normalizeLocale(languageNames[0]) || 'en';
   const names = new Intl.DisplayNames([displayLocale.replaceAll('_', '-')], {type: 'language'});
-  return DICTIONARY_LOCALES.map(locale => {
+  const dictionaryLocales = DICTIONARY_LOCALES.filter(locale =>
+    DICTIONARY_REQUIRED_LOCALES.includes(locale.split('_')[0]));
+  return dictionaryLocales.map(locale => {
     const languageTag = locale.replaceAll('_', '-');
     return {
       locale,
