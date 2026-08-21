@@ -8,6 +8,7 @@ import {
   DICTIONARY_LOCALES,
   localeCandidates,
   normalizeLocale,
+  requiresDictionary,
   selectLocale,
   SYSTEM_DICTIONARY_ID,
 } from '../../clipboard/tokenizer/dictionary/locale.js';
@@ -64,11 +65,13 @@ function showDictionary(window, file) {
 }
 
 export function create({settings, store, window}) {
+  const languageNames = GLib.get_language_names();
+  if (!requiresDictionary(languageNames))
+    return null;
   const group = new Adw.PreferencesGroup({
     title: _('Dictionaries'),
     description: _('Dictionaries matching the current display language are loaded automatically.'),
   });
-  const languageNames = GLib.get_language_names();
   const languages = languageChoices(languageNames);
   const currentLocale = selectLocale(languageNames);
   const localeRow = new Adw.ComboRow({

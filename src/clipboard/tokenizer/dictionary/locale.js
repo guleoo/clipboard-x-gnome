@@ -2,6 +2,8 @@ const LOCALE_PATTERN = /^[a-z]{2,3}(?:[_-][a-z0-9]{2,8})*$/iu;
 
 export const SYSTEM_DICTIONARY_ID = 'system';
 
+export const DICTIONARY_REQUIRED_LOCALES = Object.freeze(['ja', 'zh']);
+
 export const DICTIONARY_LOCALES = Object.freeze([
   'ar',
   'bg',
@@ -54,6 +56,11 @@ export function localeCandidates(languageNames) {
     return values;
   }
   return ['en'];
+}
+
+export function requiresDictionary(languageNames) {
+  return localeCandidates(languageNames)
+    .some(candidate => DICTIONARY_REQUIRED_LOCALES.includes(candidate.split('_')[0]));
 }
 
 export function selectLocale(languageNames, locales = DICTIONARY_LOCALES) {

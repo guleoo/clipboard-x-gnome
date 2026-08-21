@@ -6,6 +6,7 @@ import {
   DICTIONARY_LOCALES,
   localeCandidates,
   normalizeLocale,
+  requiresDictionary,
   selectLocale,
   SYSTEM_DICTIONARY_ID,
 } from '../../../src/clipboard/tokenizer/dictionary/locale.js';
@@ -45,6 +46,13 @@ assertEqual(normalizeLocale('pt-BR.UTF-8'), 'pt_br', 'locale normalization');
 assertEqual(localeCandidates(['zh_CN.UTF-8', 'zh', 'C']), ['zh_cn', 'zh'], 'locale fallback order');
 assertEqual(localeCandidates(['fr_FR.UTF-8', 'de_DE']), ['fr_fr', 'fr'],
   'only the active display language should select dictionaries');
+assert(requiresDictionary(['zh_CN.UTF-8', 'zh', 'C']),
+  'Chinese display languages should expose dictionary settings');
+assert(requiresDictionary(['ja_JP.UTF-8', 'ja', 'C']),
+  'Japanese display languages should expose dictionary settings');
+assert(!requiresDictionary(['ko_KR.UTF-8', 'ko', 'C'])
+    && !requiresDictionary(['en_US.UTF-8', 'en', 'C']),
+  'languages with reliable system word segmentation should hide dictionary settings');
 assertEqual(selectLocale(['zh_CN.UTF-8', 'zh', 'C']), 'zh_cn',
   'dictionary language selection should default to the exact display locale');
 assertEqual(selectLocale(['fr_CA.UTF-8', 'fr', 'C']), 'fr_fr',

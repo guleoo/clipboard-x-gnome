@@ -66,6 +66,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 使用系统 `Intl.Segmenter`。系统 `Intl.Segmenter` 本身也作为默认启用的词库项显示在
 列表中，可以和用户词库一起开关。
 
+词库设置只在中文和日文显示语言下出现；其他已支持语言使用系统
+`Intl.Segmenter` 完成基础分词，不显示不相关的词库配置。
+
 图片编辑器优先使用设置中选择的 Desktop Application。选择“自定义命令”时支持：
 
 - `%u`：图片 URI；

@@ -198,11 +198,13 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Excluded applications'),
       _('Comma-separated window classes'),
     ));
-    page.add(createDictionariesGroup({
+    const dictionaries = createDictionariesGroup({
       settings,
       store: this._dictionaryStore,
       window,
-    }));
+    });
+    if (dictionaries)
+      page.add(dictionaries);
     return page;
   }
 
