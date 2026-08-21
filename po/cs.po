@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-20 21:50+0800\n"
+"POT-Creation-Date: 2026-08-21 21:58+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: cs\n"
@@ -60,7 +60,7 @@ msgstr "Připnout"
 msgid "Delete from local history"
 msgstr "Smazat"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:320
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:318
 msgid "Text"
 msgstr "Text"
 
@@ -73,12 +73,12 @@ msgid "Search clipboard history…"
 msgstr "Vyhledávejte psaním…"
 
 #: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:352 src/ui/settings/window.js:353
-#: src/ui/settings/window.js:437
+#: src/ui/settings/window.js:350 src/ui/settings/window.js:351
+#: src/ui/settings/window.js:435
 msgid "Screenshot"
 msgstr "Snímek obrazovky"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:435
+#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:433
 msgid "Pick color"
 msgstr "Vybrat barvu"
 
@@ -88,11 +88,11 @@ msgid "Privacy mode"
 msgstr "Soukromý režim"
 
 #: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:211
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
 msgid "Quick phrases"
 msgstr "Rychlé fráze"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:399
+#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:397
 msgid "Clear unpinned history"
 msgstr "Smazat historii"
 
@@ -260,12 +260,12 @@ msgstr ""
 msgid "Move to top toolbar"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:433
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:337
+#: src/ui/settings/window.js:431
 msgid "Color picker"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:233
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
 msgid "Synchronization"
 msgstr "Synchronizace"
 
@@ -273,70 +273,98 @@ msgstr "Synchronizace"
 msgid "Clear history"
 msgstr "Smazat historii"
 
-#: src/ui/settings/dictionaries.js:22
+#: src/ui/settings/dictionaries.js:23
 msgid "Dictionary operation failed"
 msgstr "Operace se slovníkem selhala"
 
-#: src/ui/settings/dictionaries.js:27
+#: src/ui/settings/dictionaries.js:28
 msgid "Close"
 msgstr "Zavřít"
 
-#: src/ui/settings/dictionaries.js:68
+#: src/ui/settings/dictionaries.js:70
+msgid "HTTP(S) URL"
+msgstr "URL HTTP(S)"
+
+#: src/ui/settings/dictionaries.js:74
+msgid "Add network dictionary location"
+msgstr "Přidat síťové umístění slovníku"
+
+#: src/ui/settings/dictionaries.js:75
+msgid "Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file."
+msgstr "Zadejte adresu HTTP nebo HTTPS, která poskytuje soubor slovníku v UTF-8."
+
+#: src/ui/settings/dictionaries.js:78
+msgid "Cancel"
+msgstr ""
+
+#: src/ui/settings/dictionaries.js:79
+msgid "Add"
+msgstr ""
+
+#: src/ui/settings/dictionaries.js:98
 msgid "Dictionaries"
 msgstr "Slovníky"
 
-#: src/ui/settings/dictionaries.js:69
+#: src/ui/settings/dictionaries.js:99
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Slovníky odpovídající aktuálnímu jazyku zobrazení se načítají automaticky."
 
-#: src/ui/settings/dictionaries.js:75
+#: src/ui/settings/dictionaries.js:104
 msgid "Language for import"
 msgstr "Jazyk pro import"
 
-#: src/ui/settings/dictionaries.js:79
+#: src/ui/settings/dictionaries.js:108
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Použije se, pokud slovník neobsahuje „# locale: language-code“."
 
-#: src/ui/settings/dictionaries.js:83 src/ui/settings/dictionaries.js:215
+#: src/ui/settings/dictionaries.js:112 src/ui/settings/dictionaries.js:291
 msgid "Import dictionary"
 msgstr "Importovat slovník"
 
-#: src/ui/settings/dictionaries.js:84
+#: src/ui/settings/dictionaries.js:113
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "Text UTF-8; jedno slovo a volitelná četnost na řádek"
 
-#: src/ui/settings/dictionaries.js:87
+#: src/ui/settings/dictionaries.js:116
 msgid "Import…"
 msgstr "Importovat…"
 
-#: src/ui/settings/dictionaries.js:134
+#: src/ui/settings/dictionaries.js:121
+msgid "Add network location"
+msgstr "Přidat síťové umístění"
+
+#: src/ui/settings/dictionaries.js:173
 msgid "System tokenizer"
 msgstr "Systémový segmentátor"
 
-#: src/ui/settings/dictionaries.js:145
+#: src/ui/settings/dictionaries.js:184
 msgid "entries"
 msgstr "položek"
 
-#: src/ui/settings/dictionaries.js:173
+#: src/ui/settings/dictionaries.js:212
 msgid "Edit dictionary"
 msgstr "Upravit slovník"
 
-#: src/ui/settings/dictionaries.js:181
+#: src/ui/settings/dictionaries.js:220
 msgid "Open containing folder"
 msgstr "Otevřít složku se souborem"
 
-#: src/ui/settings/dictionaries.js:189
+#: src/ui/settings/dictionaries.js:229
+msgid "Refresh dictionary"
+msgstr "Obnovit slovník"
+
+#: src/ui/settings/dictionaries.js:248
 msgid "Remove dictionary"
 msgstr "Odstranit slovník"
 
-#: src/ui/settings/dictionaries.js:232
+#: src/ui/settings/dictionaries.js:308
 msgid "Dictionary import failed"
 msgstr "Import slovníku se nezdařil"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:311 src/ui/settings/window.js:316
+#: src/ui/settings/window.js:309 src/ui/settings/window.js:314
 msgid "Disabled"
 msgstr "Zakázáno"
 
@@ -388,548 +416,552 @@ msgstr ""
 msgid "Choose custom theme color"
 msgstr ""
 
-#: src/ui/settings/window.js:105
+#: src/ui/settings/window.js:101
 msgid "General"
 msgstr "Obecné"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:104
 msgid "Appearance"
 msgstr "Vzhled"
 
-#: src/ui/settings/window.js:112
+#: src/ui/settings/window.js:108
 msgid "Panel"
 msgstr ""
 
-#: src/ui/settings/window.js:114
+#: src/ui/settings/window.js:110
 msgid "Show panel indicator"
 msgstr ""
 
-#: src/ui/settings/window.js:115
+#: src/ui/settings/window.js:111
 msgid "Panel position when indicator is hidden"
 msgstr ""
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "Vlevo nahoře"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:113
 msgid "Top center"
 msgstr ""
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:114
 msgid "Top right"
 msgstr "Vpravo nahoře"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:115
 msgid "Center left"
 msgstr ""
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:116
 msgid "Center"
 msgstr "Střed"
 
-#: src/ui/settings/window.js:121
+#: src/ui/settings/window.js:117
 msgid "Center right"
 msgstr ""
 
-#: src/ui/settings/window.js:122
+#: src/ui/settings/window.js:118
 msgid "Bottom left"
 msgstr "Vlevo dole"
 
-#: src/ui/settings/window.js:123
+#: src/ui/settings/window.js:119
 msgid "Bottom center"
 msgstr ""
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:120
 msgid "Bottom right"
 msgstr "Vpravo dole"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:124
 msgid "Horizontal panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:128
 msgid "px; positive moves right"
 msgstr ""
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:132
 msgid "Vertical panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:140
+#: src/ui/settings/window.js:136
 msgid "px; positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:138
 msgid "Panel width"
 msgstr ""
 
-#: src/ui/settings/window.js:142 src/ui/settings/window.js:143
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
+#: src/ui/settings/window.js:330
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:143
+#: src/ui/settings/window.js:139
 msgid "Panel height"
 msgstr ""
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:142
 msgid "Text vertical offset"
 msgstr ""
 
-#: src/ui/settings/window.js:150
+#: src/ui/settings/window.js:146
 msgid "px; negative moves up, positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:152
+#: src/ui/settings/window.js:148
 msgid "Maximum entries shown in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:155
+#: src/ui/settings/window.js:151
 msgid "Preserve panel state"
 msgstr ""
 
-#: src/ui/settings/window.js:156
+#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
 
-#: src/ui/settings/window.js:160
+#: src/ui/settings/window.js:156
 msgid "Keep keyboard focus in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:161
+#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
 
-#: src/ui/settings/window.js:165
+#: src/ui/settings/window.js:161
 msgid "Icon layout"
 msgstr ""
 
-#: src/ui/settings/window.js:166
+#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
 msgstr ""
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:171 src/ui/settings/window.js:402
 msgid "Clipboard"
 msgstr "Schránka"
 
-#: src/ui/settings/window.js:176
+#: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historie"
 
-#: src/ui/settings/window.js:178
+#: src/ui/settings/window.js:174
 msgid "History entries"
 msgstr ""
 
-#: src/ui/settings/window.js:179
+#: src/ui/settings/window.js:175
 msgid "Cache size"
 msgstr ""
 
-#: src/ui/settings/window.js:179 src/ui/settings/window.js:181
-#: src/ui/settings/window.js:331
+#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
+#: src/ui/settings/window.js:329
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:180
+#: src/ui/settings/window.js:176
 msgid "Automatic cleanup"
 msgstr ""
 
-#: src/ui/settings/window.js:180
+#: src/ui/settings/window.js:176
 msgid "days; 0 disables"
 msgstr ""
 
-#: src/ui/settings/window.js:181
+#: src/ui/settings/window.js:177
 msgid "Maximum item size"
 msgstr ""
 
-#: src/ui/settings/window.js:182
+#: src/ui/settings/window.js:178
 msgid "Trim surrounding whitespace"
 msgstr "Odebrat prázdné znaky kolem textu"
 
-#: src/ui/settings/window.js:184 src/ui/settings/window.js:418
+#: src/ui/settings/window.js:180 src/ui/settings/window.js:416
 msgid "Tokenizer"
 msgstr "Tokenizér"
 
-#: src/ui/settings/window.js:186
+#: src/ui/settings/window.js:182
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:188
+#: src/ui/settings/window.js:184
 msgid "Privacy"
 msgstr ""
 
-#: src/ui/settings/window.js:190
+#: src/ui/settings/window.js:186
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:191 src/ui/settings/window.js:323
+#: src/ui/settings/window.js:187 src/ui/settings/window.js:321
 msgid "Sensitive content"
 msgstr ""
 
-#: src/ui/settings/window.js:192
+#: src/ui/settings/window.js:188
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:193
+#: src/ui/settings/window.js:189
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:194
+#: src/ui/settings/window.js:190
 msgid "Store like other history"
 msgstr ""
 
-#: src/ui/settings/window.js:198
+#: src/ui/settings/window.js:194
 msgid "Excluded applications"
 msgstr "Vynechané aplikace"
 
-#: src/ui/settings/window.js:199
+#: src/ui/settings/window.js:195
 msgid "Comma-separated window classes"
 msgstr ""
 
-#: src/ui/settings/window.js:215
+#: src/ui/settings/window.js:213
 msgid "Behavior"
 msgstr "Chování"
 
-#: src/ui/settings/window.js:216
+#: src/ui/settings/window.js:214
 msgid "Quick phrases are stored only on this device."
 msgstr ""
 
-#: src/ui/settings/window.js:219
+#: src/ui/settings/window.js:217
 msgid "Maximum quick phrases"
 msgstr ""
 
-#: src/ui/settings/window.js:222
+#: src/ui/settings/window.js:220
 msgid "Place new phrases first"
 msgstr ""
 
-#: src/ui/settings/window.js:223
+#: src/ui/settings/window.js:221
 msgid "When disabled, new phrases are added at the end"
 msgstr ""
 
-#: src/ui/settings/window.js:227
+#: src/ui/settings/window.js:225
 msgid "Close panel after copying"
 msgstr ""
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:232
 msgid "Device"
 msgstr "Zařízení"
 
-#: src/ui/settings/window.js:236
+#: src/ui/settings/window.js:234
 msgid "Device ID"
 msgstr "ID zařízení"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:239
 msgid "Device tag"
 msgstr "Značka"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:239
 msgid "Friendly name shown during device discovery"
 msgstr ""
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:240
 msgid "Device icon"
 msgstr ""
 
-#: src/ui/settings/window.js:243
+#: src/ui/settings/window.js:241
 msgid "Desktop"
 msgstr "Pracovní plocha"
 
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:242
 msgid "Laptop"
 msgstr ""
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:243
 msgid "Phone"
 msgstr "Telefon"
 
-#: src/ui/settings/window.js:246
+#: src/ui/settings/window.js:244
 msgid "Tablet"
 msgstr "Tablet"
 
-#: src/ui/settings/window.js:247
+#: src/ui/settings/window.js:245
 msgid "Server"
 msgstr "Server"
 
-#: src/ui/settings/window.js:248
+#: src/ui/settings/window.js:246
 msgid "Other"
 msgstr "Ostatní"
 
-#: src/ui/settings/window.js:251
+#: src/ui/settings/window.js:249
 msgid "Service connection"
 msgstr ""
 
-#: src/ui/settings/window.js:253
+#: src/ui/settings/window.js:251
 msgid "Enable synchronization integration"
 msgstr ""
 
-#: src/ui/settings/window.js:256
+#: src/ui/settings/window.js:254
 msgid "D-Bus name"
 msgstr ""
 
-#: src/ui/settings/window.js:262
+#: src/ui/settings/window.js:260
 msgid "Object path"
 msgstr ""
 
-#: src/ui/settings/window.js:266
+#: src/ui/settings/window.js:264
 msgid "Service status"
 msgstr ""
 
-#: src/ui/settings/window.js:266
+#: src/ui/settings/window.js:264
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/settings/window.js:267
+#: src/ui/settings/window.js:265
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/settings/window.js:270
+#: src/ui/settings/window.js:268
 msgid "Connecting…"
 msgstr "Spojuje se…"
 
-#: src/ui/settings/window.js:281
+#: src/ui/settings/window.js:279
 msgid "item limit"
 msgstr ""
 
-#: src/ui/settings/window.js:282
+#: src/ui/settings/window.js:280
 msgid "preview limit"
 msgstr ""
 
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:292
 msgid "Service preferences"
 msgstr ""
 
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:293
 msgid "Provided by the external synchronization Service"
 msgstr ""
 
-#: src/ui/settings/window.js:297
+#: src/ui/settings/window.js:295
 msgid "Open"
 msgstr "Otevřít"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:306
 msgid "Transfer policy"
 msgstr ""
 
-#: src/ui/settings/window.js:310
+#: src/ui/settings/window.js:308
 msgid "Send mode"
 msgstr ""
 
-#: src/ui/settings/window.js:312
+#: src/ui/settings/window.js:310
 msgid "Manual"
 msgstr "Ruční"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:311
 msgid "Automatic"
 msgstr "Automatické"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:313
 msgid "Receive mode"
 msgstr ""
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:315
 msgid "History only"
 msgstr ""
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:316
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/ui/settings/window.js:321
+#: src/ui/settings/window.js:319
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:322
+#: src/ui/settings/window.js:320
 msgid "Images"
 msgstr "Obrázky"
 
-#: src/ui/settings/window.js:323
+#: src/ui/settings/window.js:321
 msgid "Disabled by default"
 msgstr ""
 
-#: src/ui/settings/window.js:326
+#: src/ui/settings/window.js:324
 msgid "Favorites only"
 msgstr ""
 
-#: src/ui/settings/window.js:327
+#: src/ui/settings/window.js:325
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/ui/settings/window.js:329
+#: src/ui/settings/window.js:327
 msgid "Small text sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:329 src/ui/settings/window.js:330
-#: src/ui/settings/window.js:333
+#: src/ui/settings/window.js:327 src/ui/settings/window.js:328
+#: src/ui/settings/window.js:331
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:328
 msgid "Large text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:331
+#: src/ui/settings/window.js:329
 msgid "Small images sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:330
 msgid "Thumbnail dimension"
 msgstr ""
 
-#: src/ui/settings/window.js:333
+#: src/ui/settings/window.js:331
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/ui/settings/window.js:334
+#: src/ui/settings/window.js:332
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/ui/settings/window.js:334
+#: src/ui/settings/window.js:332
 msgid "seconds"
 msgstr "sekund"
 
-#: src/ui/settings/window.js:340
+#: src/ui/settings/window.js:338
 msgid "Color format"
 msgstr ""
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:340
 msgid "Default format"
 msgstr "Výchozí formát"
 
-#: src/ui/settings/window.js:355
+#: src/ui/settings/window.js:353
 msgid "Default target"
 msgstr ""
 
-#: src/ui/settings/window.js:356
+#: src/ui/settings/window.js:354
 msgid "Interactive"
 msgstr "Interaktivní"
 
-#: src/ui/settings/window.js:357
+#: src/ui/settings/window.js:355
 msgid "Full screen"
 msgstr ""
 
-#: src/ui/settings/window.js:358
+#: src/ui/settings/window.js:356
 msgid "Window"
 msgstr "Okno"
 
-#: src/ui/settings/window.js:359
+#: src/ui/settings/window.js:357
 msgid "Area"
 msgstr "Oblast"
 
-#: src/ui/settings/window.js:360
+#: src/ui/settings/window.js:358
 msgid "Active window"
 msgstr "Aktivovat okno"
 
-#: src/ui/settings/window.js:362
+#: src/ui/settings/window.js:360
 msgid "Add to history"
 msgstr ""
 
-#: src/ui/settings/window.js:363
+#: src/ui/settings/window.js:361
 msgid "Copy screenshot"
 msgstr ""
 
-#: src/ui/settings/window.js:364
+#: src/ui/settings/window.js:362
 msgid "Open image editor"
 msgstr ""
 
-#: src/ui/settings/window.js:366
+#: src/ui/settings/window.js:364
 msgid "Image editing"
 msgstr ""
 
-#: src/ui/settings/window.js:370
+#: src/ui/settings/window.js:368
 msgid "Command"
 msgstr "Příkaz"
 
-#: src/ui/settings/window.js:371
+#: src/ui/settings/window.js:369
 msgid ""
 "%u is the URI, %f is a local path, %i is standard input and %% is a percent "
 "sign"
 msgstr ""
 
-#: src/ui/settings/window.js:387
+#: src/ui/settings/window.js:385
 msgid "Shortcuts"
 msgstr "Zkratky"
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:389
 msgid "Global"
 msgstr "Globální"
 
-#: src/ui/settings/window.js:392
+#: src/ui/settings/window.js:390
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:394
 msgid "Open clipboard panel"
 msgstr "Přepnout nabídku"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:395
 msgid "Focus clipboard search"
 msgstr ""
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:396
 msgid "Pause or resume clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:405
+#: src/ui/settings/window.js:403
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:409
+#: src/ui/settings/window.js:407
 msgid "Paste entry"
 msgstr ""
 
-#: src/ui/settings/window.js:410
+#: src/ui/settings/window.js:408
 msgid "Pin or unpin entry"
 msgstr ""
 
-#: src/ui/settings/window.js:411
+#: src/ui/settings/window.js:409
 msgid "Delete entry"
 msgstr ""
 
-#: src/ui/settings/window.js:412
+#: src/ui/settings/window.js:410
 msgid "Type entry directly"
 msgstr ""
 
-#: src/ui/settings/window.js:413
+#: src/ui/settings/window.js:411
 msgid "Type entry instead of copying"
 msgstr ""
 
-#: src/ui/settings/window.js:419
+#: src/ui/settings/window.js:417
 msgid "Active while a token has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:423
+#: src/ui/settings/window.js:421
 msgid "Copy selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:424
+#: src/ui/settings/window.js:422
 msgid "Paste selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:423
 msgid "Type selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:426
+#: src/ui/settings/window.js:424
 msgid "Extend selection left"
 msgstr ""
 
-#: src/ui/settings/window.js:427
+#: src/ui/settings/window.js:425
 msgid "Extend selection right"
 msgstr ""
 
-#: src/ui/settings/window.js:428
+#: src/ui/settings/window.js:426
 msgid "Extend selection upward"
 msgstr ""
 
-#: src/ui/settings/window.js:429
+#: src/ui/settings/window.js:427
 msgid "Extend selection downward"
 msgstr ""
 
-#: src/ui/settings/window.js:439
+#: src/ui/settings/window.js:437
 msgid "Take screenshot"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Remove network location"
+#~ msgstr "Odstranit slovník"
 
 #~ msgid "Enter a valid language code, such as zh, en, or pt_BR."
 #~ msgstr "Zadejte platný kód jazyka, například zh, en nebo pt_BR."

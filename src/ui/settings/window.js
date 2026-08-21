@@ -20,11 +20,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
     this._rows = new PreferenceRows(settings);
-    this._dictionaryStore = new DictionaryStore({
-      seedPaths: [GLib.build_filenamev([
-        this.path, 'clipboard', 'tokenizer', 'dictionary', 'seeds', 'zh--cppjieba-core.dict',
-      ])],
-    });
+    this._dictionaryStore = new DictionaryStore();
     const {deviceId} = ensureDeviceIdentity(settings);
     window.set_title('Clipboard X');
     window.set_default_size(900, 700);

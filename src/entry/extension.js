@@ -39,11 +39,7 @@ export default class ClipboardXExtension extends Extension {
         _('Do not press other keys during simulated typing. Input will resume after the keyboard is idle.'),
       ),
     });
-    this._dictionaryStore = new DictionaryStore({
-      seedPaths: [GLib.build_filenamev([
-        this.path, 'clipboard', 'tokenizer', 'dictionary', 'seeds', 'zh--cppjieba-core.dict',
-      ])],
-    });
+    this._dictionaryStore = new DictionaryStore();
     this._textTokenizer = new Tokenizer({store: this._dictionaryStore});
     this._colorPicker = null;
     this._settingsSignals = [];

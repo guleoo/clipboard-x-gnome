@@ -67,6 +67,7 @@ assertEqual(parseEntries('注销 80\n# ignored\ninvalid-word 20').map(entry => e
 const parsed = parseDictionary([
   '# locale: ja',
   '# name: Japanese test',
+  '# source: https://example.com/japanese.dict',
   '秘密鍵 90',
 ].join('\n'));
 assertEqual(parseDictionary(serializeDictionary(parsed)), parsed, 'dictionary format round trip');

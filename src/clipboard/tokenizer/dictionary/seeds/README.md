@@ -12,6 +12,6 @@ size and GNOME Shell heap usage.
 - Runtime entries: 45,967
 - Locale: `zh`
 
-This directory contains installation seeds only. On first use, each seed is
-copied into the same user dictionary store used by imported dictionaries. A
-seed can then be removed like any user-imported dictionary and is not restored.
+This directory is used only by tests and benchmarks. It is excluded from both
+the installed extension and release archive; users add dictionaries explicitly
+from settings.

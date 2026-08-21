@@ -64,6 +64,32 @@ function showDictionary(window, file) {
   });
 }
 
+function requestNetworkLocation(window) {
+  return new Promise(resolve => {
+    const entry = new Adw.EntryRow({
+      title: _('HTTP(S) URL'),
+      text: 'https://',
+    });
+    const dialog = new Adw.AlertDialog({
+      heading: _('Add network dictionary location'),
+      body: _('Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file.'),
+      extra_child: entry,
+    });
+    dialog.add_response('cancel', _('Cancel'));
+    dialog.add_response('add', _('Add'));
+    dialog.default_response = 'add';
+    dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
+    dialog.choose(window, null, (source, result) => {
+      try {
+        const response = source.choose_finish(result);
+        resolve(response === 'add' ? entry.text.trim() : '');
+      } catch (error) {
+        resolve('');
+      }
+    });
+  });
+}
+
 export function create({settings, store, window}) {
   const languageNames = GLib.get_language_names();
   if (!requiresDictionary(languageNames))
@@ -91,6 +117,11 @@ export function create({settings, store, window}) {
     valign: Gtk.Align.CENTER,
   });
   importRow.add_suffix(importButton);
+  const addNetworkButton = new Gtk.Button({
+    label: _('Add network location'),
+    valign: Gtk.Align.CENTER,
+  });
+  importRow.add_suffix(addNetworkButton);
   importRow.activatable_widget = importButton;
   group.add(importRow);
 
@@ -124,6 +155,11 @@ export function create({settings, store, window}) {
       return;
     settings.set_strv('tokenizer-dictionary-files', next);
     bumpRevision(settings);
+  };
+  const enableDictionaryFile = fileName => {
+    const configured = settings.get_strv('tokenizer-dictionary-files');
+    if (configured.length > 0 && !configured.includes(fileName))
+      settings.set_strv('tokenizer-dictionary-files', [...configured, fileName]);
   };
   const refresh = () => {
     refreshing = true;
@@ -187,6 +223,26 @@ export function create({settings, store, window}) {
         });
         show.connect('clicked', () => showDictionary(window, file));
         row.add_suffix(show);
+        if (dictionary.source) {
+          const refreshButton = new Gtk.Button({
+            icon_name: 'view-refresh-symbolic',
+            tooltip_text: _('Refresh dictionary'),
+            valign: Gtk.Align.CENTER,
+            css_classes: ['flat'],
+          });
+          refreshButton.connect('clicked', () => {
+            refreshButton.sensitive = false;
+            store.refreshSource(dictionary.source, dictionary.locale)
+              .then(dictionary => {
+                enableDictionaryFile(dictionary.fileName);
+                bumpRevision(settings);
+                refresh();
+              })
+              .catch(error => showError(window, error))
+              .finally(() => refreshButton.sensitive = true);
+          });
+          row.add_suffix(refreshButton);
+        }
         const remove = new Gtk.Button({
           icon_name: 'user-trash-symbolic',
           tooltip_text: _('Remove dictionary'),
@@ -211,6 +267,23 @@ export function create({settings, store, window}) {
   };
 
   localeRow.connect('notify::selected', refresh);
+
+  addNetworkButton.connect('clicked', async () => {
+    const source = await requestNetworkLocation(window);
+    if (!source)
+      return;
+    addNetworkButton.sensitive = false;
+    try {
+      const dictionary = await store.refreshSource(source, selectedLocale());
+      enableDictionaryFile(dictionary.fileName);
+      bumpRevision(settings);
+      refresh();
+    } catch (error) {
+      showError(window, error);
+    } finally {
+      addNetworkButton.sensitive = true;
+    }
+  });
 
   importButton.connect('clicked', () => {
     const locale = languages[localeRow.selected]?.locale ?? currentLocale;

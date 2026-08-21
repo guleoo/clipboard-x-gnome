@@ -31,6 +31,19 @@ function loadText(file) {
   return decode(contents);
 }
 
+function checksum(value) {
+  const digest = GLib.Checksum.new(GLib.ChecksumType.SHA256);
+  digest.update(value);
+  return digest.get_string().slice(0, 24);
+}
+
+function validateNetworkLocation(uri) {
+  const normalized = String(uri ?? '').trim();
+  if (!/^https?:\/\/[^\s/]+(?:\/[^\s]*)?$/iu.test(normalized))
+    throw new Error('Network dictionary location must use HTTP or HTTPS');
+  return normalized;
+}
+
 export class DictionaryStore {
   constructor({rootPath = '', seedPaths = []} = {}) {
     const path = rootPath || GLib.build_filenamev([
@@ -109,6 +122,7 @@ export class DictionaryStore {
           fileName,
           locale: parsed.locale,
           name: parsed.name,
+          source: parsed.source,
           entryCount: parsed.entries.length,
         });
       } catch (error) {
@@ -170,6 +184,41 @@ export class DictionaryStore {
       fileName,
       locale: parsed.locale,
       name: parsed.name,
+      source: '',
+      entryCount: parsed.entries.length,
+    };
+  }
+
+  async refreshSource(uri, defaultLocale) {
+    const source = validateNetworkLocation(uri);
+    this.ensureSeeds();
+    const bytes = await loadFile(Gio.File.new_for_uri(source));
+    if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
+      throw new Error('Dictionary exceeds the 8 MB import limit');
+    const parsed = parseDictionary(decode(bytes.get_data()), {
+      locale: inferLocale(source, defaultLocale),
+      name: source.split('/').pop()?.replace(/\.[^.]+$/u, '') || source,
+      source,
+    });
+    if (parsed.entries.length > MAXIMUM_IMPORT_ENTRIES)
+      throw new Error(`Dictionary exceeds the ${MAXIMUM_IMPORT_ENTRIES} entry import limit`);
+    const previous = this.list().find(dictionary => dictionary.source === source);
+    const fileName = previous?.fileName
+      ?? `${parsed.locale}--${checksum(source)}.dict`;
+    if (previous && !fileName.startsWith(`${parsed.locale}--`))
+      this.remove(previous.fileName);
+    const targetName = previous && fileName.startsWith(`${parsed.locale}--`)
+      ? fileName
+      : `${parsed.locale}--${checksum(source)}.dict`;
+    await writeFile(
+      this._root.get_child(targetName),
+      new GLib.Bytes(new TextEncoder().encode(serializeDictionary({...parsed, source}))),
+    );
+    return {
+      fileName: targetName,
+      locale: parsed.locale,
+      name: parsed.name,
+      source,
       entryCount: parsed.entries.length,
     };
   }

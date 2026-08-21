@@ -14,6 +14,7 @@ export function parseDictionary(text, defaults = {}) {
   }
   const locale = normalizeLocale(metadata.get('locale') ?? defaults.locale);
   const name = (metadata.get('name') ?? defaults.name ?? '').trim();
+  const source = (metadata.get('source') ?? defaults.source ?? '').trim();
   const entries = parseEntries(text);
   if (!locale)
     throw new Error('Dictionary locale is missing or invalid');
@@ -21,7 +22,7 @@ export function parseDictionary(text, defaults = {}) {
     throw new Error('Dictionary name is missing');
   if (entries.length === 0)
     throw new Error('Dictionary contains no valid entries');
-  return {locale, name, entries};
+  return {locale, name, source, entries};
 }
 
 export function serializeDictionary(dictionary) {
@@ -29,6 +30,7 @@ export function serializeDictionary(dictionary) {
     '# clipboard-x-dictionary: 1',
     `# locale: ${dictionary.locale}`,
     `# name: ${dictionary.name.replaceAll('\n', ' ')}`,
+    ...(dictionary.source ? [`# source: ${dictionary.source}`] : []),
     '',
     ...dictionary.entries.map(({word, frequency}) => `${word} ${frequency}`),
     '',

@@ -40,7 +40,12 @@ configure_file(
   install_dir: extension_dir,
 )
 
-install_subdir('src', strip_directory: true, install_dir: extension_dir)
+install_subdir(
+  'src',
+  strip_directory: true,
+  install_dir: extension_dir,
+  exclude_directories: ['clipboard/tokenizer/dictionary/seeds'],
+)
 install_data('data/stylesheet.css', install_dir: extension_dir)
 
 subdir('po')

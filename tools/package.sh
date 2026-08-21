@@ -16,6 +16,7 @@ trap cleanup EXIT
 
 mkdir -p "$staging_dir/schemas"
 cp -R "$source_dir"/. "$staging_dir/"
+rm -rf -- "$staging_dir/clipboard/tokenizer/dictionary/seeds"
 cp "$extension_dir/metadata.json" "$extension_dir/stylesheet.css" "$staging_dir/"
 cp "$extension_dir/schemas/gschemas.compiled" "$staging_dir/schemas/"
 cp "$extension_dir/schemas/$schema_filename" "$staging_dir/schemas/"
