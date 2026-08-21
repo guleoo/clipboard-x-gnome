@@ -293,11 +293,11 @@ msgstr "输入提供 UTF-8 词库文件的 HTTP 或 HTTPS 地址。"
 
 #: src/ui/settings/dictionaries.js:78
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: src/ui/settings/dictionaries.js:79
 msgid "Add"
-msgstr ""
+msgstr "添加"
 
 #: src/ui/settings/dictionaries.js:98
 msgid "Dictionaries"
