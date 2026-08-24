@@ -242,10 +242,10 @@
     </key>
     <key name="sync-enabled" type="b">
       <default>false</default>
-      <summary>Enable synchronization service integration</summary>
+      <summary>Enable synchronization service</summary>
     </key>
     <key name="service-bus-name" type="s">
-      <default>'io.github.guleo.ClipboardX.MockService'</default>
+      <default>'io.github.guleo.ClipboardX.SyncService'</default>
       <summary>Synchronization service D-Bus name</summary>
     </key>
     <key name="service-object-path" type="s">

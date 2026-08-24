@@ -172,7 +172,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const history = new Adw.PreferencesGroup({title: _('History')});
     page.add(history);
     history.add(this._rows.spin('history-size', _('History entries'), 1, 10000, 1));
-    history.add(this._rows.spin('cache-size-mib', _('Cache size'), 16, 16384, 16, _('MB')));
+    history.add(this._rows.spin('cache-size-mib', _('Storage size'), 16, 16384, 16, _('MB')));
     history.add(this._rows.spin('history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
     history.add(this._rows.spin('capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MB')));
     history.add(this._rows.switch('trim-whitespace', _('Trim surrounding whitespace')));
@@ -248,19 +248,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
 
     const service = new Adw.PreferencesGroup({title: _('Service connection')});
     page.add(service);
-    service.add(this._rows.switch('sync-enabled', _('Enable synchronization integration')));
-    service.add(this._rows.entry(
-      'service-bus-name',
-      _('D-Bus name'),
-      '',
-      value => Gio.dbus_is_name(value),
-    ));
-    service.add(this._rows.entry(
-      'service-object-path',
-      _('Object path'),
-      '',
-      value => GLib.Variant.is_object_path(value),
-    ));
+    service.add(this._rows.switch('sync-enabled', _('Enable synchronization service')));
     const statusRow = new Adw.ActionRow({title: _('Service status'), subtitle: _('Not tested')});
     const testButton = new Gtk.Button({label: _('Test connection'), valign: Gtk.Align.CENTER});
     testButton.connect('clicked', async () => {

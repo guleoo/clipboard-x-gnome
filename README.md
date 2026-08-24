@@ -88,8 +88,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 ## 同步 Service
 
-在“设置 → 同步”中填写 Service 的 Session D-Bus 名称和对象路径，然后测试连接。
-默认的名称只供仓库 Mock 使用，不代表已安装真实服务。
+在“设置 → 同步”中启动同步服务，然后测试连接。兼容实现使用 Sync1 规定的 Session
+D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
+`/io/github/guleo/ClipboardX/Sync`，用户不需要配置 D-Bus 技术细节。
 
 正式 ABI、字段、FD 生命周期、状态机和安全要求见：
 
@@ -103,8 +104,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 ## 隐私
 
-剪切板历史保存在用户缓存目录
-`$XDG_CACHE_HOME/clipboard-x@guleo.github.io`，对象目录权限设为仅当前用户可访问。
+剪切板历史保存在用户数据目录
+`$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，每个来源设备分别存放索引、对象和预览，
+目录权限设为仅当前用户可访问。旧缓存数据会在首次加载时迁移到该结构。
 “隐私模式”会暂停捕获；密码管理器标记的敏感内容默认只保存在内存中，同步敏感内容
 默认关闭。详细的数据流、信任边界和报告方式见 [SECURITY.md](SECURITY.md)。
 

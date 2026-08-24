@@ -1,6 +1,12 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import {
+  SYNC_BUS_NAME,
+  SYNC_INTERFACE,
+  SYNC_OBJECT_PATH,
+} from '../../src/sync/constants.js';
+
 function assert(condition, message) {
   if (!condition)
     throw new Error(message);
@@ -40,6 +46,10 @@ for (const name of [
 }
 
 assert(xml.includes('interface name="io.github.guleo.ClipboardX.Sync1"'), 'versioned interface name');
+assert(SYNC_BUS_NAME === 'io.github.guleo.ClipboardX.SyncService'
+    && SYNC_OBJECT_PATH === '/io/github/guleo/ClipboardX/Sync'
+    && SYNC_INTERFACE === 'io.github.guleo.ClipboardX.Sync1',
+  'production Sync1 D-Bus addressing must be standardized');
 assert(xml.includes('type="h"'), 'protocol must use UNIX FD payloads');
 const preferences = xml.match(/<method name="OpenPreferences"([\s\S]*?)\/>/u)?.[0] ?? '';
 assert(!preferences.includes('deviceId'), 'OpenPreferences is not a synchronization data operation');

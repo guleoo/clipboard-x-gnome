@@ -24,17 +24,23 @@ async function assertRejects(promise, pattern, message) {
 }
 
 const rootPath = GLib.dir_make_tmp('clipboard-x-storage-test-XXXXXX');
-const store = new HistoryStore(rootPath);
+const localDeviceId = GLib.uuid_string_random();
+const remoteDeviceId = GLib.uuid_string_random();
+const store = new HistoryStore({rootPath, deviceId: localDeviceId});
+const localPaths = store.directory();
+const remotePaths = store.directory(remoteDeviceId);
 
 try {
   const first = ClipboardItem.fromText('persistent clipboard content');
   const sensitive = ClipboardItem.fromText('sensitive memory-only content', {sensitive: true});
   await store.save([first, sensitive]);
-  assert(first.primary.path?.startsWith(store.objectsPath), 'save must place content in the private object cache');
-  const cacheMode = Gio.File.new_for_path(store.objectsPath)
+  assert(first.primary.path?.startsWith(localPaths.objects),
+    'save must place local content in its device object directory');
+  assert(first.originDeviceId === localDeviceId, 'save must assign legacy local entries to the local device');
+  const storageMode = Gio.File.new_for_path(localPaths.objects)
     .query_info(Gio.FILE_ATTRIBUTE_UNIX_MODE, Gio.FileQueryInfoFlags.NONE, null)
     .get_attribute_uint32(Gio.FILE_ATTRIBUTE_UNIX_MODE);
-  assert((cacheMode & 0o077) === 0, 'clipboard cache directory must not grant group or other access');
+  assert((storageMode & 0o077) === 0, 'clipboard storage must not grant group or other access');
 
   const loaded = await store.load();
   assert(loaded.length === 1 && loaded[0].primary.bytes === undefined,
@@ -57,19 +63,25 @@ try {
   const invalid = third.toJSON();
   invalid.representations[0].path = '/etc/passwd';
   await writeFile(
-    Gio.File.new_for_path(store.indexPath),
-    bytesFromString(JSON.stringify([invalid])),
+    Gio.File.new_for_path(localPaths.index),
+    bytesFromString(JSON.stringify({
+      version: 1,
+      deviceId: localDeviceId,
+      updatedAt: Date.now(),
+      items: [invalid],
+    })),
   );
-  assert((await store.load()).length === 0, 'history paths outside the private cache must be rejected');
+  assert((await store.load()).length === 0, 'history paths outside device storage must be rejected');
 
-  GLib.mkdir_with_parents(store.previewsPath, 0o700);
+  GLib.mkdir_with_parents(remotePaths.previews, 0o700);
   const previewBytes = bytesFromString('derived preview bytes');
-  const previewPath = GLib.build_filenamev([store.previewsPath, 'referenced.preview']);
-  const stalePreviewPath = GLib.build_filenamev([store.previewsPath, 'stale.preview']);
+  const previewHash = sha256(previewBytes);
+  const previewPath = GLib.build_filenamev([remotePaths.previews, previewHash]);
+  const stalePreviewPath = GLib.build_filenamev([remotePaths.previews, 'stale.preview']);
   await writeFile(Gio.File.new_for_path(previewPath), previewBytes);
   await writeFile(Gio.File.new_for_path(stalePreviewPath), bytesFromString('stale'));
   const remote = ClipboardItem.fromText('remote original', {
-    originDeviceId: GLib.uuid_string_random(),
+    originDeviceId: remoteDeviceId,
     remote: true,
     availability: 'preview',
   });
@@ -77,11 +89,15 @@ try {
     mimeType: 'image/png',
     path: previewPath,
     size: previewBytes.get_size(),
-    sha256: sha256(previewBytes),
+    sha256: previewHash,
     truncated: true,
     derivedFrom: remote.primary.id,
   };
   await store.save([remote]);
+  assert(remote.primary.path.startsWith(remotePaths.objects),
+    'remote history content must be partitioned by its origin DeviceId');
+  assert(Gio.File.new_for_path(remotePaths.index).query_exists(null),
+    'remote history must have an independent versioned index');
   assert(Gio.File.new_for_path(previewPath).query_exists(null), 'referenced remote preview must be retained');
   assert(!Gio.File.new_for_path(stalePreviewPath).query_exists(null), 'stale remote preview must be pruned');
   await store.save([]);
@@ -94,6 +110,31 @@ try {
   const thumbnail = await createThumbnail(new GLib.Bytes(png), 100, 64 * 1024);
   assert(thumbnail.width === 100 && thumbnail.height === 50, 'thumbnail decode must scale before full allocation');
   assert(thumbnail.bytes.get_size() <= 64 * 1024, 'thumbnail must respect its byte limit');
+
+  const legacyPath = GLib.build_filenamev([rootPath, 'legacy-cache']);
+  const migratedPath = GLib.build_filenamev([rootPath, 'migrated-data']);
+  const legacyObjectsPath = GLib.build_filenamev([legacyPath, 'objects']);
+  GLib.mkdir_with_parents(legacyObjectsPath, 0o700);
+  const legacyItem = ClipboardItem.fromText('migrated clipboard content');
+  const legacyObjectPath = GLib.build_filenamev([legacyObjectsPath, legacyItem.primary.sha256]);
+  await writeFile(Gio.File.new_for_path(legacyObjectPath), legacyItem.primary.bytes);
+  legacyItem.primary.path = legacyObjectPath;
+  await writeFile(
+    Gio.File.new_for_path(GLib.build_filenamev([legacyPath, 'history.json'])),
+    bytesFromString(JSON.stringify([legacyItem.toJSON()])),
+  );
+  const migrationStore = new HistoryStore({
+    rootPath: migratedPath,
+    deviceId: localDeviceId,
+    legacyPath,
+  });
+  const migrated = await migrationStore.load();
+  assert(migrated.length === 1 && migrated[0].originDeviceId === localDeviceId,
+    'legacy cache history must migrate into the local device directory');
+  assert(migrated[0].primary.path.startsWith(migrationStore.directory().objects),
+    'legacy cache objects must move to stable device storage');
+  assert((await migrationStore.load()).length === 1,
+    'the migration marker must prevent duplicate legacy imports');
 
 } finally {
   deleteTree(Gio.File.new_for_path(rootPath));

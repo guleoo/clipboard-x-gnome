@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 21:58+0800\n"
+"POT-Creation-Date: 2026-08-24 10:14+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: oc\n"
@@ -59,7 +59,7 @@ msgstr ""
 msgid "Delete from local history"
 msgstr ""
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:318
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
 msgid "Text"
 msgstr "Tèxte"
 
@@ -72,16 +72,16 @@ msgid "Search clipboard history…"
 msgstr "Picatz aquí per recercar..."
 
 #: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:350 src/ui/settings/window.js:351
-#: src/ui/settings/window.js:435
+#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
+#: src/ui/settings/window.js:423
 msgid "Screenshot"
 msgstr "Captura d'ecran"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:433
+#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
 msgid "Pick color"
 msgstr "Causir una color"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:424
+#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "Mòde privat"
@@ -91,7 +91,7 @@ msgstr "Mòde privat"
 msgid "Quick phrases"
 msgstr "Frasas rapidas"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:397
+#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
 msgid "Clear unpinned history"
 msgstr "Escafar l’istoric"
 
@@ -115,11 +115,7 @@ msgstr ""
 msgid "Clipboard history is empty"
 msgstr "Contengut del quichapapièrs"
 
-#: src/ui/panels/history/panel.js:233
-msgid "More entries are available; refine the search to see others"
-msgstr ""
-
-#: src/ui/panels/history/panel.js:443
+#: src/ui/panels/history/panel.js:437
 msgid "Unknown device"
 msgstr "Periferic desconegut"
 
@@ -259,8 +255,8 @@ msgstr ""
 msgid "Move to top toolbar"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:337
-#: src/ui/settings/window.js:431
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
+#: src/ui/settings/window.js:419
 msgid "Color picker"
 msgstr ""
 
@@ -272,99 +268,100 @@ msgstr "Sincronizacion"
 msgid "Clear history"
 msgstr "Escafar l’istoric"
 
-#: src/ui/settings/dictionaries.js:23
+#: src/ui/settings/dictionaries.js:24
 msgid "Dictionary operation failed"
 msgstr "L’operacion sul diccionari a fracassat"
 
-#: src/ui/settings/dictionaries.js:28
+#: src/ui/settings/dictionaries.js:29
 msgid "Close"
 msgstr "Tampar"
 
-#: src/ui/settings/dictionaries.js:70
+#: src/ui/settings/dictionaries.js:73
 msgid "HTTP(S) URL"
 msgstr "URL HTTP(S)"
 
-#: src/ui/settings/dictionaries.js:74
+#: src/ui/settings/dictionaries.js:77
 msgid "Add network dictionary location"
 msgstr "Apondre un emplaçament de diccionari de ret"
 
-#: src/ui/settings/dictionaries.js:75
-msgid "Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file."
-msgstr "Picatz una URL HTTP o HTTPS que provesís un fichièr de diccionari UTF-8."
-
 #: src/ui/settings/dictionaries.js:78
+msgid "Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file."
+msgstr ""
+"Picatz una URL HTTP o HTTPS que provesís un fichièr de diccionari UTF-8."
+
+#: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:79
+#: src/ui/settings/dictionaries.js:82
 msgid "Add"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:98
+#: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
 msgstr "Diccionaris"
 
-#: src/ui/settings/dictionaries.js:99
+#: src/ui/settings/dictionaries.js:102
 msgid ""
 "Dictionaries matching the current display language are loaded automatically."
 msgstr ""
 "Los diccionaris que correspondon a la lenga d’afichatge actuala son cargats "
 "automaticament."
 
-#: src/ui/settings/dictionaries.js:104
+#: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
 msgstr "Lenga d’importacion"
 
-#: src/ui/settings/dictionaries.js:108
+#: src/ui/settings/dictionaries.js:111
 msgid "Used when the dictionary does not declare “# locale: language-code”."
 msgstr "Utilizat quand lo diccionari declara pas « # locale: language-code »."
 
-#: src/ui/settings/dictionaries.js:112 src/ui/settings/dictionaries.js:291
+#: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
 msgstr "Importar un diccionari"
 
-#: src/ui/settings/dictionaries.js:113
+#: src/ui/settings/dictionaries.js:116
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr "Tèxte UTF-8 ; un mot e una frequéncia facultativa per linha"
 
-#: src/ui/settings/dictionaries.js:116
+#: src/ui/settings/dictionaries.js:119
 msgid "Import…"
 msgstr "Importar…"
 
-#: src/ui/settings/dictionaries.js:121
+#: src/ui/settings/dictionaries.js:124
 msgid "Add network location"
 msgstr "Apondre un emplaçament ret"
 
-#: src/ui/settings/dictionaries.js:173
+#: src/ui/settings/dictionaries.js:176
 msgid "System tokenizer"
 msgstr "Segmentador del sistèma"
 
-#: src/ui/settings/dictionaries.js:184
+#: src/ui/settings/dictionaries.js:187
 msgid "entries"
 msgstr "entradas"
 
-#: src/ui/settings/dictionaries.js:212
+#: src/ui/settings/dictionaries.js:215
 msgid "Edit dictionary"
 msgstr "Modificar lo diccionari"
 
-#: src/ui/settings/dictionaries.js:220
+#: src/ui/settings/dictionaries.js:223
 msgid "Open containing folder"
 msgstr "Dobrir lo dorsièr contenent"
 
-#: src/ui/settings/dictionaries.js:229
+#: src/ui/settings/dictionaries.js:232
 msgid "Refresh dictionary"
 msgstr "Actualizar lo diccionari"
 
-#: src/ui/settings/dictionaries.js:248
+#: src/ui/settings/dictionaries.js:251
 msgid "Remove dictionary"
 msgstr "Suprimir lo diccionari"
 
-#: src/ui/settings/dictionaries.js:308
+#: src/ui/settings/dictionaries.js:311
 msgid "Dictionary import failed"
 msgstr "L’importacion del diccionari a fracassat"
 
 #: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:309 src/ui/settings/window.js:314
+#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
 msgid "Disabled"
 msgstr "Desactivat"
 
@@ -493,7 +490,7 @@ msgid "Panel width"
 msgstr ""
 
 #: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:318
 msgid "px"
 msgstr "px"
 
@@ -538,7 +535,7 @@ msgstr ""
 msgid "Use the buttons to change action placement and order."
 msgstr ""
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:402
+#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
 msgid "Clipboard"
 msgstr "Quichapapièrs"
 
@@ -551,11 +548,11 @@ msgid "History entries"
 msgstr ""
 
 #: src/ui/settings/window.js:175
-msgid "Cache size"
-msgstr ""
+msgid "Storage size"
+msgstr "Talha de l’emmagazinatge"
 
 #: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:329
+#: src/ui/settings/window.js:317
 msgid "MB"
 msgstr "Mio"
 
@@ -575,7 +572,7 @@ msgstr ""
 msgid "Trim surrounding whitespace"
 msgstr "Suprimir los espacis blancs a l’entorn del tèxt"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:416
+#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
 msgid "Tokenizer"
 msgstr "Segmentador"
 
@@ -591,7 +588,7 @@ msgstr ""
 msgid "Pause clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:321
+#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
 msgid "Sensitive content"
 msgstr ""
 
@@ -688,274 +685,266 @@ msgid "Service connection"
 msgstr ""
 
 #: src/ui/settings/window.js:251
-msgid "Enable synchronization integration"
-msgstr ""
+msgid "Enable synchronization service"
+msgstr "Activar lo servici de sincronizacion"
 
-#: src/ui/settings/window.js:254
-msgid "D-Bus name"
-msgstr ""
-
-#: src/ui/settings/window.js:260
-msgid "Object path"
-msgstr ""
-
-#: src/ui/settings/window.js:264
+#: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""
 
-#: src/ui/settings/window.js:264
+#: src/ui/settings/window.js:252
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/settings/window.js:265
+#: src/ui/settings/window.js:253
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/settings/window.js:268
+#: src/ui/settings/window.js:256
 msgid "Connecting…"
 msgstr "Connexion en cors…"
 
-#: src/ui/settings/window.js:279
+#: src/ui/settings/window.js:267
 msgid "item limit"
 msgstr ""
 
-#: src/ui/settings/window.js:280
+#: src/ui/settings/window.js:268
 msgid "preview limit"
 msgstr ""
 
-#: src/ui/settings/window.js:292
+#: src/ui/settings/window.js:280
 msgid "Service preferences"
 msgstr ""
 
-#: src/ui/settings/window.js:293
+#: src/ui/settings/window.js:281
 msgid "Provided by the external synchronization Service"
 msgstr ""
 
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:283
 msgid "Open"
 msgstr "Dobrir"
 
-#: src/ui/settings/window.js:306
+#: src/ui/settings/window.js:294
 msgid "Transfer policy"
 msgstr ""
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:296
 msgid "Send mode"
 msgstr ""
 
-#: src/ui/settings/window.js:310
+#: src/ui/settings/window.js:298
 msgid "Manual"
 msgstr "Manual"
 
-#: src/ui/settings/window.js:311
+#: src/ui/settings/window.js:299
 msgid "Automatic"
 msgstr "Automatic"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:301
 msgid "Receive mode"
 msgstr ""
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:303
 msgid "History only"
 msgstr ""
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:304
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:307
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:308
 msgid "Images"
 msgstr "Imatges"
 
-#: src/ui/settings/window.js:321
+#: src/ui/settings/window.js:309
 msgid "Disabled by default"
 msgstr ""
 
-#: src/ui/settings/window.js:324
+#: src/ui/settings/window.js:312
 msgid "Favorites only"
 msgstr ""
 
-#: src/ui/settings/window.js:325
+#: src/ui/settings/window.js:313
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/ui/settings/window.js:327
+#: src/ui/settings/window.js:315
 msgid "Small text sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:327 src/ui/settings/window.js:328
-#: src/ui/settings/window.js:331
+#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
+#: src/ui/settings/window.js:319
 msgid "KB"
 msgstr "ko"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:316
 msgid "Large text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:329
+#: src/ui/settings/window.js:317
 msgid "Small images sent in full"
 msgstr ""
 
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:318
 msgid "Thumbnail dimension"
 msgstr ""
 
-#: src/ui/settings/window.js:331
+#: src/ui/settings/window.js:319
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:320
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:320
 msgid "seconds"
 msgstr "segondas"
 
-#: src/ui/settings/window.js:338
+#: src/ui/settings/window.js:326
 msgid "Color format"
 msgstr ""
 
-#: src/ui/settings/window.js:340
+#: src/ui/settings/window.js:328
 msgid "Default format"
 msgstr "Format per defaut"
 
-#: src/ui/settings/window.js:353
+#: src/ui/settings/window.js:341
 msgid "Default target"
 msgstr ""
 
-#: src/ui/settings/window.js:354
+#: src/ui/settings/window.js:342
 msgid "Interactive"
 msgstr "Interactiu"
 
-#: src/ui/settings/window.js:355
+#: src/ui/settings/window.js:343
 msgid "Full screen"
 msgstr ""
 
-#: src/ui/settings/window.js:356
+#: src/ui/settings/window.js:344
 msgid "Window"
 msgstr "Fenèstra"
 
-#: src/ui/settings/window.js:357
+#: src/ui/settings/window.js:345
 msgid "Area"
 msgstr "Region"
 
-#: src/ui/settings/window.js:358
+#: src/ui/settings/window.js:346
 msgid "Active window"
 msgstr "Fenèstra activa"
 
-#: src/ui/settings/window.js:360
+#: src/ui/settings/window.js:348
 msgid "Add to history"
 msgstr ""
 
-#: src/ui/settings/window.js:361
+#: src/ui/settings/window.js:349
 msgid "Copy screenshot"
 msgstr ""
 
-#: src/ui/settings/window.js:362
+#: src/ui/settings/window.js:350
 msgid "Open image editor"
 msgstr ""
 
-#: src/ui/settings/window.js:364
+#: src/ui/settings/window.js:352
 msgid "Image editing"
 msgstr ""
 
-#: src/ui/settings/window.js:368
+#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "Comanda"
 
-#: src/ui/settings/window.js:369
+#: src/ui/settings/window.js:357
 msgid ""
 "%u is the URI, %f is a local path, %i is standard input and %% is a percent "
 "sign"
 msgstr ""
 
-#: src/ui/settings/window.js:385
+#: src/ui/settings/window.js:373
 msgid "Shortcuts"
 msgstr "Acorchis de clavièr"
 
-#: src/ui/settings/window.js:389
+#: src/ui/settings/window.js:377
 msgid "Global"
 msgstr "Global"
 
-#: src/ui/settings/window.js:390
+#: src/ui/settings/window.js:378
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
 
-#: src/ui/settings/window.js:394
+#: src/ui/settings/window.js:382
 msgid "Open clipboard panel"
 msgstr "Alternar menú"
 
-#: src/ui/settings/window.js:395
+#: src/ui/settings/window.js:383
 msgid "Focus clipboard search"
 msgstr ""
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:384
 msgid "Pause or resume clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:403
+#: src/ui/settings/window.js:391
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:407
+#: src/ui/settings/window.js:395
 msgid "Paste entry"
 msgstr ""
 
-#: src/ui/settings/window.js:408
+#: src/ui/settings/window.js:396
 msgid "Pin or unpin entry"
 msgstr ""
 
-#: src/ui/settings/window.js:409
+#: src/ui/settings/window.js:397
 msgid "Delete entry"
 msgstr ""
 
-#: src/ui/settings/window.js:410
+#: src/ui/settings/window.js:398
 msgid "Type entry directly"
 msgstr ""
 
-#: src/ui/settings/window.js:411
+#: src/ui/settings/window.js:399
 msgid "Type entry instead of copying"
 msgstr ""
 
-#: src/ui/settings/window.js:417
+#: src/ui/settings/window.js:405
 msgid "Active while a token has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:421
+#: src/ui/settings/window.js:409
 msgid "Copy selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:422
+#: src/ui/settings/window.js:410
 msgid "Paste selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:423
+#: src/ui/settings/window.js:411
 msgid "Type selected tokens"
 msgstr ""
 
-#: src/ui/settings/window.js:424
+#: src/ui/settings/window.js:412
 msgid "Extend selection left"
 msgstr ""
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:413
 msgid "Extend selection right"
 msgstr ""
 
-#: src/ui/settings/window.js:426
+#: src/ui/settings/window.js:414
 msgid "Extend selection upward"
 msgstr ""
 
-#: src/ui/settings/window.js:427
+#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
 msgstr ""
 
-#: src/ui/settings/window.js:437
+#: src/ui/settings/window.js:425
 msgid "Take screenshot"
 msgstr ""
 

@@ -12,7 +12,7 @@ history. It includes word, sentence, line, URL, email, number and identifier ext
 color picker; and screenshots through the system Screenshot Portal. Screenshots and local images can
 be opened in an image editor explicitly selected by the user.
 
-This extension reads clipboard content to build local history. Content is stored in the user's cache
+This extension reads clipboard content to build local history. Content is stored in the user's data directory
 according to the configured retention, size, private-mode and sensitive-content policies. Clipboard X
 does not contain a network client or cloud backend. When the user explicitly chooses “Send to sync
 service”, it passes the selected immutable snapshot over the local Session D-Bus to a separately

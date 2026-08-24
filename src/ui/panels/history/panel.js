@@ -228,12 +228,6 @@ export class HistoryPanel {
       this._section.addMenuItem(row);
       focusRows.push(row._clipboardXFocusRow);
     }
-    if (items.length > limit) {
-      this._section.addMenuItem(new PopupMenu.PopupMenuItem(
-        _('More entries are available; refine the search to see others'),
-        {reactive: false},
-      ));
-    }
     this._setFocusRows(focusRows);
   }
 

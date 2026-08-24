@@ -25,7 +25,8 @@ export class ClipboardController extends EventEmitter {
     super();
     this._settings = settings;
     this._clipboard = St.Clipboard.get_default();
-    this._store = new HistoryStore();
+    const {deviceId} = ensureDeviceIdentity(settings);
+    this._store = new HistoryStore({deviceId});
     this._items = [];
     this._selection = null;
     this._selectionSignal = 0;
@@ -294,8 +295,9 @@ export class ClipboardController extends EventEmitter {
         this._cancellable,
       );
       const digest = sha256(thumbnail.bytes);
-      const previewPath = GLib.build_filenamev([this._store.objectsPath, `preview-${digest}.png`]);
-      GLib.mkdir_with_parents(this._store.objectsPath, 0o700);
+      const previewsPath = this._store.directory(item.originDeviceId).previews;
+      const previewPath = GLib.build_filenamev([previewsPath, `${digest}.png`]);
+      GLib.mkdir_with_parents(previewsPath, 0o700);
       await writeFile(Gio.File.new_for_path(previewPath), thumbnail.bytes, this._cancellable);
       item.preview = {
         mimeType: thumbnail.mimeType,

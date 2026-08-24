@@ -7,7 +7,9 @@ Sync1 是 Clipboard X 扩展与本机会话中外部同步 Service 之间的公�
 ## 寻址与兼容性
 
 - 使用 Session D-Bus；接口名固定为 `io.github.guleo.ClipboardX.Sync1`。
-- Bus Name 和 Object Path 由用户配置，Service 可以提供 D-Bus 激活文件。
+- Bus Name 固定为 `io.github.guleo.ClipboardX.SyncService`，Object Path 固定为
+  `/io/github/guleo/ClipboardX/Sync`。Service 可以提供 D-Bus 激活文件；测试实现可以在
+  隔离环境中覆盖寻址信息，但普通用户不需要配置 D-Bus 技术细节。
 - 客户端连接后必须读取所有属性，并拒绝不等于 `1` 的 `ApiVersion`。
 - `MaxItemBytes` 或 `MaxPreviewBytes` 为 `0` 时表示 Service 不声明额外上限；客户端自身的安全限制仍然有效。
 - `SupportedMimeTypes` 为空表示不额外限制 MIME；否则客户端只发布交集中的表示。
