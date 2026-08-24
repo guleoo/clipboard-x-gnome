@@ -4,6 +4,9 @@
 物化、取消和重连。它们只把快照保存在内存中，不执行设备发现、网络传输、认证或
 持久化，不能作为生产同步服务。
 
+`GetConfiguration`、`UpdateConfiguration`、`ListChannels` 和 `TestConnection` 使用内存中的
+固定服务器地址与 Channel 数据验证插件设置契约。Mock 不会持久化凭据，也不会建立网络连接。
+
 在临时 Session Bus 中启动 GJS 实现：
 
 ```sh

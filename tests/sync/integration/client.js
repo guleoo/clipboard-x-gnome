@@ -94,6 +94,20 @@ const expectedImplementation = GLib.getenv('CLIPBOARD_X_EXPECTED_IMPLEMENTATION'
 assert(client.capabilities?.implementationName === expectedImplementation,
   'SyncClient must expose Service identity');
 assert(settings.get_string('device-id').length === 36, 'SyncClient must generate and persist DeviceId');
+assert(client.configuration?.serverAddress === 'http://127.0.0.1:8765',
+  'SyncClient must load the Service-owned server address');
+assert(client.channels.length === 1 && client.channels[0].active,
+  'SyncClient must load the active server channel');
+const configured = await client.updateConfiguration({
+  serverAddress: '192.168.1.20:8765',
+  apiKey: 'cbx_integration_secret',
+  activeChannelId: client.channels[0].id,
+});
+assert(configured.serverAddress === '192.168.1.20:8765' && configured.apiKeyConfigured,
+  'SyncClient must update connection settings without reading the API key back');
+const connection = await client.testConnection();
+assert(connection.state === 'online' && connection.latencyMs >= 0,
+  'SyncClient must expose the Service connection test result');
 
 const item = ClipboardItem.fromText('full synchronized content');
 item.primary.delivery = 'on-demand';

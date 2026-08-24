@@ -1,6 +1,6 @@
 # Clipboard X Sync1 协议
 
-Sync1 是 Clipboard X 扩展与本机会话中外部同步 Service 之间的公开 D-Bus 协议。扩展不进行设备发现、认证或网络传输；Service 接管不可变快照，并负责把它们安全地传送到其他设备。
+Sync1 是 Clipboard X 扩展与本机会话中外部同步 Service 之间的公开 D-Bus 协议。扩展不进行远端认证或网络传输；Service 接管不可变快照，并负责连接用户配置的 Clipboard X Server。服务器是可信中心存储，可以查看已经上传到服务器的剪切板内容。
 
 正式 ABI 以 [`io.github.guleo.ClipboardX.Sync1.xml`](io.github.guleo.ClipboardX.Sync1.xml) 为准。本文件定义字段语义、恢复机制和进度计量规则。
 
@@ -44,6 +44,36 @@ Tag 和图标只在注册或变化时发送，不在每次内容调用中重复�
 | `is-current` | `b` | 是 | 是否为调用方设备 |
 
 任意本地文件路径、主题私有图标名和图片字节都不能作为 `icon-kind`。
+
+## 服务器连接与 Channel
+
+服务器地址、设备 API Key 和活动 Channel 由本地 Service 持久化。插件设置页只通过 Sync1 管理它们，API Key 不写入插件 GSettings，也不允许从 Service 读回。
+
+```text
+GetConfiguration(deviceId) -> configuration
+UpdateConfiguration(deviceId, changes) -> configuration
+ListChannels(deviceId) -> channels
+TestConnection(deviceId) -> result
+```
+
+`configuration` 返回：
+
+| 字段 | 类型 | 必需 | 含义 |
+| --- | --- | --- | --- |
+| `server-address` | `s` | 是 | 用户填写的服务器地址；未配置时为空 |
+| `api-key-configured` | `b` | 是 | Service 是否已保存设备 API Key |
+| `active-channel-id` | `s` | 是 | 当前 Channel UUID；未选择时为空 |
+| `active-channel-name` | `s` | 否 | 当前 Channel 友好名称 |
+
+`UpdateConfiguration` 使用增量 changes：字段缺失表示保留旧值；`server-address` 更新服务器地址；`api-key` 是只写字段，用于替换现有 Key；`clear-api-key=true` 才清除 Key；`active-channel-id` 选择当前设备已经加入的 Channel。方法返回更新后的脱敏 configuration。
+
+Service 接受的服务器地址形式由实现决定，Clipboard X 标准实现应接受纯主机/IP、`IP:端口`、`http://` 和 `https://`。设置界面不替用户选择传输协议。
+
+`ListChannels` 只返回当前 API Key 对应设备已经加入的 Channel。每条记录包含 UUID `id`、友好 `name` 和布尔值 `active`。设备可以加入多个 Channel，但每次只有一个活动 Channel；每条发布记录只属于一个明确 Channel。
+
+`Publish` 和 `GetChanges` 总是作用于 Service 当前保存的活动 Channel。切换 Channel 后，Service 必须切换到该 Channel 独立的变化流；扩展收到 `ConfigurationChanged` 后丢弃内存 cursor，并用空 cursor 重建一致视图。Service 不得把旧 Channel 的 cursor 用到新 Channel。
+
+`TestConnection` 对当前已保存配置执行一次有限时长测试，返回 `state`（`online`、`offline` 或 `error`）、非负 `latency-ms`、可选 `server-version` 和可选 `message`。它不得返回 API Key 或剪切板正文。
 
 ## Service 状态
 
@@ -94,7 +124,7 @@ Publish(deviceId, item, previews, contents, options) -> itemId, transferId
 
 `Publish` 只创建异步发布任务并返回稳定的 `transferId`。Service 必须在返回前取得所有 UNIX FD 的独立所有权，之后可以异步读取。方法返回不表示远端发布已经完成。
 
-发布任务的 `kind` 为 `publish`、`direction` 为 `upload`。对于 `on-demand` 内容，初始发布进度只计算清单、预览和实际向目标设备发送的 eager 内容；完整原文以后被请求时建立独立的 `content` 传输。这样 100% 不会错误表示大内容已经到达远端。
+发布任务的 `kind` 为 `publish`、`direction` 为 `upload`。对于 `on-demand` 内容，初始发布进度只计算实际上传到中心服务器的清单、预览和 eager 内容；完整原文以后被 Web 或其他设备请求时建立独立的 `content` 传输。这样 100% 不会错误表示大内容已经缓存到服务器。
 
 ## 增量同步
 
@@ -168,13 +198,15 @@ RequestContent(deviceId, itemId, contentIds, options) -> transferId
 | `DeviceRemoved(deviceId, reason)` | 设备解除配对或永久删除 | `ListDevices` |
 | `ChangesAvailable(latestCursor)` | 提示变化日志已有新内容 | `GetChanges` |
 | `TransferChanged(transfer)` | 上传或下载状态及精确进度 | `GetTransfer` / `ListTransfers` |
+| `ConfigurationChanged(configuration)` | 服务器地址、Key 状态或活动 Channel 变化 | `GetConfiguration` |
+| `ChannelsChanged(revision)` | 当前设备可用 Channel 集合变化 | `ListChannels` |
 
 `ChangesAvailable` 可以合并，不能携带剪切板正文。客户端重连后必须主动调用全部对应恢复方法，不能假设信号从未丢失。设备删除后，已有条目应继续显示保存于条目元数据中的来源 Tag 和图标快照。
 
 ## 错误与安全边界
 
-标准错误尾名：`UnsupportedVersion`、`UnsupportedMimeType`、`TooLarge`、`Unavailable`、`Expired`、`NotAuthorized`、`InvalidItem`、`Busy`、`Offline`。
+标准错误尾名：`UnsupportedVersion`、`UnsupportedMimeType`、`TooLarge`、`Unavailable`、`Expired`、`NotAuthorized`、`InvalidItem`、`InvalidConfiguration`、`NotConfigured`、`Busy`、`Offline`。
 
-Sync1 只跨本机会话总线，不定义网络认证或端到端加密。Service 负责用户授权、设备配对、网络加密、离线队列和远端快照删除。实现不得在日志或信号中记录剪切板正文、认证信息或完整敏感路径；客户端隐私模式和敏感内容策略优先于自动发布。
+Sync1 只跨本机会话总线，不定义服务器 HTTP API 的认证和传输协议。标准服务端采用每设备 API Key，服务器拥有并可查看实际上传的内容；连接使用 HTTP 还是 HTTPS 由用户填写的服务器地址决定。Service 负责 Key 保存、网络请求、离线队列和远端快照删除。实现不得在日志或信号中记录剪切板正文、API Key、Authorization 或完整敏感路径；客户端隐私模式和敏感内容策略优先于自动发布。
 
 仓库中的 GJS 与 Python Mock Service 只用于互操作测试，不是网络同步服务，也不随 GNOME Extensions 发布包安装。

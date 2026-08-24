@@ -29,6 +29,14 @@ TRANSFERS: dict[str, dict] = {}
 CHANGES: list[dict] = []
 CONNECTION: Gio.DBusConnection | None = None
 REVISION = 0
+DEFAULT_CHANNEL_ID = "11111111-1111-4111-8111-111111111111"
+CONFIGURATION = {
+    "server-address": "http://127.0.0.1:8765",
+    "api-key-configured": False,
+    "active-channel-id": DEFAULT_CHANNEL_ID,
+    "active-channel-name": "Default",
+}
+CHANNELS = [{"id": DEFAULT_CHANNEL_ID, "name": "Default"}]
 
 
 def _variant(value):
@@ -234,6 +242,64 @@ def _method_call(
             )
             return
 
+        if method_name == "GetConfiguration":
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary(CONFIGURATION),))
+            )
+            return
+
+        if method_name == "UpdateConfiguration":
+            changes = values[1]
+            if changes.get("server-address"):
+                CONFIGURATION["server-address"] = changes["server-address"]
+            if changes.get("active-channel-id"):
+                channel_id = changes["active-channel-id"]
+                if not any(channel["id"] == channel_id for channel in CHANNELS):
+                    raise ValueError("Unknown channel")
+                CONFIGURATION["active-channel-id"] = channel_id
+                CONFIGURATION["active-channel-name"] = next(
+                    channel["name"] for channel in CHANNELS if channel["id"] == channel_id
+                )
+            if changes.get("api-key"):
+                CONFIGURATION["api-key-configured"] = True
+            if changes.get("clear-api-key"):
+                CONFIGURATION["api-key-configured"] = False
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary(CONFIGURATION),))
+            )
+            _connection.emit_signal(
+                None,
+                OBJECT_PATH,
+                INTERFACE,
+                "ConfigurationChanged",
+                GLib.Variant("(a{sv})", (_variant_dictionary(CONFIGURATION),)),
+            )
+            return
+
+        if method_name == "ListChannels":
+            channels = [
+                _variant_dictionary({
+                    **channel,
+                    "active": channel["id"] == CONFIGURATION["active-channel-id"],
+                })
+                for channel in CHANNELS
+            ]
+            invocation.return_value(GLib.Variant("(aa{sv})", (channels,)))
+            return
+
+        if method_name == "TestConnection":
+            configured = CONFIGURATION["api-key-configured"]
+            result = {
+                "state": "online" if configured else "offline",
+                "latency-ms": 1,
+                "server-version": "0.1.0-python-mock",
+                "message": "Connected" if configured else "API key is not configured",
+            }
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary(result),))
+            )
+            return
+
         if method_name == "Publish":
             device_id, metadata, previews, contents, _options = values
             item_id = metadata.get("id", str(uuid.uuid4()))
@@ -398,7 +464,7 @@ def _method_call(
             invocation.return_value(GLib.Variant("(aa{sv})", (result,)))
             return
 
-        if method_name in {"Acknowledge", "OpenPreferences"}:
+        if method_name == "Acknowledge":
             invocation.return_value(GLib.Variant("()", ()))
             return
 

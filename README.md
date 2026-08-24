@@ -4,7 +4,7 @@ Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏�
 快捷键打开统一面板，提供文本与图片历史、词元选择式分词、外部设备同步集成、截图、
 取色和调用外部图片编辑器等功能。
 
-同步能力只包含客户端协议。扩展不会建立网络连接；设备发现、配对、认证、加密、
+同步能力只包含客户端协议。扩展不会建立网络连接；服务器地址、设备 API Key、Channel、
 网络传输和离线队列由实现 [Sync1](protocol/SYNC1.md) 的独立本机 Service 负责。
 
 ## 功能
@@ -88,7 +88,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 
 ## 同步 Service
 
-在“设置 → 同步”中启动同步服务，然后测试连接。兼容实现使用 Sync1 规定的 Session
+在“设置 → 同步”中填写服务器地址、设备 API Key，刷新并选择活动 Channel，然后启动
+同步服务并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；API Key 由本机 Service
+保存，插件 GSettings 不保存也不读回明文。兼容实现使用 Sync1 规定的 Session
 D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
 `/io/github/guleo/ClipboardX/Sync`，用户不需要配置 D-Bus 技术细节。
 

@@ -29,6 +29,10 @@ for (const name of [
   'GetStatus',
   'RegisterDevice',
   'ListDevices',
+  'GetConfiguration',
+  'UpdateConfiguration',
+  'ListChannels',
+  'TestConnection',
   'Publish',
   'GetChanges',
   'GetItem',
@@ -51,15 +55,14 @@ assert(SYNC_BUS_NAME === 'io.github.guleo.ClipboardX.SyncService'
     && SYNC_INTERFACE === 'io.github.guleo.ClipboardX.Sync1',
   'production Sync1 D-Bus addressing must be standardized');
 assert(xml.includes('type="h"'), 'protocol must use UNIX FD payloads');
-const preferences = xml.match(/<method name="OpenPreferences"([\s\S]*?)\/>/u)?.[0] ?? '';
-assert(!preferences.includes('deviceId'), 'OpenPreferences is not a synchronization data operation');
-
 for (const name of [
   'StatusChanged',
   'DeviceChanged',
   'DeviceRemoved',
   'ChangesAvailable',
   'TransferChanged',
+  'ConfigurationChanged',
+  'ChannelsChanged',
 ])
   assert(xml.includes(`<signal name="${name}">`), `protocol must define ${name}`);
 

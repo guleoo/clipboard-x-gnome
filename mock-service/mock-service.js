@@ -18,6 +18,7 @@ const TRANSFER_STATES = (GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_SEQUENCE') ?? 'c
 const TRANSFER_DELAY_MS = parseLimit(GLib.getenv('CLIPBOARD_X_MOCK_TRANSFER_DELAY_MS'), 60);
 const MALFORMED_SIGNALS = GLib.getenv('CLIPBOARD_X_MOCK_MALFORMED') === '1';
 const TERMINAL_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
+const DEFAULT_CHANNEL_ID = '11111111-1111-4111-8111-111111111111';
 
 const sourcePath = GLib.filename_from_uri(import.meta.url)[0];
 const protocolPath = GLib.build_filenamev([
@@ -37,6 +38,12 @@ let connection = null;
 let registrationId = 0;
 let transferRequestCount = 0;
 let revision = 0;
+let connectionConfiguration = {
+  serverAddress: 'http://127.0.0.1:8765',
+  apiKeyConfigured: false,
+  activeChannelId: DEFAULT_CHANNEL_ID,
+};
+const channels = [{id: DEFAULT_CHANNEL_ID, name: 'Default'}];
 
 function parseLimit(value, fallback) {
   if (value === null || value === '')
@@ -156,6 +163,16 @@ function statusRecord(deviceId) {
   };
 }
 
+function configurationRecord() {
+  const active = channels.find(channel => channel.id === connectionConfiguration.activeChannelId);
+  return {
+    'server-address': connectionConfiguration.serverAddress,
+    'api-key-configured': connectionConfiguration.apiKeyConfigured,
+    'active-channel-id': connectionConfiguration.activeChannelId,
+    'active-channel-name': active?.name ?? '',
+  };
+}
+
 function emitDictionarySignal(name, value) {
   connection.emit_signal(null, OBJECT_PATH, INTERFACE, name,
     new GLib.Variant('(a{sv})', [dictionary(value)]));
@@ -264,6 +281,52 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
     if (methodName === 'ListDevices') {
       const result = [...devices.keys()].map(deviceId => dictionary(deviceRecord(deviceId, values[0])));
       invocation.return_value(new GLib.Variant('(aa{sv})', [result]));
+      return;
+    }
+
+    if (methodName === 'GetConfiguration') {
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary(configurationRecord())]));
+      return;
+    }
+
+    if (methodName === 'UpdateConfiguration') {
+      const changes = values[1];
+      const address = metadataString(changes, 'server-address');
+      const channelId = metadataString(changes, 'active-channel-id');
+      const apiKey = metadataString(changes, 'api-key');
+      if (address)
+        connectionConfiguration.serverAddress = address;
+      if (channelId) {
+        if (!channels.some(channel => channel.id === channelId))
+          throw new Error('Unknown channel');
+        connectionConfiguration.activeChannelId = channelId;
+      }
+      if (apiKey)
+        connectionConfiguration.apiKeyConfigured = true;
+      if (unpack(changes['clear-api-key'] ?? false))
+        connectionConfiguration.apiKeyConfigured = false;
+      const configuration = configurationRecord();
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary(configuration)]));
+      emitDictionarySignal('ConfigurationChanged', configuration);
+      return;
+    }
+
+    if (methodName === 'ListChannels') {
+      const result = channels.map(channel => dictionary({
+        ...channel,
+        active: channel.id === connectionConfiguration.activeChannelId,
+      }));
+      invocation.return_value(new GLib.Variant('(aa{sv})', [result]));
+      return;
+    }
+
+    if (methodName === 'TestConnection') {
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary({
+        state: connectionConfiguration.apiKeyConfigured ? 'online' : 'offline',
+        'latency-ms': 1,
+        'server-version': '0.1.0-mock',
+        message: connectionConfiguration.apiKeyConfigured ? 'Connected' : 'API key is not configured',
+      })]));
       return;
     }
 
@@ -388,7 +451,7 @@ function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodN
       return;
     }
 
-    if (methodName === 'Acknowledge' || methodName === 'OpenPreferences') {
+    if (methodName === 'Acknowledge') {
       emptyReply(invocation);
       return;
     }

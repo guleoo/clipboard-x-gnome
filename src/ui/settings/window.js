@@ -1,17 +1,14 @@
 // Clipboard X settings window composition.
 import Adw from 'gi://Adw';
-import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
 import {DictionaryStore} from '../../clipboard/tokenizer/dictionary/store.js';
-import {SYNC_API_VERSION, SYNC_INTERFACE} from '../../sync/constants.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
-import {effectiveCapabilities} from '../../sync/policy.js';
 import {create as createPanelActionsRow} from './panel-actions.js';
+import {create as createSyncGroup} from './sync.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
@@ -246,50 +243,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['other', _('Other'), 'avatar-default-symbolic'],
     ]));
 
-    const service = new Adw.PreferencesGroup({title: _('Service connection')});
-    page.add(service);
-    service.add(this._rows.switch('sync-enabled', _('Enable synchronization service')));
-    const statusRow = new Adw.ActionRow({title: _('Service status'), subtitle: _('Not tested')});
-    const testButton = new Gtk.Button({label: _('Test connection'), valign: Gtk.Align.CENTER});
-    testButton.connect('clicked', async () => {
-      testButton.sensitive = false;
-      statusRow.subtitle = _('Connecting…');
-      try {
-        const capabilities = await inspectSyncService(settings);
-        if (Number(capabilities.ApiVersion) !== SYNC_API_VERSION)
-          throw new Error(`Sync${capabilities.ApiVersion} is not compatible with Sync${SYNC_API_VERSION}`);
-        const effective = effectiveCapabilities(settings, capabilities);
-        statusRow.subtitle = [
-          capabilities.ImplementationName,
-          capabilities.ImplementationVersion,
-          capabilities.Status,
-          `${effective.mimeTypes.length} MIME`,
-          `${formatBytes(effective.itemBytes)} ${_('item limit')}`,
-          `${formatBytes(effective.previewBytes)} ${_('preview limit')}`,
-        ].filter(Boolean).join(' · ');
-      } catch (error) {
-        statusRow.subtitle = error.message;
-      } finally {
-        testButton.sensitive = true;
-      }
-    });
-    statusRow.add_suffix(testButton);
-    service.add(statusRow);
-
-    const servicePrefs = new Adw.ActionRow({
-      title: _('Service preferences'),
-      subtitle: _('Provided by the external synchronization Service'),
-    });
-    const servicePrefsButton = new Gtk.Button({label: _('Open'), valign: Gtk.Align.CENTER});
-    servicePrefsButton.connect('clicked', async () => {
-      try {
-        await callSyncService(settings, 'OpenPreferences', null, null);
-      } catch (error) {
-        statusRow.subtitle = error.message;
-      }
-    });
-    servicePrefs.add_suffix(servicePrefsButton);
-    service.add(servicePrefs);
+    page.add(createSyncGroup(settings, deviceId, this._rows));
 
     const policy = new Adw.PreferencesGroup({title: _('Transfer policy')});
     page.add(policy);
@@ -438,56 +392,4 @@ function GdkClipboard(window) {
       window.get_clipboard().set(text);
     },
   };
-}
-
-async function inspectSyncService(settings) {
-  const reply = await callSyncService(
-    settings,
-    'GetAll',
-    new GLib.Variant('(s)', [SYNC_INTERFACE]),
-    new GLib.VariantType('(a{sv})'),
-    'org.freedesktop.DBus.Properties',
-  );
-  return unpackVariants(reply.deepUnpack()[0]);
-}
-
-function callSyncService(settings, method, parameters, replyType, interfaceName = SYNC_INTERFACE) {
-  return new Promise((resolve, reject) => {
-    Gio.DBus.session.call(
-      settings.get_string('service-bus-name'),
-      settings.get_string('service-object-path'),
-      interfaceName,
-      method,
-      parameters,
-      replyType,
-      Gio.DBusCallFlags.NONE,
-      5000,
-      null,
-      (connection, result) => {
-        try {
-          resolve(connection.call_finish(result));
-        } catch (error) {
-          reject(error);
-        }
-      },
-    );
-  });
-}
-
-function unpackVariants(value) {
-  if (value instanceof GLib.Variant)
-    return unpackVariants(value.deepUnpack());
-  if (Array.isArray(value))
-    return value.map(unpackVariants);
-  if (value && typeof value === 'object')
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, unpackVariants(item)]));
-  return value;
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024)
-    return `${bytes} B`;
-  if (bytes < 1024 * 1024)
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

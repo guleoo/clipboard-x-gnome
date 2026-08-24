@@ -16,6 +16,12 @@ import {writeFile} from '../common/files.js';
 import {isUuid} from '../common/uuid.js';
 import {DEVICE_ICON_KINDS, ensureDeviceIdentity} from './device.js';
 import {
+  channel as validateChannel,
+  configuration as validateConfiguration,
+  configurationChanges,
+  connectionResult as validateConnectionResult,
+} from './configuration.js';
+import {
   SYNC_API_VERSION,
   SYNC_INTERFACE,
   TransferState,
@@ -40,6 +46,8 @@ export class SyncClient extends EventEmitter {
     this._transferStates = new Map();
     this._knownTransfers = new Set();
     this._devices = new Map();
+    this._channels = [];
+    this._configuration = null;
     this._status = null;
     this._cursor = '';
     this._syncingChanges = false;
@@ -60,6 +68,14 @@ export class SyncClient extends EventEmitter {
 
   get devices() {
     return [...this._devices.values()].map(device => ({...device}));
+  }
+
+  get channels() {
+    return this._channels.map(channel => ({...channel}));
+  }
+
+  get configuration() {
+    return this._configuration ? {...this._configuration} : null;
   }
 
   get status() {
@@ -237,6 +253,48 @@ export class SyncClient extends EventEmitter {
       throw new Error('Synchronization Service returned an invalid changes page');
     const changes = rawChanges.map(validateChange);
     return {nextCursor, changes, hasMore};
+  }
+
+  async getConfiguration() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('GetConfiguration', new GLib.Variant('(s)', [deviceId]));
+    this._configuration = validateConfiguration(unpackDictionary(reply.deepUnpack()[0]));
+    return this.configuration;
+  }
+
+  async updateConfiguration(changes) {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const serialized = configurationChanges(changes);
+    const reply = await this._call('UpdateConfiguration', new GLib.Variant('(sa{sv})', [
+      deviceId,
+      variantDictionary(serialized),
+    ]));
+    this._applyConfiguration(validateConfiguration(unpackDictionary(reply.deepUnpack()[0])));
+    return this.configuration;
+  }
+
+  async listChannels() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('ListChannels', new GLib.Variant('(s)', [deviceId]));
+    const values = reply.deepUnpack()[0];
+    if (!Array.isArray(values) || values.length > 10_000)
+      throw new Error('Synchronization Service returned an invalid channel list');
+    const ids = new Set();
+    this._channels = values.map(value => {
+      const result = validateChannel(unpackDictionary(value));
+      if (ids.has(result.id))
+        throw new Error('Synchronization Service returned duplicate channels');
+      ids.add(result.id);
+      return result;
+    });
+    this.emit('channels-changed', this.channels);
+    return this.channels;
+  }
+
+  async testConnection() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const reply = await this._call('TestConnection', new GLib.Variant('(s)', [deviceId]));
+    return validateConnectionResult(unpackDictionary(reply.deepUnpack()[0]));
   }
 
   async requestContent(itemId, contentIds) {
@@ -478,10 +536,6 @@ export class SyncClient extends EventEmitter {
     return values.map(value => validateTransfer(value, deviceId));
   }
 
-  async openPreferences() {
-    await this._call('OpenPreferences', null);
-  }
-
   _openPayload(fdList, streams, mimeType, metadata, path) {
     const stream = Gio.File.new_for_path(path).read(this._cancellable);
     streams.push(stream);
@@ -562,6 +616,10 @@ export class SyncClient extends EventEmitter {
         }
         else if (name === 'TransferChanged')
           this._handleTransferChanged(values[0]);
+        else if (name === 'ConfigurationChanged')
+          this._handleConfigurationChanged(values[0]);
+        else if (name === 'ChannelsChanged')
+          this._handleChannelsChanged(values[0]);
       });
       await this._handleNameOwnerChanged(true);
     } finally {
@@ -620,6 +678,8 @@ export class SyncClient extends EventEmitter {
         this._loadStatus(),
         this._loadDevices(),
         this._loadTransfers(),
+        this.getConfiguration(),
+        this.listChannels(),
       ]);
       await this._syncChanges();
       this.emit('status-changed', this._status?.state ?? this._capabilities.status ?? 'online', this.capabilities);
@@ -749,6 +809,33 @@ export class SyncClient extends EventEmitter {
     this._devices.delete(deviceId);
     this.emit('device-removed', deviceId, safeString(reason, 256));
     this.emit('devices-changed', this.devices);
+  }
+
+  _handleConfigurationChanged(rawConfiguration) {
+    try {
+      this._applyConfiguration(validateConfiguration(unpackDictionary(rawConfiguration)));
+    } catch (error) {
+      this._report(error);
+    }
+  }
+
+  _applyConfiguration(configuration) {
+    const previousChannelId = this._configuration?.activeChannelId ?? '';
+    this._configuration = configuration;
+    this.emit('configuration-changed', this.configuration);
+    if (previousChannelId !== configuration.activeChannelId) {
+      this._cursor = '';
+      this._syncChanges().catch(error => this._report(error));
+    }
+  }
+
+  _handleChannelsChanged(revision) {
+    const value = Number(revision);
+    if (!Number.isSafeInteger(value) || value < 0) {
+      this._report(new Error('Service emitted an invalid channel revision'));
+      return;
+    }
+    this.listChannels().catch(error => this._report(error));
   }
 
   _canPublish(mimeType) {
@@ -894,6 +981,8 @@ export class SyncClient extends EventEmitter {
     this._registeredProfile = null;
     this._capabilities = null;
     this._status = null;
+    this._configuration = null;
+    this._channels = [];
   }
 
   _stopWatchingName() {

@@ -26,6 +26,27 @@
       <arg name="devices" type="aa{sv}" direction="out"/>
     </method>
 
+    <method name="GetConfiguration">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="configuration" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="UpdateConfiguration">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="changes" type="a{sv}" direction="in"/>
+      <arg name="configuration" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="ListChannels">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="channels" type="aa{sv}" direction="out"/>
+    </method>
+
+    <method name="TestConnection">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="result" type="a{sv}" direction="out"/>
+    </method>
+
     <method name="Publish">
       <arg name="deviceId" type="s" direction="in"/>
       <arg name="item" type="a{sv}" direction="in"/>
@@ -92,8 +113,6 @@
       <arg name="transfers" type="aa{sv}" direction="out"/>
     </method>
 
-    <method name="OpenPreferences"/>
-
     <signal name="StatusChanged">
       <arg name="status" type="a{sv}"/>
     </signal>
@@ -113,6 +132,14 @@
 
     <signal name="TransferChanged">
       <arg name="transfer" type="a{sv}"/>
+    </signal>
+
+    <signal name="ConfigurationChanged">
+      <arg name="configuration" type="a{sv}"/>
+    </signal>
+
+    <signal name="ChannelsChanged">
+      <arg name="revision" type="t"/>
     </signal>
   </interface>
 </node>

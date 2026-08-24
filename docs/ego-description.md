@@ -16,8 +16,9 @@ This extension reads clipboard content to build local history. Content is stored
 according to the configured retention, size, private-mode and sensitive-content policies. Clipboard X
 does not contain a network client or cloud backend. When the user explicitly chooses “Send to sync
 service”, it passes the selected immutable snapshot over the local Session D-Bus to a separately
-installed, user-configured Sync1 service. That service is responsible for pairing, authentication,
-encryption, networking and remote retention.
+installed, user-configured Sync1 service. That service stores the server address, per-device API key
+and active channel, and is responsible for networking, offline queues and remote retention. The
+configured server is a trusted central store and can read content uploaded to it.
 
 No keyboard shortcut is assigned by default. The extension does not bundle executables, the Mock
 Service, or an image editor.
