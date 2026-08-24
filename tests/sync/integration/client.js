@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import {ClipboardItem} from '../../../src/clipboard/item.js';
 import {SyncClient} from '../../../src/sync/client.js';
+import {SyncConfigurationStore} from '../../../src/sync/configuration-store.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -74,6 +75,12 @@ class TestSettings {
   }
 }
 
+const storedConfiguration = new SyncConfigurationStore();
+await storedConfiguration.save({
+  serverAddress: '192.168.1.20:8765',
+  apiKey: 'cbx_integration_secret',
+  activeChannelId: '11111111-1111-4111-8111-111111111111',
+});
 const settings = new TestSettings();
 const client = new SyncClient(settings);
 const online = new Promise((resolve, reject) => {
@@ -94,17 +101,12 @@ const expectedImplementation = GLib.getenv('CLIPBOARD_X_EXPECTED_IMPLEMENTATION'
 assert(client.capabilities?.implementationName === expectedImplementation,
   'SyncClient must expose Service identity');
 assert(settings.get_string('device-id').length === 36, 'SyncClient must generate and persist DeviceId');
-assert(client.configuration?.serverAddress === 'http://127.0.0.1:8765',
-  'SyncClient must load the Service-owned server address');
+assert(client.configuration?.serverAddress === '192.168.1.20:8765',
+  'SyncClient must apply the server address stored in sync.json');
 assert(client.channels.length === 1 && client.channels[0].active,
   'SyncClient must load the active server channel');
-const configured = await client.updateConfiguration({
-  serverAddress: '192.168.1.20:8765',
-  apiKey: 'cbx_integration_secret',
-  activeChannelId: client.channels[0].id,
-});
-assert(configured.serverAddress === '192.168.1.20:8765' && configured.apiKeyConfigured,
-  'SyncClient must update connection settings without reading the API key back');
+assert(client.configuration.apiKeyConfigured,
+  'SyncClient must send the locally stored API key without reading it back');
 const connection = await client.testConnection();
 assert(connection.state === 'online' && connection.latencyMs >= 0,
   'SyncClient must expose the Service connection test result');

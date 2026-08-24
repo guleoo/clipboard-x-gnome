@@ -21,6 +21,7 @@ import {
   configurationChanges,
   connectionResult as validateConnectionResult,
 } from './configuration.js';
+import {SyncConfigurationStore} from './configuration-store.js';
 import {
   SYNC_API_VERSION,
   SYNC_INTERFACE,
@@ -33,9 +34,10 @@ const MAX_PENDING_ITEMS = 10_000;
 const MAX_TRANSFER_STATES = 1024;
 
 export class SyncClient extends EventEmitter {
-  constructor(settings) {
+  constructor(settings, {configurationStore = new SyncConfigurationStore()} = {}) {
     super();
     this._settings = settings;
+    this._configurationStore = configurationStore;
     this._proxy = null;
     this._proxySignal = 0;
     this._nameWatchId = 0;
@@ -674,6 +676,7 @@ export class SyncClient extends EventEmitter {
         throw new Error(`Unsupported synchronization API version: ${this._capabilities.apiVersion}`);
       this._registeredProfile = null;
       await this._registerDevice(nameKnownPresent);
+      await this._applyStoredConfiguration();
       await Promise.all([
         this._loadStatus(),
         this._loadDevices(),
@@ -681,7 +684,11 @@ export class SyncClient extends EventEmitter {
         this.getConfiguration(),
         this.listChannels(),
       ]);
-      await this._syncChanges();
+      try {
+        await this._syncChanges();
+      } catch (error) {
+        this._report(error);
+      }
       this.emit('status-changed', this._status?.state ?? this._capabilities.status ?? 'online', this.capabilities);
     } catch (error) {
       this._capabilities = null;
@@ -722,6 +729,17 @@ export class SyncClient extends EventEmitter {
       maxItemBytes: safeLimit(read('MaxItemBytes', 0)),
       maxPreviewBytes: safeLimit(read('MaxPreviewBytes', 0)),
     };
+  }
+
+  async _applyStoredConfiguration() {
+    const configuration = await this._configurationStore.load();
+    if (!this._configurationStore.exists)
+      return;
+    await this.updateConfiguration({
+      ...(configuration.serverAddress ? {serverAddress: configuration.serverAddress} : {}),
+      ...(configuration.apiKey ? {apiKey: configuration.apiKey} : {clearApiKey: true}),
+      activeChannelId: configuration.activeChannelId,
+    });
   }
 
   async _loadStatus() {
@@ -1017,6 +1035,7 @@ export class SyncClient extends EventEmitter {
     this._transferStates.clear();
     this._knownTransfers.clear();
     this._cancellable.cancel();
+    this._configurationStore = null;
     this.disconnectAll();
   }
 }

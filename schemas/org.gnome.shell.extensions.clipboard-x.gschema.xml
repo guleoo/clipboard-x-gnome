@@ -207,7 +207,7 @@
     </key>
     <key name="saved-phrases" type="as">
       <default>[]</default>
-      <summary>Local collection of user-defined quick phrases</summary>
+      <summary>Legacy quick phrases awaiting migration to the user data file</summary>
     </key>
     <key name="saved-phrase-limit" type="i">
       <default>200</default>

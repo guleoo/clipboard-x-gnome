@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 12:05+0800\n"
+"POT-Creation-Date: 2026-08-24 12:31+0800\n"
 "PO-Revision-Date: 2026-08-14 21:35+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
@@ -26,7 +26,7 @@ msgid ""
 "keyboard is idle."
 msgstr "模拟键盘输入期间请勿按下其他按键；键盘空闲后将继续输入。"
 
-#: src/ui/indicator.js:279
+#: src/ui/indicator.js:276
 msgid "This text is too large for interactive processing"
 msgstr "此文本过大，无法进行交互式处理"
 
@@ -85,7 +85,7 @@ msgstr "取色"
 msgid "Privacy mode"
 msgstr "隐私模式"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
+#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:54
 #: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:206
 msgid "Quick phrases"
 msgstr "快捷语句"
@@ -190,27 +190,27 @@ msgstr "原始内容已在本机就绪"
 msgid "Send to synchronization Service"
 msgstr "发送到同步服务"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
 msgstr "返回剪切板历史"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
 msgstr "添加自定义语句"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
 msgstr "输入自定义语句…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
 msgstr "复制快捷语句"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
 msgstr "删除快捷语句"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
 msgstr "暂无快捷语句"
 
@@ -369,95 +369,99 @@ msgstr "点击以设置快捷键"
 msgid "Press shortcut…"
 msgstr "请按快捷键…"
 
-#: src/ui/settings/sync.js:18
+#: src/ui/settings/sync.js:20
 msgid "Service connection"
 msgstr "服务连接"
 
-#: src/ui/settings/sync.js:19
+#: src/ui/settings/sync.js:21
 msgid "Enable synchronization service"
 msgstr "启动同步服务"
 
-#: src/ui/settings/sync.js:21
+#: src/ui/settings/sync.js:23
 msgid "Server address"
 msgstr "服务器地址"
 
-#: src/ui/settings/sync.js:24
+#: src/ui/settings/sync.js:26
 msgid "API key"
 msgstr "API Key"
 
-#: src/ui/settings/sync.js:27
+#: src/ui/settings/sync.js:29
 msgid "Active channel"
 msgstr "当前 Channel"
 
-#: src/ui/settings/sync.js:32
+#: src/ui/settings/sync.js:34
 msgid "Refresh channels"
 msgstr "刷新 Channel"
 
-#: src/ui/settings/sync.js:37
+#: src/ui/settings/sync.js:39
 msgid "Service status"
 msgstr "服务状态"
 
-#: src/ui/settings/sync.js:37
+#: src/ui/settings/sync.js:39
 msgid "Not tested"
 msgstr "尚未测试"
 
-#: src/ui/settings/sync.js:39
+#: src/ui/settings/sync.js:41
 msgid "Apply"
 msgstr "应用"
 
-#: src/ui/settings/sync.js:40
+#: src/ui/settings/sync.js:42
 msgid "Test connection"
 msgstr "测试连接"
 
-#: src/ui/settings/sync.js:60
-msgid "An API key is configured; leave this field empty to keep it"
-msgstr "已配置 API Key；留空可保留当前值"
-
-#: src/ui/settings/sync.js:61
-msgid "Enter the API key assigned to this device"
-msgstr "输入分配给此设备的 API Key"
-
-#: src/ui/settings/sync.js:66 src/ui/settings/sync.js:155
+#: src/ui/settings/sync.js:63 src/ui/settings/sync.js:146
 msgid "No available channels"
 msgstr "没有可用的 Channel"
 
-#: src/ui/settings/sync.js:80
-msgid "Loading…"
-msgstr "正在加载…"
-
-#: src/ui/settings/sync.js:91
-msgid "Connection settings loaded · API key configured"
-msgstr "已加载连接设置 · 已配置 API Key"
-
-#: src/ui/settings/sync.js:92
-msgid "Connection settings loaded · API key not configured"
-msgstr "已加载连接设置 · 未配置 API Key"
-
-#: src/ui/settings/sync.js:134
+#: src/ui/settings/sync.js:122
 msgid "Connection settings saved · API key configured"
 msgstr "已保存连接设置 · 已配置 API Key"
 
-#: src/ui/settings/sync.js:135
+#: src/ui/settings/sync.js:123
 msgid "Connection settings saved · API key not configured"
 msgstr "已保存连接设置 · 未配置 API Key"
 
-#: src/ui/settings/sync.js:139
+#: src/ui/settings/sync.js:125
+msgid "Connection settings saved locally"
+msgstr "连接设置已保存在本地"
+
+#: src/ui/settings/sync.js:131
 msgid "Connecting…"
 msgstr "正在连接…"
 
-#: src/ui/settings/sync.js:149
+#: src/ui/settings/sync.js:141
 msgid "Loading channels…"
 msgstr "正在加载 Channel…"
 
-#: src/ui/settings/sync.js:154
+#: src/ui/settings/sync.js:145
 msgid "Channels refreshed"
 msgstr "已刷新 Channel"
 
-#: src/ui/settings/sync.js:183
+#: src/ui/settings/sync.js:151
+msgid "Loading…"
+msgstr "正在加载…"
+
+#: src/ui/settings/sync.js:156
+msgid "Connection settings are not configured"
+msgstr "尚未配置连接设置"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded · API key configured"
+msgstr "已加载连接设置 · 已配置 API Key"
+
+#: src/ui/settings/sync.js:163
+msgid "Connection settings loaded · API key not configured"
+msgstr "已加载连接设置 · 未配置 API Key"
+
+#: src/ui/settings/sync.js:165
+msgid "Connection settings loaded locally"
+msgstr "已从本地加载连接设置"
+
+#: src/ui/settings/sync.js:186
 msgid "The synchronization service returned an invalid channel list"
 msgstr "同步服务返回了无效的 Channel 列表"
 
-#: src/ui/settings/sync.js:188
+#: src/ui/settings/sync.js:191
 msgid "The synchronization service returned duplicate channels"
 msgstr "同步服务返回了重复的 Channel"
 
@@ -991,6 +995,12 @@ msgstr "向下扩展选择范围"
 #: src/ui/settings/window.js:379
 msgid "Take screenshot"
 msgstr "截图"
+
+#~ msgid "An API key is configured; leave this field empty to keep it"
+#~ msgstr "已配置 API Key；留空可保留当前值"
+
+#~ msgid "Enter the API key assigned to this device"
+#~ msgstr "输入分配给此设备的 API Key"
 
 #~ msgid "item limit"
 #~ msgstr "条目上限"

@@ -12,16 +12,18 @@ import {
   configurationChanges,
   connectionResult as validateConnectionResult,
 } from '../../sync/configuration.js';
+import {SyncConfigurationStore} from '../../sync/configuration-store.js';
 import {SYNC_INTERFACE} from '../../sync/constants.js';
 
 export function create(settings, deviceId, rows) {
+  const store = new SyncConfigurationStore();
   const group = new Adw.PreferencesGroup({title: _('Service connection')});
   group.add(rows.switch('sync-enabled', _('Enable synchronization service')));
 
   const address = new Adw.EntryRow({title: _('Server address')});
   group.add(address);
 
-  const apiKey = new Adw.PasswordEntryRow({title: _('API key'), show_peek_icon: true});
+  const apiKey = new Adw.PasswordEntryRow({title: _('API key')});
   group.add(apiKey);
 
   const channel = new Adw.ComboRow({title: _('Active channel')});
@@ -55,11 +57,6 @@ export function create(settings, deviceId, rows) {
   const showError = error => {
     status.subtitle = error?.message ?? String(error);
   };
-  const showApiKeyState = configured => {
-    apiKey.set_tooltip_text(configured
-      ? _('An API key is configured; leave this field empty to keep it')
-      : _('Enter the API key assigned to this device'));
-  };
   const renderChannels = (channels, activeChannelId) => {
     channelIds = channels.map(item => item.id);
     if (channelIds.length === 0) {
@@ -73,40 +70,36 @@ export function create(settings, deviceId, rows) {
     channel.selected = selected >= 0 ? selected : 0;
     channel.sensitive = true;
   };
-  const load = async () => {
-    if (busy)
-      return;
-    setBusy(true);
-    status.subtitle = _('Loading…');
-    try {
-      const [configuration, channels] = await Promise.all([
-        getConfiguration(settings, deviceId),
-        listChannels(settings, deviceId),
-      ]);
-      address.text = configuration.serverAddress;
-      apiKey.text = '';
-      showApiKeyState(configuration.apiKeyConfigured);
-      renderChannels(channels, configuration.activeChannelId);
-      status.subtitle = configuration.apiKeyConfigured
-        ? _('Connection settings loaded · API key configured')
-        : _('Connection settings loaded · API key not configured');
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
+  const fill = configuration => {
+    address.text = configuration.serverAddress;
+    apiKey.text = configuration.apiKey;
   };
-  const applyChanges = async () => {
-    const changes = {serverAddress: address.text};
-    const enteredApiKey = apiKey.text.trim();
-    if (enteredApiKey)
-      changes.apiKey = enteredApiKey;
-    if (channel.sensitive && channelIds[channel.selected])
-      changes.activeChannelId = channelIds[channel.selected];
-    const configuration = await updateConfiguration(settings, deviceId, changes);
-    apiKey.text = '';
-    showApiKeyState(configuration.apiKeyConfigured);
-    return configuration;
+  const persistInputs = async () => {
+    const selectedChannelId = channel.sensitive
+      ? (channelIds[channel.selected] ?? store.current.activeChannelId)
+      : store.current.activeChannelId;
+    return store.save({
+      serverAddress: address.text,
+      apiKey: apiKey.text,
+      activeChannelId: selectedChannelId,
+    });
+  };
+  const synchronize = configuration => updateConfiguration(settings, deviceId, {
+    ...(configuration.serverAddress ? {serverAddress: configuration.serverAddress} : {}),
+    ...(configuration.apiKey ? {apiKey: configuration.apiKey} : {clearApiKey: true}),
+    activeChannelId: configuration.activeChannelId,
+  });
+  const loadChannels = async configuration => {
+    await synchronize(configuration);
+    const channels = await listChannels(settings, deviceId);
+    let current = configuration;
+    if (channels.length > 0
+        && !channels.some(item => item.id === configuration.activeChannelId)) {
+      current = await store.save({...configuration, activeChannelId: channels[0].id});
+      await synchronize(current);
+    }
+    renderChannels(channels, current.activeChannelId);
+    return {configuration: current, channels};
   };
   const run = async operation => {
     if (busy)
@@ -122,49 +115,59 @@ export function create(settings, deviceId, rows) {
   };
 
   apply.connect('clicked', () => run(async () => {
-    let configuration = await applyChanges();
-    const channels = await listChannels(settings, deviceId);
-    if (channels.length > 0
-        && !channels.some(item => item.id === configuration.activeChannelId)) {
-      configuration = await updateConfiguration(settings, deviceId, {
-        activeChannelId: channels[0].id,
-      });
+    const configuration = await persistInputs();
+    try {
+      const result = await loadChannels(configuration);
+      status.subtitle = result.configuration.apiKey
+        ? _('Connection settings saved · API key configured')
+        : _('Connection settings saved · API key not configured');
+    } catch (error) {
+      status.subtitle = [_('Connection settings saved locally'), error.message].join(' · ');
     }
-    status.subtitle = configuration.apiKeyConfigured
-      ? _('Connection settings saved · API key configured')
-      : _('Connection settings saved · API key not configured');
-    renderChannels(channels, configuration.activeChannelId);
   }));
   test.connect('clicked', () => run(async () => {
+    const configuration = await persistInputs();
+    await loadChannels(configuration);
     status.subtitle = _('Connecting…');
     const result = await testConnection(settings, deviceId);
     status.subtitle = [
       result.state,
       result.serverVersion,
-      `${result.latencyMs} ms`,
+      String(result.latencyMs) + ' ms',
       result.message,
     ].filter(Boolean).join(' · ');
   }));
   refresh.connect('clicked', () => run(async () => {
     status.subtitle = _('Loading channels…');
-    const configuration = await getConfiguration(settings, deviceId);
-    const channels = await listChannels(settings, deviceId);
-    renderChannels(channels, configuration.activeChannelId);
-    status.subtitle = channels.length > 0
+    const configuration = await persistInputs();
+    const result = await loadChannels(configuration);
+    status.subtitle = result.channels.length > 0
       ? _('Channels refreshed')
       : _('No available channels');
   }));
 
   GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-    load();
+    run(async () => {
+      status.subtitle = _('Loading…');
+      const configuration = await store.load();
+      fill(configuration);
+      renderChannels([], configuration.activeChannelId);
+      if (!store.exists) {
+        status.subtitle = _('Connection settings are not configured');
+        return;
+      }
+      try {
+        const result = await loadChannels(configuration);
+        status.subtitle = result.configuration.apiKey
+          ? _('Connection settings loaded · API key configured')
+          : _('Connection settings loaded · API key not configured');
+      } catch (error) {
+        status.subtitle = [_('Connection settings loaded locally'), error.message].join(' · ');
+      }
+    });
     return GLib.SOURCE_REMOVE;
   });
   return group;
-}
-
-async function getConfiguration(settings, deviceId) {
-  const reply = await call(settings, 'GetConfiguration', new GLib.Variant('(s)', [deviceId]), '(a{sv})');
-  return validateConfiguration(unpack(reply.deepUnpack()[0]));
 }
 
 async function updateConfiguration(settings, deviceId, changes) {

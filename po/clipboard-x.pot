@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 12:05+0800\n"
+"POT-Creation-Date: 2026-08-24 12:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,7 +27,7 @@ msgid ""
 "keyboard is idle."
 msgstr ""
 
-#: src/ui/indicator.js:279
+#: src/ui/indicator.js:276
 msgid "This text is too large for interactive processing"
 msgstr ""
 
@@ -86,7 +86,7 @@ msgstr ""
 msgid "Privacy mode"
 msgstr ""
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
+#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:54
 #: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:206
 msgid "Quick phrases"
 msgstr ""
@@ -191,27 +191,27 @@ msgstr ""
 msgid "Send to synchronization Service"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
 msgstr ""
 
@@ -370,95 +370,99 @@ msgstr ""
 msgid "Press shortcut…"
 msgstr ""
 
-#: src/ui/settings/sync.js:18
+#: src/ui/settings/sync.js:20
 msgid "Service connection"
 msgstr ""
 
-#: src/ui/settings/sync.js:19
+#: src/ui/settings/sync.js:21
 msgid "Enable synchronization service"
 msgstr ""
 
-#: src/ui/settings/sync.js:21
+#: src/ui/settings/sync.js:23
 msgid "Server address"
 msgstr ""
 
-#: src/ui/settings/sync.js:24
+#: src/ui/settings/sync.js:26
 msgid "API key"
 msgstr ""
 
-#: src/ui/settings/sync.js:27
+#: src/ui/settings/sync.js:29
 msgid "Active channel"
 msgstr ""
 
-#: src/ui/settings/sync.js:32
+#: src/ui/settings/sync.js:34
 msgid "Refresh channels"
 msgstr ""
 
-#: src/ui/settings/sync.js:37
+#: src/ui/settings/sync.js:39
 msgid "Service status"
 msgstr ""
 
-#: src/ui/settings/sync.js:37
+#: src/ui/settings/sync.js:39
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/settings/sync.js:39
+#: src/ui/settings/sync.js:41
 msgid "Apply"
 msgstr ""
 
-#: src/ui/settings/sync.js:40
+#: src/ui/settings/sync.js:42
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/settings/sync.js:60
-msgid "An API key is configured; leave this field empty to keep it"
-msgstr ""
-
-#: src/ui/settings/sync.js:61
-msgid "Enter the API key assigned to this device"
-msgstr ""
-
-#: src/ui/settings/sync.js:66 src/ui/settings/sync.js:155
+#: src/ui/settings/sync.js:63 src/ui/settings/sync.js:146
 msgid "No available channels"
 msgstr ""
 
-#: src/ui/settings/sync.js:80
-msgid "Loading…"
-msgstr ""
-
-#: src/ui/settings/sync.js:91
-msgid "Connection settings loaded · API key configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:92
-msgid "Connection settings loaded · API key not configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:134
+#: src/ui/settings/sync.js:122
 msgid "Connection settings saved · API key configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:135
+#: src/ui/settings/sync.js:123
 msgid "Connection settings saved · API key not configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:139
+#: src/ui/settings/sync.js:125
+msgid "Connection settings saved locally"
+msgstr ""
+
+#: src/ui/settings/sync.js:131
 msgid "Connecting…"
 msgstr ""
 
-#: src/ui/settings/sync.js:149
+#: src/ui/settings/sync.js:141
 msgid "Loading channels…"
 msgstr ""
 
-#: src/ui/settings/sync.js:154
+#: src/ui/settings/sync.js:145
 msgid "Channels refreshed"
 msgstr ""
 
-#: src/ui/settings/sync.js:183
+#: src/ui/settings/sync.js:151
+msgid "Loading…"
+msgstr ""
+
+#: src/ui/settings/sync.js:156
+msgid "Connection settings are not configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded · API key configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:163
+msgid "Connection settings loaded · API key not configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:165
+msgid "Connection settings loaded locally"
+msgstr ""
+
+#: src/ui/settings/sync.js:186
 msgid "The synchronization service returned an invalid channel list"
 msgstr ""
 
-#: src/ui/settings/sync.js:188
+#: src/ui/settings/sync.js:191
 msgid "The synchronization service returned duplicate channels"
 msgstr ""
 

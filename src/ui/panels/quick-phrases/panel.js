@@ -15,12 +15,13 @@ import {FocusGrid} from '../../navigation/focus-grid.js';
 const OPTICAL_BASELINE_OFFSET = -1;
 
 export class QuickPhrasesPanel {
-  constructor({settings, createIconButton, handleKey, onBack, onCopy, refresh}) {
+  constructor({settings, createIconButton, handleKey, onBack, onCopy, refresh, reportError}) {
     this._store = new PhraseStore(settings);
     this._createIconButton = createIconButton;
     this._handleKey = handleKey;
     this._onCopy = onCopy;
     this._refresh = refresh;
+    this._reportError = reportError;
     this._formVisible = false;
     this._buttons = [];
     this._rows = [];
@@ -72,7 +73,7 @@ export class QuickPhrasesPanel {
     this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
       const key = event.get_key_symbol();
       if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
-        this.save();
+        this.save().catch(error => this._reportError(error));
         return Clutter.EVENT_STOP;
       }
       if (key === Clutter.KEY_Escape) {
@@ -102,6 +103,9 @@ export class QuickPhrasesPanel {
           AnimationUtils.ensureActorVisibleInScrollView(this.scroll, row);
       },
     });
+    this.ready = this._store.ready
+      .then(() => this._refresh())
+      .catch(error => this._reportError(error));
   }
 
   get phrases() {
@@ -149,7 +153,7 @@ export class QuickPhrasesPanel {
       const remove = this._createIconButton(
         'user-trash-symbolic',
         _('Delete quick phrase'),
-        () => this.remove(phrase),
+        () => this.remove(phrase).catch(error => this._reportError(error)),
         {showTooltip: false},
       );
       row.addAction(remove);
@@ -220,26 +224,36 @@ export class QuickPhrasesPanel {
       this.showForm();
   }
 
-  save() {
+  async save() {
     if (!this.entry.get_text().trim())
       return false;
-    this._store.add(this.entry.get_text());
+    await this._store.add(this.entry.get_text());
     this._setFormVisible(false);
     this._refresh();
     this.focus();
     return true;
   }
 
-  remove(phrase) {
-    if (!this._store.remove(phrase))
+  async remove(phrase) {
+    if (!await this._store.remove(phrase))
       return false;
     this._refresh();
     this.focus();
     return true;
   }
 
-  trim() {
-    return this._store.trim();
+  async trim() {
+    const changed = await this._store.trim();
+    if (changed)
+      this._refresh();
+    return changed;
+  }
+
+  async replace(phrases) {
+    const changed = await this._store.replace(phrases);
+    if (changed)
+      this._refresh();
+    return changed;
   }
 
   _setFormVisible(visible) {

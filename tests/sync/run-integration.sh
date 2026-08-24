@@ -7,7 +7,9 @@ ready_file=$(mktemp)
 client_file=$(mktemp)
 stress_file=$(mktemp)
 cache_dir=$(mktemp -d /tmp/clipboard-x-sync-cache.XXXXXX)
+data_dir=$(mktemp -d /tmp/clipboard-x-sync-data.XXXXXX)
 export XDG_CACHE_HOME="$cache_dir"
+export XDG_DATA_HOME="$data_dir"
 
 cleanup() {
   if [[ -n "${service_pid:-}" ]]; then
@@ -27,6 +29,9 @@ cleanup() {
   rm -f "$stress_file"
   if [[ "$cache_dir" == /tmp/clipboard-x-sync-cache.* ]]; then
     rm -rf -- "$cache_dir"
+  fi
+  if [[ "$data_dir" == /tmp/clipboard-x-sync-data.* ]]; then
+    rm -rf -- "$data_dir"
   fi
 }
 trap cleanup EXIT

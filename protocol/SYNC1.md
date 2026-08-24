@@ -47,7 +47,10 @@ Tag 和图标只在注册或变化时发送，不在每次内容调用中重复�
 
 ## 服务器连接与 Channel
 
-服务器地址、设备 API Key 和活动 Channel 由本地 Service 持久化。插件设置页只通过 Sync1 管理它们，API Key 不写入插件 GSettings，也不允许从 Service 读回。
+服务器地址、设备 API Key 和活动 Channel 由插件设置页持久化到
+`$XDG_DATA_HOME/clipboard-x/sync.json`。该文件是插件与本地 Service 的共享配置真源，
+目录权限为 `0700`、文件权限为 `0600`。API Key 不写入 GSettings，也不允许通过
+`GetConfiguration` 从 Service 读回。
 
 ```text
 GetConfiguration(deviceId) -> configuration
@@ -65,7 +68,11 @@ TestConnection(deviceId) -> result
 | `active-channel-id` | `s` | 是 | 当前 Channel UUID；未选择时为空 |
 | `active-channel-name` | `s` | 否 | 当前 Channel 友好名称 |
 
-`UpdateConfiguration` 使用增量 changes：字段缺失表示保留旧值；`server-address` 更新服务器地址；`api-key` 是只写字段，用于替换现有 Key；`clear-api-key=true` 才清除 Key；`active-channel-id` 选择当前设备已经加入的 Channel。方法返回更新后的脱敏 configuration。
+`UpdateConfiguration` 使用增量 changes，把设置进程刚写入 `sync.json` 的值即时通知给
+Service：字段缺失表示保留旧值；`server-address` 更新服务器地址；`api-key` 是只写字段，
+用于替换现有 Key；`clear-api-key=true` 清除内存中的 Key；`active-channel-id` 选择当前设备
+已经加入的 Channel。方法返回更新后的脱敏 configuration。Service 启动时必须主动读取
+`sync.json`，不能要求设置窗口保持运行。
 
 Service 接受的服务器地址形式由实现决定，Clipboard X 标准实现应接受纯主机/IP、`IP:端口`、`http://` 和 `https://`。设置界面不替用户选择传输协议。
 

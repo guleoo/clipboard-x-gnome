@@ -10,8 +10,9 @@ Clipboard X 会接触剪切板正文、截图和设备标识，这些数据可�
 2. 扩展按用户限制读取内容，在私有用户数据目录中保存不可变快照，并生成预览。
 3. 仅当同步服务和相应策略启用时，扩展才通过 Session D-Bus 把快照交给兼容的
    Service。扩展本身没有网络代码。
-4. Service 保存服务器地址、设备 API Key 和活动 Channel，负责认证、授权、网络传输、
-   远端删除和离线队列。服务器是可信中心存储，可以读取实际上传到服务器的内容。
+4. 插件把服务器地址、设备 API Key 和活动 Channel 保存到用户数据目录的 `sync.json`；
+   Service 读取该共享配置，负责认证、授权、网络传输、远端删除和离线队列。服务器是
+   可信中心存储，可以读取实际上传到服务器的内容。
 5. 截图由 XDG Screenshot Portal 返回本地 URI；只有用户启用相应选项时才加入历史、
    写入剪切板或交给外部编辑器。
 6. 外部编辑器由用户选择的 Desktop Application 或 argv 模板启动。模板不经过 Shell。
@@ -23,6 +24,9 @@ Session D-Bus 中能拥有 Sync1 固定服务名称的进程位于同步信任�
 
 - 历史位于 `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，按来源设备分区，目录权限
   为 `0700`。旧缓存首次加载后迁移到该结构。
+- 快捷语句位于 `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`；服务器地址、API Key 和
+  活动 Channel 位于 `$XDG_DATA_HOME/clipboard-x/sync.json`。数据根目录权限为 `0700`，
+  两个 JSON 文件权限为 `0600`。
 - 载入历史时拒绝越界路径、符号链接、非普通文件、无效元数据、大小或 SHA-256 不符
   的对象。
 - 单个条目有本地硬上限；FD 采用限量流式读取，完整内容验证大小和 SHA-256 后才能
@@ -34,7 +38,7 @@ Session D-Bus 中能拥有 Sync1 固定服务名称的进程位于同步信任�
 - 日志不记录剪切板正文、认证信息或完整敏感路径。
 - 隐私模式暂停捕获；密码管理器标记的内容默认不落盘；敏感同步默认关闭。
 
-本地历史不是保险库，也没有静态加密。能以当前用户身份读取文件、控制 GNOME Shell 或
+本地历史和 `sync.json` 不是保险库，也没有静态加密。能以当前用户身份读取文件、控制 GNOME Shell 或
 访问 Session Bus 的恶意程序不在此模型的防护范围内。处理高敏内容时应启用隐私模式
 并关闭同步。
 
@@ -54,7 +58,7 @@ EGO 审核版本时，应隐藏或移除自动发送选项，并保持手动发�
 - 为每个 DeviceId 使用独立 API Key，不能把 DeviceId 当作认证凭据；
 - 把 Key 绑定到 DeviceId，并对 Channel 成员关系执行访问控制；
 - 接受用户配置的 HTTP 或 HTTPS 服务器地址，不自动改变用户选择的协议；
-- API Key 只写入 Service 的凭据存储，不通过 `GetConfiguration` 读回；
+- 从权限受限的 `sync.json` 读取 API Key，不通过 `GetConfiguration` 在 D-Bus 上读回；
 - 不信任 D-Bus 字典、声明大小、哈希、MIME 或 FD 索引；
 - 为快照设置容量、保留、撤销和删除策略；
 - 避免在日志或遥测中写入正文、认证信息和敏感路径；

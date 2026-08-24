@@ -142,12 +142,8 @@ class Indicator extends PanelMenu.Button {
       'changed::preserve-panel-state',
       () => this._updatePanelStateRetention(),
     );
-    this._savedPhrasesSignal = settings.connect('changed::saved-phrases', () => {
-      if (this._panelManager.is('phrases'))
-        this._panelManager.refresh();
-    });
     this._phraseLimitSignal = settings.connect('changed::saved-phrase-limit', () => {
-      this._quickPhrases.trim();
+      this._quickPhrases.trim().catch(error => this._actions.reportError(error));
     });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
       if (!this.menu.actor.visible)
@@ -234,7 +230,8 @@ class Indicator extends PanelMenu.Button {
       handleKey: event => this._handleMenuKey(event),
       onBack: () => this._closePhrases(),
       onCopy: phrase => this._copyPhrase(phrase),
-      refresh: () => this._panelManager.refresh(),
+      refresh: () => this._panelManager?.refresh(),
+      reportError: error => this._actions.reportError(error),
     });
     this.menu.addMenuItem(this._quickPhrases.item);
   }
@@ -500,7 +497,6 @@ class Indicator extends PanelMenu.Button {
       this._panelOffsetYSignal,
       this._textVerticalOffsetSignal,
       this._preservePanelStateSignal,
-      this._savedPhrasesSignal,
       this._phraseLimitSignal,
     ]) {
       if (signal)
@@ -514,7 +510,6 @@ class Indicator extends PanelMenu.Button {
     this._panelOffsetYSignal = 0;
     this._textVerticalOffsetSignal = 0;
     this._preservePanelStateSignal = 0;
-    this._savedPhrasesSignal = 0;
     this._phraseLimitSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);

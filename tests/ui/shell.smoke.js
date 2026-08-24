@@ -161,8 +161,9 @@ export async function run() {
   const resizedHistoryMenuHeight = Math.round(indicator.menu.actor.height);
   assert(Math.round(history.actor.height) === resizedPanelHeight,
     'Configured panel height was not applied to the complete history panel');
-  const originalPhrases = indicator._settings.get_strv('saved-phrases');
-  indicator._settings.set_strv('saved-phrases', ['Local smoke-test phrase']);
+  await indicator._quickPhrases.ready;
+  const originalPhrases = indicator._quickPhrases.phrases;
+  await indicator._quickPhrases.replace(['Local smoke-test phrase']);
   indicator._openPhrases();
   await Scripting.sleep(100);
   assert(indicator._panelManager.is('phrases')
@@ -203,14 +204,14 @@ export async function run() {
     'Closing the quick-phrase form did not return focus to its initiating action');
   indicator._quickPhrases.toggleForm();
   indicator._quickPhrases.entry.set_text('New smoke-test phrase');
-  indicator._quickPhrases.save();
+  await indicator._quickPhrases.save();
   assert(indicator._quickPhrases.phrases[0] === 'New smoke-test phrase'
       && !indicator._quickPhrases.form.visible,
   'Saved-phrase panel did not add a custom phrase');
-  indicator._quickPhrases.remove('New smoke-test phrase');
+  await indicator._quickPhrases.remove('New smoke-test phrase');
   assert(!indicator._quickPhrases.phrases.includes('New smoke-test phrase'),
     'Saved-phrase panel did not delete a phrase');
-  indicator._settings.set_strv('saved-phrases', []);
+  await indicator._quickPhrases.replace([]);
   indicator._quickPhrases.focusStart();
   await Scripting.sleep(50);
   assert(indicator._quickPhrases.buttons.length === 0
@@ -219,7 +220,7 @@ export async function run() {
         === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === indicator._quickPhrases.addButton,
   'An empty quick-phrase panel did not fall back to the add action');
-  indicator._settings.set_strv('saved-phrases', originalPhrases);
+  await indicator._quickPhrases.replace(originalPhrases);
   indicator._closePhrases();
   assert(indicator._panelManager.is('history'),
     'Saved-phrase panel did not return to clipboard history');

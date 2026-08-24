@@ -12,6 +12,13 @@ export function serverAddress(value) {
   return address;
 }
 
+export function apiKey(value, {allowEmpty = false} = {}) {
+  const key = String(value ?? '').trim();
+  if ((!allowEmpty && !key) || key.length > MAX_API_KEY_LENGTH || CONTROL_CHARACTERS.test(key))
+    throw new Error('Synchronization API key is invalid');
+  return key;
+}
+
 export function configuration(rawValue) {
   const value = rawValue ?? {};
   const configuredAddress = String(value['server-address'] ?? '').trim();
@@ -34,10 +41,7 @@ export function configurationChanges(value) {
   if (Object.hasOwn(value, 'serverAddress'))
     changes['server-address'] = serverAddress(value.serverAddress);
   if (Object.hasOwn(value, 'apiKey')) {
-    const apiKey = String(value.apiKey ?? '').trim();
-    if (!apiKey || apiKey.length > MAX_API_KEY_LENGTH || CONTROL_CHARACTERS.test(apiKey))
-      throw new Error('Synchronization API key is invalid');
-    changes['api-key'] = apiKey;
+    changes['api-key'] = apiKey(value.apiKey);
   }
   if (Object.hasOwn(value, 'clearApiKey')) {
     if (typeof value.clearApiKey !== 'boolean')

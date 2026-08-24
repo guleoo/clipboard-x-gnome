@@ -66,6 +66,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 使用系统 `Intl.Segmenter`。系统 `Intl.Segmenter` 本身也作为默认启用的词库项显示在
 列表中，可以和用户词库一起开关。
 
+快捷语句保存在 `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`。首次使用新版存储时，
+已有的 GSettings 快捷语句会迁移到该文件。
+
 “导入词库”旁边的“添加网络位置”支持 HTTP/HTTPS UTF-8 词库地址。添加后会主动下载
 一次，之后可以使用词库行上的刷新按钮手动更新；扩展安装、启动和打开面板都不会自动
 联网。
@@ -89,8 +92,9 @@ gnome-extensions enable clipboard-x@guleo.github.io
 ## 同步 Service
 
 在“设置 → 同步”中填写服务器地址、设备 API Key，刷新并选择活动 Channel，然后启动
-同步服务并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；API Key 由本机 Service
-保存，插件 GSettings 不保存也不读回明文。兼容实现使用 Sync1 规定的 Session
+同步服务并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；服务器地址、API Key
+和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`，不写入 GSettings。本机
+Service 读取同一配置文件，并通过 Sync1 接收即时配置通知。兼容实现使用 Sync1 规定的 Session
 D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
 `/io/github/guleo/ClipboardX/Sync`，用户不需要配置 D-Bus 技术细节。
 
@@ -109,6 +113,8 @@ D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
 剪切板历史保存在用户数据目录
 `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，每个来源设备分别存放索引、对象和预览，
 目录权限设为仅当前用户可访问。旧缓存数据会在首次加载时迁移到该结构。
+快捷语句文件和 `sync.json` 位于同一个用户数据根目录；目录权限为 `0700`，文件权限为
+`0600`。
 “隐私模式”会暂停捕获；密码管理器标记的敏感内容默认只保存在内存中，同步敏感内容
 默认关闭。详细的数据流、信任边界和报告方式见 [SECURITY.md](SECURITY.md)。
 
