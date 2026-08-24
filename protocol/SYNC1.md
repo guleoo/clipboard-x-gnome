@@ -49,7 +49,7 @@ Tag 和图标只在注册或变化时发送，不在每次内容调用中重复�
 
 服务器地址、设备 API Key 和活动 Channel 由插件设置页持久化到
 `$XDG_DATA_HOME/clipboard-x/sync.json`。该文件是插件与本地 Service 的共享配置真源，
-目录权限为 `0700`、文件权限为 `0600`。API Key 不写入 GSettings，也不允许通过
+插件不检查或强制修改该文件的文件系统权限。API Key 不写入 GSettings，也不允许通过
 `GetConfiguration` 从 Service 读回。
 
 ```text

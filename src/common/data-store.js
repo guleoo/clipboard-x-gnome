@@ -31,9 +31,12 @@ export async function readJson(path, maximumBytes, cancellable = null) {
   return JSON.parse(stringFromBytes(await loadFile(file, cancellable)));
 }
 
-export async function writeJson(path, value, cancellable = null) {
+export async function writeJson(path, value, {
+  cancellable = null,
+  restrictAccess = true,
+} = {}) {
   const directoryPath = GLib.path_get_dirname(path);
-  ensurePrivateDirectory(directoryPath);
+  ensureDirectory(directoryPath, restrictAccess);
   const file = Gio.File.new_for_path(path);
   try {
     const info = await queryInfo(file, cancellable);
@@ -44,22 +47,26 @@ export async function writeJson(path, value, cancellable = null) {
       throw error;
   }
   await writeFile(file, bytesFromString(`${JSON.stringify(value, null, 2)}\n`), cancellable);
-  file.set_attribute_uint32(
-    Gio.FILE_ATTRIBUTE_UNIX_MODE,
-    0o600,
-    Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-    cancellable,
-  );
+  if (restrictAccess) {
+    file.set_attribute_uint32(
+      Gio.FILE_ATTRIBUTE_UNIX_MODE,
+      0o600,
+      Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
+      cancellable,
+    );
+  }
 }
 
-function ensurePrivateDirectory(path) {
-  GLib.mkdir_with_parents(path, 0o700);
-  Gio.File.new_for_path(path).set_attribute_uint32(
-    Gio.FILE_ATTRIBUTE_UNIX_MODE,
-    0o700,
-    Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-    null,
-  );
+function ensureDirectory(path, restrictAccess) {
+  GLib.mkdir_with_parents(path, restrictAccess ? 0o700 : 0o755);
+  if (restrictAccess) {
+    Gio.File.new_for_path(path).set_attribute_uint32(
+      Gio.FILE_ATTRIBUTE_UNIX_MODE,
+      0o700,
+      Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
+      null,
+    );
+  }
 }
 
 function queryInfo(file, cancellable) {

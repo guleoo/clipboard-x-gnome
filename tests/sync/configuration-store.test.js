@@ -30,10 +30,6 @@ try {
       && configuration.apiKey === 'cbx_device_secret'
       && configuration.activeChannelId === channelId,
     'sync.json must restore the server address, API key and active channel');
-  const mode = Gio.File.new_for_path(path)
-    .query_info(Gio.FILE_ATTRIBUTE_UNIX_MODE, Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null)
-    .get_attribute_uint32(Gio.FILE_ATTRIBUTE_UNIX_MODE);
-  assert((mode & 0o077) === 0, 'sync.json must not grant group or other access');
 } finally {
   try {
     Gio.File.new_for_path(path).delete(null);

@@ -36,7 +36,11 @@ export class SyncConfigurationStore {
 
   async save(value) {
     const configuration = validate(value);
-    await writeJson(this.path, {version: FILE_VERSION, ...configuration});
+    await writeJson(
+      this.path,
+      {version: FILE_VERSION, ...configuration},
+      {restrictAccess: false},
+    );
     this._configuration = configuration;
     this.exists = true;
     return this.current;

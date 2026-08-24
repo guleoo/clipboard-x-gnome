@@ -37,5 +37,4 @@ __pycache__/
 .refs
 .codex
 .agents
-CLAUDE.md
 build/
