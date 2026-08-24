@@ -1,0 +1,9 @@
+#!@python_path@
+import sys
+
+sys.path.insert(0, @service_python_path@)
+
+from clipboard_x_service.entry import main
+
+
+raise SystemExit(main())

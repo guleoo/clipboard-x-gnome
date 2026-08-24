@@ -49,6 +49,7 @@ install_subdir(
 install_data('data/stylesheet.css', install_dir: extension_dir)
 
 subdir('po')
+subdir('service')
 
 schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml')
 install_data(schema_source, install_dir: schema_dir)
