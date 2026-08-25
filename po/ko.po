@@ -686,6 +686,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "동기화 서비스 활성화"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "서비스 리스 기간"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

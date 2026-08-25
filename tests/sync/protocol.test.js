@@ -25,6 +25,14 @@ const [ok, bytes] = protocolFile.load_contents(null);
 assert(ok, 'protocol XML must be readable');
 const xml = new TextDecoder().decode(bytes);
 
+for (const name of ['OpenSession', 'RenewSession', 'CloseSession'])
+  assert(xml.includes(`<method name="${name}">`), `protocol must define ${name}`);
+const openSession = xml.match(/<method name="OpenSession">([\s\S]*?)<\/method>/u)?.[1] ?? '';
+assert(openSession.includes('<arg name="deviceId" type="s" direction="in"/>')
+    && openSession.includes('<arg name="options" type="a{sv}" direction="in"/>')
+    && openSession.includes('<arg name="session" type="a{sv}" direction="out"/>'),
+  'OpenSession must negotiate a DeviceId-bound lease');
+
 for (const name of [
   'GetStatus',
   'RegisterDevice',

@@ -8,6 +8,7 @@
 
 - Python 进程入口和 Session D-Bus 名称注册；
 - Sync1 对象、属性、设备注册和配置读取；
+- 可配置租约、心跳续租和最后一个客户端离开后的安全退出；
 - D-Bus 自动激活模板；
 - 明确的未配置及网络层未实现状态。
 
@@ -39,6 +40,10 @@ PYTHONPATH=service/src python3 -m clipboard_x_service
 `StartServiceByName`，D-Bus 再执行安装好的 `clipboard-x-service`，因此无需插件直接
 创建或守护后台进程。
 
+插件默认申请 15 秒租约，并每 5 秒续租一次。正常禁用时主动关闭 Session；异常停止
+续租后，Service 在租约过期、没有活动传输且队列已经安全落盘时执行退出清理。下次调用
+再由 D-Bus 自动启动。
+
 开发安装：
 
 ```sh
@@ -50,3 +55,10 @@ meson install -C build
 仍要求目标系统安装 PyGObject 和 GLib。若需要单文件程序，可以后续使用 PyInstaller 或
 Nuitka，但仍需针对目标发行版打包 GI typelibs 和原生库；不建议把一个构建产物当作所有
 Linux 发行版都能运行的通用二进制。
+
+## 源码布局
+
+`service/src/clipboard_x_service` 使用标准 Python `src layout`：`src` 是源码根，
+`clipboard_x_service` 是实际可导入包。这样测试和开发命令必须显式使用源码包或安装后的
+包，不会因为当前工作目录恰好包含同名目录而掩盖安装错误。包内继续按配置、Session、
+D-Bus 接口和进程生命周期拆分模块。

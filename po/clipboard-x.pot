@@ -378,6 +378,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr ""
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr ""
+
 #: src/ui/settings/sync.js:23
 msgid "Server address"
 msgstr ""

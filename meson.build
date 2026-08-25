@@ -78,6 +78,7 @@ test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() /
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
+test('sync-session', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/session.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
 test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])

@@ -44,6 +44,8 @@ for _attempt in {1..100}; do
     gjs -m "$integration_dir/basic.js"
     gjs -m "$integration_dir/client.js"
     gjs -m "$integration_dir/large.js"
+    gjs -m "$integration_dir/heartbeat.js" >"$client_file" 2>&1
+    grep -q HEARTBEAT_COMPLETE "$client_file"
     break
   fi
   if ! kill -0 "$service_pid" 2>/dev/null; then
@@ -58,6 +60,7 @@ if ! grep -q READY "$ready_file"; then
   echo "Mock service did not become ready" >&2
   exit 1
 fi
+grep -q SESSION_RENEWED "$ready_file"
 
 kill "$service_pid"
 wait "$service_pid" 2>/dev/null || true

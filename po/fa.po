@@ -686,6 +686,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "فعال‌سازی سرویس همگام‌سازی"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "مدت اجارهٔ سرویس"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

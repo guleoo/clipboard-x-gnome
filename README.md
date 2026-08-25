@@ -106,7 +106,8 @@ D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
 - [Mock Service 使用说明](mock-service/README.md)
 
 `service/` 已提供可由 D-Bus 自动激活的 Python Service 基础实现。目前它负责本地
-Sync1 生命周期和配置读取，中心服务器 HTTP 传输、离线队列与内容物化仍在后续阶段实现。
+Sync1 生命周期和配置读取。插件使用可配置租约维持客户端 Session，默认每 5 秒续租、
+15 秒未续租后准备退出；中心服务器 HTTP 传输、离线队列与内容物化仍在后续阶段实现。
 
 手动发送是默认策略。自动发送虽然适合自行安装场景，但会在没有逐条用户操作时把
 剪切板交给第三方进程，因此不应直接用于提交 GNOME Extensions 的审核版本。

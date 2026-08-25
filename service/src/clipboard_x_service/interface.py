@@ -11,6 +11,12 @@ from gi.repository import Gio, GLib  # noqa: E402
 
 from .configuration import Configuration, ConfigurationError, load
 from .constants import API_VERSION, DEVICE_ICON_KINDS, INTERFACE, OBJECT_PATH
+from .sessions import (
+    SessionError,
+    SessionNotAuthorized,
+    SessionNotFound,
+    SessionRegistry,
+)
 from . import __version__
 
 
@@ -18,6 +24,7 @@ UUID_V4 = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
+
 
 def _variant(value: object) -> GLib.Variant:
     if isinstance(value, GLib.Variant):
@@ -40,16 +47,49 @@ def _variant_dictionary(values: dict[str, object]) -> dict[str, GLib.Variant]:
 
 
 class SyncInterface:
-    def __init__(self, configuration_path: Path):
+    def __init__(self, configuration_path: Path, sessions_changed=lambda: None):
         self._configuration_path = configuration_path
         self._configuration = Configuration()
         self._configuration_error = ""
         self._devices: dict[str, dict[str, object]] = {}
         self._connection: Gio.DBusConnection | None = None
+        self._name_owner_subscription = 0
+        self._sessions = SessionRegistry()
+        self._sessions_changed = sessions_changed
         self.reload_configuration()
+
+    @property
+    def has_sessions(self) -> bool:
+        return self._sessions.active
+
+    def milliseconds_until_expiration(self) -> int | None:
+        return self._sessions.milliseconds_until_expiration()
+
+    def expire_sessions(self) -> int:
+        return self._sessions.expire()
+
+    def prepare_shutdown(self, completed) -> None:
+        # Network transports and the durable queue will complete their cleanup
+        # before invoking this callback.
+        completed()
 
     def attach(self, connection: Gio.DBusConnection) -> None:
         self._connection = connection
+        self._name_owner_subscription = connection.signal_subscribe(
+            "org.freedesktop.DBus",
+            "org.freedesktop.DBus",
+            "NameOwnerChanged",
+            "/org/freedesktop/DBus",
+            None,
+            Gio.DBusSignalFlags.NONE,
+            self._name_owner_changed,
+        )
+
+    def detach(self) -> None:
+        if self._connection is not None and self._name_owner_subscription:
+            self._connection.signal_unsubscribe(self._name_owner_subscription)
+        self._name_owner_subscription = 0
+        self._connection = None
 
     def reload_configuration(self) -> None:
         try:
@@ -82,7 +122,7 @@ class SyncInterface:
     def call(
         self,
         connection,
-        _sender,
+        sender,
         _object_path,
         _interface_name,
         method_name,
@@ -91,6 +131,27 @@ class SyncInterface:
     ) -> None:
         try:
             values = parameters.unpack()
+            if method_name == "OpenSession":
+                self._validate_device_id(values[0])
+                lease_ms = values[1].get("lease-ms")
+                session = self._sessions.open(sender, values[0], lease_ms)
+                invocation.return_value(GLib.Variant("(a{sv})", (
+                    _variant_dictionary(session),
+                )))
+                self._sessions_changed()
+                return
+            if method_name == "RenewSession":
+                session = self._sessions.renew(sender, values[0])
+                invocation.return_value(GLib.Variant("(a{sv})", (
+                    _variant_dictionary(session),
+                )))
+                self._sessions_changed()
+                return
+            if method_name == "CloseSession":
+                self._sessions.close(sender, values[0])
+                invocation.return_value(GLib.Variant("()", ()))
+                self._sessions_changed()
+                return
             if method_name == "GetStatus":
                 invocation.return_value(GLib.Variant("(a{sv})", (
                     _variant_dictionary(self._status()),
@@ -139,7 +200,11 @@ class SyncInterface:
                 invocation.return_value(GLib.Variant("(aa{sv})", ([],)))
                 return
             self._return_offline(invocation, method_name)
-        except (IndexError, KeyError, TypeError, ValueError) as error:
+        except SessionNotAuthorized as error:
+            invocation.return_dbus_error(f"{INTERFACE}.Error.NotAuthorized", str(error))
+        except SessionNotFound as error:
+            invocation.return_dbus_error(f"{INTERFACE}.Error.InvalidSession", str(error))
+        except (IndexError, KeyError, SessionError, TypeError, ValueError) as error:
             invocation.return_dbus_error(f"{INTERFACE}.Error.InvalidItem", str(error))
 
     def _status(self) -> dict[str, object]:
@@ -176,8 +241,7 @@ class SyncInterface:
         device_id: str,
         profile: dict[str, object],
     ) -> None:
-        if not isinstance(device_id, str) or UUID_V4.fullmatch(device_id) is None:
-            raise ValueError("invalid DeviceId")
+        self._validate_device_id(device_id)
         if not isinstance(profile, dict):
             raise ValueError("invalid device profile")
         tag = profile.get("tag", "")
@@ -202,6 +266,24 @@ class SyncInterface:
             "DeviceChanged",
             GLib.Variant("(a{sv})", (_variant_dictionary(device),)),
         )
+
+    @staticmethod
+    def _validate_device_id(device_id: str) -> None:
+        if not isinstance(device_id, str) or UUID_V4.fullmatch(device_id) is None:
+            raise ValueError("invalid DeviceId")
+
+    def _name_owner_changed(
+        self,
+        _connection,
+        _sender,
+        _path,
+        _interface,
+        _signal,
+        parameters,
+    ) -> None:
+        name, _old_owner, new_owner = parameters.unpack()
+        if not new_owner and self._sessions.remove_sender(name):
+            self._sessions_changed()
 
     def _emit(self, name: str, value: GLib.Variant) -> None:
         if self._connection is not None:

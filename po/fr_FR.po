@@ -690,6 +690,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "Activer le service de synchronisation"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "Durée du bail du service"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

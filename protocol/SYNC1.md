@@ -15,6 +15,29 @@ Sync1 是 Clipboard X 扩展与本机会话中外部同步 Service 之间的公�
 - `SupportedMimeTypes` 为空表示不额外限制 MIME；否则客户端只发布交集中的表示。
 - `a{sv}` 是协议的 Options Object。未知字段必须被忽略；必需字段缺失时必须返回 `InvalidItem`。
 
+## 客户端会话与 Service 生命周期
+
+扩展启用同步后先建立带租约的客户端会话：
+
+```text
+OpenSession(deviceId, options) -> session
+RenewSession(sessionId) -> session
+CloseSession(sessionId)
+```
+
+`OpenSession` 的 `options` 使用非零 `lease-ms` 指定期望租约。标准 Service 接受 5 至
+300 秒，并返回实际采用的租约。`session` 包含 UUID v4 `session-id`、非零 `lease-ms`
+和 Unix epoch 毫秒 `expires-at`。Session 必须绑定发起调用的 D-Bus 唯一名称；其他调用方
+不能续租或关闭它。
+
+扩展每经过实际租约的三分之一调用一次 `RenewSession`，默认租约为 15 秒，因此默认心跳
+间隔为 5 秒。正常禁用同步或卸载扩展时调用 `CloseSession`。调用方 D-Bus 名称消失或租约
+超时也会使 Session 失效。
+
+最后一个 Session 失效后，Service 只有在没有活动传输且离线队列已经安全持久化时才进入
+退出流程；退出流程必须等待资源清理完成后再结束进程。新的 Session 在退出提交前到达时，
+Service 应取消尚未开始的退出。后续调用由 D-Bus 自动重新激活 Service。
+
 ## 设备身份和设备目录
 
 客户端第一次使用时生成并持久化 UUID v4 `DeviceId`。所有读取或改变同步状态的方法都携带调用方 DeviceId。DeviceId 用于路由、幂等和去重，不等同于网络认证凭据。
@@ -212,7 +235,7 @@ RequestContent(deviceId, itemId, contentIds, options) -> transferId
 
 ## 错误与安全边界
 
-标准错误尾名：`UnsupportedVersion`、`UnsupportedMimeType`、`TooLarge`、`Unavailable`、`Expired`、`NotAuthorized`、`InvalidItem`、`InvalidConfiguration`、`NotConfigured`、`Busy`、`Offline`。
+标准错误尾名：`UnsupportedVersion`、`UnsupportedMimeType`、`TooLarge`、`Unavailable`、`Expired`、`NotAuthorized`、`InvalidSession`、`InvalidItem`、`InvalidConfiguration`、`NotConfigured`、`Busy`、`Offline`。
 
 Sync1 只跨本机会话总线，不定义服务器 HTTP API 的认证和传输协议。标准服务端采用每设备 API Key，服务器拥有并可查看实际上传的内容；连接使用 HTTP 还是 HTTPS 由用户填写的服务器地址决定。Service 负责 Key 保存、网络请求、离线队列和远端快照删除。实现不得在日志或信号中记录剪切板正文、API Key、Authorization 或完整敏感路径；客户端隐私模式和敏感内容策略优先于自动发布。
 

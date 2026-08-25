@@ -23,6 +23,11 @@ import {
 } from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
 import {
+  heartbeatMilliseconds,
+  leaseMilliseconds,
+  validate as validateSession,
+} from './session.js';
+import {
   SYNC_API_VERSION,
   SYNC_INTERFACE,
   TransferState,
@@ -56,6 +61,9 @@ export class SyncClient extends EventEmitter {
     this._capabilities = null;
     this._connecting = false;
     this._connectIdleId = 0;
+    this._heartbeatId = 0;
+    this._sessionId = '';
+    this._sessionLeaseMs = 0;
     this._generation = 0;
     this._destroyed = false;
   }
@@ -97,6 +105,7 @@ export class SyncClient extends EventEmitter {
       this._settings.connect('changed::device-icon-kind', () => this._registerDevice().catch(error => this._report(error))),
       this._settings.connect('changed::service-bus-name', () => this.restart().catch(error => this._report(error))),
       this._settings.connect('changed::service-object-path', () => this.restart().catch(error => this._report(error))),
+      this._settings.connect('changed::sync-service-lease-seconds', () => this.restart().catch(error => this._report(error))),
     );
     await this._connect();
   }
@@ -106,6 +115,12 @@ export class SyncClient extends EventEmitter {
       return;
     this._generation++;
     this._cursor = '';
+    this._stopHeartbeat();
+    try {
+      await this._closeSession();
+    } catch (error) {
+      this._report(error);
+    }
     this._stopWatchingName();
     this._disconnectProxy();
     if (this._settings.get_boolean('sync-enabled'))
@@ -674,6 +689,7 @@ export class SyncClient extends EventEmitter {
       this._capabilities = await this._loadCapabilities();
       if (this._capabilities.apiVersion !== SYNC_API_VERSION)
         throw new Error(`Unsupported synchronization API version: ${this._capabilities.apiVersion}`);
+      await this._openSession();
       this._registeredProfile = null;
       await this._registerDevice(nameKnownPresent);
       await this._applyStoredConfiguration();
@@ -729,6 +745,102 @@ export class SyncClient extends EventEmitter {
       maxItemBytes: safeLimit(read('MaxItemBytes', 0)),
       maxPreviewBytes: safeLimit(read('MaxPreviewBytes', 0)),
     };
+  }
+
+  async _openSession() {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const requestedLeaseMs = this._requestedLeaseMilliseconds();
+    const reply = await this._call('OpenSession', new GLib.Variant('(sa{sv})', [
+      deviceId,
+      variantDictionary({'lease-ms': requestedLeaseMs}),
+    ]));
+    const session = validateSession(unpackDictionary(reply.deepUnpack()[0]));
+    this._sessionId = session.id;
+    this._sessionLeaseMs = session.leaseMs;
+    this._scheduleHeartbeat();
+    return session;
+  }
+
+  async _renewSession() {
+    if (!this._sessionId)
+      throw new Error('Synchronization Service session is unavailable');
+    const reply = await this._call(
+      'RenewSession',
+      new GLib.Variant('(s)', [this._sessionId]),
+    );
+    const session = validateSession(unpackDictionary(reply.deepUnpack()[0]));
+    if (session.id !== this._sessionId)
+      throw new Error('Synchronization Service changed the session ID during renewal');
+    this._sessionLeaseMs = session.leaseMs;
+    this._scheduleHeartbeat();
+    return session;
+  }
+
+  async _closeSession() {
+    this._stopHeartbeat();
+    const sessionId = this._sessionId;
+    this._sessionId = '';
+    this._sessionLeaseMs = 0;
+    if (!sessionId || !this._proxy)
+      return;
+    await this._call('CloseSession', new GLib.Variant('(s)', [sessionId]));
+  }
+
+  _closeSessionBestEffort() {
+    this._stopHeartbeat();
+    const sessionId = this._sessionId;
+    const proxy = this._proxy;
+    this._sessionId = '';
+    this._sessionLeaseMs = 0;
+    if (!sessionId || !proxy)
+      return;
+    proxy.call(
+      'CloseSession',
+      new GLib.Variant('(s)', [sessionId]),
+      Gio.DBusCallFlags.NONE,
+      1000,
+      null,
+      (source, result) => {
+        try {
+          source.call_finish(result);
+        } catch (_error) {
+          // Lease expiry remains the fallback when the best-effort close fails.
+        }
+      },
+    );
+  }
+
+  _scheduleHeartbeat() {
+    this._stopHeartbeat();
+    if (this._destroyed || !this.connected || !this._sessionId)
+      return;
+    const interval = heartbeatMilliseconds(this._sessionLeaseMs);
+    this._heartbeatId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
+      this._heartbeatId = 0;
+      this._renewSession().catch(async error => {
+        this._report(error);
+        this._sessionId = '';
+        this._sessionLeaseMs = 0;
+        if (!this._destroyed && this.connected) {
+          try {
+            await this._openSession();
+          } catch (openError) {
+            this._report(openError);
+          }
+        }
+      });
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _stopHeartbeat() {
+    if (this._heartbeatId)
+      GLib.Source.remove(this._heartbeatId);
+    this._heartbeatId = 0;
+  }
+
+  _requestedLeaseMilliseconds() {
+    return leaseMilliseconds(this._settings.get_uint('sync-service-lease-seconds'));
   }
 
   async _applyStoredConfiguration() {
@@ -992,6 +1104,9 @@ export class SyncClient extends EventEmitter {
   }
 
   _disconnectProxy() {
+    this._stopHeartbeat();
+    this._sessionId = '';
+    this._sessionLeaseMs = 0;
     if (this._proxySignal)
       this._proxy.disconnect(this._proxySignal);
     this._proxySignal = 0;
@@ -1024,6 +1139,7 @@ export class SyncClient extends EventEmitter {
   destroy() {
     if (this._destroyed)
       return;
+    this._closeSessionBestEffort();
     this._destroyed = true;
     this._generation++;
     for (const signal of this._settingsSignals)

@@ -31,6 +31,7 @@ const nodeInfo = Gio.DBusNodeInfo.new_for_xml(new TextDecoder().decode(xmlBytes)
 const interfaceInfo = nodeInfo.interfaces[0];
 
 const devices = new Map();
+const sessions = new Map();
 const items = new Map();
 const transfers = new Map();
 const changes = [];
@@ -256,9 +257,46 @@ function addChange(kind, itemId, reason = '') {
     new GLib.Variant('(s)', [String(revision)]));
 }
 
-function handleMethod(_connection, _sender, _objectPath, _interfaceName, methodName, parameters, invocation) {
+function handleMethod(_connection, sender, _objectPath, _interfaceName, methodName, parameters, invocation) {
   try {
     const values = parameters.deepUnpack();
+    if (methodName === 'OpenSession') {
+      const leaseMs = metadataNumber(values[1], 'lease-ms');
+      if (leaseMs < 5000 || leaseMs > 300000)
+        throw new Error('Invalid session lease');
+      const sessionId = GLib.uuid_string_random();
+      const session = {sender, leaseMs};
+      sessions.set(sessionId, session);
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary({
+        'session-id': sessionId,
+        'lease-ms': leaseMs,
+        'expires-at': now() + leaseMs,
+      })]));
+      return;
+    }
+
+    if (methodName === 'RenewSession') {
+      const session = sessions.get(values[0]);
+      if (!session || session.sender !== sender)
+        throw new Error('Invalid session');
+      print('SESSION_RENEWED');
+      invocation.return_value(new GLib.Variant('(a{sv})', [dictionary({
+        'session-id': values[0],
+        'lease-ms': session.leaseMs,
+        'expires-at': now() + session.leaseMs,
+      })]));
+      return;
+    }
+
+    if (methodName === 'CloseSession') {
+      const session = sessions.get(values[0]);
+      if (!session || session.sender !== sender)
+        throw new Error('Invalid session');
+      sessions.delete(values[0]);
+      emptyReply(invocation);
+      return;
+    }
+
     if (methodName === 'GetStatus') {
       invocation.return_value(new GLib.Variant('(a{sv})', [dictionary(statusRecord(values[0]))]));
       return;

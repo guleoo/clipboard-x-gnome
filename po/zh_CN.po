@@ -377,6 +377,10 @@ msgstr "服务连接"
 msgid "Enable synchronization service"
 msgstr "启动同步服务"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "Service 租约时长"
+
 #: src/ui/settings/sync.js:23
 msgid "Server address"
 msgstr "服务器地址"

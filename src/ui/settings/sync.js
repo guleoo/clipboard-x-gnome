@@ -19,6 +19,14 @@ export function create(settings, deviceId, rows) {
   const store = new SyncConfigurationStore();
   const group = new Adw.PreferencesGroup({title: _('Service connection')});
   group.add(rows.switch('sync-enabled', _('Enable synchronization service')));
+  group.add(rows.spin(
+    'sync-service-lease-seconds',
+    _('Service lease duration'),
+    5,
+    300,
+    5,
+    _('seconds'),
+  ));
 
   const address = new Adw.EntryRow({title: _('Server address')});
   group.add(address);

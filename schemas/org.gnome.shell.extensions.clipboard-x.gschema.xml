@@ -244,6 +244,11 @@
       <default>false</default>
       <summary>Enable synchronization service</summary>
     </key>
+    <key name="sync-service-lease-seconds" type="u">
+      <default>15</default>
+      <range min="5" max="300"/>
+      <summary>Synchronization service client lease duration</summary>
+    </key>
     <key name="service-bus-name" type="s">
       <default>'io.github.guleo.ClipboardX.SyncService'</default>
       <summary>Synchronization service D-Bus name</summary>

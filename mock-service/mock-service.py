@@ -24,6 +24,7 @@ PROTOCOL_PATH = (
 )
 
 DEVICES: dict[str, dict] = {}
+SESSIONS: dict[str, dict] = {}
 ITEMS: dict[str, dict] = {}
 TRANSFERS: dict[str, dict] = {}
 CHANGES: list[dict] = []
@@ -183,7 +184,7 @@ def _add_change(item_id: str):
 
 def _method_call(
     _connection,
-    _sender,
+    sender,
     _object_path,
     _interface_name,
     method_name,
@@ -192,6 +193,42 @@ def _method_call(
 ):
     try:
         values = parameters.unpack()
+        if method_name == "OpenSession":
+            lease_ms = int(values[1].get("lease-ms", 0))
+            if lease_ms < 5_000 or lease_ms > 300_000:
+                raise ValueError("Invalid session lease")
+            session_id = str(uuid.uuid4())
+            SESSIONS[session_id] = {"sender": sender, "lease-ms": lease_ms}
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary({
+                    "session-id": session_id,
+                    "lease-ms": lease_ms,
+                    "expires-at": GLib.get_real_time() // 1000 + lease_ms,
+                }),))
+            )
+            return
+
+        if method_name == "RenewSession":
+            session = SESSIONS.get(values[0])
+            if session is None or session["sender"] != sender:
+                raise ValueError("Invalid session")
+            invocation.return_value(
+                GLib.Variant("(a{sv})", (_variant_dictionary({
+                    "session-id": values[0],
+                    "lease-ms": session["lease-ms"],
+                    "expires-at": GLib.get_real_time() // 1000 + session["lease-ms"],
+                }),))
+            )
+            return
+
+        if method_name == "CloseSession":
+            session = SESSIONS.get(values[0])
+            if session is None or session["sender"] != sender:
+                raise ValueError("Invalid session")
+            del SESSIONS[values[0]]
+            invocation.return_value(GLib.Variant("()", ()))
+            return
+
         if method_name == "GetStatus":
             status = {
                 "state": "online",

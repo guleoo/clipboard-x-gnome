@@ -685,6 +685,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "تشغيل خدمة المزامنة"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "مدة صلاحية عقد الخدمة"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

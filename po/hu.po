@@ -688,6 +688,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "Szinkronizálási szolgáltatás engedélyezése"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "Szolgáltatás bérleti ideje"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

@@ -687,6 +687,10 @@ msgstr ""
 msgid "Enable synchronization service"
 msgstr "Eşzamanlama hizmetini etkinleştir"
 
+#: src/ui/settings/sync.js:24
+msgid "Service lease duration"
+msgstr "Hizmet kira süresi"
+
 #: src/ui/settings/window.js:252
 msgid "Service status"
 msgstr ""

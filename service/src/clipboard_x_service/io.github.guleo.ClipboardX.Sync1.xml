@@ -11,6 +11,21 @@
     <property name="MaxItemBytes" type="t" access="read"/>
     <property name="MaxPreviewBytes" type="t" access="read"/>
 
+    <method name="OpenSession">
+      <arg name="deviceId" type="s" direction="in"/>
+      <arg name="options" type="a{sv}" direction="in"/>
+      <arg name="session" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="RenewSession">
+      <arg name="sessionId" type="s" direction="in"/>
+      <arg name="session" type="a{sv}" direction="out"/>
+    </method>
+
+    <method name="CloseSession">
+      <arg name="sessionId" type="s" direction="in"/>
+    </method>
+
     <method name="GetStatus">
       <arg name="deviceId" type="s" direction="in"/>
       <arg name="status" type="a{sv}" direction="out"/>
