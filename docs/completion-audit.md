@@ -1,105 +1,71 @@
 # 开发完成审计
 
-本文件把 `.codex/development-plan.md` 的阶段要求映射到当前实现和可重复运行的证据。
-它不是以“现有测试为准”缩小范围；每项证据都必须直接覆盖对应行为。
+本文把 `.codex/development-plan.md` 的要求对应到当前仓库中可重复运行的证据。未完成项
+明确列出，不用旧架构测试或 Mock 代替真实服务器互操作。
 
-## 阶段 0：协议与技术验证
+## 已有证据
 
-- Sync1 正式 ABI 位于 `protocol/io.github.guleo.ClipboardX.Sync1.xml`，字段和生命周期见
-  `protocol/SYNC1.md`。
-- `tests/sync/protocol.test.js` 验证所有数据操作都携带 DeviceId，而 Device Tag 只出现在
-  `RegisterDevice`。
-- `tests/run-sync-integration.sh` 对 GJS 和 Python 两个独立 Mock 执行双向 UNIX FD、
-  发布、预览、按需获取、取消、确认和重连。
-- `tests/screenshot/tools.test.js` 覆盖 Screenshot Portal v2/v3 协商、成功、拒绝、取消、超时、
-  缺失 URI 和重复请求，并实际启动安全 argv 测试进程。
-- `tests/screenshot/tools.test.js` 覆盖原生命令、Flatpak argv、Unicode/空格/引号、`%u`、`%f`、
-  `%%`、无占位符和非法占位符。
+### 工程与生命周期
 
-## 阶段 1–2：工程、生命周期和界面
+- `meson.build` 提供 local、system、package target，并构建 metadata、Schema、CSS 和翻译。
+- `tests/ui/shell.smoke.js` 覆盖扩展 enable/disable、面板、剪切板、同步 UI 注入、Portal、
+  取色器、快捷键和销毁后的资源释放。
+- `tests/ui/preferences.smoke.js` 覆盖 GTK 4/Libadwaita 设置窗口加载。
+- `tools/run-dev-shell.sh` 使用隔离的 XDG 目录运行嵌套 GNOME Shell，供人工 UI 验收。
 
-- `meson.build` 提供 `local`、`system`、`package` 三种 target，并构建 metadata、Schema、
-  CSS 和 Gettext。
-- `tests/ui/shell.smoke.js` 在真正的嵌套 GNOME Shell 50 中验证面板鼠标开关、搜索框键盘
-  焦点、搜索与三按钮同行布局、浮动 Tooltip、动态显隐、用户快捷键、设置生效、重复
-  enable/disable、锁定/解锁和进程暂停/恢复。
-- 同一测试保留旧对象引用，确认禁用后 selection/settings 信号、快捷键、D-Bus 名称
-  watch、idle source、传输 waiter 和 modal grab 都已释放。
-- `tests/ui/preferences.smoke.js` 从扩展打开真实 GTK 4/Libadwaita 设置窗口；窗口按剪切板、同步、
-  取色器、截图和快捷键划分五页，设备类型使用图标工厂，传输尺寸以 KiB/MiB 展示。
+### 本地剪切板与文本工具
 
-## 阶段 3：本地剪切板
+- `tests/clipboard/history/` 覆盖按 DeviceId 分区的稳定数据目录、对象校验、Pin 排序、迁移、
+  删除和压力场景。
+- `tests/clipboard/tokenizer/` 覆盖中文、英文、韩文、日文及其他已支持语言，包含 URL、邮箱、
+  数字、标点、重复句和用户词库。
+- `tests/clipboard/terminal/` 覆盖模拟键盘序列和检测真实按键后的暂停。
+- `tests/ui/focus-grid.test.js` 与 `tests/ui/panel-manager.test.js` 覆盖面板内键盘焦点和现场恢复。
 
-- `tests/ui/shell.smoke.js` 分别使用 `wl-copy` 和 GTK 3 X11 客户端产生真实 Wayland 与
-  XWayland 剪切板所有者，验证文本捕获；另验证图片捕获和异步缩略图。
-- 同一测试覆盖搜索、收藏/取消收藏、删除、清空但保留收藏、重新激活、程序化写入
-  回环抑制、隐私模式和重启持久化。
-- `tests/clipboard/history/storage.test.js` 覆盖稳定用户数据目录、按 DeviceId 分区、旧缓存迁移、
-  私有目录权限、敏感内容不落盘、并发保存顺序、越界路径、
-  非法/篡改对象、远端预览回收和按比例异步缩略图。
+### 截图、编辑器和取色
 
-## 阶段 4：文本处理
+- `tests/screenshot/tools.test.js` 覆盖 Portal 目标协商、取消、拒绝、超时、URI 以及安全 argv
+  命令模板。
+- `tests/color-picker/color.test.js` 覆盖坐标缩放和 HEX、RGB、HSL、OKLCH 格式。
+- 真实 Portal 的交互选择仍由人工 GNOME 会话验收，自动测试不替用户完成系统授权界面。
 
-- `src/clipboard/tokenizer/processors.js` 先识别 URL、邮箱和结构化数字，再使用 `Intl.Segmenter` 产生
-  自然词元，并根据源文本位置组合所选内容。
-- `tests/clipboard/tokenizer/processors.test.js` 使用中英混合文本、URL 和数字验证特殊词元不被拆散、选择顺序和
-  间隔保持正确。
-- `tests/ui/shell.smoke.js` 验证点击条目分词按钮会在当前小面板切换视图、逐词选择会实时
-  更新结果，并能返回历史列表；超过交互大小上限时明确拒绝。
+### 插件内 HTTP 同步
 
-## 阶段 5–6：同步与按需物化
+- 正式协议位于 `protocol/HTTP1.md`，路由集中在 `src/sync/http/routes.js`。
+- `tests/sync/protocol.test.js` 覆盖 API 版本、状态、Channel、清单、预览、变化、Transfer 和 Work
+  的 JSON 边界。
+- `tests/sync/http-client.test.js` 覆盖 HTTP/HTTPS 地址规范化、反向代理前缀、凭据/查询拒绝、
+  路径 segment 编码和结构化请求。
+- `tests/sync/configuration-store.test.js` 覆盖服务器地址、API Key、活动 Channel、每 Channel
+  changes cursor 与 work cursor 的持久化。
+- `tests/sync/transfers.test.js` 覆盖陈旧进度抑制和终态不会被本地时间戳遮蔽。
+- `tests/sync/client.test.js` 使用注入的 HTTP Transport 覆盖认证启动、设备资料、Channel、游标
+  保存、两阶段小文本发布、精确字节和销毁时 abort。
+- `tests/sync/http-client.test.js` 还会把响应流写入临时对象，验证大小、SHA-256、精确进度和
+  原子落盘；异步输出会处理部分写入，不假设单次写调用完成整个分块。
+- 2026-08-25 的独立 GJS/libsoup 3 基准验证 256 MB 流式上传不会构造同体积 JS Buffer；
+  详细数字记录在开发计划“性能基线”。
 
-- `tests/sync/integration/client.js` 覆盖 DeviceId 首次生成与稳定、Unicode Tag 更新但不
-  更换 ID、设备图标注册、设备目录、状态获取、增量 cursor、幂等发布/确认/取消、
-  预览获取、完整内容物化和不支持 MIME。
-- `tests/sync/integration/policy.js` 让 Mock 声明更小的条目/预览上限和 MIME 集，验证
-  实际交集与 Unicode 安全截断。
-- `tests/sync/integration/large.js` 真实传输 10 MiB 文本和 50 MiB 图片：首次只有截断
-  文本或缩略图语义，用户物化后再验证完整大小与 SHA-256。
-- `tests/sync/integration/retry.js` 验证快照过期显示失败且第二次请求可以恢复；
-  `tests/sync/integration/offline-transfer.js` 验证传输中 Service 消失会立即失败而非卡住。
-- `tests/sync/integration/malformed.js` 验证非法信号、路径型 ID 和待处理列表不能越过
-  客户端边界；重连压力测试连续完成五次 Service 退出/出现。
-- `tests/ui/shell.smoke.js` 覆盖图片手动发送入口、Pin 限定自动发送、敏感内容默认拒绝、
-  设备来源图标、预览/失败/就绪状态、按条目精确进度环、等待、过期和取消 UI，以及
-  下载内容的离线本地恢复。
+### 本次完整回归
 
-## 阶段 7：截图与编辑器
+- `meson compile -C build-devkit` 通过。
+- `meson install -C build-devkit` 成功生成最小发布 ZIP；归档包含新的 `sync/http`、协议校验
+  与传输跟踪代码，不包含已删除的 Service、Mock 或 Sync1 文件。
+- Meson 25 项测试中 24 项在受限沙盒内直接通过；唯一的图片存储测试因为沙盒禁止
+  GdkPixbuf/Glycin 的 D-Bus 编码调用而失败，同一测试在宿主环境单独运行通过。
+- 全部 `src/`、`tests/` JavaScript 通过 `node --check`，Schema 严格检查和全部 PO 的
+  `msgfmt --check` 通过。
+- GNOME 50 的 Preferences 冒烟测试在隔离 Session Bus 中通过，直连同步设置页可以加载；
+  测试环境仍会报告缺失日历库、AT-SPI systemd unit 等与扩展无关的系统警告。
 
-- Portal Request/Response 和编辑器 argv 的边界由 `tests/screenshot/tools.test.js` 覆盖。
-- `tests/ui/shell.smoke.js` 注入确定性的 Portal URI，执行“截图 → 历史 → 剪切板 → 外部
-  编辑器”完整管线，也验证关闭历史记录时不会被 owner-change 重新捕获。
-- 同一测试验证刚捕获的图片在后台保存尚未发生前也能立即编辑，以及已下载远端原图
-  在 Service 离线时从本地缓存恢复；缩略图从未用于复制或编辑原图。
+## 尚未完成的证据
 
-## 阶段 8：取色器
-
-- `tests/color-picker/color.test.js` 验证 2× 缩放、舞台边界、HEX/RGB/HSL/OKLCH。
-- `tests/ui/shell.smoke.js` 在 Shell 舞台获取实际纹理和 modal grab，验证逐像素键盘移动、
-  取色写入历史、Escape 取消、扩展禁用时强制关闭和再次启用。
-- 取色器每次打开都重新截取完整 stage，坐标按 Shell 返回的纹理 scale 映射；overlay
-  绑定 stage 尺寸，因此不缓存显示器布局，显示器变化不会复用旧坐标或纹理。
-
-## 阶段 9：可靠性、安全与性能
-
-- 所有 Service 字典、数量、UUID、MIME、大小、哈希、delivery、FD 索引和状态进入
-  缓存或 UI 前验证；未知传输和无限列表有显式上限。
-- `tests/clipboard/history/stress.test.js` 在 10 秒门槛内构造 10 MiB 文本、50 MiB 图片元数据，并对
-  10,000 条历史执行首次和缓存搜索基准；主面板只构建用户配置的最大显示条目数。
-- Shell 测试连续写入 50 次剪切板；同步测试连续重启 Service 五次；禁用审计确认不再
-  持有读取、发布或接收资源。
-- `SECURITY.md` 记录数据流和信任边界；日志测试所用恶意 Service 错误不会把正文或
-  路径写进扩展日志。
-
-## 阶段 10：发布
-
-- `po/clipboard-x.pot` 和 `po/zh_CN.po` 提供英语源码与完整简体中文翻译；中文 Shell
-  测试确认 MO 被实际加载。
-- `tools/package.sh` 从临时 staging 白名单创建全新 ZIP，排除 Mock、测试、协议源码、
-  PO/POT 和开发依赖。
-- 用户说明、Service 实现说明、安全模型、贡献指南和 EGO 描述分别位于 `README.md`、
-  `protocol/SYNC1.md`、`mock-service/README.md`、`SECURITY.md`、`CONTRIBUTING.md` 和
-  `docs/ego-description.md`。
+- 中心服务器 `/api/v1` 尚未实现，因而还没有真实网络互操作测试。
+- 大文本/大图片跨两个真实设备的 content request → source work → upload → download 全链路
+  尚未验收。
+- 来源离线、服务器重启、对象过期、取消竞态、重复请求幂等和恶意响应需要服务器夹具后测试。
+- 完整 Shell 冒烟测试已经启动，但在进入同步生命周期断言前，被与本次同步改动无关的
+  既有“文字垂直偏移”断言阻断；本次未修改对应 UI/CSS，需作为独立 UI 回归处理。
 
 ## 可重复验收命令
 
@@ -115,10 +81,6 @@ LC_ALL=zh_CN.UTF-8 LANGUAGE=zh_CN CLIPBOARD_X_EXPECT_CHINESE=1 \
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```
 
-在仅有虚拟显示器的环境中，如果 Mutter 能枚举 `wl-copy` MIME 却无法完成 selection
-transfer，可设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1` 运行 UI/生命周期回归，并在正常
-Wayland 会话单独保留外部来源用例；该开关不会跳过扩展内部的文本和图片剪切板管线。
-
-真实 Portal 的交互选择和用户实际选择的生产 Sync1 Service 涉及用户授权与外部实现，
-不能由仓库测试替用户确认；仓库分别验证 Portal 协议/扩展后续管线和两个独立 Mock 的
-Sync1 ABI。它们不改变扩展自身阶段的完成边界。
+在仅有虚拟显示器的环境中，如果 Mutter 能枚举外部 selection MIME 却无法完成 transfer，
+可以设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1` 只跳过外部 Wayland/XWayland 来源；扩展内部
+文本、图片、分词、同步 UI 和生命周期用例仍必须运行。

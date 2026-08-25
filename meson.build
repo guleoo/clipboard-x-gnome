@@ -49,7 +49,6 @@ install_subdir(
 install_data('data/stylesheet.css', install_dir: extension_dir)
 
 subdir('po')
-subdir('service')
 
 schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml')
 install_data(schema_source, install_dir: schema_dir)
@@ -78,7 +77,6 @@ test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() /
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
-test('sync-session', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/session.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
 test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])
@@ -88,6 +86,9 @@ test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tes
 test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'])
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
+test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])
+test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
+test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/dictionary.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
@@ -103,17 +104,6 @@ test(
   timeout: 30,
   suite: 'stress',
 )
-test(
-  'sync-integration',
-  find_program('dbus-run-session'),
-  args: [
-    '--',
-    find_program('bash'),
-    meson.current_source_dir() / 'tests/sync/run-integration.sh',
-  ],
-  timeout: 30,
-)
-
 if target == 'package'
   meson.add_install_script(
     find_program('bash'),

@@ -133,16 +133,16 @@ msgid "Sync disabled"
 msgstr ""
 
 #: src/ui/panels/history/sync-action.js:51
-msgid "Sync Service offline"
-msgstr ""
+msgid "Synchronization server offline"
+msgstr "동기화 서버 오프라인"
 
 #: src/ui/panels/history/sync-action.js:54
 msgid "Sync protocol error"
 msgstr ""
 
 #: src/ui/panels/history/sync-action.js:58
-msgid "Sync Service online"
-msgstr ""
+msgid "Synchronization server online"
+msgstr "동기화 서버 온라인"
 
 #: src/ui/panels/history/sync-action.js:81
 msgid "Uploading"
@@ -189,8 +189,8 @@ msgid "Original is available locally"
 msgstr ""
 
 #: src/ui/panels/history/sync-action.js:116
-msgid "Send to synchronization Service"
-msgstr ""
+msgid "Send to synchronization server"
+msgstr "동기화 서버로 보내기"
 
 #: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
@@ -679,20 +679,17 @@ msgid "Other"
 msgstr "기타"
 
 #: src/ui/settings/window.js:249
-msgid "Service connection"
-msgstr ""
+msgid "Server connection"
+msgstr "서버 연결"
 
 #: src/ui/settings/window.js:251
-msgid "Enable synchronization service"
-msgstr "동기화 서비스 활성화"
+msgid "Enable synchronization"
+msgstr "동기화 활성화"
 
-#: src/ui/settings/sync.js:24
-msgid "Service lease duration"
-msgstr "서비스 리스 기간"
 
 #: src/ui/settings/window.js:252
-msgid "Service status"
-msgstr ""
+msgid "Server status"
+msgstr "서버 상태"
 
 #: src/ui/settings/window.js:252
 msgid "Not tested"

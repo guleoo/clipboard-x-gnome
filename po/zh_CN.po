@@ -131,16 +131,16 @@ msgid "Sync disabled"
 msgstr "同步已禁用"
 
 #: src/ui/panels/history/sync-action.js:51
-msgid "Sync Service offline"
-msgstr "同步服务离线"
+msgid "Synchronization server offline"
+msgstr "同步服务器离线"
 
 #: src/ui/panels/history/sync-action.js:54
 msgid "Sync protocol error"
 msgstr "同步协议错误"
 
 #: src/ui/panels/history/sync-action.js:58
-msgid "Sync Service online"
-msgstr "同步服务在线"
+msgid "Synchronization server online"
+msgstr "同步服务器在线"
 
 #: src/ui/panels/history/sync-action.js:81
 msgid "Uploading"
@@ -187,8 +187,8 @@ msgid "Original is available locally"
 msgstr "原始内容已在本机就绪"
 
 #: src/ui/panels/history/sync-action.js:116
-msgid "Send to synchronization Service"
-msgstr "发送到同步服务"
+msgid "Send to synchronization server"
+msgstr "发送到同步服务器"
 
 #: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
@@ -370,16 +370,13 @@ msgid "Press shortcut…"
 msgstr "请按快捷键…"
 
 #: src/ui/settings/sync.js:20
-msgid "Service connection"
-msgstr "服务连接"
+msgid "Server connection"
+msgstr "服务器连接"
 
 #: src/ui/settings/sync.js:21
-msgid "Enable synchronization service"
-msgstr "启动同步服务"
+msgid "Enable synchronization"
+msgstr "启动同步"
 
-#: src/ui/settings/sync.js:24
-msgid "Service lease duration"
-msgstr "Service 租约时长"
 
 #: src/ui/settings/sync.js:23
 msgid "Server address"
@@ -398,8 +395,8 @@ msgid "Refresh channels"
 msgstr "刷新 Channel"
 
 #: src/ui/settings/sync.js:39
-msgid "Service status"
-msgstr "服务状态"
+msgid "Server status"
+msgstr "服务器状态"
 
 #: src/ui/settings/sync.js:39
 msgid "Not tested"
@@ -461,13 +458,7 @@ msgstr "已加载连接设置 · 未配置 API Key"
 msgid "Connection settings loaded locally"
 msgstr "已从本地加载连接设置"
 
-#: src/ui/settings/sync.js:186
-msgid "The synchronization service returned an invalid channel list"
-msgstr "同步服务返回了无效的 Channel 列表"
 
-#: src/ui/settings/sync.js:191
-msgid "The synchronization service returned duplicate channels"
-msgstr "同步服务返回了重复的 Channel"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"

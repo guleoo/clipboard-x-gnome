@@ -4,8 +4,9 @@ Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏�
 快捷键打开统一面板，提供文本与图片历史、词元选择式分词、外部设备同步集成、截图、
 取色和调用外部图片编辑器等功能。
 
-同步能力只包含客户端协议。扩展不会建立网络连接；服务器地址、设备 API Key、Channel、
-网络传输和离线队列由实现 [Sync1](protocol/SYNC1.md) 的独立本机 Service 负责。
+同步由扩展内的 HTTP 客户端直接完成。用户配置自己的中心服务器地址、设备 API Key 和
+Channel；扩展使用流式上传、下载与按需物化控制大内容的内存和主线程开销，不需要额外
+安装或运行本机同步 Service。
 
 ## 功能
 
@@ -89,28 +90,25 @@ gnome-extensions enable clipboard-x@guleo.github.io
 截图目标取决于本机 Portal 版本。Portal v2 通常支持交互选择和全屏；窗口、区域和
 活动窗口需要实现 `AvailableTargets` 的 Portal v3 后端。扩展会拒绝后端未声明的目标。
 
-## 同步 Service
+## 剪切板同步
 
 在“设置 → 同步”中填写服务器地址、设备 API Key，刷新并选择活动 Channel，然后启动
-同步服务并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；服务器地址、API Key
-和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`，不写入 GSettings。本机
-Service 读取同一配置文件，并通过 Sync1 接收即时配置通知。兼容实现使用 Sync1 规定的 Session
-D-Bus 名称 `io.github.guleo.ClipboardX.SyncService` 和对象路径
-`/io/github/guleo/ClipboardX/Sync`，用户不需要配置 D-Bus 技术细节。
+同步并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；未写协议时按 HTTP 处理，
+扩展不会擅自升级协议。服务器地址、API Key 和活动 Channel 保存在
+`$XDG_DATA_HOME/clipboard-x/sync.json`；非机密的增量游标单独保存在 `sync-state.json`，
+避免设置进程和 Shell 并发保存时互相覆盖。API Key 不写入 GSettings。
 
-正式 ABI、字段、FD 生命周期、状态机和安全要求见：
+扩展直接使用版本化 HTTP API 访问用户选择的可信中心服务器。小文本和小图片立即流式
+上传；大文本只先传截断预览，大图片只先传缩略图，用户真正复制、保存或编辑时才请求
+来源设备提供完整内容。上传和下载按实际字节提供精确进度，并在落盘前校验大小与
+SHA-256。协议端点、字段、状态机和实现要求见 [HTTP API v1](protocol/HTTP1.md)。
 
-- [Sync1 协议说明](protocol/SYNC1.md)
-- [D-Bus introspection XML](protocol/io.github.guleo.ClipboardX.Sync1.xml)
-- [Python Sync Service](service/README.md)
-- [Mock Service 使用说明](mock-service/README.md)
-
-`service/` 已提供可由 D-Bus 自动激活的 Python Service 基础实现。目前它负责本地
-Sync1 生命周期和配置读取。插件使用可配置租约维持客户端 Session，默认每 5 秒续租、
-15 秒未续租后准备退出；中心服务器 HTTP 传输、离线队列与内容物化仍在后续阶段实现。
+服务器不是盲中转站：它可以保存、展示和管理已经上传的剪切板内容，管理设备及 Channel；
+网页查看大内容仍可以使用同一套按需物化流程。服务器是同步信任边界，服务器管理员可以
+读取实际上传到服务器的内容。
 
 手动发送是默认策略。自动发送虽然适合自行安装场景，但会在没有逐条用户操作时把
-剪切板交给第三方进程，因此不应直接用于提交 GNOME Extensions 的审核版本。
+剪切板交给用户配置的第三方服务器，因此不应直接用于提交 GNOME Extensions 的审核版本。
 自动发送可进一步限制为只有用户收藏条目后才发送；敏感内容同步仍需单独启用。
 
 ## 隐私
@@ -118,8 +116,8 @@ Sync1 生命周期和配置读取。插件使用可配置租约维持客户端 S
 剪切板历史保存在用户数据目录
 `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，每个来源设备分别存放索引、对象和预览，
 目录权限设为仅当前用户可访问。旧缓存数据会在首次加载时迁移到该结构。
-快捷语句文件和 `sync.json` 位于同一个用户数据根目录。快捷语句仍按私有数据写入；
-插件不检查或强制修改 `sync.json` 的文件系统权限。
+快捷语句文件、`sync.json` 和 `sync-state.json` 位于同一个用户数据根目录。快捷语句与
+同步进度按私有数据写入；插件不检查或强制修改 `sync.json` 的文件系统权限。
 “隐私模式”会暂停捕获；密码管理器标记的敏感内容默认只保存在内存中，同步敏感内容
 默认关闭。详细的数据流、信任边界和报告方式见 [SECURITY.md](SECURITY.md)。
 

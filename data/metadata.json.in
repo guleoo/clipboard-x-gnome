@@ -1,7 +1,7 @@
 {
   "uuid": "@uuid@",
   "name": "Clipboard X",
-  "description": "Clipboard history, text tools, device sync integration, color picking and screenshots. This extension accesses clipboard content and only shares it with a configured synchronization service according to user settings.",
+  "description": "Clipboard history, text tools, device synchronization, color picking and screenshots. This extension accesses clipboard content and only sends it to a user-configured synchronization server according to user settings.",
   "shell-version": ["50"],
   "settings-schema": "@schema@",
   "gettext-domain": "clipboard-x",

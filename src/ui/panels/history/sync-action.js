@@ -48,14 +48,14 @@ export class SyncAction {
       text = _('Sync disabled');
     } else if (status === 'offline') {
       iconName = 'network-offline-symbolic';
-      text = _('Sync Service offline');
+      text = _('Synchronization server offline');
     } else if (status === 'error') {
       iconName = 'dialog-error-symbolic';
       text = capabilities?.error ?? _('Sync protocol error');
     } else {
       iconName = 'network-transmit-receive-symbolic';
       const implementation = capabilities?.implementationName;
-      text = implementation ? `${implementation} · ${status}` : _('Sync Service online');
+      text = implementation ? `${implementation} · ${status}` : _('Synchronization server online');
     }
     this._setIcon(this.statusButton, iconName);
     this._setHint(this.statusButton, text);
@@ -113,7 +113,7 @@ export class SyncAction {
     this._setIcon(button, 'folder-remote-symbolic');
     this._setHint(button, item.remote
       ? _('Original is available locally')
-      : _('Send to synchronization Service'));
+      : _('Send to synchronization server'));
   }
 
   async _activate(item) {

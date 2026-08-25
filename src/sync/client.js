@@ -1,75 +1,76 @@
 import Gio from 'gi://Gio';
-import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 
-import {UUID} from '../entry/constants.js';
 import {ClipboardItem} from '../clipboard/item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
   MAX_ITEM_REPRESENTATIONS,
 } from '../clipboard/constants.js';
-import {sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
-import {variantDictionary} from '../common/dbus.js';
+import {devicePaths} from '../clipboard/history/paths.js';
+import {bytesFromString, sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {writeFile} from '../common/files.js';
 import {isUuid} from '../common/uuid.js';
-import {DEVICE_ICON_KINDS, ensureDeviceIdentity} from './device.js';
-import {
-  channel as validateChannel,
-  configuration as validateConfiguration,
-  configurationChanges,
-  connectionResult as validateConnectionResult,
-} from './configuration.js';
+import {configuration as publicConfiguration} from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
+import {POLL_INTERVAL_MILLISECONDS} from './constants.js';
+import {ensureDeviceIdentity} from './device.js';
+import {HttpTransport} from './http/transport.js';
 import {
-  heartbeatMilliseconds,
-  leaseMilliseconds,
-  validate as validateSession,
-} from './session.js';
-import {
-  SYNC_API_VERSION,
-  SYNC_INTERFACE,
-  TransferState,
-} from './constants.js';
+  acceptedWork as validateAcceptedWork,
+  changes as validateChanges,
+  channels as validateChannels,
+  contentRequest as validateContentRequest,
+  device as validateDevice,
+  item as validateItem,
+  publication as validatePublication,
+  status as validateStatus,
+  transfer as validateTransfer,
+  transfers as validateTransfers,
+  validateLocalRepresentation,
+  workPage as validateWorkPage,
+} from './protocol.js';
+import {TransferTracker} from './transfers.js';
 
-const SHA256_PATTERN = /^[0-9a-f]{64}$/u;
-const TRANSFER_STATES = new Set(Object.values(TransferState));
-const MAX_PENDING_ITEMS = 10_000;
-const MAX_TRANSFER_STATES = 1024;
+const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
 export class SyncClient extends EventEmitter {
-  constructor(settings, {configurationStore = new SyncConfigurationStore()} = {}) {
+  constructor(settings, {
+    configurationStore = new SyncConfigurationStore(),
+    transportFactory = (configuration, options) => new HttpTransport(configuration, options),
+    sourceItem = () => null,
+  } = {}) {
     super();
     this._settings = settings;
     this._configurationStore = configurationStore;
-    this._proxy = null;
-    this._proxySignal = 0;
-    this._nameWatchId = 0;
+    this._transportFactory = transportFactory;
+    this._sourceItem = sourceItem;
     this._settingsSignals = [];
-    this._cancellable = new Gio.Cancellable();
-    this._registeredProfile = null;
-    this._transferWaiters = new Map();
-    this._transferStates = new Map();
-    this._knownTransfers = new Set();
+    this._transport = null;
+    this._cancellable = null;
+    this._connected = false;
+    this._capabilities = null;
+    this._configuration = null;
+    this._storedConfiguration = null;
+    this._status = null;
     this._devices = new Map();
     this._channels = [];
-    this._configuration = null;
-    this._status = null;
-    this._cursor = '';
-    this._syncingChanges = false;
-    this._capabilities = null;
-    this._connecting = false;
-    this._connectIdleId = 0;
-    this._heartbeatId = 0;
-    this._sessionId = '';
-    this._sessionLeaseMs = 0;
+    this._registeredProfile = '';
+    this._pollSource = 0;
+    this._polling = false;
     this._generation = 0;
     this._destroyed = false;
+    this._transferWaiters = new Map();
+    this._operations = new Map();
+    this._remoteTransferIds = new Set();
+    this._activeCancellables = new Set();
+    this._transferChain = Promise.resolve();
+    this._transfers = new TransferTracker(transfer => this._transferChanged(transfer));
   }
 
   get connected() {
-    return Boolean(this._proxy?.get_name_owner());
+    return this._connected;
   }
 
   get capabilities() {
@@ -77,11 +78,11 @@ export class SyncClient extends EventEmitter {
   }
 
   get devices() {
-    return [...this._devices.values()].map(device => ({...device}));
+    return [...this._devices.values()].map(value => ({...value}));
   }
 
   get channels() {
-    return this._channels.map(channel => ({...channel}));
+    return this._channels.map(value => ({...value}));
   }
 
   get configuration() {
@@ -93,19 +94,14 @@ export class SyncClient extends EventEmitter {
   }
 
   getTransferForItem(itemId) {
-    const transfers = [...this._transferStates.values()]
-      .filter(transfer => transfer.itemId === itemId)
-      .sort((left, right) => right.updatedAt - left.updatedAt);
-    return transfers[0] ? {...transfers[0]} : null;
+    return this._transfers.forItem(itemId);
   }
 
   async start() {
     this._settingsSignals.push(
-      this._settings.connect('changed::device-tag', () => this._registerDevice().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-kind', () => this._registerDevice().catch(error => this._report(error))),
-      this._settings.connect('changed::service-bus-name', () => this.restart().catch(error => this._report(error))),
-      this._settings.connect('changed::service-object-path', () => this.restart().catch(error => this._report(error))),
-      this._settings.connect('changed::sync-service-lease-seconds', () => this.restart().catch(error => this._report(error))),
+      this._settings.connect('changed::device-tag', () => this._updateProfile().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-kind', () => this._updateProfile().catch(error => this._report(error))),
+      this._settings.connect('changed::sync-configuration-revision', () => this.restart().catch(error => this._report(error))),
     );
     await this._connect();
   }
@@ -114,342 +110,96 @@ export class SyncClient extends EventEmitter {
     if (this._destroyed)
       return;
     this._generation++;
-    this._cursor = '';
-    this._stopHeartbeat();
-    try {
-      await this._closeSession();
-    } catch (error) {
-      this._report(error);
-    }
-    this._stopWatchingName();
-    this._disconnectProxy();
+    this._resetRuntime(new Error('Synchronization connection was restarted'));
     if (this._settings.get_boolean('sync-enabled'))
       await this._connect();
+    else
+      this.emit('status-changed', 'offline', null);
   }
 
-  async publish(item) {
-    if (!this.connected)
-      throw new Error('Synchronization service is unavailable');
-    if (!isUuid(item.id))
-      throw new Error('Item ID must be a UUID v4');
-
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const representations = item.representations.filter(representation => this._canPublish(representation.mimeType));
-    if (representations.length === 0)
-      throw new Error('The synchronization policy or Service capabilities reject all representations');
-    if (representations.length > MAX_ITEM_REPRESENTATIONS)
-      throw new Error(`Item has more than ${MAX_ITEM_REPRESENTATIONS} representations`);
-    for (const representation of representations)
-      validateRepresentation(representation);
-    const totalBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
-    if (totalBytes > ABSOLUTE_ITEM_LIMIT_BYTES)
-      throw new Error(`Item exceeds the local limit of ${ABSOLUTE_ITEM_LIMIT_BYTES} bytes`);
-    if (this._capabilities.maxItemBytes > 0 && totalBytes > this._capabilities.maxItemBytes)
-      throw new Error(`Item exceeds the Service limit of ${this._capabilities.maxItemBytes} bytes`);
-    const fdList = new Gio.UnixFDList();
-    const streams = [];
-    const temporaryFiles = [];
-
-    try {
-      const previews = [];
-      if (item.preview?.text) {
-        const previewLimit = this._effectivePreviewLimit(false);
-        const textPreview = truncateUtf8(item.preview.text, previewLimit);
-        const [temporaryFile, temporaryStream] = Gio.File.new_tmp('clipboard-x-preview-XXXXXX');
-        temporaryStream.close(null);
-        const path = temporaryFile.get_path();
-        await writeFile(
-          temporaryFile,
-          new GLib.Bytes(new TextEncoder().encode(textPreview.text)),
-          this._cancellable,
-        );
-        temporaryFiles.push(path);
-        previews.push(this._openPayload(
-          fdList,
-          streams,
-          item.preview.mimeType,
-          {
-            'content-id': item.preview.derivedFrom,
-            size: new TextEncoder().encode(textPreview.text).length,
-            truncated: item.preview.truncated || textPreview.truncated,
-          },
-          path,
-        ));
-      } else if (item.preview?.path && item.preview.size <= this._effectivePreviewLimit(true)) {
-        previews.push(this._openPayload(
-          fdList,
-          streams,
-          item.preview.mimeType,
-          {
-            'content-id': item.preview.derivedFrom,
-            size: item.preview.size,
-            truncated: true,
-          },
-          item.preview.path,
-        ));
-      }
-
-      const contents = [];
-      for (const representation of representations) {
-        if (!representation.path)
-          throw new Error('Snapshot must be persisted before publication');
-        contents.push(this._openPayload(
-          fdList,
-          streams,
-          representation.mimeType,
-          {
-            'content-id': representation.id,
-            size: representation.size,
-            sha256: representation.sha256,
-            delivery: representation.delivery,
-          },
-          representation.path,
-        ));
-      }
-
-      const metadata = variantDictionary({
-        id: item.id,
-        'created-at': item.createdAt,
-        'origin-device-id': deviceId,
-      });
-      metadata.contents = new GLib.Variant(
-        'aa{sv}',
-        representations.map(representation => variantDictionary({
-          'content-id': representation.id,
-          'mime-type': representation.mimeType,
-          size: representation.size,
-          sha256: representation.sha256,
-          delivery: representation.delivery,
-        })),
-      );
-      const parameters = new GLib.Variant('(sa{sv}a(sa{sv}h)a(sa{sv}h)a{sv})', [
-        deviceId,
-        metadata,
-        previews,
-        contents,
-        variantDictionary({}),
-      ]);
-
-      const [reply] = await this._callWithFds('Publish', parameters, fdList);
-      const [publishedId, transferId] = reply.deepUnpack();
-      if (publishedId !== item.id)
-        throw new Error('Synchronization Service did not preserve the published item ID');
-      if (!isUuid(transferId))
-        throw new Error('Synchronization Service returned an invalid publication transfer ID');
-      this._knownTransfers.add(transferId);
-      const current = this._transferStates.get(transferId);
-      if (current)
-        this.emit('transfer-changed', {...current});
-      return {itemId: publishedId, transferId};
-    } finally {
-      for (const stream of streams)
-        stream.close(null);
-      for (const path of temporaryFiles) {
-        try {
-          Gio.File.new_for_path(path).delete(null);
-        } catch (_error) {
-          // The temporary preview has already been consumed or removed.
-        }
-      }
-    }
+  publish(item) {
+    return this._enqueueTransfer(() => this._publish(item));
   }
 
-  async getChanges(cursor = this._cursor, options = {}) {
-    if (!this.connected)
+  materialize(item) {
+    return this._materialize(item);
+  }
+
+  async getChanges(cursor, options = {}) {
+    if (!this._connected || !this._storedConfiguration?.activeChannelId)
       return {nextCursor: cursor, changes: [], hasMore: false};
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('GetChanges', new GLib.Variant('(ssa{sv})', [
-      deviceId,
+    return validateChanges(await this._transport.changes(
+      this._storedConfiguration.activeChannelId,
       cursor,
-      variantDictionary(options),
-    ]));
-    const [nextCursor, rawChanges, hasMore] = reply.deepUnpack();
-    if (typeof nextCursor !== 'string' || nextCursor.length > 256
-        || !Array.isArray(rawChanges) || rawChanges.length > MAX_PENDING_ITEMS
-        || typeof hasMore !== 'boolean')
-      throw new Error('Synchronization Service returned an invalid changes page');
-    const changes = rawChanges.map(validateChange);
-    return {nextCursor, changes, hasMore};
-  }
-
-  async getConfiguration() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('GetConfiguration', new GLib.Variant('(s)', [deviceId]));
-    this._configuration = validateConfiguration(unpackDictionary(reply.deepUnpack()[0]));
-    return this.configuration;
-  }
-
-  async updateConfiguration(changes) {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const serialized = configurationChanges(changes);
-    const reply = await this._call('UpdateConfiguration', new GLib.Variant('(sa{sv})', [
-      deviceId,
-      variantDictionary(serialized),
-    ]));
-    this._applyConfiguration(validateConfiguration(unpackDictionary(reply.deepUnpack()[0])));
-    return this.configuration;
-  }
-
-  async listChannels() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('ListChannels', new GLib.Variant('(s)', [deviceId]));
-    const values = reply.deepUnpack()[0];
-    if (!Array.isArray(values) || values.length > 10_000)
-      throw new Error('Synchronization Service returned an invalid channel list');
-    const ids = new Set();
-    this._channels = values.map(value => {
-      const result = validateChannel(unpackDictionary(value));
-      if (ids.has(result.id))
-        throw new Error('Synchronization Service returned duplicate channels');
-      ids.add(result.id);
-      return result;
-    });
-    this.emit('channels-changed', this.channels);
-    return this.channels;
-  }
-
-  async testConnection() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('TestConnection', new GLib.Variant('(s)', [deviceId]));
-    return validateConnectionResult(unpackDictionary(reply.deepUnpack()[0]));
-  }
-
-  async requestContent(itemId, contentIds) {
-    validateItemId(itemId);
-    if (!Array.isArray(contentIds)
-        || contentIds.length === 0
-        || contentIds.length > MAX_ITEM_REPRESENTATIONS
-        || !contentIds.every(isContentId))
-      throw new Error('Synchronization content request is invalid');
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call(
-      'RequestContent',
-      new GLib.Variant('(ssasa{sv})', [
-        deviceId,
-        itemId,
-        [...new Set(contentIds)],
-        variantDictionary({}),
-      ]),
-    );
-    const transferId = reply.deepUnpack()[0];
-    if (!isUuid(transferId))
-      throw new Error('Synchronization Service returned an invalid transfer ID');
-    this._knownTransfers.add(transferId);
-    const current = this._transferStates.get(transferId);
-    if (current)
-      this.emit('transfer-changed', {...current});
-    return transferId;
+      options.limit ?? 200,
+    ));
   }
 
   async getItem(itemId) {
+    this._requireConnection();
     validateItemId(itemId);
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const [reply, fdList] = await this._callWithFds(
-      'GetItem',
-      new GLib.Variant('(ss)', [deviceId, itemId]),
-      null,
-    );
-    const [rawMetadata, rawPreviews] = reply.deepUnpack();
-    const metadata = unpackDictionary(rawMetadata);
-    const contentValues = metadata.contents ?? [];
-    if (!isUuid(metadata.id ?? itemId) || metadata.id !== itemId || !isUuid(metadata['origin-device-id'] ?? ''))
-      throw new Error('Synchronization Service returned an invalid item or DeviceId');
-    if (!Array.isArray(contentValues)
-        || contentValues.length === 0
-        || contentValues.length > MAX_ITEM_REPRESENTATIONS)
-      throw new Error('Synchronization Service returned an invalid representation count');
-    const contentIds = new Set();
-    const representations = contentValues.map(rawContent => {
-      const content = unpackDictionary(rawContent);
-      const representation = {
-        id: content['content-id'],
-        mimeType: content['mime-type'],
-        size: Number(content.size),
-        sha256: content.sha256,
-        delivery: content.delivery,
-        bytes: null,
-        path: null,
-      };
-      validateRepresentation(representation);
-      if (contentIds.has(representation.id))
-        throw new Error('Synchronization Service returned duplicate content IDs');
-      contentIds.add(representation.id);
-      return representation;
-    });
-    const declaredBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
-    const itemLimit = effectiveLimit(this._capabilities?.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
+    const channelId = this._requireChannel();
+    const remote = validateItem(await this._transport.item(channelId, itemId), itemId);
+    const declaredBytes = remote.contents.reduce((sum, content) => sum + content.size, 0);
+    const itemLimit = effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
     if (declaredBytes > itemLimit)
       throw new Error(`Synchronization item exceeds the effective limit of ${itemLimit} bytes`);
-    const createdAt = Number(metadata['created-at']);
-    if (!Number.isSafeInteger(createdAt) || createdAt < 0)
-      throw new Error('Synchronization Service returned an invalid timestamp');
-    const originDeviceIconKind = safeString(metadata['origin-device-icon-kind'] ?? 'other', 32);
-    if (!DEVICE_ICON_KINDS.includes(originDeviceIconKind))
-      throw new Error('Synchronization Service returned an invalid device icon kind');
 
+    const representations = remote.contents.map(content => ({
+      id: content.id,
+      mimeType: content.mimeType,
+      size: content.size,
+      sha256: content.sha256,
+      delivery: content.delivery,
+      bytes: null,
+      path: null,
+    }));
     let preview = null;
-    if (!Array.isArray(rawPreviews) || rawPreviews.length > MAX_ITEM_REPRESENTATIONS)
-      throw new Error('Synchronization Service returned an invalid preview count');
-    if (rawPreviews.length > 0) {
-      const validatedPreviews = rawPreviews.map(rawPreview => {
-        if (!Array.isArray(rawPreview) || rawPreview.length !== 3)
-          throw new Error('Synchronization Service returned invalid preview metadata');
-        const [mimeType, rawPreviewMetadata, fdIndex] = rawPreview;
-        const previewMetadata = unpackDictionary(rawPreviewMetadata);
-        if (!isMimeType(mimeType)
-            || !Number.isInteger(fdIndex)
-            || !isContentId(previewMetadata['content-id'])
-            || !representations.some(representation => representation.id === previewMetadata['content-id'])
-            || !Number.isSafeInteger(Number(previewMetadata.size))
-            || Number(previewMetadata.size) < 0
-            || !fdList
-            || fdIndex < 0
-            || fdIndex >= fdList.get_length()
-            || typeof previewMetadata.truncated !== 'boolean')
-          throw new Error('Synchronization Service returned invalid preview metadata');
-        return {mimeType, previewMetadata, fdIndex};
-      });
-      const selected = validatedPreviews.find(candidate => candidate.previewMetadata['content-id'] === representations[0].id)
-        ?? validatedPreviews[0];
-      const {mimeType, previewMetadata, fdIndex} = selected;
-      const bytes = await readFdListBytes(
-        fdList,
-        fdIndex,
-        this._cancellable,
-        effectiveLimit(this._capabilities?.maxPreviewBytes, ABSOLUTE_PREVIEW_LIMIT_BYTES),
+    const selected = remote.previews.find(value => value.contentId === representations[0].id)
+      ?? remote.previews[0];
+    if (selected) {
+      const maximumBytes = effectiveLimit(
+        this._capabilities.maxPreviewBytes,
+        ABSOLUTE_PREVIEW_LIMIT_BYTES,
       );
-      if (Number(previewMetadata.size ?? bytes.get_size()) !== bytes.get_size())
-        throw new Error('Synchronization preview size does not match its metadata');
-      if (mimeType.startsWith('text/')) {
+      const bytes = await this._transport.preview(
+        channelId,
+        itemId,
+        selected.id,
+        maximumBytes,
+        selected.mimeType,
+      );
+      if (bytes.get_size() !== selected.size || sha256(bytes) !== selected.sha256)
+        throw new Error('Synchronization preview does not match its manifest');
+      if (selected.mimeType.startsWith('text/')) {
         preview = {
-          mimeType,
+          mimeType: selected.mimeType,
           text: stringFromBytes(bytes),
-          truncated: Boolean(previewMetadata.truncated),
-          derivedFrom: previewMetadata['content-id'],
+          truncated: selected.truncated,
+          derivedFrom: selected.contentId,
         };
       } else {
-        const previewRoot = GLib.build_filenamev([GLib.get_user_cache_dir(), UUID, 'remote-previews']);
-        GLib.mkdir_with_parents(previewRoot, 0o700);
-        const previewHash = sha256(bytes);
-        const path = GLib.build_filenamev([previewRoot, `${metadata.id}-${previewHash}.preview`]);
+        const paths = devicePaths(remote.originDeviceId);
+        GLib.mkdir_with_parents(paths.previews, 0o700);
+        const path = GLib.build_filenamev([paths.previews, selected.sha256]);
         await writeFile(Gio.File.new_for_path(path), bytes, this._cancellable);
         preview = {
-          mimeType,
+          mimeType: selected.mimeType,
           path,
-          size: bytes.get_size(),
-          sha256: previewHash,
-          truncated: true,
-          derivedFrom: previewMetadata['content-id'],
+          size: selected.size,
+          sha256: selected.sha256,
+          truncated: selected.truncated,
+          derivedFrom: selected.contentId,
         };
       }
     }
 
     return new ClipboardItem({
-      id: metadata.id ?? itemId,
-      createdAt,
-      originDeviceId: metadata['origin-device-id'] ?? '',
-      originDeviceTag: safeString(metadata['origin-device-tag'] ?? '', 256),
-      originDeviceIconKind,
+      id: remote.id,
+      createdAt: remote.createdAt,
+      originDeviceId: remote.originDeviceId,
+      originDeviceTag: remote.originDeviceTag,
+      originDeviceIconKind: remote.originDeviceIconKind,
       representations,
       preview,
       favorite: false,
@@ -458,520 +208,552 @@ export class SyncClient extends EventEmitter {
     });
   }
 
-  async materialize(item) {
-    if (!item.remote || item.representations.every(representation => representation.bytes))
-      return item;
-
-    item.availability = 'waiting-for-peer';
-    try {
-      const contentIds = item.representations.map(representation => representation.id);
-      const transferId = await this.requestContent(item.id, contentIds);
-      await this._waitForTransfer(transferId);
-      for (const representation of item.representations) {
-        const {metadata, bytes} = await this.openContent(item.id, representation.id);
-        const actualSize = bytes.get_size();
-        const actualHash = sha256(bytes);
-        if (actualSize !== representation.size || actualSize !== Number(metadata.size))
-          throw new Error(`Synchronization size mismatch for ${representation.id}`);
-        if (actualHash !== representation.sha256 || actualHash !== metadata.sha256)
-          throw new Error(`Synchronization hash mismatch for ${representation.id}`);
-        representation.bytes = bytes;
-      }
-      item.availability = 'ready';
-    } catch (error) {
-      item.availability = 'failed';
-      throw error;
-    }
-    return item;
-  }
-
-  async openContent(itemId, contentId) {
-    validateItemId(itemId);
-    if (!isContentId(contentId))
-      throw new Error('Synchronization content ID is invalid');
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const [reply, fdList] = await this._callWithFds(
-      'OpenContent',
-      new GLib.Variant('(sss)', [deviceId, itemId, contentId]),
-      null,
-    );
-    const [rawMetadata, fdIndex] = reply.deepUnpack();
-    const metadata = unpackDictionary(rawMetadata);
-    if (metadata['content-id'] !== contentId
-        || !Number.isSafeInteger(Number(metadata.size))
-        || Number(metadata.size) < 0
-        || !SHA256_PATTERN.test(metadata.sha256 ?? '')
-        || !['eager', 'on-demand'].includes(metadata.delivery))
-      throw new Error('Synchronization Service returned invalid content metadata');
-    return {
-      metadata,
-      bytes: await readFdListBytes(
-        fdList,
-        fdIndex,
-        this._cancellable,
-        effectiveLimit(this._capabilities?.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES),
-      ),
-    };
-  }
-
-  async acknowledge(itemId, result, message = '') {
-    validateItemId(itemId);
-    if (typeof result !== 'string' || result.length === 0 || result.length > 64
-        || typeof message !== 'string' || message.length > 512)
-      throw new Error('Synchronization acknowledgement is invalid');
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    await this._call(
-      'Acknowledge',
-      new GLib.Variant('(ssss)', [deviceId, itemId, result, message]),
-    );
-  }
-
   async cancelTransfer(transferId) {
     if (!isUuid(transferId))
       throw new Error('Synchronization transfer ID is invalid');
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    await this._call('CancelTransfer', new GLib.Variant('(ss)', [deviceId, transferId]));
+    this._operations.get(transferId)?.cancel();
+    if (this._connected && this._remoteTransferIds.has(transferId)) {
+      try {
+        await this._transport.cancel(transferId);
+      } catch (error) {
+        if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+          throw error;
+      }
+    }
+    const current = this._transfers.get(transferId);
+    if (current && !TERMINAL_TRANSFER_STATES.has(current.state))
+      this._recordTransfer({...current, state: 'cancelled', updatedAt: Date.now()}, true);
   }
 
   async getTransfer(transferId) {
+    this._requireConnection();
     if (!isUuid(transferId))
       throw new Error('Synchronization transfer ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('GetTransfer', new GLib.Variant('(ss)', [deviceId, transferId]));
-    return validateTransfer(reply.deepUnpack()[0], deviceId);
+    const transfer = validateTransfer(await this._transport.transfer(transferId), deviceId);
+    this._remoteTransferIds.add(transferId);
+    return transfer;
   }
 
-  async listTransfers(filter = {}) {
+  async listTransfers() {
+    this._requireConnection();
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('ListTransfers', new GLib.Variant('(sa{sv})', [
-      deviceId,
-      variantDictionary(filter),
-    ]));
-    const values = reply.deepUnpack()[0];
-    if (!Array.isArray(values) || values.length > MAX_TRANSFER_STATES)
-      throw new Error('Synchronization Service returned an invalid transfer list');
-    return values.map(value => validateTransfer(value, deviceId));
+    const values = validateTransfers(await this._transport.transfers(), deviceId);
+    for (const transfer of values) {
+      this._remoteTransferIds.add(transfer.transferId);
+      this._recordTransfer(transfer, true);
+    }
+    return values;
   }
 
-  _openPayload(fdList, streams, mimeType, metadata, path) {
-    const stream = Gio.File.new_for_path(path).read(this._cancellable);
-    streams.push(stream);
-    const fdIndex = fdList.append(stream.get_fd());
-    return [mimeType, variantDictionary(metadata), fdIndex];
+  async listChannels() {
+    this._requireConnection();
+    this._channels = validateChannels(
+      await this._transport.channels(),
+      this._storedConfiguration.activeChannelId,
+    );
+    this.emit('channels-changed', this.channels);
+    return this.channels;
+  }
+
+  async testConnection() {
+    this._requireConnection();
+    const started = GLib.get_monotonic_time();
+    const status = validateStatus(await this._transport.status());
+    return {
+      state: 'online',
+      latencyMs: Math.max(0, Math.round((GLib.get_monotonic_time() - started) / 1000)),
+      serverVersion: status.implementationVersion,
+      message: 'Connected',
+    };
   }
 
   async _connect() {
     if (this._destroyed || !this._settings.get_boolean('sync-enabled'))
       return;
-
     const generation = ++this._generation;
-    const busName = this._settings.get_string('service-bus-name');
-    const objectPath = this._settings.get_string('service-object-path');
-    if (!Gio.dbus_is_name(busName))
-      throw new Error('The configured synchronization Service bus name is invalid');
-    if (!GLib.Variant.is_object_path(objectPath))
-      throw new Error('The configured synchronization Service object path is invalid');
-    this._nameWatchId = Gio.bus_watch_name(
-      Gio.BusType.SESSION,
-      busName,
-      Gio.BusNameWatcherFlags.NONE,
-      () => {
-        if (!this._destroyed && generation === this._generation
-            && !this._capabilities && !this._connecting) {
-          if (this._connectIdleId)
-            return;
-          this._connectIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            this._connectIdleId = 0;
-            if (!this._destroyed && generation === this._generation)
-              this._createProxy(busName, generation).catch(error => this._report(error));
-            return GLib.SOURCE_REMOVE;
-          });
-        }
-      },
-      () => {
-        if (!this._destroyed && generation === this._generation)
-          this._handleServiceVanished();
-      },
-    );
-    this._requestActivation(busName);
-  }
-
-  async _createProxy(destination = this._settings.get_string('service-bus-name'), generation = this._generation) {
-    if (this._destroyed || generation !== this._generation)
+    this._storedConfiguration = await this._configurationStore.load();
+    this._applyPublicConfiguration();
+    if (!this._storedConfiguration.serverAddress || !this._storedConfiguration.apiKey) {
+      this._setStatus('offline', null, 'not-configured');
       return;
-    this._connecting = true;
-    this._disconnectProxy();
+    }
 
+    this._cancellable = new Gio.Cancellable();
+    const identity = ensureDeviceIdentity(this._settings);
+    this._transport = this._transportFactory(this._storedConfiguration, {
+      deviceId: identity.deviceId,
+      cancellable: this._cancellable,
+    });
     try {
-      this._proxy = Gio.DBusProxy.new_sync(
-        Gio.DBus.session,
-        Gio.DBusProxyFlags.DO_NOT_AUTO_START | Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES,
-        null,
-        destination,
-        this._settings.get_string('service-object-path'),
-        SYNC_INTERFACE,
-        this._cancellable,
-      );
-      if (this._destroyed || generation !== this._generation) {
-        this._disconnectProxy();
+      this._capabilities = validateStatus(await this._transport.status());
+      if (this._destroyed || generation !== this._generation)
         return;
+      this._connected = true;
+      const currentDevice = validateDevice(await this._transport.device(), identity.deviceId);
+      this._devices.set(currentDevice.deviceId, currentDevice);
+      await this._updateProfile(true);
+      await this.listChannels();
+      if (this._channels.length > 0
+          && !this._channels.some(channel => channel.id === this._storedConfiguration.activeChannelId)) {
+        this._storedConfiguration.activeChannelId = this._channels[0].id;
+        await this._saveConnection();
+        await this.listChannels();
       }
-
-      this._proxySignal = this._proxy.connect('g-signal', (_proxy, _sender, name, parameters) => {
-        const values = parameters.deepUnpack();
-        if (name === 'StatusChanged')
-          this._handleStatusChanged(values[0]);
-        else if (name === 'DeviceChanged')
-          this._handleDeviceChanged(values[0]);
-        else if (name === 'DeviceRemoved')
-          this._handleDeviceRemoved(...values);
-        else if (name === 'ChangesAvailable') {
-          if (typeof values[0] !== 'string' || values[0].length > 256 || /[\r\n\0]/u.test(values[0]))
-            this._report(new Error('Service emitted an invalid changes cursor'));
-          else
-            this._syncChanges().catch(error => this._report(error));
-        }
-        else if (name === 'TransferChanged')
-          this._handleTransferChanged(values[0]);
-        else if (name === 'ConfigurationChanged')
-          this._handleConfigurationChanged(values[0]);
-        else if (name === 'ChannelsChanged')
-          this._handleChannelsChanged(values[0]);
-      });
-      await this._handleNameOwnerChanged(true);
-    } finally {
-      if (generation === this._generation)
-        this._connecting = false;
-    }
-  }
-
-  _requestActivation(busName) {
-    Gio.DBus.session.call(
-      'org.freedesktop.DBus',
-      '/org/freedesktop/DBus',
-      'org.freedesktop.DBus',
-      'StartServiceByName',
-      new GLib.Variant('(su)', [busName, 0]),
-      null,
-      Gio.DBusCallFlags.NONE,
-      2000,
-      this._cancellable,
-      (connection, result) => {
-        try {
-          connection.call_finish(result);
-        } catch (error) {
-          if (!error.matches?.(Gio.DBusError, Gio.DBusError.SERVICE_UNKNOWN))
-            this._report(error);
-        }
-      },
-    );
-  }
-
-  _handleServiceVanished() {
-    if (!this._proxy && !this._capabilities)
-      return;
-    this._disconnectProxy();
-    this._rejectTransfers(new Error('Synchronization service went offline'));
-    this.emit('status-changed', 'offline', null);
-  }
-
-  async _handleNameOwnerChanged(nameKnownPresent = false) {
-    if (!nameKnownPresent && !this.connected) {
-      this._registeredProfile = null;
-      this._capabilities = null;
-      this._status = null;
-      this._rejectTransfers(new Error('Synchronization service went offline'));
-      this.emit('status-changed', 'offline', null);
-      return;
-    }
-
-    try {
-      this._capabilities = await this._loadCapabilities();
-      if (this._capabilities.apiVersion !== SYNC_API_VERSION)
-        throw new Error(`Unsupported synchronization API version: ${this._capabilities.apiVersion}`);
-      await this._openSession();
-      this._registeredProfile = null;
-      await this._registerDevice(nameKnownPresent);
-      await this._applyStoredConfiguration();
-      await Promise.all([
-        this._loadStatus(),
-        this._loadDevices(),
-        this._loadTransfers(),
-        this.getConfiguration(),
-        this.listChannels(),
-      ]);
-      try {
-        await this._syncChanges();
-      } catch (error) {
-        this._report(error);
-      }
-      this.emit('status-changed', this._status?.state ?? this._capabilities.status ?? 'online', this.capabilities);
+      this._applyPublicConfiguration();
+      await this.listTransfers();
+      await this._poll();
+      this._setStatus(this._capabilities.status, this._capabilities, 'online');
+      this._schedulePoll();
     } catch (error) {
-      this._capabilities = null;
-      this.emit('status-changed', 'error', {error: error.message});
+      if (generation === this._generation) {
+        this._closeConnection();
+        this._setStatus('error', {error: error.message}, 'request-failed');
+      }
       throw error;
     }
   }
 
-  async _loadCapabilities() {
-    const reply = await new Promise((resolve, reject) => {
-      Gio.DBus.session.call(
-        this._proxy.get_name_owner() || this._settings.get_string('service-bus-name'),
-        this._settings.get_string('service-object-path'),
-        'org.freedesktop.DBus.Properties',
-        'GetAll',
-        new GLib.Variant('(s)', [SYNC_INTERFACE]),
-        new GLib.VariantType('(a{sv})'),
-        Gio.DBusCallFlags.NONE,
-        5000,
-        this._cancellable,
-        (connection, result) => {
-          try {
-            resolve(connection.call_finish(result));
-          } catch (error) {
-            reject(error);
-          }
+  async _publish(item) {
+    this._requireConnection();
+    if (!isUuid(item.id))
+      throw new Error('Item ID must be a UUID v4');
+    const channelId = this._requireChannel();
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const representations = item.representations
+      .filter(representation => this._canPublish(representation.mimeType));
+    if (representations.length === 0 || representations.length > MAX_ITEM_REPRESENTATIONS)
+      throw new Error('Synchronization policy rejects all representations or their count');
+    for (const representation of representations) {
+      validateLocalRepresentation(representation);
+      if (!representation.path)
+        throw new Error('Clipboard snapshot must be persisted before publication');
+    }
+    const declaredBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
+    const itemLimit = effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
+    if (declaredBytes > itemLimit)
+      throw new Error(`Synchronization item exceeds the effective limit of ${itemLimit} bytes`);
+
+    const previews = this._publicationPreviews(item);
+    const sources = new Map();
+    for (const preview of previews)
+      sources.set(`preview:${preview.id}`, preview.source);
+    for (const representation of representations.filter(value => value.delivery === 'eager')) {
+      sources.set(`content:${representation.id}`, {
+        path: representation.path,
+        size: representation.size,
+        mimeType: representation.mimeType,
+      });
+    }
+    const manifest = {
+      id: item.id,
+      createdAt: item.createdAt,
+      originDeviceId: deviceId,
+      contents: representations.map(representation => ({
+        id: representation.id,
+        mimeType: representation.mimeType,
+        size: representation.size,
+        sha256: representation.sha256,
+        delivery: representation.delivery,
+      })),
+      previews: previews.map(({source: _source, ...preview}) => preview),
+    };
+
+    let transfer = null;
+    let completedBytes = 0;
+    const cancellable = this._newOperationCancellable();
+    try {
+      const publication = validatePublication(
+        await this._transport.createItem(channelId, manifest),
+        item.id,
+      );
+      transfer = publication.transfer;
+      if (transfer.kind !== 'publish' || transfer.direction !== 'upload')
+        throw new Error('Synchronization server returned an invalid publication transfer');
+      this._remoteTransferIds.add(transfer.transferId);
+      this._operations.set(transfer.transferId, cancellable);
+      const requested = [
+        ...publication.previewIds.map(id => [`preview:${id}`, id, true]),
+        ...publication.contentIds.map(id => [`content:${id}`, id, false]),
+      ];
+      const totalBytes = requested.reduce((sum, [key]) => {
+        const source = sources.get(key);
+        if (!source)
+          throw new Error('Synchronization server requested an unknown upload object');
+        return sum + source.size;
+      }, 0);
+      if (!TERMINAL_TRANSFER_STATES.has(transfer.state) && transfer.totalBytes !== totalBytes)
+        throw new Error('Synchronization server returned an inconsistent upload size');
+      this._recordTransfer(transfer, true);
+      if (transfer.state === 'completed')
+        return {itemId: publication.itemId, transferId: transfer.transferId};
+      if (TERMINAL_TRANSFER_STATES.has(transfer.state))
+        throw new Error(transfer.errorMessage || `Transfer ${transfer.state}`);
+      for (const [key, id, preview] of requested) {
+        const source = sources.get(key);
+        const base = completedBytes;
+        const progress = bytes => this._recordTransfer({
+          ...transfer,
+          state: 'transferring',
+          completedBytes: Math.min(totalBytes, base + bytes),
+          totalBytes,
+          updatedAt: Date.now(),
+        });
+        if (preview)
+          await this._transport.uploadPreview(publication.uploadId, id, source, progress, cancellable);
+        else
+          await this._transport.uploadContent(publication.uploadId, id, source, progress, cancellable);
+        completedBytes += source.size;
+      }
+      const completed = validateTransfer(
+        (await this._transport.completeUpload(publication.uploadId)).transfer,
+        deviceId,
+      );
+      this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
+      return {itemId: publication.itemId, transferId: completed.transferId};
+    } catch (error) {
+      if (transfer) {
+        this._recordTransfer({
+          ...transfer,
+          state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
+          completedBytes,
+          updatedAt: Date.now(),
+          errorCode: String(error.code ?? 'upload_failed'),
+          errorMessage: error.message,
+        }, true);
+      }
+      throw error;
+    } finally {
+      if (transfer)
+        this._operations.delete(transfer.transferId);
+      this._activeCancellables.delete(cancellable);
+    }
+  }
+
+  async _materialize(item) {
+    if (!item.remote || item.representations.every(value => value.bytes || value.path))
+      return item;
+    this._requireConnection();
+    const channelId = this._requireChannel();
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    item.availability = 'waiting-for-peer';
+    try {
+      for (const representation of item.representations.filter(value => !value.bytes && !value.path)) {
+        const request = validateContentRequest(
+          await this._transport.requestContent(channelId, item.id, representation.id),
+          deviceId,
+        );
+        if (request.transfer.kind !== 'content' || request.transfer.direction !== 'download'
+            || request.transfer.itemId !== item.id)
+          throw new Error('Synchronization server returned an invalid content request transfer');
+        this._remoteTransferIds.add(request.transfer.transferId);
+        this._recordTransfer(request.transfer, true);
+        if (!TERMINAL_TRANSFER_STATES.has(request.transfer.state))
+          await this._waitForTransfer(request.transfer.transferId);
+        else if (request.transfer.state !== 'completed')
+          throw new Error(request.transfer.errorMessage || `Transfer ${request.transfer.state}`);
+        await this._enqueueTransfer(
+          () => this._downloadRepresentation(channelId, item, representation),
+        );
+      }
+      item.availability = 'ready';
+      return item;
+    } catch (error) {
+      item.availability = 'failed';
+      throw error;
+    }
+  }
+
+  async _downloadRepresentation(channelId, item, representation) {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const transferId = GLib.uuid_string_random();
+    const now = Date.now();
+    const transfer = {
+      transferId,
+      itemId: item.id,
+      deviceId,
+      kind: 'content',
+      direction: 'download',
+      state: 'transferring',
+      completedBytes: 0,
+      totalBytes: representation.size,
+      peerDeviceIds: [item.originDeviceId],
+      createdAt: now,
+      updatedAt: now,
+      errorCode: '',
+      errorMessage: '',
+    };
+    const cancellable = this._newOperationCancellable();
+    this._operations.set(transferId, cancellable);
+    this._recordTransfer(transfer, true);
+    const targetPath = GLib.build_filenamev([
+      devicePaths(item.originDeviceId).objects,
+      representation.sha256,
+    ]);
+    try {
+      const result = await this._transport.downloadContent(
+        channelId,
+        item.id,
+        representation.id,
+        targetPath,
+        {
+          maximumBytes: effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES),
+          expectedBytes: representation.size,
+          expectedSha256: representation.sha256,
+          mimeType: representation.mimeType,
+          cancellable,
+          onProgress: completedBytes => this._recordTransfer({
+            ...transfer,
+            completedBytes,
+            updatedAt: Date.now(),
+          }),
         },
       );
-    });
-    const properties = unpackDictionary(reply.deepUnpack()[0]);
-    const read = (name, fallback) => properties[name] ?? fallback;
-    return {
-      apiVersion: Number(read('ApiVersion', 0)),
-      implementationName: safeString(read('ImplementationName', ''), 256),
-      implementationVersion: safeString(read('ImplementationVersion', ''), 128),
-      status: safeString(read('Status', 'online'), 64),
-      supportedMimeTypes: validateMimeTypes(read('SupportedMimeTypes', [])),
-      maxItemBytes: safeLimit(read('MaxItemBytes', 0)),
-      maxPreviewBytes: safeLimit(read('MaxPreviewBytes', 0)),
-    };
-  }
-
-  async _openSession() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const requestedLeaseMs = this._requestedLeaseMilliseconds();
-    const reply = await this._call('OpenSession', new GLib.Variant('(sa{sv})', [
-      deviceId,
-      variantDictionary({'lease-ms': requestedLeaseMs}),
-    ]));
-    const session = validateSession(unpackDictionary(reply.deepUnpack()[0]));
-    this._sessionId = session.id;
-    this._sessionLeaseMs = session.leaseMs;
-    this._scheduleHeartbeat();
-    return session;
-  }
-
-  async _renewSession() {
-    if (!this._sessionId)
-      throw new Error('Synchronization Service session is unavailable');
-    const reply = await this._call(
-      'RenewSession',
-      new GLib.Variant('(s)', [this._sessionId]),
-    );
-    const session = validateSession(unpackDictionary(reply.deepUnpack()[0]));
-    if (session.id !== this._sessionId)
-      throw new Error('Synchronization Service changed the session ID during renewal');
-    this._sessionLeaseMs = session.leaseMs;
-    this._scheduleHeartbeat();
-    return session;
-  }
-
-  async _closeSession() {
-    this._stopHeartbeat();
-    const sessionId = this._sessionId;
-    this._sessionId = '';
-    this._sessionLeaseMs = 0;
-    if (!sessionId || !this._proxy)
-      return;
-    await this._call('CloseSession', new GLib.Variant('(s)', [sessionId]));
-  }
-
-  _closeSessionBestEffort() {
-    this._stopHeartbeat();
-    const sessionId = this._sessionId;
-    const proxy = this._proxy;
-    this._sessionId = '';
-    this._sessionLeaseMs = 0;
-    if (!sessionId || !proxy)
-      return;
-    proxy.call(
-      'CloseSession',
-      new GLib.Variant('(s)', [sessionId]),
-      Gio.DBusCallFlags.NONE,
-      1000,
-      null,
-      (source, result) => {
-        try {
-          source.call_finish(result);
-        } catch (_error) {
-          // Lease expiry remains the fallback when the best-effort close fails.
-        }
-      },
-    );
-  }
-
-  _scheduleHeartbeat() {
-    this._stopHeartbeat();
-    if (this._destroyed || !this.connected || !this._sessionId)
-      return;
-    const interval = heartbeatMilliseconds(this._sessionLeaseMs);
-    this._heartbeatId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, interval, () => {
-      this._heartbeatId = 0;
-      this._renewSession().catch(async error => {
-        this._report(error);
-        this._sessionId = '';
-        this._sessionLeaseMs = 0;
-        if (!this._destroyed && this.connected) {
-          try {
-            await this._openSession();
-          } catch (openError) {
-            this._report(openError);
-          }
-        }
-      });
-      return GLib.SOURCE_REMOVE;
-    });
-  }
-
-  _stopHeartbeat() {
-    if (this._heartbeatId)
-      GLib.Source.remove(this._heartbeatId);
-    this._heartbeatId = 0;
-  }
-
-  _requestedLeaseMilliseconds() {
-    return leaseMilliseconds(this._settings.get_uint('sync-service-lease-seconds'));
-  }
-
-  async _applyStoredConfiguration() {
-    const configuration = await this._configurationStore.load();
-    if (!this._configurationStore.exists)
-      return;
-    await this.updateConfiguration({
-      ...(configuration.serverAddress ? {serverAddress: configuration.serverAddress} : {}),
-      ...(configuration.apiKey ? {apiKey: configuration.apiKey} : {clearApiKey: true}),
-      activeChannelId: configuration.activeChannelId,
-    });
-  }
-
-  async _loadStatus() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('GetStatus', new GLib.Variant('(s)', [deviceId]));
-    this._status = validateStatus(reply.deepUnpack()[0]);
-    this.emit('status-details-changed', {...this._status});
-    return this._status;
-  }
-
-  async _loadDevices() {
-    const {deviceId} = ensureDeviceIdentity(this._settings);
-    const reply = await this._call('ListDevices', new GLib.Variant('(s)', [deviceId]));
-    const values = reply.deepUnpack()[0];
-    if (!Array.isArray(values) || values.length > 10_000)
-      throw new Error('Synchronization Service returned an invalid device list');
-    this._devices.clear();
-    for (const value of values) {
-      const device = validateDevice(value);
-      this._devices.set(device.deviceId, device);
+      representation.path = result.path;
+      this._recordTransfer({
+        ...transfer,
+        state: 'completed',
+        completedBytes: representation.size,
+        updatedAt: Date.now(),
+      }, true);
+    } catch (error) {
+      this._recordTransfer({
+        ...transfer,
+        state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
+        updatedAt: Date.now(),
+        errorCode: String(error.code ?? 'download_failed'),
+        errorMessage: error.message,
+      }, true);
+      throw error;
+    } finally {
+      this._operations.delete(transferId);
+      this._activeCancellables.delete(cancellable);
     }
-    this.emit('devices-changed', this.devices);
-    return this.devices;
   }
 
-  async _loadTransfers() {
-    const values = await this.listTransfers();
-    for (const transfer of values) {
-      this._transferStates.set(transfer.transferId, transfer);
-      this.emit('transfer-changed', {...transfer});
+  _publicationPreviews(item) {
+    if (item.preview?.text) {
+      const result = truncateUtf8(item.preview.text, this._effectivePreviewLimit(false));
+      const bytes = bytesFromString(result.text);
+      const digest = sha256(bytes);
+      return [{
+        id: digest,
+        contentId: item.preview.derivedFrom,
+        mimeType: item.preview.mimeType,
+        size: bytes.get_size(),
+        sha256: digest,
+        truncated: item.preview.truncated || result.truncated,
+        source: {bytes, size: bytes.get_size(), mimeType: item.preview.mimeType},
+      }];
     }
-    this.emit('transfers-restored', values.map(transfer => ({...transfer})));
-    return values;
+    if (item.preview?.path && item.preview.size <= this._effectivePreviewLimit(true)) {
+      return [{
+        id: item.preview.sha256,
+        contentId: item.preview.derivedFrom,
+        mimeType: item.preview.mimeType,
+        size: item.preview.size,
+        sha256: item.preview.sha256,
+        truncated: true,
+        source: {
+          path: item.preview.path,
+          size: item.preview.size,
+          mimeType: item.preview.mimeType,
+        },
+      }];
+    }
+    return [];
+  }
+
+  async _poll() {
+    if (this._polling || !this._connected || this._destroyed)
+      return;
+    this._polling = true;
+    try {
+      await this._syncChanges();
+      await this._syncWork();
+      await this._refreshActiveTransfers();
+      if (this._status?.state === 'error')
+        this._setStatus(this._capabilities.status, this._capabilities, 'online');
+    } finally {
+      this._polling = false;
+    }
   }
 
   async _syncChanges() {
-    if (this._syncingChanges || !this.connected)
+    const channelId = this._storedConfiguration.activeChannelId;
+    if (!channelId)
       return;
-    this._syncingChanges = true;
+    let cursor = this._storedConfiguration.cursors[channelId] ?? '';
+    let hasMore;
+    do {
+      const page = await this.getChanges(cursor, {limit: 200});
+      for (const change of page.changes) {
+        if (change.kind === 'upsert')
+          this.emit('item-available', change.itemId);
+        else
+          this.emit('item-removed', change.itemId, change.reason);
+      }
+      if (page.nextCursor === cursor && page.hasMore)
+        throw new Error('Synchronization server returned a non-advancing changes cursor');
+      cursor = page.nextCursor;
+      this._storedConfiguration.cursors[channelId] = cursor;
+      await this._saveProgress();
+      hasMore = page.hasMore;
+    } while (hasMore);
+  }
+
+  async _syncWork() {
+    let cursor = this._storedConfiguration.workCursor;
+    let hasMore;
+    do {
+      const page = validateWorkPage(await this._transport.work(cursor));
+      for (const work of page.work)
+        await this._enqueueTransfer(() => this._performWork(work));
+      if (page.cursor === cursor && page.hasMore)
+        throw new Error('Synchronization server returned a non-advancing work cursor');
+      cursor = page.cursor;
+      this._storedConfiguration.workCursor = cursor;
+      await this._saveProgress();
+      hasMore = page.hasMore;
+    } while (hasMore);
+  }
+
+  async _performWork(work) {
+    const item = this._sourceItem(work.itemId);
+    const representation = item?.representations.find(value => value.id === work.contentId);
+    if (!item || !representation || (!representation.path && !representation.bytes)) {
+      await this._transport.rejectWork(work.id, 'source_content_missing');
+      return;
+    }
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const accepted = validateAcceptedWork(
+      await this._transport.acceptWork(work.id),
+      work.itemId,
+      deviceId,
+    );
+    if (accepted.transfer.kind !== 'content' || accepted.transfer.direction !== 'upload'
+        || accepted.transfer.totalBytes !== representation.size)
+      throw new Error('Synchronization server returned an inconsistent source upload size');
+    if (accepted.transfer.state === 'completed') {
+      this._remoteTransferIds.add(accepted.transfer.transferId);
+      this._recordTransfer(accepted.transfer, true);
+      return;
+    }
+    if (TERMINAL_TRANSFER_STATES.has(accepted.transfer.state))
+      throw new Error(accepted.transfer.errorMessage || `Transfer ${accepted.transfer.state}`);
+    const cancellable = this._newOperationCancellable();
+    this._remoteTransferIds.add(accepted.transfer.transferId);
+    this._operations.set(accepted.transfer.transferId, cancellable);
+    this._recordTransfer(accepted.transfer, true);
     try {
-      let hasMore;
-      do {
-        const page = await this.getChanges(this._cursor, {limit: 200});
-        for (const change of page.changes) {
-          if (change.kind === 'upsert')
-            this.emit('item-available', change.itemId);
-          else
-            this.emit('item-removed', change.itemId, change.reason);
-        }
-        if (page.nextCursor === this._cursor && page.hasMore)
-          throw new Error('Synchronization Service returned a non-advancing changes cursor');
-        this._cursor = page.nextCursor;
-        hasMore = page.hasMore;
-      } while (hasMore);
+      const source = {
+        ...(representation.path ? {path: representation.path} : {bytes: representation.bytes}),
+        size: representation.size,
+        mimeType: representation.mimeType,
+      };
+      await this._transport.uploadContent(
+        accepted.uploadId,
+        representation.id,
+        source,
+        completedBytes => this._recordTransfer({
+          ...accepted.transfer,
+          state: 'transferring',
+          completedBytes,
+          updatedAt: Date.now(),
+        }),
+        cancellable,
+      );
+      const completed = validateTransfer(
+        (await this._transport.completeUpload(accepted.uploadId)).transfer,
+        deviceId,
+      );
+      this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
+    } catch (error) {
+      this._recordTransfer({
+        ...accepted.transfer,
+        state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
+        updatedAt: Date.now(),
+        errorCode: String(error.code ?? 'source_upload_failed'),
+        errorMessage: error.message,
+      }, true);
+      throw error;
     } finally {
-      this._syncingChanges = false;
+      this._operations.delete(accepted.transfer.transferId);
+      this._activeCancellables.delete(cancellable);
     }
   }
 
-  _handleStatusChanged(rawStatus) {
-    try {
-      this._status = validateStatus(rawStatus);
-      this.emit('status-details-changed', {...this._status});
-      this.emit('status-changed', this._status.state, this.capabilities);
-    } catch (error) {
-      this._report(error);
-    }
+  async _refreshActiveTransfers() {
+    const active = this._transfers.values()
+      .filter(value => !TERMINAL_TRANSFER_STATES.has(value.state) && !this._operations.has(value.transferId));
+    for (const current of active)
+      this._recordTransfer(await this.getTransfer(current.transferId), true);
   }
 
-  _handleDeviceChanged(rawDevice) {
-    try {
-      const device = validateDevice(rawDevice);
-      this._devices.set(device.deviceId, device);
-      this.emit('devices-changed', this.devices);
-    } catch (error) {
-      this._report(error);
-    }
+  _waitForTransfer(transferId) {
+    const current = this._transfers.get(transferId);
+    if (!current)
+      return Promise.reject(new Error('Synchronization transfer ID is unknown'));
+    if (current.state === 'completed')
+      return Promise.resolve();
+    if (TERMINAL_TRANSFER_STATES.has(current.state))
+      return Promise.reject(new Error(current.errorMessage || `Transfer ${current.state}`));
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this._transferWaiters.delete(transferId);
+        this.cancelTransfer(transferId).catch(() => {});
+        reject(new Error('Timed out waiting for synchronized content'));
+      }, this._settings.get_uint('sync-transfer-timeout-seconds') * 1000);
+      this._transferWaiters.set(transferId, {resolve, reject, timeout});
+    });
   }
 
-  _handleDeviceRemoved(deviceId, reason) {
-    if (!isUuid(deviceId) || typeof reason !== 'string') {
-      this._report(new Error('Service emitted invalid device removal metadata'));
+  _recordTransfer(transfer, immediate = false) {
+    this._transfers.update(transfer, {immediate});
+    const waiter = this._transferWaiters.get(transfer.transferId);
+    if (!waiter || !TERMINAL_TRANSFER_STATES.has(transfer.state))
       return;
-    }
-    this._devices.delete(deviceId);
-    this.emit('device-removed', deviceId, safeString(reason, 256));
+    clearTimeout(waiter.timeout);
+    this._transferWaiters.delete(transfer.transferId);
+    if (transfer.state === 'completed')
+      waiter.resolve();
+    else
+      waiter.reject(new Error(transfer.errorMessage || `Transfer ${transfer.state}`));
+  }
+
+  _transferChanged(transfer) {
+    this.emit('transfer-changed', transfer);
+  }
+
+  async _updateProfile(force = false) {
+    if (!this._connected)
+      return;
+    const identity = ensureDeviceIdentity(this._settings);
+    const serialized = `${identity.deviceTag}\0${identity.deviceIconKind}`;
+    if (!force && serialized === this._registeredProfile)
+      return;
+    const raw = await this._transport.updateProfile({
+      tag: identity.deviceTag,
+      iconKind: identity.deviceIconKind,
+    });
+    const current = raw ? validateDevice(raw, identity.deviceId) : {
+      deviceId: identity.deviceId,
+      tag: identity.deviceTag,
+      iconKind: identity.deviceIconKind,
+      state: 'online',
+      lastSeenAt: Date.now(),
+      isCurrent: true,
+    };
+    this._devices.set(current.deviceId, current);
+    this._registeredProfile = serialized;
     this.emit('devices-changed', this.devices);
-  }
-
-  _handleConfigurationChanged(rawConfiguration) {
-    try {
-      this._applyConfiguration(validateConfiguration(unpackDictionary(rawConfiguration)));
-    } catch (error) {
-      this._report(error);
-    }
-  }
-
-  _applyConfiguration(configuration) {
-    const previousChannelId = this._configuration?.activeChannelId ?? '';
-    this._configuration = configuration;
-    this.emit('configuration-changed', this.configuration);
-    if (previousChannelId !== configuration.activeChannelId) {
-      this._cursor = '';
-      this._syncChanges().catch(error => this._report(error));
-    }
-  }
-
-  _handleChannelsChanged(revision) {
-    const value = Number(revision);
-    if (!Number.isSafeInteger(value) || value < 0) {
-      this._report(new Error('Service emitted an invalid channel revision'));
-      return;
-    }
-    this.listChannels().catch(error => this._report(error));
   }
 
   _canPublish(mimeType) {
     if (mimeType === 'text/html' && !this._settings.get_boolean('sync-html'))
       return false;
-    if (mimeType.startsWith('text/') && mimeType !== 'text/html' && !this._settings.get_boolean('sync-text'))
+    if (mimeType.startsWith('text/') && mimeType !== 'text/html'
+        && !this._settings.get_boolean('sync-text'))
       return false;
     if (mimeType.startsWith('image/') && !this._settings.get_boolean('sync-images'))
       return false;
@@ -980,122 +762,95 @@ export class SyncClient extends EventEmitter {
   }
 
   _effectivePreviewLimit(image) {
-    const serviceLimit = this._capabilities?.maxPreviewBytes ?? 0;
-    const configuredLimit = this._settings.get_uint(image ? 'thumbnail-byte-limit' : 'text-preview-limit');
-    return effectiveLimit(serviceLimit, Math.min(configuredLimit, ABSOLUTE_PREVIEW_LIMIT_BYTES));
+    const configured = this._settings.get_uint(image ? 'thumbnail-byte-limit' : 'text-preview-limit');
+    return effectiveLimit(
+      this._capabilities.maxPreviewBytes,
+      Math.min(configured, ABSOLUTE_PREVIEW_LIMIT_BYTES),
+    );
   }
 
-  async _registerDevice(nameKnownPresent = false) {
-    if (!nameKnownPresent && !this.connected)
+  _setStatus(state, capabilities, networkState) {
+    this._status = {
+      state,
+      networkState,
+      pendingItems: this._capabilities?.pendingItems ?? 0,
+      activeTransfers: this._capabilities?.activeTransfers ?? 0,
+      lastSyncAt: this._capabilities?.lastSyncAt ?? 0,
+      revision: this._capabilities?.revision ?? 0,
+      errorCode: state === 'error' ? 'request_failed' : '',
+      errorMessage: capabilities?.error ?? '',
+    };
+    this.emit('status-details-changed', {...this._status});
+    this.emit('status-changed', state, capabilities);
+  }
+
+  _applyPublicConfiguration() {
+    const active = this._channels.find(value => value.id === this._storedConfiguration?.activeChannelId);
+    this._configuration = this._storedConfiguration
+      ? publicConfiguration(this._storedConfiguration, active?.name ?? '')
+      : null;
+    this.emit('configuration-changed', this.configuration);
+  }
+
+  async _saveConnection() {
+    this._storedConfiguration = await this._configurationStore.saveConnection(
+      this._storedConfiguration,
+    );
+    this._applyPublicConfiguration();
+  }
+
+  async _saveProgress() {
+    this._storedConfiguration = await this._configurationStore.saveProgress(
+      this._storedConfiguration,
+    );
+    this._applyPublicConfiguration();
+  }
+
+  _schedulePoll() {
+    if (this._pollSource || !this._connected || this._destroyed)
       return;
-    const {deviceId, deviceTag, deviceIconKind} = ensureDeviceIdentity(this._settings);
-    const serialized = `${deviceTag}\0${deviceIconKind}`;
-    if (serialized === this._registeredProfile)
-      return;
-    await this._call('RegisterDevice', new GLib.Variant('(sa{sv})', [
-      deviceId,
-      variantDictionary({tag: deviceTag, 'icon-kind': deviceIconKind}),
-    ]));
-    this._registeredProfile = serialized;
+    this._pollSource = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      POLL_INTERVAL_MILLISECONDS,
+      () => {
+        this._poll().catch(error => {
+          if (this._connected)
+            this._setStatus('error', {error: error.message}, 'request-failed');
+          this._report(error);
+        });
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
   }
 
-  _call(method, parameters) {
-    if (!this._proxy)
-      return Promise.reject(new Error('Synchronization Service proxy is unavailable'));
-    return new Promise((resolve, reject) => {
-      this._proxy.call(
-        method,
-        parameters,
-        Gio.DBusCallFlags.NONE,
-        5000,
-        this._cancellable,
-        (proxy, result) => {
-          try {
-            resolve(proxy.call_finish(result));
-          } catch (error) {
-            reject(error);
-          }
-        },
-      );
-    });
+  _enqueueTransfer(operation) {
+    const generation = this._generation;
+    const guardedOperation = () => {
+      if (this._destroyed || generation !== this._generation)
+        throw new Error('Synchronization operation is no longer current');
+      return operation();
+    };
+    const result = this._transferChain.then(guardedOperation, guardedOperation);
+    this._transferChain = result.catch(() => {});
+    return result;
   }
 
-  _callWithFds(method, parameters, fdList) {
-    if (!this._proxy)
-      return Promise.reject(new Error('Synchronization Service proxy is unavailable'));
-    return new Promise((resolve, reject) => {
-      this._proxy.call_with_unix_fd_list(
-        method,
-        parameters,
-        Gio.DBusCallFlags.NONE,
-        5000,
-        fdList,
-        this._cancellable,
-        (proxy, result) => {
-          try {
-            resolve(proxy.call_with_unix_fd_list_finish(result));
-          } catch (error) {
-            reject(error);
-          }
-        },
-      );
-    });
+  _newOperationCancellable() {
+    const cancellable = new Gio.Cancellable();
+    this._activeCancellables.add(cancellable);
+    return cancellable;
   }
 
-  _handleTransferChanged(rawTransfer) {
-    let transfer;
-    try {
-      const {deviceId} = ensureDeviceIdentity(this._settings);
-      transfer = validateTransfer(rawTransfer, deviceId);
-      const previous = this._transferStates.get(transfer.transferId);
-      if (previous && (transfer.completedBytes < previous.completedBytes
-          || (previous.totalBytes > 0 && transfer.totalBytes !== previous.totalBytes)))
-        throw new Error('Service emitted non-monotonic transfer progress');
-    } catch (error) {
-      this._report(error);
-      return;
-    }
-    const {transferId, state} = transfer;
-    if (!this._transferStates.has(transferId) && this._transferStates.size >= MAX_TRANSFER_STATES)
-      this._transferStates.delete(this._transferStates.keys().next().value);
-    this._transferStates.set(transferId, transfer);
-    const waiter = this._transferWaiters.get(transferId);
-    if (waiter && state === 'completed') {
-      clearTimeout(waiter.timeout);
-      this._transferWaiters.delete(transferId);
-      this._knownTransfers.delete(transferId);
-      waiter.resolve();
-    } else if (waiter && ['cancelled', 'expired', 'failed'].includes(state)) {
-      clearTimeout(waiter.timeout);
-      this._transferWaiters.delete(transferId);
-      this._knownTransfers.delete(transferId);
-      waiter.reject(new Error(transfer.errorMessage || `Transfer ${state}`));
-    }
-    this.emit('transfer-changed', {...transfer});
+  _requireConnection() {
+    if (!this._connected || !this._transport)
+      throw new Error('Synchronization server is unavailable');
   }
 
-  _waitForTransfer(transferId) {
-    if (!isUuid(transferId) || !this._knownTransfers.has(transferId))
-      return Promise.reject(new Error('Synchronization transfer ID is unknown'));
-    const current = this._transferStates.get(transferId);
-    if (current?.state === 'completed') {
-      this._knownTransfers.delete(transferId);
-      return Promise.resolve();
-    }
-    if (current && ['cancelled', 'expired', 'failed'].includes(current.state)) {
-      this._knownTransfers.delete(transferId);
-      return Promise.reject(new Error(current.errorMessage || `Transfer ${current.state}`));
-    }
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this._transferWaiters.delete(transferId);
-        this._knownTransfers.delete(transferId);
-        this.cancelTransfer(transferId).catch(() => {});
-        reject(new Error('Timed out waiting for synchronized content'));
-      }, this._settings.get_uint('sync-transfer-timeout-seconds') * 1000);
-      this._transferWaiters.set(transferId, {resolve, reject, timeout});
-    });
+  _requireChannel() {
+    const channelId = this._storedConfiguration?.activeChannelId ?? '';
+    if (!isUuid(channelId))
+      throw new Error('No active synchronization channel is configured');
+    return channelId;
   }
 
   _report(error) {
@@ -1103,226 +858,53 @@ export class SyncClient extends EventEmitter {
       console.error(`Clipboard X sync operation failed (code ${error.code ?? 'unknown'})`);
   }
 
-  _disconnectProxy() {
-    this._stopHeartbeat();
-    this._sessionId = '';
-    this._sessionLeaseMs = 0;
-    if (this._proxySignal)
-      this._proxy.disconnect(this._proxySignal);
-    this._proxySignal = 0;
-    this._proxy = null;
-    this._registeredProfile = null;
-    this._capabilities = null;
-    this._status = null;
-    this._configuration = null;
-    this._channels = [];
-  }
-
-  _stopWatchingName() {
-    if (this._connectIdleId)
-      GLib.Source.remove(this._connectIdleId);
-    this._connectIdleId = 0;
-    if (this._nameWatchId)
-      Gio.bus_unwatch_name(this._nameWatchId);
-    this._nameWatchId = 0;
-  }
-
-  _rejectTransfers(error) {
+  _resetRuntime(error) {
+    if (this._pollSource)
+      GLib.Source.remove(this._pollSource);
+    this._pollSource = 0;
+    for (const cancellable of this._activeCancellables)
+      cancellable.cancel();
+    this._activeCancellables.clear();
+    this._operations.clear();
+    this._remoteTransferIds.clear();
+    this._transferChain = Promise.resolve();
+    this._closeConnection();
+    this._polling = false;
     for (const waiter of this._transferWaiters.values()) {
       clearTimeout(waiter.timeout);
       waiter.reject(error);
     }
     this._transferWaiters.clear();
-    this._knownTransfers.clear();
+    this._transfers.clear();
+  }
+
+  _closeConnection() {
+    this._cancellable?.cancel();
+    this._transport?.abort();
+    this._transport = null;
+    this._cancellable = null;
+    this._connected = false;
+    this._capabilities = null;
+    this._devices.clear();
+    this._channels = [];
+    this._remoteTransferIds.clear();
+    this._registeredProfile = '';
   }
 
   destroy() {
     if (this._destroyed)
       return;
-    this._closeSessionBestEffort();
     this._destroyed = true;
     this._generation++;
     for (const signal of this._settingsSignals)
       this._settings.disconnect(signal);
     this._settingsSignals = [];
-    this._stopWatchingName();
-    this._disconnectProxy();
-    this._rejectTransfers(new Error('Synchronization client was destroyed'));
-    this._transferStates.clear();
-    this._knownTransfers.clear();
-    this._cancellable.cancel();
+    this._resetRuntime(new Error('Synchronization client was destroyed'));
     this._configurationStore = null;
+    this._transportFactory = null;
+    this._sourceItem = null;
     this.disconnectAll();
   }
-}
-
-function unpackValue(value) {
-  if (value instanceof GLib.Variant)
-    return unpackValue(value.deepUnpack());
-  if (Array.isArray(value))
-    return value.map(unpackValue);
-  if (value && typeof value === 'object')
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, unpackValue(item)]));
-  return value;
-}
-
-function unpackDictionary(value) {
-  return unpackValue(value);
-}
-
-async function readFdListBytes(fdList, index, cancellable, maxBytes = 0) {
-  if (!fdList || !Number.isInteger(index) || index < 0 || index >= fdList.get_length())
-    throw new Error('D-Bus payload references an invalid UNIX FD');
-  const fd = fdList.get(index);
-  const stream = new GioUnix.InputStream({fd, close_fd: true});
-  const chunks = [];
-  let total = 0;
-  try {
-    while (true) {
-      const bytes = await new Promise((resolve, reject) => {
-        stream.read_bytes_async(64 * 1024, GLib.PRIORITY_DEFAULT, cancellable, (source, result) => {
-          try {
-            resolve(source.read_bytes_finish(result));
-          } catch (error) {
-            reject(error);
-          }
-        });
-      });
-      if (bytes.get_size() === 0)
-        break;
-      total += bytes.get_size();
-      if (maxBytes > 0 && total > maxBytes)
-        throw new Error(`D-Bus payload exceeds the negotiated limit of ${maxBytes} bytes`);
-      chunks.push(bytes.get_data());
-    }
-  } finally {
-    stream.close(null);
-  }
-  const output = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    output.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return new GLib.Bytes(output);
-}
-
-function validateChange(rawValue) {
-  const value = unpackDictionary(rawValue);
-  const sequence = Number(value.sequence);
-  const kind = value.kind;
-  const itemId = value['item-id'];
-  if (!Number.isSafeInteger(sequence) || sequence < 0
-      || !['upsert', 'remove'].includes(kind)
-      || !isUuid(itemId))
-    throw new Error('Synchronization Service returned an invalid change record');
-  return {
-    sequence,
-    kind,
-    itemId,
-    reason: safeString(value.reason ?? '', 256),
-  };
-}
-
-function validateStatus(rawValue) {
-  const value = unpackDictionary(rawValue);
-  const state = safeString(value.state ?? '', 32);
-  const networkState = safeString(value['network-state'] ?? '', 64);
-  const pendingItems = Number(value['pending-items']);
-  const activeTransfers = Number(value['active-transfers']);
-  const lastSyncAt = Number(value['last-sync-at']);
-  const revision = Number(value.revision);
-  if (!['online', 'offline', 'degraded', 'error'].includes(state)
-      || !networkState
-      || !Number.isSafeInteger(pendingItems) || pendingItems < 0
-      || !Number.isSafeInteger(activeTransfers) || activeTransfers < 0
-      || !Number.isSafeInteger(lastSyncAt) || lastSyncAt < 0
-      || !Number.isSafeInteger(revision) || revision < 0)
-    throw new Error('Synchronization Service returned invalid status metadata');
-  return {
-    state,
-    networkState,
-    pendingItems,
-    activeTransfers,
-    lastSyncAt,
-    revision,
-    errorCode: safeString(value['error-code'] ?? '', 128),
-    errorMessage: safeString(value['error-message'] ?? '', 512),
-  };
-}
-
-function validateDevice(rawValue) {
-  const value = unpackDictionary(rawValue);
-  const deviceId = value['device-id'];
-  const tag = safeString(value.tag ?? '', 256);
-  const iconKind = safeString(value['icon-kind'] ?? '', 32);
-  const state = safeString(value.state ?? '', 32);
-  const lastSeenAt = Number(value['last-seen-at']);
-  if (!isUuid(deviceId) || !tag || !DEVICE_ICON_KINDS.includes(iconKind)
-      || !['online', 'offline', 'unavailable'].includes(state)
-      || !Number.isSafeInteger(lastSeenAt) || lastSeenAt < 0
-      || typeof value['is-current'] !== 'boolean')
-    throw new Error('Synchronization Service returned invalid device metadata');
-  return {deviceId, tag, iconKind, state, lastSeenAt, isCurrent: value['is-current']};
-}
-
-function validateTransfer(rawValue, expectedDeviceId = '') {
-  const value = unpackDictionary(rawValue);
-  const transferId = value['transfer-id'];
-  const itemId = value['item-id'];
-  const deviceId = value['device-id'];
-  const kind = value.kind;
-  const direction = value.direction;
-  const state = value.state;
-  const completedBytes = Number(value['completed-bytes']);
-  const totalBytes = Number(value['total-bytes']);
-  const peerDeviceIds = value['peer-device-ids'];
-  const createdAt = Number(value['created-at']);
-  const updatedAt = Number(value['updated-at']);
-  if (!isUuid(transferId) || !isUuid(itemId) || !isUuid(deviceId)
-      || (expectedDeviceId && deviceId !== expectedDeviceId)
-      || !['publish', 'content'].includes(kind)
-      || !['upload', 'download'].includes(direction)
-      || !TRANSFER_STATES.has(state)
-      || !Number.isSafeInteger(completedBytes) || completedBytes < 0
-      || !Number.isSafeInteger(totalBytes) || totalBytes < 0
-      || (totalBytes > 0 && completedBytes > totalBytes)
-      || (state === 'completed' && completedBytes !== totalBytes)
-      || !Array.isArray(peerDeviceIds) || peerDeviceIds.length > 10_000
-      || !peerDeviceIds.every(isUuid)
-      || !Number.isSafeInteger(createdAt) || createdAt < 0
-      || !Number.isSafeInteger(updatedAt) || updatedAt < createdAt)
-    throw new Error('Synchronization Service returned invalid transfer metadata');
-  return {
-    transferId,
-    itemId,
-    deviceId,
-    kind,
-    direction,
-    state,
-    completedBytes,
-    totalBytes,
-    peerDeviceIds: [...new Set(peerDeviceIds)],
-    createdAt,
-    updatedAt,
-    errorCode: safeString(value['error-code'] ?? '', 128),
-    errorMessage: safeString(value['error-message'] ?? '', 512),
-  };
-}
-
-function validateRepresentation(representation) {
-  if (!isContentId(representation.id))
-    throw new Error('Synchronization content ID is invalid');
-  if (!isMimeType(representation.mimeType))
-    throw new Error('Synchronization MIME type is invalid');
-  if (!Number.isSafeInteger(representation.size)
-      || representation.size < 0
-      || representation.size > ABSOLUTE_ITEM_LIMIT_BYTES)
-    throw new Error('Synchronization content size is invalid');
-  if (!SHA256_PATTERN.test(representation.sha256))
-    throw new Error('Synchronization content hash is invalid');
-  if (!['eager', 'on-demand'].includes(representation.delivery))
-    throw new Error('Synchronization delivery policy is invalid');
 }
 
 function validateItemId(itemId) {
@@ -1330,38 +912,6 @@ function validateItemId(itemId) {
     throw new Error('Synchronization item ID must be a UUID v4');
 }
 
-function isContentId(value) {
-  return typeof value === 'string'
-    && value.length > 0
-    && value.length <= 128
-    && !/[\r\n\0]/u.test(value);
-}
-
-function validateMimeTypes(value) {
-  if (!Array.isArray(value) || value.length > 256 || !value.every(isMimeType))
-    throw new Error('Synchronization Service returned invalid MIME capabilities');
-  return [...new Set(value)];
-}
-
-function isMimeType(value) {
-  return typeof value === 'string'
-    && value.length <= 255
-    && /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+(?:;[^\r\n]{1,128})?$/iu.test(value);
-}
-
-function safeString(value, maximumLength) {
-  if (typeof value !== 'string')
-    throw new Error('Synchronization Service returned a non-string metadata value');
-  return value.slice(0, maximumLength).replace(/[\r\n\0]/gu, ' ');
-}
-
-function safeLimit(value) {
-  const number = Number(value);
-  if (!Number.isSafeInteger(number) || number < 0)
-    throw new Error('Synchronization Service returned an invalid byte limit');
-  return number;
-}
-
-function effectiveLimit(serviceLimit, localLimit) {
-  return serviceLimit > 0 ? Math.min(serviceLimit, localLimit) : localLimit;
+function effectiveLimit(serverLimit, localLimit) {
+  return serverLimit > 0 ? Math.min(serverLimit, localLimit) : localLimit;
 }

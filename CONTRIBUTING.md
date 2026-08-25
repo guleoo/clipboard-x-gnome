@@ -26,11 +26,11 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/pref
 - `src/common/` 只存放被多个领域复用的基础设施。
 - `src/entry/`、`clipboard/`、`sync/`、`screenshot/`、`color-picker/` 和 `ui/` 按功能领域
   组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
-- `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`，同步集成场景放在
-  `tests/sync/integration/`。
+- `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`。
 
-同步协议改动必须同时更新 XML、`protocol/SYNC1.md`、GJS Mock、Python Mock 和协议
-测试。兼容性破坏必须创建新的接口主版本，不能原地改变 Sync1 的既有签名或语义。
+同步协议改动必须同时更新 `protocol/HTTP1.md`、GJS 路由/校验器、客户端测试和中心
+服务器开发计划。兼容性破坏必须创建新的 HTTP API 主版本，不能原地改变 v1 的既有字段
+或语义。
 
 ## 本地化
 
@@ -48,9 +48,9 @@ PO 文件。
 
 - 生命周期资源必须由拥有者保存句柄，并在 `disable()` 或 `destroy()` 中释放。
 - 不在 Shell 主线程同步读取大文件或同步解码大图片。
-- 不记录剪切板正文、用户路径、Service 原始错误或认证数据。
+- 不记录剪切板正文、用户路径、服务器原始错误正文或认证数据。
 - 外部命令必须使用 argv 和 `Gio.SubprocessLauncher`，禁止隐式 `sh -c`。
 - 公共 API 使用上下文表达领域、成员表达动作；避免重复上下文、含糊缩写和隐藏行为。
 - 新协议数据先校验类型、数量和大小，再分配或读取负载。
 
-发布 ZIP 必须是最小运行时集合，不能包含 Mock Service、测试、协议源码或翻译源码。
+发布 ZIP 必须是最小运行时集合，不能包含测试、协议源码或翻译源码。

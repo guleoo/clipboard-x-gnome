@@ -24,15 +24,15 @@ const settings = {
   get_boolean: key => values.get(key),
 };
 const effective = effectiveCapabilities(settings, {
-  MaxItemBytes: 64 * 1024 * 1024,
-  MaxPreviewBytes: 64 * 1024,
-  SupportedMimeTypes: ['text/plain;charset=utf-8', 'text/html', 'image/png'],
+  maxItemBytes: 64 * 1024 * 1024,
+  maxPreviewBytes: 64 * 1024,
+  supportedMimeTypes: ['text/plain;charset=utf-8', 'text/html', 'image/png'],
 });
 assertEqual(effective, {
   itemBytes: 64 * 1024 * 1024,
   previewBytes: 64 * 1024,
   mimeTypes: ['text/plain;charset=utf-8', 'image/png'],
-}, 'Service capability display must show effective policy intersections');
+}, 'Server capability display must show effective policy intersections');
 const thresholds = {
   get_uint: key => ({
     'text-full-threshold': 64 * 1024,

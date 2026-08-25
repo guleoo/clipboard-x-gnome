@@ -1,7 +1,5 @@
-export const SYNC_INTERFACE = 'io.github.guleo.ClipboardX.Sync1';
-export const SYNC_BUS_NAME = 'io.github.guleo.ClipboardX.SyncService';
-export const SYNC_OBJECT_PATH = '/io/github/guleo/ClipboardX/Sync';
-export const SYNC_API_VERSION = 1;
+export const POLL_INTERVAL_MILLISECONDS = 5000;
+export const MAX_TRANSFER_STATES = 1024;
 
 export const TransferState = Object.freeze({
   QUEUED: 'queued',

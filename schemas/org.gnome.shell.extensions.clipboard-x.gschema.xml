@@ -242,20 +242,11 @@
     </key>
     <key name="sync-enabled" type="b">
       <default>false</default>
-      <summary>Enable synchronization service</summary>
+      <summary>Enable synchronization</summary>
     </key>
-    <key name="sync-service-lease-seconds" type="u">
-      <default>15</default>
-      <range min="5" max="300"/>
-      <summary>Synchronization service client lease duration</summary>
-    </key>
-    <key name="service-bus-name" type="s">
-      <default>'io.github.guleo.ClipboardX.SyncService'</default>
-      <summary>Synchronization service D-Bus name</summary>
-    </key>
-    <key name="service-object-path" type="s">
-      <default>'/io/github/guleo/ClipboardX/Sync'</default>
-      <summary>Synchronization service D-Bus object path</summary>
+    <key name="sync-configuration-revision" type="u">
+      <default>0</default>
+      <summary>Synchronization connection configuration revision</summary>
     </key>
     <key name="sync-send-mode" type="s">
       <choices>

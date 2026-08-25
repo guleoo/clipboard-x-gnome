@@ -1,10 +1,4 @@
-import {
-  channel,
-  configuration,
-  configurationChanges,
-  connectionResult,
-  serverAddress,
-} from '../../src/sync/configuration.js';
+import {apiKey, configuration, serverAddress} from '../../src/sync/configuration.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -28,41 +22,21 @@ assert(serverAddress('http://127.0.0.1:8765') === 'http://127.0.0.1:8765',
 assert(serverAddress('https://clipboard.example.test/base') === 'https://clipboard.example.test/base',
   'HTTPS server addresses and reverse-proxy paths must be accepted');
 assertRejects(() => serverAddress(''), 'empty server address must be rejected');
+assertRejects(() => serverAddress('ftp://clipboard.example.test'), 'non-HTTP schemes must be rejected');
 assertRejects(() => serverAddress('host\nAuthorization: secret'), 'control characters must be rejected');
 
-const current = configuration({
-  'server-address': '192.168.1.2:8765',
-  'api-key-configured': true,
-  'active-channel-id': channelId,
-  'active-channel-name': '家庭',
-});
-assert(current.serverAddress === '192.168.1.2:8765' && current.apiKeyConfigured,
-  'configuration must preserve the service-owned connection state');
-assert(current.activeChannelId === channelId && current.activeChannelName === '家庭',
-  'configuration must preserve the active channel');
+assert(apiKey(' cbx_device_secret ') === 'cbx_device_secret', 'API keys must be trimmed');
+assertRejects(() => apiKey(''), 'empty API keys must be rejected by default');
+assert(apiKey('', {allowEmpty: true}) === '', 'settings storage may represent an empty API key');
 
-const changes = configurationChanges({
-  serverAddress: '[::1]:8765',
+const current = configuration({
+  serverAddress: '192.168.1.2:8765',
   apiKey: 'cbx_device_secret',
   activeChannelId: channelId,
-});
-assert(changes['server-address'] === '[::1]:8765'
-    && changes['api-key'] === 'cbx_device_secret'
-    && changes['active-channel-id'] === channelId,
-  'configuration changes must serialize public field names to Sync1 fields');
-assertRejects(() => configurationChanges({apiKey: ''}), 'empty replacement API keys must be rejected');
-assertRejects(() => configurationChanges({activeChannelId: 'default'}), 'channel IDs must be UUIDs');
-
-const availableChannel = channel({id: channelId, name: '家庭', active: true});
-assert(availableChannel.active && availableChannel.name === '家庭', 'channel metadata must validate');
-assertRejects(() => channel({id: channelId, name: '家庭'}), 'channel active state is required');
-
-const result = connectionResult({
-  state: 'online',
-  'latency-ms': 12,
-  'server-version': '0.1.0',
-  message: 'Connected',
-});
-assert(result.state === 'online' && result.latencyMs === 12, 'connection results must validate');
-assertRejects(() => connectionResult({state: 'connected', 'latency-ms': -1}),
-  'invalid connection result state and latency must be rejected');
+}, '家庭');
+assert(current.serverAddress === '192.168.1.2:8765' && current.apiKeyConfigured,
+  'public configuration must hide the API key while reporting whether it exists');
+assert(current.activeChannelId === channelId && current.activeChannelName === '家庭',
+  'public configuration must preserve the active channel');
+assert(!Object.hasOwn(current, 'apiKey'), 'public configuration must never expose the API key');
+assertRejects(() => configuration({activeChannelId: 'default'}), 'channel IDs must be UUIDs');

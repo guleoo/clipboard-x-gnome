@@ -1,4 +1,5 @@
 import {isUuid} from '../common/uuid.js';
+import {normalizeServerAddress} from './http/client.js';
 
 const MAX_SERVER_ADDRESS_LENGTH = 2048;
 const MAX_API_KEY_LENGTH = 4096;
@@ -9,6 +10,7 @@ export function serverAddress(value) {
   const address = String(value ?? '').trim();
   if (!address || address.length > MAX_SERVER_ADDRESS_LENGTH || CONTROL_CHARACTERS.test(address))
     throw new Error('Synchronization server address is invalid');
+  normalizeServerAddress(address);
   return address;
 }
 
@@ -19,74 +21,25 @@ export function apiKey(value, {allowEmpty = false} = {}) {
   return key;
 }
 
-export function configuration(rawValue) {
+export function configuration(rawValue, activeChannelName = '') {
   const value = rawValue ?? {};
-  const configuredAddress = String(value['server-address'] ?? '').trim();
-  const activeChannelId = String(value['active-channel-id'] ?? '').trim();
-  const activeChannelName = text(value['active-channel-name'] ?? '', MAX_CHANNEL_NAME_LENGTH);
+  const configuredAddress = String(value.serverAddress ?? '').trim();
+  const activeChannelId = String(value.activeChannelId ?? '').trim();
   if ((configuredAddress && serverAddress(configuredAddress) !== configuredAddress)
-      || typeof value['api-key-configured'] !== 'boolean'
       || (activeChannelId && !isUuid(activeChannelId)))
-    throw new Error('Synchronization Service returned invalid connection configuration');
+    throw new Error('Synchronization configuration is invalid');
   return {
     serverAddress: configuredAddress,
-    apiKeyConfigured: value['api-key-configured'],
+    apiKeyConfigured: Boolean(value.apiKey),
     activeChannelId,
-    activeChannelName,
-  };
-}
-
-export function configurationChanges(value) {
-  const changes = {};
-  if (Object.hasOwn(value, 'serverAddress'))
-    changes['server-address'] = serverAddress(value.serverAddress);
-  if (Object.hasOwn(value, 'apiKey')) {
-    changes['api-key'] = apiKey(value.apiKey);
-  }
-  if (Object.hasOwn(value, 'clearApiKey')) {
-    if (typeof value.clearApiKey !== 'boolean')
-      throw new Error('Synchronization API key clear flag is invalid');
-    changes['clear-api-key'] = value.clearApiKey;
-  }
-  if (Object.hasOwn(value, 'activeChannelId')) {
-    const channelId = String(value.activeChannelId ?? '').trim();
-    if (channelId && !isUuid(channelId))
-      throw new Error('Synchronization channel ID is invalid');
-    changes['active-channel-id'] = channelId;
-  }
-  if (Object.keys(changes).length === 0)
-    throw new Error('Synchronization configuration update is empty');
-  return changes;
-}
-
-export function channel(rawValue) {
-  const value = rawValue ?? {};
-  const id = String(value.id ?? '').trim();
-  const name = text(value.name ?? '', MAX_CHANNEL_NAME_LENGTH);
-  if (!isUuid(id) || !name || typeof value.active !== 'boolean')
-    throw new Error('Synchronization Service returned invalid channel metadata');
-  return {id, name, active: value.active};
-}
-
-export function connectionResult(rawValue) {
-  const value = rawValue ?? {};
-  const state = text(value.state ?? '', 32);
-  const latencyMs = Number(value['latency-ms']);
-  if (!['online', 'offline', 'error'].includes(state)
-      || !Number.isSafeInteger(latencyMs) || latencyMs < 0)
-    throw new Error('Synchronization Service returned invalid connection test result');
-  return {
-    state,
-    latencyMs,
-    serverVersion: text(value['server-version'] ?? '', 128),
-    message: text(value.message ?? '', 512),
+    activeChannelName: text(activeChannelName, MAX_CHANNEL_NAME_LENGTH),
   };
 }
 
 function text(value, maximumLength) {
   if (typeof value !== 'string')
-    throw new Error('Synchronization Service returned a non-string configuration value');
+    throw new Error('Synchronization server returned a non-string configuration value');
   if (CONTROL_CHARACTERS.test(value))
-    throw new Error('Synchronization Service returned invalid configuration text');
+    throw new Error('Synchronization server returned invalid configuration text');
   return value.slice(0, maximumLength);
 }

@@ -850,9 +850,9 @@ export async function run() {
   assert(oldController._destroyed && oldController._selectionSignal === 0
       && oldController._settingsSignals.length === 0,
   'Disabling Clipboard X did not release clipboard and settings subscriptions');
-  assert(oldSync._destroyed && oldSync._nameWatchId === 0 && oldSync._connectIdleId === 0
-      && oldSync._transferWaiters.size === 0,
-  'Disabling Clipboard X did not release D-Bus watches, idle sources or transfer waiters');
+  assert(oldSync._destroyed && oldSync._pollSource === 0
+      && oldSync._activeCancellables.size === 0 && oldSync._transferWaiters.size === 0,
+  'Disabling Clipboard X did not release synchronization polling, requests or transfer waiters');
   assert(!extensionObject._shortcutBound, 'Disabling Clipboard X did not remove its shortcut');
 
   Main.extensionManager.enableExtension(UUID);

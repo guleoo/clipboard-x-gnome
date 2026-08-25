@@ -9,24 +9,24 @@ export function effectiveCapabilities(settings, capabilities) {
     Math.max(settings.get_uint('text-preview-limit'), settings.get_uint('thumbnail-byte-limit')),
     absolutePreviewLimit,
   );
-  const serviceItemLimit = Number(capabilities.MaxItemBytes) || 0;
-  const servicePreviewLimit = Number(capabilities.MaxPreviewBytes) || 0;
+  const serverItemLimit = Number(capabilities.maxItemBytes) || 0;
+  const serverPreviewLimit = Number(capabilities.maxPreviewBytes) || 0;
   const localMimeTypes = [
     settings.get_boolean('sync-text') ? 'text/plain;charset=utf-8' : null,
     settings.get_boolean('sync-html') ? 'text/html' : null,
     settings.get_boolean('sync-images') ? 'image/*' : null,
   ].filter(Boolean);
-  const advertised = Array.isArray(capabilities.SupportedMimeTypes)
-    ? capabilities.SupportedMimeTypes
+  const advertised = Array.isArray(capabilities.supportedMimeTypes)
+    ? capabilities.supportedMimeTypes
     : [];
   const mimeTypes = advertised.length === 0
     ? localMimeTypes
     : advertised.filter(mimeType => localMimeTypes.some(allowed =>
       allowed === mimeType || (allowed === 'image/*' && mimeType.startsWith('image/'))));
   return {
-    itemBytes: serviceItemLimit > 0 ? Math.min(serviceItemLimit, configuredItemLimit) : configuredItemLimit,
-    previewBytes: servicePreviewLimit > 0
-      ? Math.min(servicePreviewLimit, configuredPreviewLimit)
+    itemBytes: serverItemLimit > 0 ? Math.min(serverItemLimit, configuredItemLimit) : configuredItemLimit,
+    previewBytes: serverPreviewLimit > 0
+      ? Math.min(serverPreviewLimit, configuredPreviewLimit)
       : configuredPreviewLimit,
     mimeTypes,
   };

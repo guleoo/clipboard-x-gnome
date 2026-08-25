@@ -32,7 +32,9 @@ export default class ClipboardXExtension extends Extension {
     this._settings = this.getSettings();
     this._controller = new ClipboardController(this._settings);
     this._portal = new ScreenshotPortal();
-    this._sync = new SyncClient(this._settings);
+    this._sync = new SyncClient(this._settings, {
+      sourceItem: itemId => this._controller.items.find(item => item.id === itemId) ?? null,
+    });
     this._terminalInput = new TerminalInput({
       onManualInput: () => Main.notify(
         _('Simulated keyboard input paused'),
@@ -233,14 +235,8 @@ export default class ClipboardXExtension extends Extension {
         await this._sync.materialize(item);
         this._controller.update(item);
         await this._controller.persist();
-        await this._sync.acknowledge(item.id, 'accepted');
       } catch (error) {
         this._controller.update(item);
-        try {
-          await this._sync.acknowledge(item.id, 'rejected');
-        } catch (_acknowledgeError) {
-          // Preserve the materialization error when the Service is also unavailable.
-        }
         throw error;
       }
     } else {
