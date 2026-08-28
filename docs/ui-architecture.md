@@ -1,66 +1,70 @@
-# Clipboard X 界面开发指南
+# Clipboard X UI development guide
 
-本文记录当前已经确认的组件边界与界面约定。后续增加面板或调整 UI 时，应优先扩展这些边界，避免把状态与控件重新堆回 `Indicator`。
+> English · [简体中文](zh-CN/ui-architecture.md)
 
-## 1. 职责边界
+This document records the component boundaries and UI conventions that new panels and controls must
+follow. Extend these boundaries instead of putting state and widgets back into `Indicator`.
 
-- `ui/indicator.js`：GNOME 顶栏入口和面板编排层。负责系统级动作、菜单开关、面板注册与主题协调，不实现具体面板内部视图。
-- `ui/panel-manager.js`：面板生命周期、现场和几何管理。设置值作为所有面板根容器的默认尺寸（高度包含标题栏、内容区和 Footer）；面板注册时可用 `geometry` 局部强制覆盖，切换时同步更新共享 popup 容器。
-- `ui/navigation/focus-grid.js`：面板内的二维键盘焦点导航。每个面板维护自己的控件矩阵，不通过全局焦点监听修正焦点。
-- `ui/layouts/panel-actions.js`：顶栏与底栏动作的布局模型和校正规则，不依赖 Shell actor。
-- `ui/controls/`：Shell 公共控件。只负责结构、通用状态和无业务含义的交互，不读取剪切板、同步或面板设置。
-- `ui/panels/`：可独立切换的 Shell 面板。面板拥有自己的 actor、滚动区域、状态、焦点矩阵和领域交互。
-- `ui/settings/window.js`：设置窗口的页面编排层，不直接重复实现设置绑定控件。
-- `ui/settings/`：设置窗口与可复用的 GTK/Libadwaita 设置组件。
+## Responsibilities
 
-## 2. 已有组件
+- `ui/indicator.js`: top-bar entry point and panel orchestration. It owns system actions, menu toggles,
+  panel registration, and theme coordination, but not panel-specific views.
+- `ui/panel-manager.js`: panel lifecycle, scene restoration, and geometry. Settings provide default
+  width and height for every panel; a registered panel may override them with a partial `geometry` object.
+- `ui/navigation/focus-grid.js`: two-dimensional keyboard navigation inside a panel. Each panel owns
+  its matrix; no global focus listener repairs focus.
+- `ui/layouts/panel-actions.js`: layout model and validation for top and bottom actions.
+- `ui/controls/`: public Shell controls. Controls provide structure and generic state; they do not read
+  clipboard, synchronization, or panel settings.
+- `ui/panels/`: independently switchable panels. Each panel owns its actor, scroll area, state, focus
+  matrix, and domain interactions.
+- `ui/settings/window.js`: preferences-page orchestration.
+- `ui/settings/`: reusable GTK/Libadwaita preferences components.
 
-- `QuickPhrasesPanel`：快捷语句标题栏、输入表单、列表、`quick-phrases.json` 本地存储操作和焦点矩阵。
-- `TokenizerPanel`：分词布局、选择状态、鼠标连续选择、键盘选择、结果预览和焦点矩阵。
-- `HistoryPanel`：搜索、历史列表、工具栏、底栏、同步状态、现场恢复和焦点矩阵；条目内容与同步进度绘制位于同领域目录的独立模块。
-- `ContentItem`：统一的“左侧前导标识 + 可伸展内容 + 右侧动作”条目。控件负责内容区的公共样式、伸展与裁剪规则以及整个条目的正常前景色；`focusActors` 按实际显示顺序提供给面板焦点矩阵。
-- `PanelHeader`：内部由标题行和独立 divider actor 组成；标题行平衡左右动作区，使标题相对整个面板居中，业务面板不再自行绘制分割线。
-- `PanelFooter`：内部由独立 divider actor 和自由内容行组成；主剪切板面板与次级面板统一复用。
-- `SearchEntry`：统一搜索图标、placeholder 光学偏移、左间距以及搜索框事件接入。
-- `IconButton`：统一图标尺寸、可访问名称和异步动作错误处理；`selected` 仅表达可选中按钮的状态。
-- `FocusAnchor`：次级面板开头的零尺寸透明键盘锚点。面板进入时由它持有不可见焦点，第一次无修饰方向键转入面板指定的业务控件，随后退出正常导航流程。
-- `Tooltip`：持有插件唯一的浮动提示控件，负责关联目标、延迟显示、定位、输入方式切换和信号清理。
-- `PreferenceRows`：开关、文本、数字、容量、下拉框、图标下拉框、快捷键和字符串列表设置行。
-- `settings/theme-color.js`：主题色选择器及自定义颜色流程。
-- `settings/panel-actions.js`：用按钮调整顶栏与底栏动作的顺序及所在区域，不注册拖放事件。
-- `panels/quick-phrases/panel.js`：快捷语句面板的视图、表单、列表和焦点状态。
+## Shared components
 
-公共 API 采用“上下文承载领域、成员表达动作”的命名方式。例如 `PreferenceRows.spin()`、`QuickPhrasesPanel.render()`；成员名称不重复类型已经表达的语义。
+- `QuickPhrasesPanel`: quick-phrase header, form, list, local storage, and focus state.
+- `TokenizerPanel`: token layout, selection, mouse range selection, keyboard selection, preview, and focus state.
+- `HistoryPanel`: search, history list, toolbar, footer, sync status, scene restoration, and focus state.
+- `ContentItem`: one row with a leading marker, expandable content, and right-side actions. It owns shared
+  content styling and clipping; the panel supplies focus actors in display order.
+- `PanelHeader` and `PanelFooter`: shared divider, padding, and free-content regions for secondary panels.
+- `SearchEntry`: shared search icon, placeholder offset, leading spacing, and search-event wiring.
+- `IconButton`: shared icon size, accessible name, async-action errors, and selectable state.
+- `FocusAnchor`: zero-size transparent anchor at the start of secondary panels. It consumes the first
+  unmodified direction key and transfers focus to the panel's first business control.
+- `Tooltip`: the extension's single floating tooltip, including target association, delay, positioning,
+  input-mode changes, and signal cleanup.
+- `PreferenceRows`: reusable switches, text, number, capacity, dropdown, icon-dropdown, shortcut, and
+  string-list rows.
 
-除 `Tooltip` 自己的显示生命周期外，控件不管理面板生命周期或业务快捷键。面板通过构造参数接入动作，并用自己的 `FocusGrid` 组织键盘导航。
+Public APIs use the domain as context and the member as the action: names should not repeat a type or
+module, hide behavior, or rely on opaque abbreviations. Controls do not manage panel lifecycles or
+business shortcuts; panels connect actions and use their own `FocusGrid`.
 
-## 3. Shell 面板约定
+## Panel conventions
 
-- 搜索框与主要动作保持在同一行；顶栏为截图、取色、快捷语句，底栏为隐私模式、同步、清空、设置。
-- 顶栏默认为截图、取色、快捷语句，底栏默认为隐私模式、同步、清空、设置；动作位置和顺序由设置驱动，焦点矩阵必须从 actor 的实际顺序生成。
-- 内容条目采用“左侧内容、右侧动作”结构。文字和普通动作图标使用统一前景色，条目级间距由统一容器控制，不给最后一个删除按钮添加专属右边距。
-- 有选中状态的图标只使用主题色表达选中；正常 hover 和 active 反馈仍然保留。
-- 条目动作、分词按钮和返回按钮默认不显示 tooltip；需要说明的全局工具按钮使用浮动 tooltip。
-- 每个可切换面板拥有独立的 `FocusGrid`。方向键到达边缘时是否离开插件，由统一设置控制。
-- 分词与快捷语句面板进入时聚焦零尺寸透明 `FocusAnchor`，不使用 Stage 全局捕获；锚点消费第一次无修饰方向键并转入面板指定的业务控件，且不加入 FocusGrid，避免影响正常矩阵导航。
-- 可滚动内容使用 overlay scrollbar 和统一细滚动条样式。
-- 面板宽高、文字垂直偏移和现场保留均由设置驱动，不在子面板硬编码用户环境差异。
+- Keep search and primary actions on one row. Default top actions are screenshot, color picker, and quick
+  phrases; default footer actions are privacy, synchronization, clear, and settings. Settings control
+  order and placement.
+- Content rows use “left content, right actions” with one row-level hover background.
+- Selected icons use the theme color; normal hover and active feedback remain distinct states.
+- Entry actions, token buttons, and back buttons do not show tooltips by default. Global tools may use
+  the floating tooltip.
+- Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
+  an edge may leave the extension.
+- Scrollable content uses an overlay scrollbar and the shared thin-scrollbar style.
+- Panel geometry, text vertical offset, and scene restoration are settings, not hard-coded per-user values.
 
-## 4. CSS 约定
+## CSS conventions
 
-- 尺寸和间距优先定义在结构组件上，例如菜单、标题栏、条目、工具栏和底栏。
-- 不为单个业务动作添加位置修正；确需差异时使用表达结构或状态的类名，而不是图标名称。
-- 新增规则前检查选择器优先级。当前 `.cbx-menu .popup-menu-item` 的优先级高于 `.cbx-entry`，通用条目 padding 可能覆盖后者。
-- 主题色、hover、focus、active 和 checked 是不同状态，不互相替代。
+- Put dimensions and spacing on structural components such as menus, headers, rows, toolbars, and footers.
+- Do not position individual actions with one-off corrections. Use classes that express structure or state.
+- Check selector specificity before adding a rule; `.cbx-menu .popup-menu-item` can override `.cbx-entry`.
+- Treat theme, hover, focus, active, and checked as separate states.
 
-## 5. 后续拆分顺序
+## Verification
 
-1. 继续压缩设置窗口编排层，把页面定义按领域拆分，但保持设置绑定集中复用。
-2. 新面板统一使用 `PanelHeader`、`PanelFooter` 和 `FocusGrid`，不重复实现标题栏、分割线与焦点边界。
-
-## 6. 验证要求
-
-- 纯状态和布局算法提供 GJS 单元测试。
-- Shell actor、焦点、菜单生命周期通过 `tests/ui/shell.smoke.js` 验证。
-- GTK 设置组件通过 `tests/ui/preferences.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
-- 每次结构重构必须通过构建、常规测试、Shell 冒烟测试和设置窗口冒烟测试。
+Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and lifecycle are covered by
+`tests/ui/shell.smoke.js`; GTK preferences are covered by `tests/ui/preferences.smoke.js`. Every
+structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.

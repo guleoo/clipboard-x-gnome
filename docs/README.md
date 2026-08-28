@@ -1,26 +1,32 @@
-# Clipboard X 文档
+# Clipboard X documentation
 
-这里是 Clipboard X 的公开文档，内容面向扩展使用者、兼容服务器开发者和项目贡献者。
-当前公开文档以简体中文维护；英文版本会在内容稳定后放入 `docs/en/`，不会在中文文件名
-后追加语言后缀。
+> English · [简体中文](zh-CN/README.md)
 
-## 协议与同步
+This directory contains public documentation for extension users, compatible-server developers, and
+contributors. Files without a language suffix are the English primary versions. Simplified Chinese
+counterparts are kept under `docs/zh-CN/` with the same names.
 
-- [同步协议（HTTP API v1）](sync-protocol.md)：扩展与用户自建中心服务器之间的公开接口、
-  清单、预览、按需物化、传输状态和恢复语义。
-- [同步性能与压力测试指南](sync-performance-testing.md)：日常基线、10 倍压力矩阵和可重复
-  的 Meson 测试命令。
+## Protocol and synchronization
 
-## 扩展开发
+- [Synchronization Protocol (HTTP API v1)](sync-protocol.md): the public interface between the
+  extension and a user-configured central server, including manifests, previews, on-demand materialization,
+  transfer state, and recovery semantics.
+- [Synchronization performance and stress testing](sync-performance-testing.md): the daily baseline,
+  10x stress matrix, and reproducible Meson commands.
 
-- [界面开发指南](ui-architecture.md)：面板、控件、焦点矩阵、生命周期和 CSS 约定。
-- [参与开发](../CONTRIBUTING.md)：构建、测试、目录结构、协议改动和代码约定。
+## Extension development
 
-## 安全与数据流
+- [UI development guide](ui-architecture.md): panels, controls, focus grids, lifecycle, and CSS conventions.
+- [Contributing](../CONTRIBUTING.md): build, test, layout, protocol changes, and code conventions.
 
-- [安全说明](../SECURITY.md)：本地数据、同步服务器信任边界、外部命令和漏洞报告方式。
+## Security and data flows
 
-## 文档职责
+- [Security and privacy](../SECURITY.md): local data, the synchronization-server trust boundary,
+  external commands, and vulnerability reporting.
 
-`docs/` 只保留可长期公开、可供用户或贡献者直接阅读的指南和协议。阶段性完成审计、发布
-审核草稿、内部决策和实验记录放在 `.codex/`，不作为 GitHub 公开文档导航的一部分。
+## Language policy
+
+English is the primary language for project documentation. Every public guide has a Simplified Chinese
+counterpart in `docs/zh-CN/`; links at the top of each page provide the language switch. Legal texts,
+including `LICENSE.md`, retain their original English wording and are not mirrored as translated legal
+documents.

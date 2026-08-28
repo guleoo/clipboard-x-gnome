@@ -1,5 +1,7 @@
 # Pre-imported tokenizer dictionaries
 
+> English · [简体中文](README.zh-CN.md)
+
 `zh--cppjieba-core.dict` is a compact, runtime-ready subset of the cppjieba dictionary.
 It contains Han words of 2–8 characters with an upstream frequency of at least
 50. POS tags and low-frequency entries are omitted to limit extension package

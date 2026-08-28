@@ -1,9 +1,11 @@
-# 参与开发
+# Contributing
 
-Clipboard X 目标环境是 GNOME Shell 50 和 GJS 1.88 或更高版本。修改 Shell UI 时只
-使用 St、Clutter 和 Shell API；GTK 4/Libadwaita 只允许出现在独立设置进程中。
+> English · [简体中文](CONTRIBUTING.zh-CN.md)
 
-## 开发流程
+Clipboard X targets GNOME Shell 50 and GJS 1.88 or later. Shell UI code must use St, Clutter, and
+Shell APIs; GTK 4 and Libadwaita are restricted to the separate preferences process.
+
+## Development workflow
 
 ```sh
 meson setup build -Dtarget=package
@@ -12,45 +14,49 @@ meson test -C build --print-errorlogs
 meson install -C build
 ```
 
-项目不使用 ESLint。提交前请对所有 JavaScript 文件运行 `node --check`，再执行完整
-Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
+The project does not use ESLint. Before committing, run `node --check` for every JavaScript file and
+the complete Meson test suite. Changes involving extension lifecycle, panels, clipboard, color picker,
+or preferences must also run:
 
 ```sh
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```
 
-## 目录结构
+## Repository layout
 
-- `src/extension.js`、`src/prefs.js` 只作为 GNOME 规定的加载入口。
-- `src/common/` 只存放被多个领域复用的基础设施。
-- `src/entry/`、`clipboard/`、`sync/`、`screenshot/`、`color-picker/` 和 `ui/` 按功能领域
-  组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
-- `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`。
+- `src/extension.js` and `src/prefs.js` are only the GNOME entry points.
+- `src/common/` contains infrastructure shared by multiple domains.
+- `src/entry/`, `clipboard/`, `sync/`, `screenshot/`, `color-picker/`, and `ui/` are organized
+  by feature domain; tokenization belongs to `src/clipboard/tokenizer/`.
+- `tests/` follows the same domain layout; cross-process fixtures live in `tests/fixtures/`.
 
-同步协议改动必须同时更新 `docs/sync-protocol.md`、GJS 路由/校验器、客户端测试和中心
-服务器开发计划。兼容性破坏必须创建新的 HTTP API 主版本，不能原地改变 v1 的既有字段
-或语义。
+Protocol changes must update `docs/sync-protocol.md`, the GJS routes and validators, client tests,
+and the central-server plan together. A breaking change requires a new HTTP API major version; do not
+change the meaning of an existing v1 field in place.
 
-## 本地化
+## Localization
 
-用户可见文本使用扩展提供的 `gettext`。新增文本后运行：
+User-visible strings use the extension's `gettext` domain. After adding strings, run:
 
 ```sh
 meson compile -C build clipboard-x-pot
 meson compile -C build clipboard-x-update-po
 ```
 
-然后补齐 `po/zh_CN.po`，并使用 `msgfmt --check` 验证。源码语言为英语；英语无需单独
-PO 文件。
+Then update `po/zh_CN.po` and validate with `msgfmt --check`. Source documentation and code use
+English as the primary language; Chinese documentation is maintained as the `.zh-CN.md` or
+`docs/zh-CN/` counterpart.
 
-## 代码约定
+## Code conventions
 
-- 生命周期资源必须由拥有者保存句柄，并在 `disable()` 或 `destroy()` 中释放。
-- 不在 Shell 主线程同步读取大文件或同步解码大图片。
-- 不记录剪切板正文、用户路径、服务器原始错误正文或认证数据。
-- 外部命令必须使用 argv 和 `Gio.SubprocessLauncher`，禁止隐式 `sh -c`。
-- 公共 API 使用上下文表达领域、成员表达动作；避免重复上下文、含糊缩写和隐藏行为。
-- 新协议数据先校验类型、数量和大小，再分配或读取负载。
+- The owner of every lifecycle resource keeps its handle and releases it in `disable()` or `destroy()`.
+- Do not synchronously read large files or decode large images on the Shell main thread.
+- Do not log clipboard contents, user paths, raw server error bodies, or authentication data.
+- External commands must use argv and `Gio.SubprocessLauncher`; never invoke an implicit `sh -c`.
+- Public APIs use the domain as context and the member as the action; avoid redundant context,
+  opaque abbreviations, and hidden behavior.
+- Validate protocol types, counts, and sizes before allocating or reading payloads.
 
-发布 ZIP 必须是最小运行时集合，不能包含测试、协议源码或翻译源码。
+Release ZIPs must contain only the runtime extension, schemas, CSS, metadata, and compiled translations;
+they must not include tests, protocol source, dictionaries, or the central server.

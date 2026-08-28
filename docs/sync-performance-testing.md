@@ -1,28 +1,37 @@
-# 同步性能与压力测试指南
+# Synchronization performance and stress testing
 
-本文面向扩展和兼容服务器的开发者，说明如何验证同步实现的吞吐、进度、内存和恢复行为。
+> English · [简体中文](zh-CN/sync-performance-testing.md)
 
-同步压力测试以固定的日常负载假设为基线，并且严格放大 10 倍。这里的数字是可审计的测试契约，不是用户行为统计；如果后续有真实遥测数据，应在评审中更新基线，而不是悄悄修改测试数字。
+This guide is for extension and compatible-server developers. It defines how to verify synchronization
+throughput, progress reporting, memory use, event-loop responsiveness, and recovery behavior.
 
-| 维度 | 日常基线 | 压力负载 |
+The stress suite uses a fixed daily-load assumption and multiplies every dimension by exactly 10. These
+numbers are an auditable test contract, not user telemetry; update them through review if real telemetry
+becomes available.
+
+| Dimension | Daily baseline | Stress load |
 | --- | ---: | ---: |
-| 发布条目 | 200 | 2,000 |
-| 入站变更事件 | 200 | 2,000 |
-| 按需原文任务 | 20 | 200 |
-| 进度更新 | 10,000 | 100,000 |
-| 大对象快照 | 8 MiB | 80 MiB |
+| Published items | 200 | 2,000 |
+| Incoming change events | 200 | 2,000 |
+| On-demand source tasks | 20 | 200 |
+| Progress updates | 10,000 | 100,000 |
+| Large snapshot | 8 MiB | 80 MiB |
 
-压力套件分成两层：
+The suite has two layers:
 
-- `sync-stress` 使用确定性的内存传输替身，覆盖状态连接、分页游标、入站事件、发布队列、按需上传、精确完成进度，以及传输状态上限。它还断言上传队列保持串行，避免并发请求把 GNOME Shell 主线程和网络连接同时打满。
-- `sync-stream-stress` 使用真实 `Gio.InputStream` 分块读写 80 MiB 对象，分别覆盖上传适配器和下载校验路径。测试断言 SHA-256、最终文件大小、分块进度、事件循环延迟和 RSS 增长，确保实现没有把大对象整体读入内存。
+- `sync-stress` uses a deterministic in-memory transport double. It covers connection state, paginated
+  cursors, incoming events, the publication queue, on-demand uploads, exact terminal progress, and the
+  transfer-state bound. It also asserts that uploads remain serialized so a burst cannot overload the
+  Shell main thread or the network connection.
+- `sync-stream-stress` reads and writes an 80 MiB object through real `Gio.InputStream` chunks. It
+  covers both upload adaptation and download verification, asserting SHA-256, final size, chunked
+  progress, event-loop delay, and RSS growth.
 
-运行方式：
+Run only the stress suite with:
 
 ```sh
 meson test -C build --suite stress --print-errorlogs
 ```
 
-这两个用例注册在 Meson 的 `stress` suite 中。普通的 `meson test -C build` 会执行全部测试，
-而下面的命令只运行压力套件，适合在同步实现发生变化时快速复验。测试临时文件位于系统
-临时目录，完成后会清理。
+The regular `meson test -C build` command also runs these tests because Meson includes every registered
+test by default. Temporary files are created in the system temporary directory and removed afterwards.
