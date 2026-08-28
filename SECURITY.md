@@ -60,7 +60,7 @@ GNOME Shell 的恶意程序不在此模型的防护范围内。处理高敏内�
 - 为内容保留、撤销、删除和服务器网页访问制定清晰策略；
 - 避免在日志或遥测中写入正文、API Key 和完整敏感路径。
 
-正式字段和状态机见 [HTTP API v1](protocol/HTTP1.md)。
+正式字段和状态机见 [HTTP API v1](docs/HTTP1.md)。
 
 ## GNOME Extensions 审核边界
 

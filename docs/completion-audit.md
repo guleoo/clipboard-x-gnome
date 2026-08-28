@@ -31,7 +31,7 @@
 
 ### 插件内 HTTP 同步
 
-- 正式协议位于 `protocol/HTTP1.md`，路由集中在 `src/sync/http/routes.js`。
+- 正式协议位于 `docs/HTTP1.md`，路由集中在 `src/sync/http/routes.js`。
 - `tests/sync/protocol.test.js` 覆盖 API 版本、状态、Channel、清单、预览、变化、Transfer 和 Work
   的 JSON 边界。
 - `tests/sync/http-client.test.js` 覆盖 HTTP/HTTPS 地址规范化、反向代理前缀、凭据/查询拒绝、

@@ -28,7 +28,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/pref
   组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
 - `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`。
 
-同步协议改动必须同时更新 `protocol/HTTP1.md`、GJS 路由/校验器、客户端测试和中心
+同步协议改动必须同时更新 `docs/HTTP1.md`、GJS 路由/校验器、客户端测试和中心
 服务器开发计划。兼容性破坏必须创建新的 HTTP API 主版本，不能原地改变 v1 的既有字段
 或语义。
 
