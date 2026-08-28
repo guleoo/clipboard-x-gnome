@@ -125,6 +125,7 @@ SHA-256。协议端点、字段、状态机和实现要求见 [HTTP API v1](prot
 
 ```sh
 meson test -C build --print-errorlogs
+meson test -C build --suite stress --print-errorlogs
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```

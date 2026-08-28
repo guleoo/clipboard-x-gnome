@@ -51,8 +51,10 @@
 - `meson compile -C build-devkit` 通过。
 - `meson install -C build-devkit` 成功生成最小发布 ZIP；归档包含新的 `sync/http`、协议校验
   与传输跟踪代码，不包含已删除的 Service、Mock 或 Sync1 文件。
-- Meson 25 项测试中 24 项在受限沙盒内直接通过；唯一的图片存储测试因为沙盒禁止
+- Meson 27 项测试中 26 项在受限沙盒内直接通过；唯一的图片存储测试因为沙盒禁止
   GdkPixbuf/Glycin 的 D-Bus 编码调用而失败，同一测试在宿主环境单独运行通过。
+- 同步压力套件新增 `sync-stress` 和 `sync-stream-stress`：固定放大 10 倍的控制面负载，
+  以及 80 MiB 真实 Gio 流式对象；两项在本次回归中通过。
 - 全部 `src/`、`tests/` JavaScript 通过 `node --check`，Schema 严格检查和全部 PO 的
   `msgfmt --check` 通过。
 - GNOME 50 的 Preferences 冒烟测试在隔离 Session Bus 中通过，直连同步设置页可以加载；

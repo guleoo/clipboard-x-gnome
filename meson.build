@@ -89,6 +89,20 @@ test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'te
 test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
+test(
+  'sync-stress',
+  test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/sync/stress.test.js'],
+  timeout: 60,
+  suite: 'stress',
+)
+test(
+  'sync-stream-stress',
+  test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/sync/stream-stress.test.js'],
+  timeout: 60,
+  suite: 'stress',
+)
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/dictionary.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
