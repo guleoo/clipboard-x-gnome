@@ -101,7 +101,7 @@ gnome-extensions enable clipboard-x@guleo.github.io
 扩展直接使用版本化 HTTP API 访问用户选择的可信中心服务器。小文本和小图片立即流式
 上传；大文本只先传截断预览，大图片只先传缩略图，用户真正复制、保存或编辑时才请求
 来源设备提供完整内容。上传和下载按实际字节提供精确进度，并在落盘前校验大小与
-SHA-256。协议端点、字段、状态机和实现要求见 [HTTP API v1](docs/HTTP1.md)。
+SHA-256。协议端点、字段、状态机和实现要求见 [同步协议（HTTP API v1）](docs/sync-protocol.md)。
 
 服务器不是盲中转站：它可以保存、展示和管理已经上传的剪切板内容，管理设备及 Channel；
 网页查看大内容仍可以使用同一套按需物化流程。服务器是同步信任边界，服务器管理员可以
@@ -162,7 +162,7 @@ gjs -m tools/benchmark-tokenizer.js /tmp/jieba.dict.utf8 2000
 完整词库只作为 benchmark 输入，不会被提交到扩展包；脚本会复用正式的词库解析和
 分词加载路径。
 
-完整的阶段要求与自动化证据对应关系见 [开发完成审计](docs/completion-audit.md)。
+公开文档索引见 [docs/README.md](docs/README.md)。
 
 ## 许可证
 

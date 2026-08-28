@@ -1,4 +1,9 @@
-# Clipboard X HTTP API v1
+# Clipboard X 同步协议（HTTP API v1）
+
+> 规范版本：v1 · 文档语言：简体中文
+
+本文是 Clipboard X 扩展与兼容服务器之间的公开协议指南。字段、状态和幂等要求属于
+跨实现的接口约定；实现细节以各自项目为准。
 
 本文定义 GNOME 扩展与用户配置的 Clipboard X 中心服务器之间的版本化协议。扩展直接
 访问服务器，不需要本机同步 Service，也不使用同步专用 D-Bus 接口。
