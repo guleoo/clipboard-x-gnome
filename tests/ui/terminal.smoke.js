@@ -39,6 +39,7 @@ export async function run() {
   await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]));
   const terminalInput = Main.panel.statusArea[STATUS_AREA_NAME]?._actions?.extensionObject?._terminalInput;
   assert(terminalInput, 'Clipboard X terminal input is unavailable');
+  const originalModifierState = terminalInput._modifierState.bind(terminalInput);
 
   const [output, outputStream] = Gio.File.new_tmp('clipboard-x-typing-XXXXXX');
   outputStream.close(null);
@@ -114,13 +115,14 @@ WantedBy=multi-user.target
       `Mixed-language simulated input changed character order (${actual.length}/${source.length})`);
 
     const queuedSuffix = 'x'.repeat(200);
+    let manualModifiers = 0;
+    terminalInput._modifierState = () => manualModifiers;
     const interrupted = terminalInput.type(queuedSuffix);
     const queued = terminalInput.type('THIS_QUEUED_INPUT_MUST_NOT_APPEAR');
     await Scripting.sleep(30);
-    terminalInput._filterEvent({
-      type: () => Clutter.EventType.KEY_PRESS,
-    });
+    manualModifiers = Clutter.ModifierType.CONTROL_MASK;
     await Promise.all([interrupted, queued]);
+    manualModifiers = 0;
     await Scripting.sleep(50);
     const [, interruptedContents] = output.load_contents(null);
     const interruptedText = new TextDecoder().decode(interruptedContents);
@@ -133,6 +135,7 @@ WantedBy=multi-user.target
     assert(new TextDecoder().decode(settledContents) === interruptedText,
       'Simulated input continued after cancellation');
   } finally {
+    terminalInput._modifierState = originalModifierState;
     targetWindow()?.delete(global.get_current_time());
     process.force_exit();
     output.delete(null);

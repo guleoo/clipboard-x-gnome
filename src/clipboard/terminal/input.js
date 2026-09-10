@@ -66,6 +66,10 @@ export class TerminalInput {
         for (const character of sequence) {
           if (this._destroyed || typing.cancelled)
             return;
+          if (this._commandModifiersPressed()) {
+            this._cancelTypingWithNotification();
+            return;
+          }
           this._typeCharacter(character);
           await this._waitForNextStep(character);
         }
@@ -151,14 +155,19 @@ export class TerminalInput {
       return Clutter.EVENT_PROPAGATE;
     // VirtualInputDevice events bypass this filter, while physical events may
     // use a logical input device without a device node.
-    if (this._cancelTyping()) {
-      GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-        if (!this._destroyed)
-          this._onCancelled?.();
-        return GLib.SOURCE_REMOVE;
-      });
-    }
+    this._cancelTypingWithNotification();
     return Clutter.EVENT_PROPAGATE;
+  }
+
+  _cancelTypingWithNotification() {
+    if (!this._cancelTyping())
+      return false;
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      if (!this._destroyed)
+        this._onCancelled?.();
+      return GLib.SOURCE_REMOVE;
+    });
+    return true;
   }
 
   _cancelTyping() {
@@ -201,6 +210,10 @@ export class TerminalInput {
 
   _modifierState() {
     return global.get_pointer()[2] ?? 0;
+  }
+
+  _commandModifiersPressed() {
+    return Boolean(this._modifierState() & COMMAND_MODIFIER_MASK);
   }
 
   _settle() {
