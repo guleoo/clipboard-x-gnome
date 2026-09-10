@@ -102,6 +102,20 @@ Screenshot targets depend on the local Portal version. Portal v2 normally suppor
 and full-screen capture; window, area, and active-window targets require a Portal v3 backend advertising
 `AvailableTargets`. The extension rejects targets that the backend does not declare.
 
+## Simulated keyboard input
+
+Simulated keyboard input is intended for targets where normal clipboard paste is unavailable or unsuitable.
+Before typing starts, Clipboard X waits for modifiers used to trigger the action to be released. While typing,
+it checks the global modifier state before every character. Pressing Ctrl, Alt, Shift, Super, Meta, or Hyper
+cancels the current operation and any simulated input already queued, then shows a notification. The pressed
+modifier itself is not blocked, but no later simulated characters are emitted after cancellation.
+
+This safety fuse is deliberately limited to modifiers. When keyboard focus belongs to another Wayland client,
+GNOME Shell extension APIs do not provide a reliable stream of ordinary physical key presses. Letters, numbers,
+and other non-modifier keys therefore cannot automatically cancel simulated input and may be interleaved with it.
+Do not use the physical keyboard until simulated typing finishes. Prefer normal clipboard paste for long,
+sensitive, or exact text whenever the target supports it.
+
 ## Synchronization
 
 In “Settings → Synchronization”, enter the server address and device API key, refresh the channel list,
