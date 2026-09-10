@@ -119,7 +119,6 @@ WantedBy=multi-user.target
     await Scripting.sleep(30);
     terminalInput._filterEvent({
       type: () => Clutter.EventType.KEY_PRESS,
-      get_source_device: () => ({get_device_node: () => '/dev/input/event-test'}),
     });
     await Promise.all([interrupted, queued]);
     await Scripting.sleep(50);

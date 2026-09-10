@@ -294,25 +294,23 @@ export async function run() {
   const activeTyping = {cancelled: false};
   terminalInput._typing = activeTyping;
   terminalInput._monitoring = true;
-  const physicalKeyboard = {get_device_node: () => '/dev/input/event-test'};
-  const keyboardEvent = (type, device) => ({
+  const keyboardEvent = type => ({
     type: () => type,
-    get_source_device: () => device,
     get_key_code: () => 30,
   });
-  terminalInput._filterEvent(keyboardEvent(
-    Clutter.EventType.KEY_PRESS,
-    {get_device_node: () => null},
-  ));
+  terminalInput._emitting = true;
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS));
   assert(cancelledNotifications === 0 && !activeTyping.cancelled,
-    'Virtual keyboard event was mistaken for manual input');
-  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
-  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
+    'Synchronous virtual keyboard event was mistaken for manual input');
+  terminalInput._emitting = false;
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS));
+  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS));
   await Scripting.sleep(10);
   assert(activeTyping.cancelled && cancelledNotifications === 1,
     'Manual keyboard input did not cancel typing with one notification');
   terminalInput._typing = null;
   terminalInput._monitoring = false;
+  terminalInput._emitting = false;
   terminalInput._onCancelled = cancelledCallback;
 
   const originalAnchor = indicator._settings.get_string('panel-anchor');

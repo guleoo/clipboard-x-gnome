@@ -149,9 +149,8 @@ export class TerminalInput {
     const type = event.type();
     if (type !== Clutter.EventType.KEY_PRESS)
       return Clutter.EVENT_PROPAGATE;
-    const device = event.get_source_device();
-    if (!device?.get_device_node())
-      return Clutter.EVENT_PROPAGATE;
+    // VirtualInputDevice events bypass this filter, while physical events may
+    // use a logical input device without a device node.
     if (this._cancelTyping()) {
       GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
         if (!this._destroyed)
