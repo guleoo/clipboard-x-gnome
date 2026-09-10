@@ -3,13 +3,11 @@ import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {Activity} from './activity.js';
 import {typingDelay, typingSequence} from './sequence.js';
 
 const SETTLE_DELAY_MILLISECONDS = 75;
 const INPUT_POLL_MILLISECONDS = 20;
 const INPUT_WAIT_TIMEOUT_MILLISECONDS = 10_000;
-const MANUAL_INPUT_QUIET_MILLISECONDS = 250;
 const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.CONTROL_MASK
   | Clutter.ModifierType.MOD1_MASK
@@ -21,7 +19,7 @@ const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.META_MASK;
 
 export class TerminalInput {
-  constructor({onManualInput = null} = {}) {
+  constructor({onCancelled = null} = {}) {
     const seat = Clutter.get_default_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
@@ -29,9 +27,9 @@ export class TerminalInput {
     this._destroyed = false;
     this._emitting = false;
     this._monitoring = false;
-    this._manualInputActive = false;
-    this._onManualInput = onManualInput;
-    this._activity = new Activity(MANUAL_INPUT_QUIET_MILLISECONDS * 1000);
+    this._typing = null;
+    this._typingRevision = 0;
+    this._onCancelled = onCancelled;
     this._eventFilterId = Clutter.Event.add_filter(
       null,
       event => this._filterEvent(event),
@@ -55,27 +53,35 @@ export class TerminalInput {
 
   type(text) {
     const sequence = typingSequence(text);
+    const revision = this._typingRevision;
     return this._enqueue(async () => {
+      if (this._destroyed || revision !== this._typingRevision)
+        return;
+      const typing = {cancelled: false};
+      this._typing = typing;
       this._monitoring = true;
       try {
         if (!await this._prepare())
           return;
         for (const character of sequence) {
-          if (this._destroyed || !await this._waitForManualInputIdle())
+          if (this._destroyed || typing.cancelled)
             return;
           this._typeCharacter(character);
           await this._waitForNextStep(character);
         }
       } finally {
+        if (this._typing === typing)
+          this._typing = null;
         this._monitoring = false;
-        this._manualInputActive = false;
-        this._activity.reset();
       }
     });
   }
 
   destroy() {
     this._destroyed = true;
+    this._typingRevision++;
+    if (this._typing)
+      this._typing.cancelled = true;
     if (this._eventFilterId)
       Clutter.Event.remove_filter(this._eventFilterId);
     this._eventFilterId = 0;
@@ -141,26 +147,27 @@ export class TerminalInput {
     if (!this._monitoring || this._emitting)
       return Clutter.EVENT_PROPAGATE;
     const type = event.type();
-    if (type !== Clutter.EventType.KEY_PRESS && type !== Clutter.EventType.KEY_RELEASE)
+    if (type !== Clutter.EventType.KEY_PRESS)
       return Clutter.EVENT_PROPAGATE;
     const device = event.get_source_device();
     if (!device?.get_device_node())
       return Clutter.EVENT_PROPAGATE;
-    this._activity.update(
-      device,
-      event.get_key_code(),
-      type === Clutter.EventType.KEY_PRESS,
-      GLib.get_monotonic_time(),
-    );
-    if (type === Clutter.EventType.KEY_PRESS && !this._manualInputActive) {
-      this._manualInputActive = true;
+    if (this._cancelTyping()) {
       GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
         if (!this._destroyed)
-          this._onManualInput?.();
+          this._onCancelled?.();
         return GLib.SOURCE_REMOVE;
       });
     }
     return Clutter.EVENT_PROPAGATE;
+  }
+
+  _cancelTyping() {
+    if (!this._typing || this._typing.cancelled)
+      return false;
+    this._typing.cancelled = true;
+    this._typingRevision++;
+    return true;
   }
 
   async _prepare() {
@@ -186,27 +193,6 @@ export class TerminalInput {
         }
         if (GLib.get_monotonic_time() >= deadline) {
           resolve(false);
-          return GLib.SOURCE_REMOVE;
-        }
-        return GLib.SOURCE_CONTINUE;
-      });
-    });
-  }
-
-  _waitForManualInputIdle() {
-    const now = GLib.get_monotonic_time();
-    if (this._activity.ready(now))
-      return Promise.resolve(true);
-    return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, INPUT_POLL_MILLISECONDS, () => {
-        if (this._destroyed) {
-          resolve(false);
-          return GLib.SOURCE_REMOVE;
-        }
-        const currentTime = GLib.get_monotonic_time();
-        if (this._activity.ready(currentTime)) {
-          this._manualInputActive = false;
-          resolve(true);
           return GLib.SOURCE_REMOVE;
         }
         return GLib.SOURCE_CONTINUE;

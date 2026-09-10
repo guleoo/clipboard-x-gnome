@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-25 12:41+0800\n"
+"POT-Creation-Date: 2026-09-10 13:42+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,13 +18,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: src/entry/extension.js:40
-msgid "Simulated keyboard input paused"
+msgid "Simulated keyboard input cancelled"
 msgstr ""
 
 #: src/entry/extension.js:41
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
 
 #: src/ui/indicator.js:276

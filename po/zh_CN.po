@@ -16,15 +16,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr "模拟键盘输入已暂停"
+#: src/entry/extension.js:40
+msgid "Simulated keyboard input cancelled"
+msgstr "模拟键盘输入已取消"
 
-#: src/entry/extension.js:39
+#: src/entry/extension.js:41
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr "模拟键盘输入期间请勿按下其他按键；键盘空闲后将继续输入。"
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
+msgstr "检测到真实键盘输入，剩余的模拟输入已取消。"
 
 #: src/ui/indicator.js:276
 msgid "This text is too large for interactive processing"

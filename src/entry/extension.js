@@ -36,9 +36,9 @@ export default class ClipboardXExtension extends Extension {
       sourceItem: itemId => this._controller.items.find(item => item.id === itemId) ?? null,
     });
     this._terminalInput = new TerminalInput({
-      onManualInput: () => Main.notify(
-        _('Simulated keyboard input paused'),
-        _('Do not press other keys during simulated typing. Input will resume after the keyboard is idle.'),
+      onCancelled: () => Main.notify(
+        _('Simulated keyboard input cancelled'),
+        _('Physical keyboard input was detected. The remaining simulated input was cancelled.'),
       ),
     });
     this._dictionaryStore = new DictionaryStore();

@@ -1,5 +1,6 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
@@ -111,6 +112,27 @@ WantedBy=multi-user.target
     const actual = new TextDecoder().decode(contents);
     assert(actual === source,
       `Mixed-language simulated input changed character order (${actual.length}/${source.length})`);
+
+    const queuedSuffix = 'x'.repeat(200);
+    const interrupted = terminalInput.type(queuedSuffix);
+    const queued = terminalInput.type('THIS_QUEUED_INPUT_MUST_NOT_APPEAR');
+    await Scripting.sleep(30);
+    terminalInput._filterEvent({
+      type: () => Clutter.EventType.KEY_PRESS,
+      get_source_device: () => ({get_device_node: () => '/dev/input/event-test'}),
+    });
+    await Promise.all([interrupted, queued]);
+    await Scripting.sleep(50);
+    const [, interruptedContents] = output.load_contents(null);
+    const interruptedText = new TextDecoder().decode(interruptedContents);
+    assert(interruptedText.startsWith(source)
+        && interruptedText.length < source.length + queuedSuffix.length
+        && !interruptedText.includes('THIS_QUEUED_INPUT_MUST_NOT_APPEAR'),
+    'Physical keyboard input did not cancel the remaining simulated input');
+    await Scripting.sleep(100);
+    const [, settledContents] = output.load_contents(null);
+    assert(new TextDecoder().decode(settledContents) === interruptedText,
+      'Simulated input continued after cancellation');
   } finally {
     targetWindow()?.delete(global.get_current_time());
     process.force_exit();

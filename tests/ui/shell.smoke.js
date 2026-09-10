@@ -286,11 +286,13 @@ export async function run() {
   assert(!modifiersReleased, 'Terminal input did not wait for the triggering Ctrl key to be released');
   simulatedModifiers = 0;
   await releaseWait;
-  assert(modifiersReleased, 'Terminal input did not resume after the triggering Ctrl key was released');
+  assert(modifiersReleased, 'Terminal input did not begin after the triggering Ctrl key was released');
   terminalInput._modifierState = modifierState.bind(terminalInput);
-  const manualInputCallback = terminalInput._onManualInput;
-  let manualInputNotifications = 0;
-  terminalInput._onManualInput = () => manualInputNotifications++;
+  const cancelledCallback = terminalInput._onCancelled;
+  let cancelledNotifications = 0;
+  terminalInput._onCancelled = () => cancelledNotifications++;
+  const activeTyping = {cancelled: false};
+  terminalInput._typing = activeTyping;
   terminalInput._monitoring = true;
   const physicalKeyboard = {get_device_node: () => '/dev/input/event-test'};
   const keyboardEvent = (type, device) => ({
@@ -302,16 +304,16 @@ export async function run() {
     Clutter.EventType.KEY_PRESS,
     {get_device_node: () => null},
   ));
-  assert(manualInputNotifications === 0, 'Virtual keyboard event was mistaken for manual input');
+  assert(cancelledNotifications === 0 && !activeTyping.cancelled,
+    'Virtual keyboard event was mistaken for manual input');
   terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
   terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_PRESS, physicalKeyboard));
   await Scripting.sleep(10);
-  assert(manualInputNotifications === 1, 'Manual keyboard interruption did not emit one pause notification');
-  terminalInput._filterEvent(keyboardEvent(Clutter.EventType.KEY_RELEASE, physicalKeyboard));
+  assert(activeTyping.cancelled && cancelledNotifications === 1,
+    'Manual keyboard input did not cancel typing with one notification');
+  terminalInput._typing = null;
   terminalInput._monitoring = false;
-  terminalInput._manualInputActive = false;
-  terminalInput._activity.reset();
-  terminalInput._onManualInput = manualInputCallback;
+  terminalInput._onCancelled = cancelledCallback;
 
   const originalAnchor = indicator._settings.get_string('panel-anchor');
   const originalOffsetX = indicator._settings.get_int('panel-offset-x');
