@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Activity} from './activity.js';
-import {typingSequence} from './sequence.js';
+import {typingDelay, typingSequence} from './sequence.js';
 
 const SETTLE_DELAY_MILLISECONDS = 75;
 const INPUT_POLL_MILLISECONDS = 20;
@@ -35,7 +35,6 @@ export class TerminalInput {
     this._eventFilterId = Clutter.Event.add_filter(
       null,
       event => this._filterEvent(event),
-      null,
     );
   }
 
@@ -65,7 +64,7 @@ export class TerminalInput {
           if (this._destroyed || !await this._waitForManualInputIdle())
             return;
           this._typeCharacter(character);
-          await this._yield();
+          await this._waitForNextStep(character);
         }
       } finally {
         this._monitoring = false;
@@ -129,9 +128,9 @@ export class TerminalInput {
       return;
     }
 
-    // Mutter can only resolve keyvals present in the active XKB map. GNOME
-    // applications accept the standard Ctrl+Shift+U hexadecimal input path,
-    // which also lets a Latin keyboard type CJK and other Unicode characters.
+    // Mutter can only resolve keyvals present in the active XKB map. Use the
+    // standard Unicode composition path, then let the target input method
+    // finish the commit before emitting the next character.
     this._chord([Clutter.KEY_Control_L, Clutter.KEY_Shift_L], Clutter.KEY_u);
     for (const digit of codePoint.toString(16))
       this._tap(Clutter.unicode_to_keysym(digit.codePointAt(0)));
@@ -228,9 +227,9 @@ export class TerminalInput {
     });
   }
 
-  _yield() {
+  _waitForNextStep(character) {
     return new Promise(resolve => {
-      GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, typingDelay(character), () => {
         resolve();
         return GLib.SOURCE_REMOVE;
       });
