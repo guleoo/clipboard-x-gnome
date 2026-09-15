@@ -73,6 +73,16 @@ try {
   );
   assert((await store.load()).length === 0, 'history paths outside device storage must be rejected');
 
+  const missingLocal = ClipboardItem.fromText('missing local original', {
+    originDeviceId: localDeviceId,
+  });
+  missingLocal.primary.bytes = null;
+  await assertRejects(
+    store.save([missingLocal]),
+    /no content to persist/u,
+    'local history without content',
+  );
+
   GLib.mkdir_with_parents(remotePaths.previews, 0o700);
   const previewBytes = bytesFromString('derived preview bytes');
   const previewHash = sha256(previewBytes);
@@ -100,6 +110,35 @@ try {
     'remote history must have an independent versioned index');
   assert(Gio.File.new_for_path(previewPath).query_exists(null), 'referenced remote preview must be retained');
   assert(!Gio.File.new_for_path(stalePreviewPath).query_exists(null), 'stale remote preview must be pruned');
+
+  const manifestOnly = ClipboardItem.fromText('remote lazy manifest', {
+    originDeviceId: remoteDeviceId,
+    remote: true,
+    availability: 'preview',
+  });
+  manifestOnly.primary.delivery = 'on-demand';
+  manifestOnly.primary.bytes = null;
+  const cachedManifest = ClipboardItem.fromText('remote original', {
+    originDeviceId: remoteDeviceId,
+    remote: true,
+    availability: 'preview',
+  });
+  cachedManifest.primary.delivery = 'on-demand';
+  cachedManifest.primary.bytes = null;
+  const capturedAfterLazySync = ClipboardItem.fromText('local capture after lazy synchronization', {
+    originDeviceId: localDeviceId,
+  });
+  await store.save([capturedAfterLazySync, remote, manifestOnly, cachedManifest]);
+  assert(capturedAfterLazySync.primary.path?.startsWith(localPaths.objects),
+    'new local content must persist while remote lazy manifests remain in history');
+  assert(manifestOnly.primary.path === null,
+    'remote lazy history must preserve a manifest without fabricating a local object path');
+  assert(cachedManifest.primary.path === remote.primary.path,
+    'remote lazy history must reuse an already cached object with the same hash');
+  const restoredRemote = (await store.load()).find(item => item.id === manifestOnly.id);
+  assert(restoredRemote?.remote && restoredRemote.primary.path === null,
+    'remote lazy manifest must survive a history reload without its original content');
+
   await store.save([]);
   assert(!Gio.File.new_for_path(previewPath).query_exists(null), 'removed history must release its remote preview');
 

@@ -221,7 +221,7 @@ export class HistoryStore {
     ensurePrivateDirectory(paths.previews);
     for (const item of items) {
       for (const representation of item.representations)
-        await this._persistRepresentation(representation, paths.objects, cancellable);
+        await this._persistRepresentation(item, representation, paths.objects, cancellable);
       await this._persistPreview(item.preview, paths.previews, cancellable);
     }
     const document = {
@@ -238,20 +238,29 @@ export class HistoryStore {
       await this._removeUnreferencedFiles(items, paths, cancellable);
   }
 
-  async _persistRepresentation(representation, objectsPath, cancellable) {
+  async _persistRepresentation(item, representation, objectsPath, cancellable) {
     if (representation.size > ABSOLUTE_ITEM_LIMIT_BYTES)
       throw new Error('Clipboard representation exceeds the local persistence limit');
     const targetPath = GLib.build_filenamev([objectsPath, representation.sha256]);
-    if (!await pathExists(targetPath, cancellable)) {
-      const bytes = representation.bytes
-        ?? await this._loadManagedFile(
-          representation.path,
-          representation.size,
-          representation.sha256,
-          cancellable,
-        );
-      await writeFile(Gio.File.new_for_path(targetPath), bytes, cancellable);
+    if (await pathExists(targetPath, cancellable)) {
+      representation.path = targetPath;
+      return;
     }
+
+    if (!representation.bytes && !representation.path) {
+      if (item.remote && item.availability !== 'ready')
+        return;
+      throw new Error('Local clipboard representation has no content to persist');
+    }
+
+    const bytes = representation.bytes
+      ?? await this._loadManagedFile(
+        representation.path,
+        representation.size,
+        representation.sha256,
+        cancellable,
+      );
+    await writeFile(Gio.File.new_for_path(targetPath), bytes, cancellable);
     representation.path = targetPath;
   }
 
