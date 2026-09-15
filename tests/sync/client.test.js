@@ -95,11 +95,12 @@ class TestStore {
 }
 
 class TestTransport {
-  constructor() {
+  constructor(channels = [{id: channelId, name: 'Test channel'}]) {
     this.uploadedBytes = 0;
     this.aborted = false;
     this.itemId = '';
     this.totalBytes = 0;
+    this.channelValues = channels;
   }
 
   status() {
@@ -124,7 +125,7 @@ class TestTransport {
   }
 
   channels() {
-    return Promise.resolve({channels: [{id: channelId, name: 'Test channel'}]});
+    return Promise.resolve({channels: this.channelValues});
   }
 
   transfers() {
@@ -242,3 +243,25 @@ try {
 }
 
 assert(transport.aborted, 'disabling the extension must abort in-flight HTTP work');
+
+const channelRequiredStore = new TestStore();
+channelRequiredStore.value.activeChannelId = '';
+const channelRequiredClient = new SyncClient(settings, {
+  configurationStore: channelRequiredStore,
+  transportFactory: () => new TestTransport([]),
+});
+try {
+  await channelRequiredClient.start();
+  const item = ClipboardItem.fromText('channel required', {originDeviceId: deviceId});
+  item.representations[0].path = path;
+  let error = null;
+  try {
+    await channelRequiredClient.publish(item);
+  } catch (caught) {
+    error = caught;
+  }
+  assert(error?.code === 'channel_required',
+    'publishing without an active channel must expose the stable localization code');
+} finally {
+  channelRequiredClient.destroy();
+}

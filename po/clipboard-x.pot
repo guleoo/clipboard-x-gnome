@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-10 13:42+0800\n"
+"POT-Creation-Date: 2026-09-15 21:09+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,14 +17,95 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/entry/extension.js:40
+#: src/entry/extension.js:42
 msgid "Simulated keyboard input cancelled"
 msgstr ""
 
-#: src/entry/extension.js:41
+#: src/entry/extension.js:43
 msgid ""
 "Physical keyboard input was detected. The remaining simulated input was "
 "cancelled."
+msgstr ""
+
+#: src/entry/extension.js:323
+msgid "Operation failed"
+msgstr ""
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr ""
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr ""
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr ""
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr ""
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr ""
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr ""
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr ""
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr ""
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr ""
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr ""
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr ""
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr ""
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr ""
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr ""
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr ""
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr ""
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr ""
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr ""
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
 msgstr ""
 
 #: src/ui/indicator.js:276
@@ -119,75 +200,75 @@ msgstr ""
 msgid "Unknown device"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:54
+#: src/ui/panels/history/sync-action.js:58
 msgid "Sync protocol error"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:58
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr ""
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:85
+#: src/ui/panels/history/sync-action.js:92
 msgid "Waiting for peer device"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:86
+#: src/ui/panels/history/sync-action.js:93
 msgid "Preparing transfer"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:92
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr ""
 
@@ -370,91 +451,99 @@ msgstr ""
 msgid "Press shortcut…"
 msgstr ""
 
-#: src/ui/settings/sync.js:13
+#: src/ui/settings/sync.js:14
 msgid "Server connection"
 msgstr ""
 
-#: src/ui/settings/sync.js:14
+#: src/ui/settings/sync.js:15
 msgid "Enable synchronization"
 msgstr ""
 
-#: src/ui/settings/sync.js:16
+#: src/ui/settings/sync.js:17
 msgid "Server address"
 msgstr ""
 
-#: src/ui/settings/sync.js:19
+#: src/ui/settings/sync.js:20
 msgid "API key"
 msgstr ""
 
-#: src/ui/settings/sync.js:22
+#: src/ui/settings/sync.js:23
 msgid "Active channel"
 msgstr ""
 
-#: src/ui/settings/sync.js:27
+#: src/ui/settings/sync.js:28
 msgid "Refresh channels"
 msgstr ""
 
-#: src/ui/settings/sync.js:32
+#: src/ui/settings/sync.js:33
 msgid "Server status"
 msgstr ""
 
-#: src/ui/settings/sync.js:32
+#: src/ui/settings/sync.js:33
 msgid "Not tested"
 msgstr ""
 
-#: src/ui/settings/sync.js:34
+#: src/ui/settings/sync.js:35
 msgid "Apply"
 msgstr ""
 
-#: src/ui/settings/sync.js:35
+#: src/ui/settings/sync.js:36
 msgid "Test connection"
 msgstr ""
 
-#: src/ui/settings/sync.js:56 src/ui/settings/sync.js:135
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
 msgid "No available channels"
 msgstr ""
 
-#: src/ui/settings/sync.js:112
+#: src/ui/settings/sync.js:113
 msgid "Connection settings saved · API key configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:113
+#: src/ui/settings/sync.js:114
 msgid "Connection settings saved · API key not configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:115
+#: src/ui/settings/sync.js:117
 msgid "Connection settings saved locally"
 msgstr ""
 
-#: src/ui/settings/sync.js:120
+#: src/ui/settings/sync.js:124
 msgid "Connecting…"
 msgstr ""
 
-#: src/ui/settings/sync.js:130
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr ""
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr ""
+
+#: src/ui/settings/sync.js:137
 msgid "Loading channels…"
 msgstr ""
 
-#: src/ui/settings/sync.js:134
+#: src/ui/settings/sync.js:141
 msgid "Channels refreshed"
 msgstr ""
 
-#: src/ui/settings/sync.js:140
+#: src/ui/settings/sync.js:147
 msgid "Loading…"
 msgstr ""
 
-#: src/ui/settings/sync.js:145
+#: src/ui/settings/sync.js:152
 msgid "Connection settings are not configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:151
+#: src/ui/settings/sync.js:158
 msgid "Connection settings loaded · API key configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:152
+#: src/ui/settings/sync.js:159
 msgid "Connection settings loaded · API key not configured"
 msgstr ""
 
-#: src/ui/settings/sync.js:154
+#: src/ui/settings/sync.js:162
 msgid "Connection settings loaded locally"
 msgstr ""
 

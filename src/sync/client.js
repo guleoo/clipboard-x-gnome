@@ -16,6 +16,7 @@ import {configuration as publicConfiguration} from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
 import {POLL_INTERVAL_MILLISECONDS} from './constants.js';
 import {ensureDeviceIdentity} from './device.js';
+import {SyncError} from './errors.js';
 import {HttpTransport} from './http/transport.js';
 import {
   acceptedWork as validateAcceptedWork,
@@ -308,7 +309,10 @@ export class SyncClient extends EventEmitter {
     } catch (error) {
       if (generation === this._generation) {
         this._closeConnection();
-        this._setStatus('error', {error: error.message}, 'request-failed');
+        this._setStatus('error', {
+          error: error.message,
+          errorCode: String(error.code ?? 'request_failed'),
+        }, 'request-failed');
       }
       throw error;
     }
@@ -777,7 +781,9 @@ export class SyncClient extends EventEmitter {
       activeTransfers: this._capabilities?.activeTransfers ?? 0,
       lastSyncAt: this._capabilities?.lastSyncAt ?? 0,
       revision: this._capabilities?.revision ?? 0,
-      errorCode: state === 'error' ? 'request_failed' : '',
+      errorCode: state === 'error'
+        ? String(capabilities?.errorCode ?? 'request_failed')
+        : '',
       errorMessage: capabilities?.error ?? '',
     };
     this.emit('status-details-changed', {...this._status});
@@ -815,7 +821,10 @@ export class SyncClient extends EventEmitter {
       () => {
         this._poll().catch(error => {
           if (this._connected)
-            this._setStatus('error', {error: error.message}, 'request-failed');
+            this._setStatus('error', {
+              error: error.message,
+              errorCode: String(error.code ?? 'request_failed'),
+            }, 'request-failed');
           this._report(error);
         });
         return GLib.SOURCE_CONTINUE;
@@ -843,13 +852,16 @@ export class SyncClient extends EventEmitter {
 
   _requireConnection() {
     if (!this._connected || !this._transport)
-      throw new Error('Synchronization server is unavailable');
+      throw new SyncError('server_unavailable', 'Synchronization server is unavailable');
   }
 
   _requireChannel() {
     const channelId = this._storedConfiguration?.activeChannelId ?? '';
     if (!isUuid(channelId))
-      throw new Error('No active synchronization channel is configured');
+      throw new SyncError(
+        'channel_required',
+        'No active synchronization channel is configured',
+      );
     return channelId;
   }
 

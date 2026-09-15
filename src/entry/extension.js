@@ -11,11 +11,13 @@ import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
+import {diagnosticCode} from '../common/errors.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
 import {SyncClient} from '../sync/client.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
+import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
 import {Indicator} from '../ui/indicator.js';
 import {ScreenshotPortal} from '../screenshot/portal.js';
 
@@ -156,7 +158,7 @@ export default class ClipboardXExtension extends Extension {
 
   async _publish(item) {
     if (!this._settings.get_boolean('sync-enabled'))
-      throw new Error('Synchronization is disabled');
+      throw new SyncError('disabled', 'Synchronization is disabled');
     await this._controller.persist();
     return this._sync.publish(item);
   }
@@ -313,7 +315,12 @@ export default class ClipboardXExtension extends Extension {
   _reportError(error) {
     if (error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
       return;
-    console.error('Clipboard X: operation failed; details were shown in the desktop notification');
-    Main.notifyError('Clipboard X', error?.message ?? String(error));
+    console.error(
+      `Clipboard X: operation failed (${diagnosticCode(error)}): ${error?.message ?? String(error)}`,
+    );
+    Main.notifyError(
+      'Clipboard X',
+      syncErrorMessage(error, _) || _('Operation failed'),
+    );
   }
 }

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 12:31+0800\n"
-"PO-Revision-Date: 2026-08-14 21:35+0800\n"
+"POT-Creation-Date: 2026-09-15 21:09+0800\n"
+"PO-Revision-Date: 2026-09-15 21:00+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: Simplified Chinese\n"
 "Language: zh_CN\n"
@@ -16,15 +16,96 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/entry/extension.js:40
+#: src/entry/extension.js:42
 msgid "Simulated keyboard input cancelled"
 msgstr "模拟键盘输入已取消"
 
-#: src/entry/extension.js:41
+#: src/entry/extension.js:43
 msgid ""
 "Physical keyboard input was detected. The remaining simulated input was "
 "cancelled."
 msgstr "检测到真实键盘输入，剩余的模拟输入已取消。"
+
+#: src/entry/extension.js:323
+msgid "Operation failed"
+msgstr "操作失败"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "同步已禁用"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "同步服务器不可用"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "尚未配置同步 Channel"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "同步服务器地址无效"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "同步认证失败"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "此设备已在同步服务器上停用"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "此 API Key 不属于当前设备"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "此设备无权访问该同步 Channel"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "此剪切板条目与同步服务器上的条目冲突"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "源设备上的剪切板内容尚未就绪"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "源设备已没有此剪切板内容"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "剪切板内容超过同步大小限制"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "同步内容未通过完整性验证"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "同步传输已过期"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "同步服务器繁忙，请稍后重试。"
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "同步服务器返回了无效响应"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "同步上传失败"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "同步下载失败"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "同步请求失败"
 
 #: src/ui/indicator.js:276
 msgid "This text is too large for interactive processing"
@@ -118,75 +199,75 @@ msgstr "剪切板历史为空"
 msgid "Unknown device"
 msgstr "未知设备"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
 msgstr "同步设置"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
 msgstr "同步"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
 msgstr "同步已禁用"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr "同步服务器离线"
 
-#: src/ui/panels/history/sync-action.js:54
+#: src/ui/panels/history/sync-action.js:58
 msgid "Sync protocol error"
 msgstr "同步协议错误"
 
-#: src/ui/panels/history/sync-action.js:58
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "同步服务器降级运行"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr "同步服务器在线"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
 msgstr "正在上传"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "正在下载"
 
-#: src/ui/panels/history/sync-action.js:85
+#: src/ui/panels/history/sync-action.js:92
 msgid "Waiting for peer device"
 msgstr "正在等待对端设备"
 
-#: src/ui/panels/history/sync-action.js:86
+#: src/ui/panels/history/sync-action.js:93
 msgid "Preparing transfer"
 msgstr "正在准备传输"
 
-#: src/ui/panels/history/sync-action.js:92
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
 msgstr "传输失败；点击重试"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
 msgstr "上传完成"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
 msgstr "原始内容已下载"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr "同步已禁用"
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
 msgstr "重试下载原始内容"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
 msgstr "下载原始内容"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
 msgstr "原始内容已在本机就绪"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr "发送到同步服务器"
 
@@ -369,96 +450,101 @@ msgstr "点击以设置快捷键"
 msgid "Press shortcut…"
 msgstr "请按快捷键…"
 
-#: src/ui/settings/sync.js:20
+#: src/ui/settings/sync.js:14
 msgid "Server connection"
 msgstr "服务器连接"
 
-#: src/ui/settings/sync.js:21
+#: src/ui/settings/sync.js:15
 msgid "Enable synchronization"
 msgstr "启动同步"
 
-
-#: src/ui/settings/sync.js:23
+#: src/ui/settings/sync.js:17
 msgid "Server address"
 msgstr "服务器地址"
 
-#: src/ui/settings/sync.js:26
+#: src/ui/settings/sync.js:20
 msgid "API key"
 msgstr "API Key"
 
-#: src/ui/settings/sync.js:29
+#: src/ui/settings/sync.js:23
 msgid "Active channel"
 msgstr "当前 Channel"
 
-#: src/ui/settings/sync.js:34
+#: src/ui/settings/sync.js:28
 msgid "Refresh channels"
 msgstr "刷新 Channel"
 
-#: src/ui/settings/sync.js:39
+#: src/ui/settings/sync.js:33
 msgid "Server status"
 msgstr "服务器状态"
 
-#: src/ui/settings/sync.js:39
+#: src/ui/settings/sync.js:33
 msgid "Not tested"
 msgstr "尚未测试"
 
-#: src/ui/settings/sync.js:41
+#: src/ui/settings/sync.js:35
 msgid "Apply"
 msgstr "应用"
 
-#: src/ui/settings/sync.js:42
+#: src/ui/settings/sync.js:36
 msgid "Test connection"
 msgstr "测试连接"
 
-#: src/ui/settings/sync.js:63 src/ui/settings/sync.js:146
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
 msgid "No available channels"
 msgstr "没有可用的 Channel"
 
-#: src/ui/settings/sync.js:122
+#: src/ui/settings/sync.js:113
 msgid "Connection settings saved · API key configured"
 msgstr "已保存连接设置 · 已配置 API Key"
 
-#: src/ui/settings/sync.js:123
+#: src/ui/settings/sync.js:114
 msgid "Connection settings saved · API key not configured"
 msgstr "已保存连接设置 · 未配置 API Key"
 
-#: src/ui/settings/sync.js:125
+#: src/ui/settings/sync.js:117
 msgid "Connection settings saved locally"
 msgstr "连接设置已保存在本地"
 
-#: src/ui/settings/sync.js:131
+#: src/ui/settings/sync.js:124
 msgid "Connecting…"
 msgstr "正在连接…"
 
-#: src/ui/settings/sync.js:141
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "降级运行"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "在线"
+
+#: src/ui/settings/sync.js:137
 msgid "Loading channels…"
 msgstr "正在加载 Channel…"
 
-#: src/ui/settings/sync.js:145
+#: src/ui/settings/sync.js:141
 msgid "Channels refreshed"
 msgstr "已刷新 Channel"
 
-#: src/ui/settings/sync.js:151
+#: src/ui/settings/sync.js:147
 msgid "Loading…"
 msgstr "正在加载…"
 
-#: src/ui/settings/sync.js:156
+#: src/ui/settings/sync.js:152
 msgid "Connection settings are not configured"
 msgstr "尚未配置连接设置"
 
-#: src/ui/settings/sync.js:162
+#: src/ui/settings/sync.js:158
 msgid "Connection settings loaded · API key configured"
 msgstr "已加载连接设置 · 已配置 API Key"
 
-#: src/ui/settings/sync.js:163
+#: src/ui/settings/sync.js:159
 msgid "Connection settings loaded · API key not configured"
 msgstr "已加载连接设置 · 未配置 API Key"
 
-#: src/ui/settings/sync.js:165
+#: src/ui/settings/sync.js:162
 msgid "Connection settings loaded locally"
 msgstr "已从本地加载连接设置"
-
-
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
@@ -994,9 +1080,6 @@ msgstr "截图"
 #~ msgid "An API key is configured; leave this field empty to keep it"
 #~ msgstr "已配置 API Key；留空可保留当前值"
 
-#~ msgid "Enter the API key assigned to this device"
-#~ msgstr "输入分配给此设备的 API Key"
-
 #~ msgid "item limit"
 #~ msgstr "条目上限"
 
@@ -1092,9 +1175,6 @@ msgstr "截图"
 
 #~ msgid "Capture and editing"
 #~ msgstr "截图与编辑"
-
-#~ msgid "Synchronized content is ready"
-#~ msgstr "同步内容已就绪"
 
 #~ msgid "Retry and copy"
 #~ msgstr "重试并复制"

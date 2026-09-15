@@ -5,6 +5,7 @@ import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {SyncConfigurationStore} from '../../sync/configuration-store.js';
+import {message as syncErrorMessage} from '../../sync/errors.js';
 import {HttpTransport} from '../../sync/http/transport.js';
 import {channels as validateChannels, status as validateStatus} from '../../sync/protocol.js';
 
@@ -48,7 +49,7 @@ export function create(settings, deviceId, rows) {
     refresh.sensitive = !value;
   };
   const showError = error => {
-    status.subtitle = error?.message ?? String(error);
+    status.subtitle = syncErrorMessage(error, _) || _('Synchronization request failed');
   };
   const renderChannels = (channels, activeChannelId) => {
     channelIds = channels.map(item => item.id);
@@ -112,7 +113,10 @@ export function create(settings, deviceId, rows) {
         ? _('Connection settings saved · API key configured')
         : _('Connection settings saved · API key not configured');
     } catch (error) {
-      status.subtitle = [_('Connection settings saved locally'), error.message].join(' · ');
+      status.subtitle = [
+        _('Connection settings saved locally'),
+        syncErrorMessage(error, _) || _('Synchronization request failed'),
+      ].join(' · ');
     }
   }));
   test.connect('clicked', () => run(async () => {
@@ -123,7 +127,10 @@ export function create(settings, deviceId, rows) {
     const result = validateStatus(server);
     const latency = Math.max(0, Math.round((GLib.get_monotonic_time() - started) / 1000));
     await loadChannels(configuration);
-    status.subtitle = ['online', result.implementationVersion, `${latency} ms`]
+    const serverState = result.status === 'degraded'
+      ? _('Degraded')
+      : _('Online');
+    status.subtitle = [serverState, result.implementationVersion, `${latency} ms`]
       .filter(Boolean).join(' · ');
   }));
   refresh.connect('clicked', () => run(async () => {
@@ -151,7 +158,10 @@ export function create(settings, deviceId, rows) {
           ? _('Connection settings loaded · API key configured')
           : _('Connection settings loaded · API key not configured');
       } catch (error) {
-        status.subtitle = [_('Connection settings loaded locally'), error.message].join(' · ');
+        status.subtitle = [
+          _('Connection settings loaded locally'),
+          syncErrorMessage(error, _) || _('Synchronization request failed'),
+        ].join(' · ');
       }
     });
     return GLib.SOURCE_REMOVE;

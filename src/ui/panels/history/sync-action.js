@@ -2,6 +2,7 @@ import St from 'gi://St';
 
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {message as syncErrorMessage} from '../../../sync/errors.js';
 import {ProgressRing} from './progress-ring.js';
 
 const ICON_SIZE = 16;
@@ -51,11 +52,17 @@ export class SyncAction {
       text = _('Synchronization server offline');
     } else if (status === 'error') {
       iconName = 'dialog-error-symbolic';
-      text = capabilities?.error ?? _('Sync protocol error');
+      text = syncErrorMessage({
+        code: capabilities?.errorCode,
+        message: capabilities?.error,
+      }, _) || _('Sync protocol error');
     } else {
       iconName = 'network-transmit-receive-symbolic';
       const implementation = capabilities?.implementationName;
-      text = implementation ? `${implementation} · ${status}` : _('Synchronization server online');
+      const state = status === 'degraded'
+        ? _('Synchronization server degraded')
+        : _('Synchronization server online');
+      text = implementation ? `${implementation} · ${state}` : state;
     }
     this._setIcon(this.statusButton, iconName);
     this._setHint(this.statusButton, text);
@@ -89,7 +96,11 @@ export class SyncAction {
     }
     if (transfer?.state === 'failed' || transfer?.state === 'expired') {
       this._setIcon(button, 'view-refresh-symbolic');
-      this._setHint(button, transfer.errorMessage || _('Transfer failed; activate to retry'));
+      this._setHint(
+        button,
+        syncErrorMessage({code: transfer.errorCode, message: transfer.errorMessage}, _)
+          || _('Transfer failed; activate to retry'),
+      );
       return;
     }
     if (transfer?.state === 'completed') {
