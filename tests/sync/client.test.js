@@ -260,6 +260,31 @@ try {
   assert(transport.updatedProfiles.length === 6
       && !Object.hasOwn(transport.updatedProfiles[5].iconColor, 'dark'),
   'linking colors again must remove the custom dark color from the profile');
+  const originalUpdateProfile = transport.updateProfile.bind(transport);
+  const pendingProfiles = [];
+  transport.updateProfile = profile => new Promise(resolve => {
+    pendingProfiles.push({profile, complete: () => resolve(originalUpdateProfile(profile))});
+  });
+  const lightChange = settings.changeString('device-icon-color-light', '#66ccff');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert(pendingProfiles.length === 1 && pendingProfiles[0].profile.iconColor.light === '#66ccff',
+    'the first profile update should begin before the second color change');
+  const darkChange = settings.changeString('device-icon-color-dark', '#204050');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert(pendingProfiles.length === 1,
+    'a second color change must wait for the in-flight profile update');
+  pendingProfiles[0].complete();
+  await lightChange;
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert(pendingProfiles.length === 2
+      && pendingProfiles[1].profile.iconColor.light === '#66ccff'
+      && pendingProfiles[1].profile.iconColor.dark === '#204050',
+  'the queued profile must send both final colors together');
+  pendingProfiles[1].complete();
+  await darkChange;
+  transport.updateProfile = originalUpdateProfile;
+  assert(client.devices[0].iconColor.dark === '#204050',
+    'the final server profile must not be overwritten by an older response');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 

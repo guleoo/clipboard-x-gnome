@@ -5,14 +5,11 @@ import Gtk from 'gi://Gtk';
 
 import {gettext} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {deriveDarkColor, readIconColor, setIconColorLinked} from '../../sync/icon-color.js';
+import {deriveDarkColor, readIconColor, setIconColor, setIconColorLinked} from '../../sync/icon-color.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
 
 const iconDirectory = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('icons');
-const LINK_ICONS = Object.freeze({
-  linked: new Gio.FileIcon({file: iconDirectory.get_child('link-2-symbolic.svg')}),
-  unlinked: new Gio.FileIcon({file: iconDirectory.get_child('link-2-off-symbolic.svg')}),
-});
+const LINK_ICON = new Gio.FileIcon({file: iconDirectory.get_child('link-2-symbolic.svg')});
 
 function swatch(label) {
   const area = new Gtk.DrawingArea({content_width: 22, content_height: 22});
@@ -61,7 +58,7 @@ export function create(settings, _ = gettext) {
   const controls = new Gtk.Box({spacing: 6, valign: Gtk.Align.CENTER});
   const light = swatch(_('Light color'));
   const dark = swatch(_('Dark color'));
-  const linkImage = new Gtk.Image({gicon: LINK_ICONS.linked, pixel_size: 18});
+  const linkImage = new Gtk.Image({gicon: LINK_ICON, pixel_size: 18});
   const link = new Gtk.ToggleButton({
     child: linkImage,
     css_classes: ['flat'],
@@ -75,17 +72,15 @@ export function create(settings, _ = gettext) {
   let updating = false;
   const update = () => {
     const colors = readIconColor(settings);
-    const linked = !colors.dark;
+    const linked = settings.get_boolean('device-icon-color-linked');
     updating = true;
     link.active = linked;
     updating = false;
-    linkImage.gicon = linked ? LINK_ICONS.linked : LINK_ICONS.unlinked;
     link[linked ? 'remove_css_class' : 'add_css_class']('flat');
     link[linked ? 'add_css_class' : 'remove_css_class']('suggested-action');
     link.tooltip_text = linked ? _('Unlink colors') : _('Link colors');
     light.setColor(colors.light);
     dark.setColor(colors.dark ?? deriveDarkColor(colors.light));
-    dark.button.sensitive = !linked;
   };
   link.connect('toggled', () => {
     if (updating)
@@ -93,13 +88,14 @@ export function create(settings, _ = gettext) {
     setIconColorLinked(settings, link.active);
   });
   light.button.connect('clicked', () => chooseColor(light.button, readIconColor(settings).light,
-    _('Light color'), color => settings.set_string('device-icon-color-light', color)));
+    _('Light color'), color => setIconColor(settings, 'light', color)));
   dark.button.connect('clicked', () => chooseColor(dark.button,
     readIconColor(settings).dark ?? deriveDarkColor(readIconColor(settings).light),
-    _('Dark color'), color => settings.set_string('device-icon-color-dark', color)));
+    _('Dark color'), color => setIconColor(settings, 'dark', color)));
   const signals = [
     settings.connect('changed::device-icon-color-light', update),
     settings.connect('changed::device-icon-color-dark', update),
+    settings.connect('changed::device-icon-color-linked', update),
   ];
   disconnectWhenUnrooted(row, () => signals.forEach(signal => settings.disconnect(signal)));
   update();

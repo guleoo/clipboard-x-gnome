@@ -58,6 +58,7 @@ export class SyncClient extends EventEmitter {
     this._devices = new Map();
     this._channels = [];
     this._registeredProfile = '';
+    this._profileUpdateChain = Promise.resolve();
     this._pollSource = 0;
     this._polling = false;
     this._generation = 0;
@@ -100,10 +101,10 @@ export class SyncClient extends EventEmitter {
 
   async start() {
     this._settingsSignals.push(
-      this._settings.connect('changed::device-tag', () => this._updateProfile().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-kind', () => this._updateProfile().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-color-light', () => this._updateProfile().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-color-dark', () => this._updateProfile().catch(error => this._report(error))),
+      this._settings.connect('changed::device-tag', () => this._queueProfileUpdate().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-kind', () => this._queueProfileUpdate().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-color-light', () => this._queueProfileUpdate().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-color-dark', () => this._queueProfileUpdate().catch(error => this._report(error))),
       this._settings.connect('changed::sync-configuration-revision', () => this.restart().catch(error => this._report(error))),
     );
     await this._connect();
@@ -296,7 +297,7 @@ export class SyncClient extends EventEmitter {
       this._connected = true;
       const currentDevice = validateDevice(await this._transport.device(), identity.deviceId);
       this._devices.set(currentDevice.deviceId, currentDevice);
-      await this._updateProfile(true);
+      await this._queueProfileUpdate(true);
       await this.listChannels();
       if (this._channels.length > 0
           && !this._channels.some(channel => channel.id === this._storedConfiguration.activeChannelId)) {
@@ -732,9 +733,16 @@ export class SyncClient extends EventEmitter {
     this.emit('transfer-changed', transfer);
   }
 
+  _queueProfileUpdate(force = false) {
+    const update = this._profileUpdateChain.catch(() => {}).then(() => this._updateProfile(force));
+    this._profileUpdateChain = update;
+    return update;
+  }
+
   async _updateProfile(force = false) {
     if (!this._connected)
       return;
+    const generation = this._generation;
     const identity = ensureDeviceIdentity(this._settings);
     const serialized = JSON.stringify([identity.deviceTag, identity.deviceIconKind, identity.deviceIconColor]);
     if (!force && serialized === this._registeredProfile)
@@ -744,6 +752,8 @@ export class SyncClient extends EventEmitter {
       iconKind: identity.deviceIconKind,
       iconColor: identity.deviceIconColor,
     });
+    if (!this._connected || this._destroyed || generation !== this._generation)
+      return;
     const current = raw ? validateDevice(raw, identity.deviceId) : {
       deviceId: identity.deviceId,
       tag: identity.deviceTag,

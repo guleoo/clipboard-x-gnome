@@ -89,13 +89,18 @@ Device response:
 Icon values are `desktop`, `laptop`, `phone`, `tablet`, `server`, and `other`.
 `iconColor` may be omitted from the profile request, in which case the server stores white.
 When supplied, it requires a lowercase `#RRGGBB` `light` value and optionally accepts a `dark`
-value. Omitted `dark` means clients derive the dark color from `light`; setting `dark` configures
-it independently. Responses include `iconColor` and preserve the absence of linked `dark`.
+value. Omitted `dark` means clients derive the dark color from `light`; providing `dark` preserves
+that exact color. Responses include `iconColor` and preserve the absence of derived `dark`.
 The light color is used on dark backgrounds; the dark color is used on light backgrounds.
 To derive a linked dark color, parse the light color into RGB channels, take the largest channel
 `maximum`, multiply each channel by `min(1, 96 / maximum)` (or `1` when `maximum` is `0`), round
 each channel to the nearest integer and format as lowercase `#RRGGBB`. Thus `#ffffff` yields
 `#606060`. Clients recalculate this color locally; the server does not persist the derived value.
+The preferences link is local UI state rather than a wire field. While linked, changing `light`
+uses the rule above and omits `dark`; changing `dark` preserves the chosen value and derives
+`light` by scaling its largest RGB channel to 255 (pure black derives `#ffffff`). The profile then
+transmits both values so other devices render the selected dark color exactly. When unlinked,
+editing one color leaves the other unchanged.
 
 ### 2.3 Publish clipboard content
 

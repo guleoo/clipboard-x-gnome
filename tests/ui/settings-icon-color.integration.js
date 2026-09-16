@@ -45,21 +45,29 @@ const row = create(settings, label => label);
 const controls = findControls(row);
 assert(row.subtitle.length > 0, 'the color preference must explain its light and dark behavior');
 assert(controls !== null, 'the row must contain exactly two swatches separated by a link button');
-const [, link, dark] = controls;
-assert(link.active && !dark.sensitive, 'dark color must initially follow the light color');
+const [light, link, dark] = controls;
+assert(light.sensitive && dark.sensitive && link.active,
+  'both colors must be editable while linked');
 assert(link.has_css_class('suggested-action') && !link.has_css_class('flat'),
   'linked colors must display an emphasized button background');
 assert(link.get_child().gicon.get_file().get_basename() === 'link-2-symbolic.svg',
   'linked state must show a recognizable chain icon');
+const {setIconColor} = await import('../../src/sync/icon-color.js');
+setIconColor(settings, 'dark', '#204050');
+assert(link.active && settings.get_string('device-icon-color-light') === '#66ccff'
+    && settings.get_string('device-icon-color-dark') === '#204050',
+  'editing the dark swatch while linked must derive light without changing button state');
 link.active = false;
-assert(settings.get_string('device-icon-color-dark') === '#606060' && dark.sensitive,
-  'unlocking must enable the editable dark color with its computed starting value');
+assert(!settings.get_boolean('device-icon-color-linked') && dark.sensitive,
+  'unlocking must retain separate editable colors');
 assert(link.has_css_class('flat') && !link.has_css_class('suggested-action'),
   'unlinked colors must have no persistent button background');
-assert(link.get_child().gicon.get_file().get_basename() === 'link-2-off-symbolic.svg',
-  'unlinked state must show the broken chain');
+assert(link.get_child().gicon.get_file().get_basename() === 'link-2-symbolic.svg',
+  'the chain icon must remain unchanged when unlinked');
 link.active = true;
-assert(settings.get_string('device-icon-color-dark') === '' && !dark.sensitive,
-  'locking must restore automatic calculation and disable manual dark edits');
+assert(settings.get_boolean('device-icon-color-linked') && dark.sensitive,
+  'locking must retain both editable swatches');
+assert(settings.get_string('device-icon-color-dark') === '',
+  'relinking must derive dark from the current light color');
 assert(link.has_css_class('suggested-action') && !link.has_css_class('flat'),
   'relinking must restore the emphasized background');

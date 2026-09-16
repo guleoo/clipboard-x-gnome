@@ -29,6 +29,10 @@
       <default>''</default>
       <summary>Optional custom device icon color on light backgrounds</summary>
     </key>
+    <key name="device-icon-color-linked" type="b">
+      <default>true</default>
+      <summary>Update the other device icon color automatically</summary>
+    </key>
     <key name="show-indicator" type="b">
       <default>true</default>
       <summary>Show the panel indicator</summary>
