@@ -67,8 +67,10 @@ Returns the protocol version, server version, state, and capability limits:
 
 ### 2.2 Get and update device information
 
+- Before the client connects, the administrator registers its client-generated DeviceId and issues
+  an API key bound to that DeviceId.
 - `GET /api/v1/device`: returns the device profile and state for the current API key.
-- `PUT /api/v1/device/profile`: updates friendly profile data with
+- `PUT /api/v1/device/profile`: updates client-owned friendly profile data with
   `{"tag":"Work computer","iconKind":"laptop"}`.
 
 Device response:

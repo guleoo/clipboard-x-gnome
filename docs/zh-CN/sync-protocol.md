@@ -66,8 +66,9 @@
 
 ### 2.2 获取和更新设备信息
 
+- 客户端连接前，管理员先登记客户端生成的 DeviceId，并签发绑定到该 DeviceId 的 API Key。
 - `GET /api/v1/device`：获取当前 API Key 对应的设备资料和状态。
-- `PUT /api/v1/device/profile`：更新友好资料，请求体为
+- `PUT /api/v1/device/profile`：更新客户端维护的友好资料，请求体为
   `{"tag":"工作电脑","iconKind":"laptop"}`。
 
 设备响应：

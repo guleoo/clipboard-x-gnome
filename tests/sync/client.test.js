@@ -48,6 +48,14 @@ class TestSettings {
     this._values.set(key, value);
   }
 
+  async changeString(key, value) {
+    this.set_string(key, value);
+    const callbacks = [...this._signals.values()]
+      .filter(({name}) => name === `changed::${key}`)
+      .map(({callback}) => callback());
+    await Promise.all(callbacks);
+  }
+
   connect(name, callback) {
     const id = this._nextSignal++;
     this._signals.set(id, {name, callback});
@@ -101,6 +109,7 @@ class TestTransport {
     this.itemId = '';
     this.totalBytes = 0;
     this.channelValues = channels;
+    this.updatedProfiles = [];
   }
 
   status() {
@@ -121,6 +130,7 @@ class TestTransport {
   }
 
   updateProfile(profile) {
+    this.updatedProfiles.push({...profile});
     return Promise.resolve(this._device(profile));
   }
 
@@ -219,7 +229,16 @@ try {
   file.replace_contents('hello', null, false, Gio.FileCreateFlags.PRIVATE, null);
   await client.start();
   assert(client.connected && client.channels[0].active,
-    'client start must authenticate, register the device and select its channel');
+    'client start must authenticate, load the pre-registered device and select its channel');
+  assert(transport.updatedProfiles.length === 1
+      && transport.updatedProfiles[0].tag === 'Test laptop'
+      && transport.updatedProfiles[0].iconKind === 'laptop'
+      && !Object.hasOwn(transport.updatedProfiles[0], 'id'),
+    'client start must synchronize its profile without changing the pre-bound DeviceId');
+  await settings.changeString('device-tag', 'Renamed laptop');
+  assert(transport.updatedProfiles.length === 2
+      && transport.updatedProfiles[1].tag === 'Renamed laptop',
+    'changing the local device profile must synchronize it with the server');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 
