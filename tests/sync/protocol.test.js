@@ -2,6 +2,7 @@ import {
   acceptedWork,
   changes,
   channels,
+  device,
   item,
   publication,
   status,
@@ -31,6 +32,11 @@ const transferId = '44444444-4444-4444-8444-444444444444';
 const uploadId = '55555555-5555-4555-8555-555555555555';
 const workId = '66666666-6666-4666-8666-666666666666';
 const digest = 'a'.repeat(64);
+const profile = device({id: deviceId, tag: 'Laptop', iconKind: 'laptop',
+  iconColor: {light: '#ffffff', dark: '#525252'}}, deviceId);
+assert(profile.iconColor.dark === '#525252', 'device profile must preserve a custom dark color');
+assertRejects(() => device({id: deviceId, tag: 'Laptop', iconKind: 'laptop'}, deviceId),
+  'the device response must use the new color contract');
 
 assert(API_VERSION === 1 && API_ROOT === '/api/v1', 'HTTP protocol must be explicitly versioned');
 assert(routes.item(channelId, itemId) === `/api/v1/channels/${channelId}/items/${itemId}`,
@@ -86,11 +92,13 @@ assert(published.uploadId === uploadId && published.contentIds[0] === digest,
 const remote = item({
   id: itemId,
   createdAt: 10,
-  origin: {deviceId, tag: 'Laptop', iconKind: 'laptop'},
+  origin: {deviceId, tag: 'Laptop', iconKind: 'laptop', iconColor: {light: '#2190a4'}},
   contents: [{id: digest, mimeType: 'text/plain;charset=utf-8', size: 5, sha256: digest, delivery: 'on-demand'}],
   previews: [{id: digest, contentId: digest, mimeType: 'text/plain;charset=utf-8', size: 5, sha256: digest, truncated: true}],
 }, itemId);
 assert(remote.contents[0].delivery === 'on-demand', 'lazy content metadata must be preserved');
+assert(remote.originDeviceIconColor.light === '#2190a4' && !Object.hasOwn(remote.originDeviceIconColor, 'dark'),
+  'item origin must preserve linked colors without inventing a stored dark value');
 
 const page = changes({cursor: '18', hasMore: false, changes: [{sequence: 18, kind: 'upsert', itemId}]});
 assert(page.nextCursor === '18' && page.changes[0].itemId === itemId,

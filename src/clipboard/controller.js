@@ -147,6 +147,7 @@ export class ClipboardController extends EventEmitter {
         originDeviceId: identity.deviceId,
         originDeviceTag: identity.deviceTag,
         originDeviceIconKind: identity.deviceIconKind,
+        originDeviceIconColor: identity.deviceIconColor,
         sensitive: sensitive && sensitiveMode !== 'store',
       });
 
@@ -192,6 +193,7 @@ export class ClipboardController extends EventEmitter {
       originDeviceId: identity.deviceId,
       originDeviceTag: identity.deviceTag,
       originDeviceIconKind: identity.deviceIconKind,
+      originDeviceIconColor: identity.deviceIconColor,
     });
     await this._prepareItem(item);
     return item;

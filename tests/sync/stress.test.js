@@ -136,7 +136,8 @@ class StressTransport {
   }
 
   _device(profile = {}) {
-    return {id: deviceId, tag: profile.tag ?? 'Stress laptop', iconKind: profile.iconKind ?? 'laptop', state: 'online', lastSeenAt: 1};
+    return {id: deviceId, tag: profile.tag ?? 'Stress laptop', iconKind: profile.iconKind ?? 'laptop',
+      iconColor: profile.iconColor ?? {light: '#ffffff'}, state: 'online', lastSeenAt: 1};
   }
   _transfer(session, state, completedBytes, kind, direction) {
     return {id: session.transferId, itemId: session.itemId, deviceId, kind, direction, state,

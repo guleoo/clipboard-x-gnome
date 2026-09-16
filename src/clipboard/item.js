@@ -1,6 +1,7 @@
 import GLib from 'gi://GLib';
 
 import {bytesFromString, sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
+import {DEFAULT_ICON_COLOR} from '../sync/icon-color.js';
 
 export class ClipboardItem {
   constructor({
@@ -9,6 +10,7 @@ export class ClipboardItem {
     originDeviceId = '',
     originDeviceTag = '',
     originDeviceIconKind = 'other',
+    originDeviceIconColor = {light: DEFAULT_ICON_COLOR},
     representations = [],
     preview = null,
     favorite = false,
@@ -21,6 +23,7 @@ export class ClipboardItem {
     this.originDeviceId = originDeviceId;
     this.originDeviceTag = originDeviceTag;
     this.originDeviceIconKind = originDeviceIconKind;
+    this.originDeviceIconColor = originDeviceIconColor;
     this.representations = representations;
     this.preview = preview;
     this.favorite = favorite;
@@ -127,6 +130,7 @@ export class ClipboardItem {
       originDeviceId: this.originDeviceId,
       originDeviceTag: this.originDeviceTag,
       originDeviceIconKind: this.originDeviceIconKind,
+      originDeviceIconColor: this.originDeviceIconColor,
       representations: this.representations.map(({bytes: _bytes, ...representation}) => representation),
       preview: this.preview,
       favorite: this.favorite,

@@ -21,6 +21,8 @@ class TestSettings {
       ['device-id', deviceId],
       ['device-tag', 'Test laptop'],
       ['device-icon-kind', 'laptop'],
+      ['device-icon-color-light', '#ffffff'],
+      ['device-icon-color-dark', ''],
       ['sync-text', true],
       ['sync-html', true],
       ['sync-images', true],
@@ -192,6 +194,7 @@ class TestTransport {
       id: deviceId,
       tag: profile.tag ?? 'Test laptop',
       iconKind: profile.iconKind ?? 'laptop',
+      iconColor: profile.iconColor ?? {light: '#ffffff'},
       state: 'online',
       lastSeenAt: 1,
     };
@@ -233,6 +236,7 @@ try {
   assert(transport.updatedProfiles.length === 1
       && transport.updatedProfiles[0].tag === 'Test laptop'
       && transport.updatedProfiles[0].iconKind === 'laptop'
+      && transport.updatedProfiles[0].iconColor.light === '#ffffff'
       && !Object.hasOwn(transport.updatedProfiles[0], 'id'),
     'client start must synchronize its profile without changing the pre-bound DeviceId');
   await settings.changeString('device-tag', 'Renamed laptop');
@@ -244,6 +248,18 @@ try {
       && transport.updatedProfiles[2].tag === 'Renamed laptop'
       && transport.updatedProfiles[2].iconKind === 'phone',
     'changing the local device icon must synchronize the complete profile with the server');
+  await settings.changeString('device-icon-color-light', '#2190a4');
+  assert(transport.updatedProfiles.length === 4
+      && JSON.stringify(transport.updatedProfiles[3].iconColor) === JSON.stringify({light: '#2190a4'}),
+  'changing the light color must synchronize a linked profile');
+  await settings.changeString('device-icon-color-dark', '#174653');
+  assert(transport.updatedProfiles.length === 5
+      && transport.updatedProfiles[4].iconColor.dark === '#174653',
+  'unlocking and setting the dark color must synchronize the independent color');
+  await settings.changeString('device-icon-color-dark', '');
+  assert(transport.updatedProfiles.length === 6
+      && !Object.hasOwn(transport.updatedProfiles[5].iconColor, 'dark'),
+  'linking colors again must remove the custom dark color from the profile');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 

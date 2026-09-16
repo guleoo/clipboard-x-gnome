@@ -102,6 +102,8 @@ export class SyncClient extends EventEmitter {
     this._settingsSignals.push(
       this._settings.connect('changed::device-tag', () => this._updateProfile().catch(error => this._report(error))),
       this._settings.connect('changed::device-icon-kind', () => this._updateProfile().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-color-light', () => this._updateProfile().catch(error => this._report(error))),
+      this._settings.connect('changed::device-icon-color-dark', () => this._updateProfile().catch(error => this._report(error))),
       this._settings.connect('changed::sync-configuration-revision', () => this.restart().catch(error => this._report(error))),
     );
     await this._connect();
@@ -201,6 +203,7 @@ export class SyncClient extends EventEmitter {
       originDeviceId: remote.originDeviceId,
       originDeviceTag: remote.originDeviceTag,
       originDeviceIconKind: remote.originDeviceIconKind,
+      originDeviceIconColor: remote.originDeviceIconColor,
       representations,
       preview,
       favorite: false,
@@ -733,17 +736,19 @@ export class SyncClient extends EventEmitter {
     if (!this._connected)
       return;
     const identity = ensureDeviceIdentity(this._settings);
-    const serialized = `${identity.deviceTag}\0${identity.deviceIconKind}`;
+    const serialized = JSON.stringify([identity.deviceTag, identity.deviceIconKind, identity.deviceIconColor]);
     if (!force && serialized === this._registeredProfile)
       return;
     const raw = await this._transport.updateProfile({
       tag: identity.deviceTag,
       iconKind: identity.deviceIconKind,
+      iconColor: identity.deviceIconColor,
     });
     const current = raw ? validateDevice(raw, identity.deviceId) : {
       deviceId: identity.deviceId,
       tag: identity.deviceTag,
       iconKind: identity.deviceIconKind,
+      iconColor: identity.deviceIconColor,
       state: 'online',
       lastSeenAt: Date.now(),
       isCurrent: true,

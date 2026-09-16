@@ -21,6 +21,11 @@ assert(new TextEncoder().encode(item.preview.text).length <= 8, 'preview must re
 
 const restored = ClipboardItem.fromJSON(item.toJSON());
 assertEqual(restored.toJSON(), item.toJSON(), 'clipboard item JSON roundtrip');
+const colored = ClipboardItem.fromText('device color', {
+  originDeviceIconColor: {light: '#ffffff', dark: '#555555'},
+});
+assertEqual(ClipboardItem.fromJSON(colored.toJSON()).originDeviceIconColor,
+  {light: '#ffffff', dark: '#555555'}, 'persisted entries must retain both icon colors');
 const interrupted = item.toJSON();
 interrupted.remote = true;
 interrupted.availability = 'waiting-for-source';

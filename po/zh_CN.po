@@ -829,6 +829,34 @@ msgstr "设备发现时显示的友好名称"
 msgid "Device icon"
 msgstr "设备图标"
 
+#: src/ui/settings/device-icon-color.js
+msgid "Icon color"
+msgstr "图标颜色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Light"
+msgstr "亮色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Dark"
+msgstr "暗色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Light color"
+msgstr "亮色图标颜色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Dark color"
+msgstr "暗色图标颜色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Link colors"
+msgstr "联动计算暗色"
+
+#: src/ui/settings/device-icon-color.js
+msgid "Unlink colors"
+msgstr "解开联动并自定义暗色"
+
 #: src/ui/settings/window.js:238
 msgid "Desktop"
 msgstr "台式电脑"

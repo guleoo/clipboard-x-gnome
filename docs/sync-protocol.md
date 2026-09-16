@@ -71,7 +71,7 @@ Returns the protocol version, server version, state, and capability limits:
   an API key bound to that DeviceId.
 - `GET /api/v1/device`: returns the device profile and state for the current API key.
 - `PUT /api/v1/device/profile`: updates client-owned friendly profile data with
-  `{"tag":"Work computer","iconKind":"laptop"}`.
+  `{"tag":"Work computer","iconKind":"laptop","iconColor":{"light":"#ffffff"}}`.
 
 Device response:
 
@@ -80,12 +80,22 @@ Device response:
   "id": "UUID",
   "tag": "Work computer",
   "iconKind": "laptop",
+  "iconColor": {"light": "#ffffff"},
   "state": "online",
   "lastSeenAt": 1787620000000
 }
 ```
 
 Icon values are `desktop`, `laptop`, `phone`, `tablet`, `server`, and `other`.
+`iconColor` may be omitted from the profile request, in which case the server stores white.
+When supplied, it requires a lowercase `#RRGGBB` `light` value and optionally accepts a `dark`
+value. Omitted `dark` means clients derive the dark color from `light`; setting `dark` configures
+it independently. Responses include `iconColor` and preserve the absence of linked `dark`.
+The light color is used on dark backgrounds; the dark color is used on light backgrounds.
+To derive a linked dark color, parse the light color into RGB channels, take the largest channel
+`maximum`, multiply each channel by `min(1, 96 / maximum)` (or `1` when `maximum` is `0`), round
+each channel to the nearest integer and format as lowercase `#RRGGBB`. Thus `#ffffff` yields
+`#606060`. Clients recalculate this color locally; the server does not persist the derived value.
 
 ### 2.3 Publish clipboard content
 
@@ -173,7 +183,7 @@ An item response stores source information in `origin`, followed by the content 
 {
   "id": "item UUID",
   "createdAt": 1787620000000,
-  "origin": {"deviceId":"UUID","tag":"Phone","iconKind":"phone"},
+  "origin": {"deviceId":"UUID","tag":"Phone","iconKind":"phone","iconColor":{"light":"#ffffff"}},
   "contents": [],
   "previews": []
 }

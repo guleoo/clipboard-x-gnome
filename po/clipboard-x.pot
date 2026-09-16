@@ -830,6 +830,34 @@ msgstr ""
 msgid "Device icon"
 msgstr ""
 
+#: src/ui/settings/device-icon-color.js
+msgid "Icon color"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Light"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Dark"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Light color"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Dark color"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Link colors"
+msgstr ""
+
+#: src/ui/settings/device-icon-color.js
+msgid "Unlink colors"
+msgstr ""
+
 #: src/ui/settings/window.js:238
 msgid "Desktop"
 msgstr ""

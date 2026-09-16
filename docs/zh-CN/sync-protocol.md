@@ -69,7 +69,7 @@
 - 客户端连接前，管理员先登记客户端生成的 DeviceId，并签发绑定到该 DeviceId 的 API Key。
 - `GET /api/v1/device`：获取当前 API Key 对应的设备资料和状态。
 - `PUT /api/v1/device/profile`：更新客户端维护的友好资料，请求体为
-  `{"tag":"工作电脑","iconKind":"laptop"}`。
+  `{"tag":"工作电脑","iconKind":"laptop","iconColor":{"light":"#ffffff"}}`。
 
 设备响应：
 
@@ -78,12 +78,20 @@
   "id": "UUID",
   "tag": "工作电脑",
   "iconKind": "laptop",
+  "iconColor": {"light": "#ffffff"},
   "state": "online",
   "lastSeenAt": 1787620000000
 }
 ```
 
 图标枚举为 `desktop`、`laptop`、`phone`、`tablet`、`server`、`other`。
+资料请求可以省略 `iconColor`，此时服务端存储白色。提供该对象时，`light` 是必需的
+小写 `#RRGGBB`；`dark` 可选。省略 `dark` 表示客户端由亮色自动计算暗色，提供 `dark`
+则使用独立配置。响应始终包含 `iconColor`，联动状态下不含 `dark`。亮色用于深色背景，
+暗色用于浅色背景。
+联动计算规则：将亮色拆为 RGB 通道，取最大通道值 `maximum`；各通道乘以
+`min(1, 96 / maximum)`（当最大值为 `0` 时取 `1`），四舍五入至整数，格式化为小写
+`#RRGGBB`。因此 `#ffffff` 对应 `#606060`。客户端本地计算，服务端不存储计算结果。
 
 ### 2.3 推送剪切板内容
 
@@ -168,7 +176,7 @@ PUT 正文就是原始字节流，`Content-Type` 使用清单 MIME，`Content-Le
 {
   "id": "item UUID",
   "createdAt": 1787620000000,
-  "origin": {"deviceId":"UUID","tag":"手机","iconKind":"phone"},
+  "origin": {"deviceId":"UUID","tag":"手机","iconKind":"phone","iconColor":{"light":"#ffffff"}},
   "contents": [],
   "previews": []
 }

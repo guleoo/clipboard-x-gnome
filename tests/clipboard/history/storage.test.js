@@ -92,6 +92,7 @@ try {
   await writeFile(Gio.File.new_for_path(stalePreviewPath), bytesFromString('stale'));
   const remote = ClipboardItem.fromText('remote original', {
     originDeviceId: remoteDeviceId,
+    originDeviceIconColor: {light: '#ffffff', dark: '#454545'},
     remote: true,
     availability: 'preview',
   });
@@ -106,6 +107,8 @@ try {
   await store.save([remote]);
   assert(remote.primary.path.startsWith(remotePaths.objects),
     'remote history content must be partitioned by its origin DeviceId');
+  assert((await store.load()).find(item => item.id === remote.id)?.originDeviceIconColor.dark === '#454545',
+    'remote device icon colors must survive a history reload');
   assert(Gio.File.new_for_path(remotePaths.index).query_exists(null),
     'remote history must have an independent versioned index');
   assert(Gio.File.new_for_path(previewPath).query_exists(null), 'referenced remote preview must be retained');
