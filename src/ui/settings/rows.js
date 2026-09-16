@@ -71,18 +71,23 @@ export class PreferenceRows {
 
   iconCombo(key, title, choices) {
     const values = choices.map(([value]) => value);
+    const model = Gtk.StringList.new(choices.map(([, label]) => label));
+    const choicesByItem = new Map(choices.map((choice, index) => [model.get_item(index), choice]));
     const createFactory = () => {
       const factory = new Gtk.SignalListItemFactory();
       factory.connect('setup', (_factory, listItem) => {
-        const box = new Gtk.Box({spacing: 10, valign: Gtk.Align.CENTER});
-        box._icon = new Gtk.Image({pixel_size: 20});
+        const box = new Gtk.Box({spacing: 8, valign: Gtk.Align.CENTER});
+        box._icon = new Gtk.Image({pixel_size: 16});
         box._label = new Gtk.Label({xalign: 0});
         box.append(box._icon);
         box.append(box._label);
         listItem.set_child(box);
       });
       factory.connect('bind', (_factory, listItem) => {
-        const choice = choices[listItem.get_position()] ?? choices[0];
+        // The selected-item preview has one row, regardless of its original position.
+        const choice = choicesByItem.get(listItem.get_item());
+        if (!choice)
+          return;
         const box = listItem.get_child();
         box._icon.icon_name = choice[2];
         box._label.label = choice[1];
@@ -91,7 +96,7 @@ export class PreferenceRows {
     };
     const row = new Adw.ComboRow({
       title,
-      model: Gtk.StringList.new(choices.map(([, label]) => label)),
+      model,
       selected: Math.max(0, values.indexOf(this._settings.get_string(key))),
       factory: createFactory(),
       list_factory: createFactory(),
