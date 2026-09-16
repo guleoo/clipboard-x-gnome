@@ -1,11 +1,18 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
+import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {gettext} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {deriveDarkColor, readIconColor, setIconColorLinked} from '../../sync/icon-color.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
+
+const iconDirectory = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('icons');
+const LINK_ICONS = Object.freeze({
+  linked: new Gio.FileIcon({file: iconDirectory.get_child('link-2-symbolic.svg')}),
+  unlinked: new Gio.FileIcon({file: iconDirectory.get_child('link-2-off-symbolic.svg')}),
+});
 
 function swatch(label) {
   const area = new Gtk.DrawingArea({content_width: 22, content_height: 22});
@@ -54,8 +61,9 @@ export function create(settings, _ = gettext) {
   const controls = new Gtk.Box({spacing: 6, valign: Gtk.Align.CENTER});
   const light = swatch(_('Light color'));
   const dark = swatch(_('Dark color'));
+  const linkImage = new Gtk.Image({gicon: LINK_ICONS.linked, pixel_size: 18});
   const link = new Gtk.ToggleButton({
-    icon_name: 'insert-link-symbolic',
+    child: linkImage,
     css_classes: ['flat'],
     valign: Gtk.Align.CENTER,
   });
@@ -71,6 +79,9 @@ export function create(settings, _ = gettext) {
     updating = true;
     link.active = linked;
     updating = false;
+    linkImage.gicon = linked ? LINK_ICONS.linked : LINK_ICONS.unlinked;
+    link[linked ? 'remove_css_class' : 'add_css_class']('flat');
+    link[linked ? 'add_css_class' : 'remove_css_class']('suggested-action');
     link.tooltip_text = linked ? _('Unlink colors') : _('Link colors');
     light.setColor(colors.light);
     dark.setColor(colors.dark ?? deriveDarkColor(colors.light));

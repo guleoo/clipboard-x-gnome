@@ -47,9 +47,19 @@ assert(row.subtitle.length > 0, 'the color preference must explain its light and
 assert(controls !== null, 'the row must contain exactly two swatches separated by a link button');
 const [, link, dark] = controls;
 assert(link.active && !dark.sensitive, 'dark color must initially follow the light color');
+assert(link.has_css_class('suggested-action') && !link.has_css_class('flat'),
+  'linked colors must display an emphasized button background');
+assert(link.get_child().gicon.get_file().get_basename() === 'link-2-symbolic.svg',
+  'linked state must show a recognizable chain icon');
 link.active = false;
 assert(settings.get_string('device-icon-color-dark') === '#606060' && dark.sensitive,
   'unlocking must enable the editable dark color with its computed starting value');
+assert(link.has_css_class('flat') && !link.has_css_class('suggested-action'),
+  'unlinked colors must have no persistent button background');
+assert(link.get_child().gicon.get_file().get_basename() === 'link-2-off-symbolic.svg',
+  'unlinked state must show the broken chain');
 link.active = true;
 assert(settings.get_string('device-icon-color-dark') === '' && !dark.sensitive,
   'locking must restore automatic calculation and disable manual dark edits');
+assert(link.has_css_class('suggested-action') && !link.has_css_class('flat'),
+  'relinking must restore the emphasized background');
