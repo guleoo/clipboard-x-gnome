@@ -239,6 +239,11 @@ try {
   assert(transport.updatedProfiles.length === 2
       && transport.updatedProfiles[1].tag === 'Renamed laptop',
     'changing the local device profile must synchronize it with the server');
+  await settings.changeString('device-icon-kind', 'phone');
+  assert(transport.updatedProfiles.length === 3
+      && transport.updatedProfiles[2].tag === 'Renamed laptop'
+      && transport.updatedProfiles[2].iconKind === 'phone',
+    'changing the local device icon must synchronize the complete profile with the server');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 

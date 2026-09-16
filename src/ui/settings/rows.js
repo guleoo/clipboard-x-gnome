@@ -6,6 +6,9 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
+import {disconnectWhenUnrooted} from './lifecycle.js';
+import {bindStringChoice} from './string-choice.js';
+
 export class PreferenceRows {
   constructor(settings) {
     this._settings = settings;
@@ -61,7 +64,8 @@ export class PreferenceRows {
       model: Gtk.StringList.new(choices.map(([, label]) => label)),
       selected: Math.max(0, values.indexOf(this._settings.get_string(key))),
     });
-    row.connect('notify::selected', () => this._settings.set_string(key, values[row.selected]));
+    const disconnect = bindStringChoice(this._settings, row, key, values);
+    disconnectWhenUnrooted(row, disconnect);
     return row;
   }
 
@@ -92,7 +96,8 @@ export class PreferenceRows {
       factory: createFactory(),
       list_factory: createFactory(),
     });
-    row.connect('notify::selected', () => this._settings.set_string(key, values[row.selected]));
+    const disconnect = bindStringChoice(this._settings, row, key, values);
+    disconnectWhenUnrooted(row, disconnect);
     return row;
   }
 
