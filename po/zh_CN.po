@@ -834,12 +834,8 @@ msgid "Icon color"
 msgstr "图标颜色"
 
 #: src/ui/settings/device-icon-color.js
-msgid "Light"
-msgstr "亮色"
-
-#: src/ui/settings/device-icon-color.js
-msgid "Dark"
-msgstr "暗色"
+msgid "Light on dark themes, dark on light themes. Linked by default."
+msgstr "亮色用于深色主题，暗色用于浅色主题；默认联动。"
 
 #: src/ui/settings/device-icon-color.js
 msgid "Light color"

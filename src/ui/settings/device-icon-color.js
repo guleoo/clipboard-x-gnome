@@ -2,7 +2,7 @@ import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 
-import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {gettext} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {deriveDarkColor, readIconColor, setIconColorLinked} from '../../sync/icon-color.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
@@ -46,8 +46,11 @@ function chooseColor(button, initial, title, onPicked) {
   });
 }
 
-export function create(settings) {
-  const row = new Adw.ActionRow({title: _('Icon color')});
+export function create(settings, _ = gettext) {
+  const row = new Adw.ActionRow({
+    title: _('Icon color'),
+    subtitle: _('Light on dark themes, dark on light themes. Linked by default.'),
+  });
   const controls = new Gtk.Box({spacing: 6, valign: Gtk.Align.CENTER});
   const light = swatch(_('Light color'));
   const dark = swatch(_('Dark color'));
@@ -56,10 +59,8 @@ export function create(settings) {
     css_classes: ['flat'],
     valign: Gtk.Align.CENTER,
   });
-  controls.append(new Gtk.Label({label: _('Light'), valign: Gtk.Align.CENTER}));
   controls.append(light.button);
   controls.append(link);
-  controls.append(new Gtk.Label({label: _('Dark'), valign: Gtk.Align.CENTER}));
   controls.append(dark.button);
   row.add_suffix(controls);
 

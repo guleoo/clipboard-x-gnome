@@ -835,11 +835,7 @@ msgid "Icon color"
 msgstr ""
 
 #: src/ui/settings/device-icon-color.js
-msgid "Light"
-msgstr ""
-
-#: src/ui/settings/device-icon-color.js
-msgid "Dark"
+msgid "Light on dark themes, dark on light themes. Linked by default."
 msgstr ""
 
 #: src/ui/settings/device-icon-color.js
