@@ -7,6 +7,7 @@
     "test": "meson test -C build --print-errorlogs",
     "build": "meson compile -C build",
     "test:shell": "gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js",
+    "test:device-badges": "gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/device-badges.smoke.js",
     "test:terminal": "dbus-run-session -- env GTK_A11Y=none NO_AT_BRIDGE=1 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/terminal.smoke.js"
   }
 }

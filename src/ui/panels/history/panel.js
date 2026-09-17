@@ -423,9 +423,8 @@ export class HistoryPanel {
 
   _displayIdentity(item) {
     const current = this._actions.ensureIdentity();
-    if (!item.originDeviceId || item.originDeviceId === current.deviceId) {
-      return {tag: current.deviceTag, iconKind: current.deviceIconKind};
-    }
+    if (!item.originDeviceId || item.originDeviceId === current.deviceId)
+      return null;
     return {
       tag: item.originDeviceTag || _('Unknown device'),
       iconKind: item.originDeviceIconKind || 'computer',

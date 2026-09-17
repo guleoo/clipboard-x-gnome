@@ -368,13 +368,24 @@ export async function run() {
         child.has_style_class_name?.('cbx-color-swatch')),
     'Clipboard history did not group its leading content inside the shared content action');
   history._multipleDevices = true;
-  const deviceRow = history.entry(capturedText);
+  const localRow = history.entry(capturedText);
+  const localContentBody = localRow.focusActors[0].get_child();
+  assert(!localContentBody.get_children().some(child =>
+    child.has_style_class_name?.('cbx-device-icon')),
+  'Local clipboard history should not show a device icon');
+  localRow.destroy();
+  const deviceRow = history.entry(new capturedText.constructor({
+    ...capturedText,
+    originDeviceId: 'remote-device-id',
+    originDeviceTag: 'Remote smoke test',
+    originDeviceIconKind: 'computer',
+  }));
   const deviceContentBody = deviceRow.focusActors[0].get_child();
   assert(!deviceRow.get_children().some(child =>
     child.has_style_class_name?.('cbx-device-icon'))
       && deviceContentBody.get_children().some(child =>
         child.has_style_class_name?.('cbx-device-icon')),
-  'Clipboard device identity was not grouped with the entry content');
+  'Remote clipboard device identity was not grouped with the entry content');
   deviceRow.destroy();
   history._multipleDevices = false;
   capturedRow.destroy();
