@@ -12,7 +12,6 @@ import {create as createSyncGroup} from './sync.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
-import {create as createDeviceIconColorRow} from './device-icon-color.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -243,7 +242,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['server', _('Server'), 'network-server-symbolic'],
       ['other', _('Other'), 'avatar-default-symbolic'],
     ]));
-    identity.add(createDeviceIconColorRow(settings));
 
     page.add(createSyncGroup(settings, deviceId, this._rows));
 

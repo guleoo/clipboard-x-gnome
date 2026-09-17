@@ -103,8 +103,6 @@ export class SyncClient extends EventEmitter {
     this._settingsSignals.push(
       this._settings.connect('changed::device-tag', () => this._queueProfileUpdate().catch(error => this._report(error))),
       this._settings.connect('changed::device-icon-kind', () => this._queueProfileUpdate().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-color-light', () => this._queueProfileUpdate().catch(error => this._report(error))),
-      this._settings.connect('changed::device-icon-color-dark', () => this._queueProfileUpdate().catch(error => this._report(error))),
       this._settings.connect('changed::sync-configuration-revision', () => this.restart().catch(error => this._report(error))),
     );
     await this._connect();
@@ -204,7 +202,6 @@ export class SyncClient extends EventEmitter {
       originDeviceId: remote.originDeviceId,
       originDeviceTag: remote.originDeviceTag,
       originDeviceIconKind: remote.originDeviceIconKind,
-      originDeviceIconColor: remote.originDeviceIconColor,
       representations,
       preview,
       favorite: false,
@@ -744,13 +741,12 @@ export class SyncClient extends EventEmitter {
       return;
     const generation = this._generation;
     const identity = ensureDeviceIdentity(this._settings);
-    const serialized = JSON.stringify([identity.deviceTag, identity.deviceIconKind, identity.deviceIconColor]);
+    const serialized = JSON.stringify([identity.deviceTag, identity.deviceIconKind]);
     if (!force && serialized === this._registeredProfile)
       return;
     const raw = await this._transport.updateProfile({
       tag: identity.deviceTag,
       iconKind: identity.deviceIconKind,
-      iconColor: identity.deviceIconColor,
     });
     if (!this._connected || this._destroyed || generation !== this._generation)
       return;
@@ -758,7 +754,6 @@ export class SyncClient extends EventEmitter {
       deviceId: identity.deviceId,
       tag: identity.deviceTag,
       iconKind: identity.deviceIconKind,
-      iconColor: identity.deviceIconColor,
       state: 'online',
       lastSeenAt: Date.now(),
       isCurrent: true,

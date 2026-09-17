@@ -1,7 +1,6 @@
 import GLib from 'gi://GLib';
 
 import {isUuid} from '../common/uuid.js';
-import {readIconColor} from './icon-color.js';
 
 export const DEVICE_ICON_KINDS = Object.freeze([
   'desktop',
@@ -31,5 +30,5 @@ export function ensureDeviceIdentity(settings) {
     settings.set_string('device-icon-kind', deviceIconKind);
   }
 
-  return {deviceId, deviceTag, deviceIconKind, deviceIconColor: readIconColor(settings)};
+  return {deviceId, deviceTag, deviceIconKind};
 }

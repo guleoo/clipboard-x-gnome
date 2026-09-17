@@ -71,7 +71,7 @@ Returns the protocol version, server version, state, and capability limits:
   an API key bound to that DeviceId.
 - `GET /api/v1/device`: returns the device profile and state for the current API key.
 - `PUT /api/v1/device/profile`: updates client-owned friendly profile data with
-  `{"tag":"Work computer","iconKind":"laptop","iconColor":{"light":"#ffffff"}}`.
+  `{"tag":"Work computer","iconKind":"laptop"}`.
 
 Device response:
 
@@ -87,6 +87,9 @@ Device response:
 ```
 
 Icon values are `desktop`, `laptop`, `phone`, `tablet`, `server`, and `other`.
+The current GNOME extension does not expose, send, store, or render device icon colors. It
+ignores `iconColor` in server responses and uses the shell theme for icon rendering. The
+following optional protocol field is reserved for clients that support icon colors.
 `iconColor` may be omitted from the profile request, in which case the server stores white.
 When supplied, it requires a lowercase `#RRGGBB` `light` value and optionally accepts a `dark`
 value. Omitted `dark` means clients derive the dark color from `light`; providing `dark` preserves
@@ -96,11 +99,6 @@ To derive a linked dark color, parse the light color into RGB channels, take the
 `maximum`, multiply each channel by `min(1, 96 / maximum)` (or `1` when `maximum` is `0`), round
 each channel to the nearest integer and format as lowercase `#RRGGBB`. Thus `#ffffff` yields
 `#606060`. Clients recalculate this color locally; the server does not persist the derived value.
-The preferences link is local UI state rather than a wire field. While linked, changing `light`
-uses the rule above and omits `dark`; changing `dark` preserves the chosen value and derives
-`light` by scaling its largest RGB channel to 255 (pure black derives `#ffffff`). The profile then
-transmits both values so other devices render the selected dark color exactly. When unlinked,
-editing one color leaves the other unchanged.
 
 ### 2.3 Publish clipboard content
 

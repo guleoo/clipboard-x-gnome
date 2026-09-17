@@ -1,7 +1,6 @@
 import {ABSOLUTE_ITEM_LIMIT_BYTES, MAX_ITEM_REPRESENTATIONS} from '../clipboard/constants.js';
 import {isUuid} from '../common/uuid.js';
 import {DEVICE_ICON_KINDS} from './device.js';
-import {parseIconColor} from './icon-color.js';
 import {API_VERSION} from './http/routes.js';
 import {TransferState} from './constants.js';
 
@@ -39,7 +38,6 @@ export function device(rawValue, expectedDeviceId = '') {
     deviceId,
     tag: text(value.tag, 256, 'device tag', false),
     iconKind: choice(value.iconKind, DEVICE_ICON_KINDS, 'device icon'),
-    iconColor: parseIconColor(value.iconColor),
     state: choice(value.state ?? 'online', ['online', 'offline', 'unavailable'], 'device state'),
     lastSeenAt: integer(value.lastSeenAt ?? 0, 0, Number.MAX_SAFE_INTEGER, 'device timestamp'),
     isCurrent: true,
@@ -113,7 +111,6 @@ export function item(rawValue, expectedItemId = '') {
     originDeviceId: origin.deviceId,
     originDeviceTag: text(origin.tag ?? '', 256, 'origin device tag'),
     originDeviceIconKind: choice(origin.iconKind ?? 'other', DEVICE_ICON_KINDS, 'origin device icon'),
-    originDeviceIconColor: parseIconColor(origin.iconColor),
     contents,
     previews,
   };

@@ -1,5 +1,4 @@
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 
@@ -12,7 +11,6 @@ import {SearchEntry} from '../../controls/search-entry.js';
 import {normalize as normalizeActions, normalizeHidden} from '../../layouts/panel-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
-import {resolveIconColor} from '../../../sync/icon-color.js';
 import {create as createItem} from './item.js';
 import {SyncAction} from './sync-action.js';
 
@@ -57,8 +55,6 @@ export class HistoryPanel {
     this._accentColor = null;
     this._focusIdleId = 0;
     this._pendingViewState = null;
-    this._interfaceSettings = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
-    this._themeSignal = this._interfaceSettings.connect('changed::color-scheme', () => this._requestRefresh());
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -188,8 +184,6 @@ export class HistoryPanel {
       settings.connect('changed::sync-enabled', () => this._requestRefresh()),
       settings.connect('changed::device-tag', () => this._requestRefresh()),
       settings.connect('changed::device-icon-kind', () => this._requestRefresh()),
-      settings.connect('changed::device-icon-color-light', () => this._requestRefresh()),
-      settings.connect('changed::device-icon-color-dark', () => this._requestRefresh()),
       settings.connect('changed::panel-toolbar-actions', () => this._updateActions()),
       settings.connect('changed::panel-footer-actions', () => this._updateActions()),
       settings.connect('changed::panel-hidden-actions', () => this._updateActions()),
@@ -241,7 +235,7 @@ export class HistoryPanel {
     const identity = this._multipleDevices ? this._displayIdentity(item) : null;
     return createItem({
       item,
-      leading: identity ? this._deviceIcon(identity.iconKind, identity.tag, identity.iconColor) : null,
+      leading: identity ? this._deviceIcon(identity.iconKind, identity.tag) : null,
       accentColor: this._accentColor,
       syncButton: this._settings.get_boolean('sync-enabled') ? this._sync.button(item) : null,
       createIconButton: (...args) => this._createIconButton(...args),
@@ -353,7 +347,6 @@ export class HistoryPanel {
 
   destroy() {
     this.leave();
-    this._interfaceSettings.disconnect(this._themeSignal);
     if (this._controllerSignal)
       this._controller.disconnect(this._controllerSignal);
     this._controllerSignal = 0;
@@ -438,24 +431,21 @@ export class HistoryPanel {
   _displayIdentity(item) {
     const current = this._actions.ensureIdentity();
     if (!item.originDeviceId || item.originDeviceId === current.deviceId) {
-      return {tag: current.deviceTag, iconKind: current.deviceIconKind, iconColor: current.deviceIconColor};
+      return {tag: current.deviceTag, iconKind: current.deviceIconKind};
     }
     return {
       tag: item.originDeviceTag || _('Unknown device'),
       iconKind: item.originDeviceIconKind || 'other',
-      iconColor: item.originDeviceIconColor,
     };
   }
 
-  _deviceIcon(iconKind, tag, iconColor) {
-    const darkTheme = this._interfaceSettings.get_string('color-scheme') === 'prefer-dark';
+  _deviceIcon(iconKind, tag) {
     const icon = new St.Icon({
       icon_name: DEVICE_ICON_NAMES[iconKind] ?? DEVICE_ICON_NAMES.other,
       icon_size: 14,
       style_class: 'cbx-device-icon',
       track_hover: true,
     });
-    icon.set_style(`color: ${resolveIconColor(iconColor, darkTheme)};`);
     this._tooltip.attach(icon, tag, {scope: 'panel'});
     return icon;
   }

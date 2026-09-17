@@ -34,9 +34,9 @@ const workId = '66666666-6666-4666-8666-666666666666';
 const digest = 'a'.repeat(64);
 const profile = device({id: deviceId, tag: 'Laptop', iconKind: 'laptop',
   iconColor: {light: '#ffffff', dark: '#525252'}}, deviceId);
-assert(profile.iconColor.dark === '#525252', 'device profile must preserve a custom dark color');
-assertRejects(() => device({id: deviceId, tag: 'Laptop', iconKind: 'laptop'}, deviceId),
-  'the device response must use the new color contract');
+assert(!Object.hasOwn(profile, 'iconColor'), 'the client must ignore server device colors');
+assert(device({id: deviceId, tag: 'Laptop', iconKind: 'laptop'}, deviceId).iconKind === 'laptop',
+  'the client must accept device profiles without icon colors');
 
 assert(API_VERSION === 1 && API_ROOT === '/api/v1', 'HTTP protocol must be explicitly versioned');
 assert(routes.item(channelId, itemId) === `/api/v1/channels/${channelId}/items/${itemId}`,
@@ -97,8 +97,8 @@ const remote = item({
   previews: [{id: digest, contentId: digest, mimeType: 'text/plain;charset=utf-8', size: 5, sha256: digest, truncated: true}],
 }, itemId);
 assert(remote.contents[0].delivery === 'on-demand', 'lazy content metadata must be preserved');
-assert(remote.originDeviceIconColor.light === '#2190a4' && !Object.hasOwn(remote.originDeviceIconColor, 'dark'),
-  'item origin must preserve linked colors without inventing a stored dark value');
+assert(!Object.hasOwn(remote, 'originDeviceIconColor'),
+  'the client must ignore origin device colors in synchronized items');
 
 const page = changes({cursor: '18', hasMore: false, changes: [{sequence: 18, kind: 'upsert', itemId}]});
 assert(page.nextCursor === '18' && page.changes[0].itemId === itemId,

@@ -21,11 +21,10 @@ assert(new TextEncoder().encode(item.preview.text).length <= 8, 'preview must re
 
 const restored = ClipboardItem.fromJSON(item.toJSON());
 assertEqual(restored.toJSON(), item.toJSON(), 'clipboard item JSON roundtrip');
-const colored = ClipboardItem.fromText('device color', {
-  originDeviceIconColor: {light: '#ffffff', dark: '#555555'},
-});
-assertEqual(ClipboardItem.fromJSON(colored.toJSON()).originDeviceIconColor,
-  {light: '#ffffff', dark: '#555555'}, 'persisted entries must retain both icon colors');
+const legacy = {...item.toJSON(), originDeviceIconColor: {light: '#ffffff', dark: '#555555'}};
+const withoutColor = ClipboardItem.fromJSON(legacy);
+assert(!Object.hasOwn(withoutColor.toJSON(), 'originDeviceIconColor'),
+  'previously stored icon colors must be ignored and not persisted again');
 const interrupted = item.toJSON();
 interrupted.remote = true;
 interrupted.availability = 'waiting-for-source';

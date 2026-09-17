@@ -6,7 +6,6 @@ import {diagnosticCode} from '../../common/errors.js';
 import {loadFile, writeFile} from '../../common/files.js';
 import {isUuid} from '../../common/uuid.js';
 import {DEVICE_ICON_KINDS} from '../../sync/device.js';
-import {DEFAULT_ICON_COLOR, parseIconColor} from '../../sync/icon-color.js';
 import {ClipboardItem} from '../item.js';
 import {
   devicePaths,
@@ -394,7 +393,6 @@ function validateStoredItem(value, objectsPath, previewPaths, expectedDeviceId =
   value.originDeviceIconKind ??= 'other';
   if (!DEVICE_ICON_KINDS.includes(value.originDeviceIconKind))
     throw new Error('origin device icon kind is invalid');
-  value.originDeviceIconColor = parseIconColor(value.originDeviceIconColor ?? {light: DEFAULT_ICON_COLOR});
   if (typeof value.favorite !== 'boolean'
       || typeof value.remote !== 'boolean'
       || typeof value.sensitive !== 'boolean'

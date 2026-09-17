@@ -92,7 +92,6 @@ try {
   await writeFile(Gio.File.new_for_path(stalePreviewPath), bytesFromString('stale'));
   const remote = ClipboardItem.fromText('remote original', {
     originDeviceId: remoteDeviceId,
-    originDeviceIconColor: {light: '#ffffff', dark: '#454545'},
     remote: true,
     availability: 'preview',
   });
@@ -107,8 +106,17 @@ try {
   await store.save([remote]);
   assert(remote.primary.path.startsWith(remotePaths.objects),
     'remote history content must be partitioned by its origin DeviceId');
-  assert((await store.load()).find(item => item.id === remote.id)?.originDeviceIconColor.dark === '#454545',
-    'remote device icon colors must survive a history reload');
+  const [, indexBytes] = Gio.File.new_for_path(remotePaths.index).load_contents(null);
+  const oldIndex = JSON.parse(new TextDecoder().decode(indexBytes));
+  oldIndex.items[0].originDeviceIconColor = {light: '#ffffff', dark: '#454545'};
+  await writeFile(Gio.File.new_for_path(remotePaths.index), bytesFromString(JSON.stringify(oldIndex)));
+  const restored = (await store.load()).find(item => item.id === remote.id);
+  assert(restored && !Object.hasOwn(restored.toJSON(), 'originDeviceIconColor'),
+    'existing history icon colors must be ignored without losing the entry');
+  await store.save([restored]);
+  const [, savedIndexBytes] = Gio.File.new_for_path(remotePaths.index).load_contents(null);
+  assert(!Object.hasOwn(JSON.parse(new TextDecoder().decode(savedIndexBytes)).items[0],
+    'originDeviceIconColor'), 'subsequent saves must omit disabled icon colors');
   assert(Gio.File.new_for_path(remotePaths.index).query_exists(null),
     'remote history must have an independent versioned index');
   assert(Gio.File.new_for_path(previewPath).query_exists(null), 'referenced remote preview must be retained');

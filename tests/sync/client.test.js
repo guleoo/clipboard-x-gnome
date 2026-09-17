@@ -21,8 +21,6 @@ class TestSettings {
       ['device-id', deviceId],
       ['device-tag', 'Test laptop'],
       ['device-icon-kind', 'laptop'],
-      ['device-icon-color-light', '#ffffff'],
-      ['device-icon-color-dark', ''],
       ['sync-text', true],
       ['sync-html', true],
       ['sync-images', true],
@@ -236,7 +234,7 @@ try {
   assert(transport.updatedProfiles.length === 1
       && transport.updatedProfiles[0].tag === 'Test laptop'
       && transport.updatedProfiles[0].iconKind === 'laptop'
-      && transport.updatedProfiles[0].iconColor.light === '#ffffff'
+      && !Object.hasOwn(transport.updatedProfiles[0], 'iconColor')
       && !Object.hasOwn(transport.updatedProfiles[0], 'id'),
     'client start must synchronize its profile without changing the pre-bound DeviceId');
   await settings.changeString('device-tag', 'Renamed laptop');
@@ -249,41 +247,34 @@ try {
       && transport.updatedProfiles[2].iconKind === 'phone',
     'changing the local device icon must synchronize the complete profile with the server');
   await settings.changeString('device-icon-color-light', '#2190a4');
-  assert(transport.updatedProfiles.length === 4
-      && JSON.stringify(transport.updatedProfiles[3].iconColor) === JSON.stringify({light: '#2190a4'}),
-  'changing the light color must synchronize a linked profile');
   await settings.changeString('device-icon-color-dark', '#174653');
-  assert(transport.updatedProfiles.length === 5
-      && transport.updatedProfiles[4].iconColor.dark === '#174653',
-  'unlocking and setting the dark color must synchronize the independent color');
-  await settings.changeString('device-icon-color-dark', '');
-  assert(transport.updatedProfiles.length === 6
-      && !Object.hasOwn(transport.updatedProfiles[5].iconColor, 'dark'),
-  'linking colors again must remove the custom dark color from the profile');
+  assert(transport.updatedProfiles.length === 3,
+    'disabled icon color settings must not trigger a profile update');
   const originalUpdateProfile = transport.updateProfile.bind(transport);
   const pendingProfiles = [];
   transport.updateProfile = profile => new Promise(resolve => {
     pendingProfiles.push({profile, complete: () => resolve(originalUpdateProfile(profile))});
   });
-  const lightChange = settings.changeString('device-icon-color-light', '#66ccff');
+  const tagChange = settings.changeString('device-tag', 'Renamed again');
   await new Promise(resolve => setTimeout(resolve, 0));
-  assert(pendingProfiles.length === 1 && pendingProfiles[0].profile.iconColor.light === '#66ccff',
-    'the first profile update should begin before the second color change');
-  const darkChange = settings.changeString('device-icon-color-dark', '#204050');
+  assert(pendingProfiles.length === 1 && pendingProfiles[0].profile.tag === 'Renamed again',
+    'the first profile update should begin before the second profile change');
+  const iconChange = settings.changeString('device-icon-kind', 'desktop');
   await new Promise(resolve => setTimeout(resolve, 0));
   assert(pendingProfiles.length === 1,
-    'a second color change must wait for the in-flight profile update');
+    'a second profile change must wait for the in-flight profile update');
   pendingProfiles[0].complete();
-  await lightChange;
+  await tagChange;
   await new Promise(resolve => setTimeout(resolve, 0));
   assert(pendingProfiles.length === 2
-      && pendingProfiles[1].profile.iconColor.light === '#66ccff'
-      && pendingProfiles[1].profile.iconColor.dark === '#204050',
-  'the queued profile must send both final colors together');
+      && pendingProfiles[1].profile.tag === 'Renamed again'
+      && pendingProfiles[1].profile.iconKind === 'desktop'
+      && !Object.hasOwn(pendingProfiles[1].profile, 'iconColor'),
+    'the queued profile must send the final device information without colors');
   pendingProfiles[1].complete();
-  await darkChange;
+  await iconChange;
   transport.updateProfile = originalUpdateProfile;
-  assert(client.devices[0].iconColor.dark === '#204050',
+  assert(client.devices[0].iconKind === 'desktop' && !Object.hasOwn(client.devices[0], 'iconColor'),
     'the final server profile must not be overwritten by an older response');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
