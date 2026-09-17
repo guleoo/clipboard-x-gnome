@@ -75,6 +75,7 @@ endif
 test_runner = find_program('gjs')
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
+test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/device-icons.test.js'])
 test('sync-icon-color', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/icon-color.test.js'])
 test('sync-errors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/errors.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])

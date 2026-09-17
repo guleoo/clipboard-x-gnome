@@ -117,6 +117,10 @@ try {
   const [, savedIndexBytes] = Gio.File.new_for_path(remotePaths.index).load_contents(null);
   assert(!Object.hasOwn(JSON.parse(new TextDecoder().decode(savedIndexBytes)).items[0],
     'originDeviceIconColor'), 'subsequent saves must omit disabled icon colors');
+  restored.originDeviceIconKind = 'unknown-remote-system';
+  await store.save([restored]);
+  assert((await store.load()).find(item => item.id === remote.id)?.originDeviceIconKind
+    === 'unknown-remote-system', 'history must preserve icon identifiers unknown to this client');
   assert(Gio.File.new_for_path(remotePaths.index).query_exists(null),
     'remote history must have an independent versioned index');
   assert(Gio.File.new_for_path(previewPath).query_exists(null), 'referenced remote preview must be retained');

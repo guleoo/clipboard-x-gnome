@@ -71,7 +71,7 @@ Returns the protocol version, server version, state, and capability limits:
   an API key bound to that DeviceId.
 - `GET /api/v1/device`: returns the device profile and state for the current API key.
 - `PUT /api/v1/device/profile`: updates client-owned friendly profile data with
-  `{"tag":"Work computer","iconKind":"laptop"}`.
+  `{"tag":"Work computer","iconKind":"archlinux"}`.
 
 Device response:
 
@@ -79,14 +79,18 @@ Device response:
 {
   "id": "UUID",
   "tag": "Work computer",
-  "iconKind": "laptop",
+  "iconKind": "archlinux",
   "iconColor": {"light": "#ffffff"},
   "state": "online",
   "lastSeenAt": 1787620000000
 }
 ```
 
-Icon values are `desktop`, `laptop`, `phone`, `tablet`, `server`, and `other`.
+`iconKind` is a nonempty plain-text icon identifier, at most 128 characters, with no carriage
+returns, line feeds, or NUL bytes. The server stores and returns it unchanged; no image or SVG
+is transferred. Each client maps identifiers it recognizes to local assets and renders unknown
+identifiers with its own generic fallback. The GNOME extension offers `computer`, `laptop`,
+`tablet`, `server`, `android`, `apple`, `windows`, `linux`, `debian`, and `archlinux`.
 The current GNOME extension does not expose, send, store, or render device icon colors. It
 ignores `iconColor` in server responses and uses the shell theme for icon rendering. The
 following optional protocol field is reserved for clients that support icon colors.
@@ -186,7 +190,7 @@ An item response stores source information in `origin`, followed by the content 
 {
   "id": "item UUID",
   "createdAt": 1787620000000,
-  "origin": {"deviceId":"UUID","tag":"Phone","iconKind":"phone","iconColor":{"light":"#ffffff"}},
+  "origin": {"deviceId":"UUID","tag":"Phone","iconKind":"android","iconColor":{"light":"#ffffff"}},
   "contents": [],
   "previews": []
 }

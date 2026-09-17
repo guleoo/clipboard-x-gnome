@@ -8,7 +8,7 @@ export class ClipboardItem {
     createdAt = Date.now(),
     originDeviceId = '',
     originDeviceTag = '',
-    originDeviceIconKind = 'other',
+    originDeviceIconKind = 'computer',
     representations = [],
     preview = null,
     favorite = false,
@@ -140,7 +140,7 @@ export class ClipboardItem {
     const availability = value.remote && ['waiting-for-source', 'waiting-for-peer'].includes(value.availability)
       ? 'failed'
       : value.availability;
-    return new ClipboardItem({originDeviceIconKind: 'other', ...value, availability});
+    return new ClipboardItem({originDeviceIconKind: 'computer', ...value, availability});
   }
 }
 

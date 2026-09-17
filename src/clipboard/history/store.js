@@ -5,7 +5,6 @@ import {bytesFromString, sha256, stringFromBytes} from '../../common/bytes.js';
 import {diagnosticCode} from '../../common/errors.js';
 import {loadFile, writeFile} from '../../common/files.js';
 import {isUuid} from '../../common/uuid.js';
-import {DEVICE_ICON_KINDS} from '../../sync/device.js';
 import {ClipboardItem} from '../item.js';
 import {
   devicePaths,
@@ -390,8 +389,9 @@ function validateStoredItem(value, objectsPath, previewPaths, expectedDeviceId =
     throw new Error('origin device ID does not match its history directory');
   if (typeof value.originDeviceTag !== 'string' || value.originDeviceTag.length > 256)
     throw new Error('origin device tag is invalid');
-  value.originDeviceIconKind ??= 'other';
-  if (!DEVICE_ICON_KINDS.includes(value.originDeviceIconKind))
+  value.originDeviceIconKind ??= 'computer';
+  if (typeof value.originDeviceIconKind !== 'string' || !value.originDeviceIconKind
+      || value.originDeviceIconKind.length > 128 || /[\r\n\0]/u.test(value.originDeviceIconKind))
     throw new Error('origin device icon kind is invalid');
   if (typeof value.favorite !== 'boolean'
       || typeof value.remote !== 'boolean'

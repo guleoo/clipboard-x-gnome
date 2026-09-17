@@ -35,14 +35,9 @@ const settings = new Gio.Settings({
   settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false),
 });
 const {PreferenceRows} = await import('../../src/ui/settings/rows.js');
-const row = new PreferenceRows(settings).iconCombo('device-icon-kind', 'Device icon', [
-  ['desktop', 'Desktop', 'video-display-symbolic'],
-  ['laptop', 'Laptop', 'computer-symbolic'],
-  ['phone', 'Phone', 'phone-symbolic'],
-  ['tablet', 'Tablet', 'input-tablet-symbolic'],
-  ['server', 'Server', 'network-server-symbolic'],
-  ['other', 'Other', 'avatar-default-symbolic'],
-]);
+const {DEVICE_ICONS, deviceIcon} = await import('../../src/ui/icons/device.js');
+const row = new PreferenceRows(settings).iconCombo('device-icon-kind', 'Device icon',
+  DEVICE_ICONS.map(name => [name, name, deviceIcon(name)]));
 const group = new Adw.PreferencesGroup();
 group.add(row);
 const page = new Adw.PreferencesPage();
@@ -57,8 +52,8 @@ function selectedIcon() {
   return find(previewList, Gtk.Image);
 }
 
-assert(selectedIcon()?.icon_name === 'video-display-symbolic',
-  'the preview should initially show the selected desktop icon');
+assert(selectedIcon()?.gicon?.file?.equal(deviceIcon('computer').file),
+  'the preview should initially show the selected custom device icon');
 
 for (const enabled of [true, false]) {
   settings.set_boolean('sync-enabled', enabled);
@@ -66,21 +61,21 @@ for (const enabled of [true, false]) {
   while (GLib.MainContext.default().iteration(false));
   const popover = find(row, Gtk.Popover);
   const list = find(popover, Gtk.ListView);
-  const selected = enabled ? 2 : 3;
-  assert(list?.model?.get_n_items() === 6, 'the popup must contain all device icons');
+  const selected = enabled ? 4 : 6;
+  assert(list?.model?.get_n_items() === DEVICE_ICONS.length, 'the popup must contain every supplied icon');
   list.model.select_item(selected, true);
   list.emit('activate', selected);
   while (GLib.MainContext.default().iteration(false));
-  assert(row.selected === selected && settings.get_string('device-icon-kind') === (enabled ? 'phone' : 'tablet'),
+  assert(row.selected === selected && settings.get_string('device-icon-kind') === (enabled ? 'android' : 'windows'),
     'activating a popup choice must save the selected device icon regardless of synchronization state');
-  assert(selectedIcon()?.icon_name === (enabled ? 'phone-symbolic' : 'input-tablet-symbolic'),
+  assert(selectedIcon()?.gicon?.file?.equal(deviceIcon(enabled ? 'android' : 'windows').file),
     'the selected icon preview must display the actual selected item, not the first popup choice');
   assert(selectedIcon()?.pixel_size === 16, 'the selected icon should use the compact settings size');
 }
 
 settings.set_string('device-icon-kind', 'server');
 while (GLib.MainContext.default().iteration(false));
-assert(selectedIcon()?.icon_name === 'network-server-symbolic',
+assert(selectedIcon()?.gicon?.file?.equal(deviceIcon('server').file),
   'external settings changes must update the selected icon preview');
 
 group.remove(row);

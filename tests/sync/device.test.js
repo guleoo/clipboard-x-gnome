@@ -26,6 +26,15 @@ assert(isUuid(first.deviceId), 'invalid persisted DeviceId must be replaced with
 assertEqual(second.deviceId, first.deviceId, 'DeviceId must remain stable after generation');
 assertEqual(first.deviceTag, '工作电脑', 'Device Tag should be trimmed for registration');
 assertEqual(first.deviceIconKind, 'laptop', 'portable device icon kind should be preserved');
+settings.set_string('device-icon-kind', 'custom-device-icon');
+assertEqual(ensureDeviceIdentity(settings).deviceIconKind, 'custom-device-icon',
+  'unrecognized icon identifiers must remain valid on the wire');
+settings.set_string('device-icon-kind', '');
+assertEqual(ensureDeviceIdentity(settings).deviceIconKind, 'computer',
+  'empty icon identifiers must use the local default');
+settings.set_string('device-icon-kind', 'x'.repeat(129));
+assertEqual(ensureDeviceIdentity(settings).deviceIconKind, 'computer',
+  'icons longer than the protocol limit must use the local default');
 assert(!Object.hasOwn(first, 'deviceIconColor'), 'device identity must not expose disabled icon colors');
 settings.set_string('device-icon-color-light', '#2190a4');
 settings.set_string('device-icon-color-dark', '#145066');

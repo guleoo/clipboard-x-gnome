@@ -8,6 +8,7 @@ import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
 import {DictionaryStore} from '../../clipboard/tokenizer/dictionary/store.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {create as createPanelActionsRow} from './panel-actions.js';
+import {deviceIcon} from '../icons/device.js';
 import {create as createSyncGroup} from './sync.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
@@ -235,12 +236,16 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     identity.add(idRow);
     identity.add(this._rows.entry('device-tag', _('Device tag'), _('Friendly name shown during device discovery')));
     identity.add(this._rows.iconCombo('device-icon-kind', _('Device icon'), [
-      ['desktop', _('Desktop'), 'video-display-symbolic'],
-      ['laptop', _('Laptop'), 'computer-symbolic'],
-      ['phone', _('Phone'), 'phone-symbolic'],
-      ['tablet', _('Tablet'), 'input-tablet-symbolic'],
-      ['server', _('Server'), 'network-server-symbolic'],
-      ['other', _('Other'), 'avatar-default-symbolic'],
+      ['computer', _('Desktop'), deviceIcon('computer')],
+      ['laptop', _('Laptop'), deviceIcon('laptop')],
+      ['tablet', _('Tablet'), deviceIcon('tablet')],
+      ['server', _('Server'), deviceIcon('server')],
+      ['android', 'Android', deviceIcon('android')],
+      ['apple', 'Apple', deviceIcon('apple')],
+      ['windows', 'Windows', deviceIcon('windows')],
+      ['linux', 'Linux', deviceIcon('linux')],
+      ['debian', 'Debian', deviceIcon('debian')],
+      ['archlinux', 'Arch Linux', deviceIcon('archlinux')],
     ]));
 
     page.add(createSyncGroup(settings, deviceId, this._rows));

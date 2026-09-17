@@ -2,15 +2,6 @@ import GLib from 'gi://GLib';
 
 import {isUuid} from '../common/uuid.js';
 
-export const DEVICE_ICON_KINDS = Object.freeze([
-  'desktop',
-  'laptop',
-  'phone',
-  'tablet',
-  'server',
-  'other',
-]);
-
 export function ensureDeviceIdentity(settings) {
   let deviceId = settings.get_string('device-id').trim();
   if (!isUuid(deviceId)) {
@@ -25,8 +16,8 @@ export function ensureDeviceIdentity(settings) {
   }
 
   let deviceIconKind = String(settings.get_string('device-icon-kind') ?? '').trim();
-  if (!DEVICE_ICON_KINDS.includes(deviceIconKind)) {
-    deviceIconKind = 'desktop';
+  if (!deviceIconKind || deviceIconKind.length > 128 || /[\r\n\0]/u.test(deviceIconKind)) {
+    deviceIconKind = 'computer';
     settings.set_string('device-icon-kind', deviceIconKind);
   }
 

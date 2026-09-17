@@ -37,6 +37,12 @@ const profile = device({id: deviceId, tag: 'Laptop', iconKind: 'laptop',
 assert(!Object.hasOwn(profile, 'iconColor'), 'the client must ignore server device colors');
 assert(device({id: deviceId, tag: 'Laptop', iconKind: 'laptop'}, deviceId).iconKind === 'laptop',
   'the client must accept device profiles without icon colors');
+assert(device({id: deviceId, tag: 'Laptop', iconKind: 'future-platform'}, deviceId).iconKind === 'future-platform',
+  'the protocol must preserve arbitrary icon identifiers');
+assertRejects(() => device({id: deviceId, tag: 'Laptop', iconKind: 'x'.repeat(129)}, deviceId),
+  'icon identifiers longer than the protocol limit must be rejected');
+assertRejects(() => device({id: deviceId, tag: 'Laptop', iconKind: ''}, deviceId),
+  'empty icon identifiers must be rejected');
 
 assert(API_VERSION === 1 && API_ROOT === '/api/v1', 'HTTP protocol must be explicitly versioned');
 assert(routes.item(channelId, itemId) === `/api/v1/channels/${channelId}/items/${itemId}`,
@@ -92,11 +98,12 @@ assert(published.uploadId === uploadId && published.contentIds[0] === digest,
 const remote = item({
   id: itemId,
   createdAt: 10,
-  origin: {deviceId, tag: 'Laptop', iconKind: 'laptop', iconColor: {light: '#2190a4'}},
+  origin: {deviceId, tag: 'Laptop', iconKind: 'custom-os', iconColor: {light: '#2190a4'}},
   contents: [{id: digest, mimeType: 'text/plain;charset=utf-8', size: 5, sha256: digest, delivery: 'on-demand'}],
   previews: [{id: digest, contentId: digest, mimeType: 'text/plain;charset=utf-8', size: 5, sha256: digest, truncated: true}],
 }, itemId);
 assert(remote.contents[0].delivery === 'on-demand', 'lazy content metadata must be preserved');
+assert(remote.originDeviceIconKind === 'custom-os', 'remote icon identifiers must not be restricted to local assets');
 assert(!Object.hasOwn(remote, 'originDeviceIconColor'),
   'the client must ignore origin device colors in synchronized items');
 

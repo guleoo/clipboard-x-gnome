@@ -69,7 +69,7 @@
 - 客户端连接前，管理员先登记客户端生成的 DeviceId，并签发绑定到该 DeviceId 的 API Key。
 - `GET /api/v1/device`：获取当前 API Key 对应的设备资料和状态。
 - `PUT /api/v1/device/profile`：更新客户端维护的友好资料，请求体为
-  `{"tag":"工作电脑","iconKind":"laptop"}`。
+  `{"tag":"工作电脑","iconKind":"archlinux"}`。
 
 设备响应：
 
@@ -77,14 +77,17 @@
 {
   "id": "UUID",
   "tag": "工作电脑",
-  "iconKind": "laptop",
+  "iconKind": "archlinux",
   "iconColor": {"light": "#ffffff"},
   "state": "online",
   "lastSeenAt": 1787620000000
 }
 ```
 
-图标枚举为 `desktop`、`laptop`、`phone`、`tablet`、`server`、`other`。
+`iconKind` 是非空纯文本图标标识，最长 128 个字符，不包含回车、换行和 NUL。
+服务端原样保存并返回该字符串，不传输图片或 SVG；各客户端自行映射本地图标，无法识别时
+显示通用图标。GNOME 插件提供 `computer`、`laptop`、`tablet`、`server`、
+`android`、`apple`、`windows`、`linux`、`debian`、`archlinux` 选项。
 当前 GNOME 插件不提供设备图标颜色配置，也不发送、保存或渲染设备图标颜色；收到服务端的
 `iconColor` 时会忽略，图标颜色跟随 Shell 主题。以下可选协议字段保留给支持图标颜色的客户端。
 资料请求可以省略 `iconColor`，此时服务端存储白色。提供该对象时，`light` 是必需的
@@ -178,7 +181,7 @@ PUT 正文就是原始字节流，`Content-Type` 使用清单 MIME，`Content-Le
 {
   "id": "item UUID",
   "createdAt": 1787620000000,
-  "origin": {"deviceId":"UUID","tag":"手机","iconKind":"phone","iconColor":{"light":"#ffffff"}},
+  "origin": {"deviceId":"UUID","tag":"手机","iconKind":"android","iconColor":{"light":"#ffffff"}},
   "contents": [],
   "previews": []
 }

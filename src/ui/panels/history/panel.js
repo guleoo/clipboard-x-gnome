@@ -7,6 +7,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {PanelFooter} from '../../controls/panel-footer.js';
+import {deviceIcon} from '../../icons/device.js';
 import {SearchEntry} from '../../controls/search-entry.js';
 import {normalize as normalizeActions, normalizeHidden} from '../../layouts/panel-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
@@ -15,14 +16,6 @@ import {create as createItem} from './item.js';
 import {SyncAction} from './sync-action.js';
 
 const ICON_SIZE = 16;
-const DEVICE_ICON_NAMES = Object.freeze({
-  desktop: 'video-display-symbolic',
-  laptop: 'computer-symbolic',
-  phone: 'phone-symbolic',
-  tablet: 'input-tablet-symbolic',
-  server: 'network-server-symbolic',
-  other: 'avatar-default-symbolic',
-});
 
 export class HistoryPanel {
   constructor({
@@ -435,13 +428,13 @@ export class HistoryPanel {
     }
     return {
       tag: item.originDeviceTag || _('Unknown device'),
-      iconKind: item.originDeviceIconKind || 'other',
+      iconKind: item.originDeviceIconKind || 'computer',
     };
   }
 
   _deviceIcon(iconKind, tag) {
     const icon = new St.Icon({
-      icon_name: DEVICE_ICON_NAMES[iconKind] ?? DEVICE_ICON_NAMES.other,
+      gicon: deviceIcon(iconKind),
       icon_size: 14,
       style_class: 'cbx-device-icon',
       track_hover: true,

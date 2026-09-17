@@ -241,10 +241,10 @@ try {
   assert(transport.updatedProfiles.length === 2
       && transport.updatedProfiles[1].tag === 'Renamed laptop',
     'changing the local device profile must synchronize it with the server');
-  await settings.changeString('device-icon-kind', 'phone');
+  await settings.changeString('device-icon-kind', 'android');
   assert(transport.updatedProfiles.length === 3
       && transport.updatedProfiles[2].tag === 'Renamed laptop'
-      && transport.updatedProfiles[2].iconKind === 'phone',
+      && transport.updatedProfiles[2].iconKind === 'android',
     'changing the local device icon must synchronize the complete profile with the server');
   await settings.changeString('device-icon-color-light', '#2190a4');
   await settings.changeString('device-icon-color-dark', '#174653');
@@ -259,7 +259,7 @@ try {
   await new Promise(resolve => setTimeout(resolve, 0));
   assert(pendingProfiles.length === 1 && pendingProfiles[0].profile.tag === 'Renamed again',
     'the first profile update should begin before the second profile change');
-  const iconChange = settings.changeString('device-icon-kind', 'desktop');
+  const iconChange = settings.changeString('device-icon-kind', 'archlinux');
   await new Promise(resolve => setTimeout(resolve, 0));
   assert(pendingProfiles.length === 1,
     'a second profile change must wait for the in-flight profile update');
@@ -268,13 +268,13 @@ try {
   await new Promise(resolve => setTimeout(resolve, 0));
   assert(pendingProfiles.length === 2
       && pendingProfiles[1].profile.tag === 'Renamed again'
-      && pendingProfiles[1].profile.iconKind === 'desktop'
+      && pendingProfiles[1].profile.iconKind === 'archlinux'
       && !Object.hasOwn(pendingProfiles[1].profile, 'iconColor'),
     'the queued profile must send the final device information without colors');
   pendingProfiles[1].complete();
   await iconChange;
   transport.updateProfile = originalUpdateProfile;
-  assert(client.devices[0].iconKind === 'desktop' && !Object.hasOwn(client.devices[0], 'iconColor'),
+  assert(client.devices[0].iconKind === 'archlinux' && !Object.hasOwn(client.devices[0], 'iconColor'),
     'the final server profile must not be overwritten by an older response');
   assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');

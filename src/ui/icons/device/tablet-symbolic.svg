@@ -1,0 +1,5 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" t="1789609714711" class="icon" viewBox="0 0 1024 1024" version="1.1" p-id="45406" width="32" height="32">
+  <path d="M832 160a32 32 0 0 0-32-32h-576a32 32 0 0 0-32 32v704a32 32 0 0 0 32 32h576a32 32 0 0 0 32-32v-704m96 0v704a128 128 0 0 1-128 128h-576a128 128 0 0 1-128-128v-704a128 128 0 0 1 128-128h576a128 128 0 0 1 128 128z" fill="#000000" p-id="45407"/>
+  <path d="M640 784a48 48 0 0 1-48 48h-160a48 48 0 0 1 0-96h160a48 48 0 0 1 48 48z" fill="#000000" p-id="45408"/>
+</svg>

@@ -1,6 +1,5 @@
 import {ABSOLUTE_ITEM_LIMIT_BYTES, MAX_ITEM_REPRESENTATIONS} from '../clipboard/constants.js';
 import {isUuid} from '../common/uuid.js';
-import {DEVICE_ICON_KINDS} from './device.js';
 import {API_VERSION} from './http/routes.js';
 import {TransferState} from './constants.js';
 
@@ -37,7 +36,7 @@ export function device(rawValue, expectedDeviceId = '') {
   return {
     deviceId,
     tag: text(value.tag, 256, 'device tag', false),
-    iconKind: choice(value.iconKind, DEVICE_ICON_KINDS, 'device icon'),
+    iconKind: text(value.iconKind, 128, 'device icon', false),
     state: choice(value.state ?? 'online', ['online', 'offline', 'unavailable'], 'device state'),
     lastSeenAt: integer(value.lastSeenAt ?? 0, 0, Number.MAX_SAFE_INTEGER, 'device timestamp'),
     isCurrent: true,
@@ -110,7 +109,7 @@ export function item(rawValue, expectedItemId = '') {
     createdAt: integer(value.createdAt, 0, Number.MAX_SAFE_INTEGER, 'item timestamp'),
     originDeviceId: origin.deviceId,
     originDeviceTag: text(origin.tag ?? '', 256, 'origin device tag'),
-    originDeviceIconKind: choice(origin.iconKind ?? 'other', DEVICE_ICON_KINDS, 'origin device icon'),
+    originDeviceIconKind: text(origin.iconKind ?? 'computer', 128, 'origin device icon', false),
     contents,
     previews,
   };

@@ -89,7 +89,10 @@ export class PreferenceRows {
         if (!choice)
           return;
         const box = listItem.get_child();
-        box._icon.icon_name = choice[2];
+        if (typeof choice[2] === 'string')
+          box._icon.icon_name = choice[2];
+        else
+          box._icon.gicon = choice[2];
         box._label.label = choice[1];
       });
       return factory;

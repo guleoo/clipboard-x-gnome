@@ -10,16 +10,8 @@
       <summary>Friendly device name</summary>
     </key>
     <key name="device-icon-kind" type="s">
-      <choices>
-        <choice value="desktop"/>
-        <choice value="laptop"/>
-        <choice value="phone"/>
-        <choice value="tablet"/>
-        <choice value="server"/>
-        <choice value="other"/>
-      </choices>
-      <default>'desktop'</default>
-      <summary>Portable device icon category</summary>
+      <default>'computer'</default>
+      <summary>Portable device icon identifier</summary>
     </key>
     <key name="device-icon-color-light" type="s">
       <default>'#ffffff'</default>

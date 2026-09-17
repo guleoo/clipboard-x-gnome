@@ -66,7 +66,7 @@ class TestRow extends SignalSource {
 }
 
 const key = 'device-icon-kind';
-const values = ['desktop', 'laptop', 'phone', 'tablet', 'server', 'other'];
+const values = ['computer', 'laptop', 'android', 'tablet', 'server', 'windows'];
 const settings = new TestSettings('laptop');
 const row = new TestRow(0);
 const disconnect = bindStringChoice(settings, row, key, values);
@@ -74,7 +74,7 @@ const disconnect = bindStringChoice(settings, row, key, values);
 assert(row.selected === 1, 'binding must initialize the selected choice from GSettings');
 
 row.selected = 2;
-assert(settings.value === 'phone', 'selecting a row must update GSettings');
+assert(settings.value === 'android', 'selecting a row must update GSettings');
 
 settings.set_string(key, 'server');
 assert(row.selected === 4, 'an external GSettings update must refresh the selected row');
@@ -83,7 +83,7 @@ row.selected = 99;
 assert(settings.value === 'server', 'an invalid row selection must not overwrite GSettings');
 
 disconnect();
-settings.set_string(key, 'desktop');
+settings.set_string(key, 'computer');
 assert(row.selected === 99, 'disconnect must stop GSettings updates from reaching the row');
 row.selected = 3;
-assert(settings.value === 'desktop', 'disconnect must stop row updates from reaching GSettings');
+assert(settings.value === 'computer', 'disconnect must stop row updates from reaching GSettings');
