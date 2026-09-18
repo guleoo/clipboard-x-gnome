@@ -1,8 +1,8 @@
 <div align="center">
 
-# Clipboard X
+# clipboard-x-gnome
 
-**A local-first clipboard workspace for GNOME Shell.**
+**Clipboard X — a local-first clipboard workspace for GNOME Shell.**
 
 History · Token selection · Quick phrases · Device sync · Screenshots · Color picking
 
@@ -72,10 +72,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x.zip`:
+Install the generated `build/clipboard-x-gnome.zip`:
 
 ```sh
-gnome-extensions install --force build/clipboard-x.zip
+gnome-extensions install --force build/clipboard-x-gnome.zip
 gnome-extensions enable clipboard-x@guleo.github.io
 ```
 
@@ -231,8 +231,8 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
 ```
 
 Clipboard X does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,

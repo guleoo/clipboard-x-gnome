@@ -1,8 +1,8 @@
 <div align="center">
 
-# Clipboard X
+# clipboard-x-gnome
 
-**面向 GNOME Shell 的本地优先剪切板工作台。**
+**Clipboard X — 面向 GNOME Shell 的本地优先剪切板工作台。**
 
 历史记录 · 分词选择 · 快捷语句 · 设备同步 · 截图 · 取色
 
@@ -67,10 +67,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x.zip`：
+安装生成的 `build/clipboard-x-gnome.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x.zip
+gnome-extensions install --force build/clipboard-x-gnome.zip
 gnome-extensions enable clipboard-x@guleo.github.io
 ```
 
@@ -219,8 +219,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见

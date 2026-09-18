@@ -1,4 +1,4 @@
-# Clipboard X documentation
+# clipboard-x-gnome documentation
 
 > English · [简体中文](zh-CN/README.md)
 

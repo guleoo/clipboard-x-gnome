@@ -6,5 +6,5 @@
   "settings-schema": "@schema@",
   "gettext-domain": "clipboard-x",
   "version-name": "@version@",
-  "url": "https://github.com/Guleo/clipboard-x"
+  "url": "https://github.com/Guleo/clipboard-x-gnome"
 }

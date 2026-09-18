@@ -6,7 +6,7 @@ extension_dir=$2
 schema_filename=$3
 source_dir=$4
 temporary_dir=$(mktemp -d)
-temporary_archive="$temporary_dir/clipboard-x.zip"
+temporary_archive="$temporary_dir/$(basename -- "$archive")"
 staging_dir="$temporary_dir/extension"
 
 cleanup() {

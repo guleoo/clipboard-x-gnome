@@ -1,5 +1,5 @@
 project(
-  'clipboard-x',
+  'clipboard-x-gnome',
   version: '0.1.0',
   license: 'GPL-3.0-or-later',
   meson_version: '>=1.6.0',
@@ -73,6 +73,7 @@ else
 endif
 
 test_runner = find_program('gjs')
+test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/device-icons.test.js'])
@@ -125,7 +126,7 @@ if target == 'package'
   meson.add_install_script(
     find_program('bash'),
     meson.project_source_root() / 'tools' / 'package.sh',
-    meson.project_build_root() / 'clipboard-x.zip',
+    meson.project_build_root() / 'clipboard-x-gnome.zip',
     extension_dir,
     'org.gnome.shell.extensions.clipboard-x.gschema.xml',
     meson.project_source_root() / 'src',

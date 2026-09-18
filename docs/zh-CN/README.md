@@ -1,4 +1,4 @@
-# Clipboard X 文档
+# clipboard-x-gnome 文档
 
 > 简体中文 · [English](../README.md)
 

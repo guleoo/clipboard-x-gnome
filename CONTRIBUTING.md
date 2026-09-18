@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to clipboard-x-gnome
 
 > English · [简体中文](CONTRIBUTING.zh-CN.md)
 
@@ -19,8 +19,8 @@ the complete Meson test suite. Changes involving extension lifecycle, panels, cl
 or preferences must also run:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
 ```
 
 ## Repository layout

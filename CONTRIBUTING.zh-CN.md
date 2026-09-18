@@ -1,4 +1,4 @@
-# 参与开发
+# 参与 clipboard-x-gnome 开发
 
 > 简体中文 · [English](CONTRIBUTING.md)
 
@@ -18,8 +18,8 @@ meson install -C build
 Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
 ```
 
 ## 目录结构
