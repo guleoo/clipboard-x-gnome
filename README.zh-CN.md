@@ -1,35 +1,65 @@
+<div align="center">
+
 # Clipboard X
 
-> 简体中文 · [English](README.md)
+**面向 GNOME Shell 的本地优先剪切板工作台。**
 
-Clipboard X 是面向 GNOME Shell 50 的剪切板效率扩展。它通过顶栏图标或用户设置的
-快捷键打开统一面板，提供文本与图片历史、词元选择式分词、外部设备同步集成、截图、
-取色和调用外部图片编辑器等功能。
+历史记录 · 分词选择 · 快捷语句 · 设备同步 · 截图 · 取色
 
-同步由扩展内的 HTTP 客户端直接完成。用户配置自己的中心服务器地址、设备 API Key 和
-Channel；扩展使用流式上传、下载与按需物化控制大内容的内存和主线程开销，不需要额外
-安装或运行本机同步 Service。
+[English](README.md) · [简体中文](README.zh-CN.md)
 
-## 功能
+[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
+[![GJS](https://img.shields.io/badge/GJS-ES%20Modules-F7DF1E?logo=javascript&logoColor=111)](https://gjs.guide/)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-663399)](LICENSE.md)
 
-- 搜索、Pin、删除和重新复制文本或图片历史；每个条目在右侧提供固定操作区。
-- 在当前小面板中把文本拆成可逐个选择的词元，并完整保留 URL、邮箱和结构化数字。
-- 支持导入任意语言的本地词库；按当前 GNOME 显示语言自动选择，未匹配时回退系统分词器。
-- 搜索框与截图、取色、同步三个紧凑按钮位于同一行；暂停记录、清理和设置位于底部。
-- 面板宽度、历史区域高度和最大显示条目数可配置；可选择每次返回历史主页，或保留分词现场。
-- 多设备历史出现时显示用户配置的设备类型图标；图标悬停或键盘聚焦时显示浮动 Tooltip。
-- 小内容立即提供完整快照；大文本使用截断预览，大图片使用缩略图，并在使用时按需
-  获取原文。
-- 上传与下载都使用可恢复的任务 ID，并在对应条目上显示精确字节进度环。
-- 使用 XDG Screenshot Portal 调用系统截图。
-- 使用 Shell 截图 API 取色，支持 HEX、RGB、HSL 和 OKLCH。
-- 从已安装图片应用中选择编辑器，或配置安全的 argv 命令模板。
-- 设置窗口按剪切板、同步、取色器、截图和快捷键划分五个页面；快捷键通过直接按键录入。
+</div>
 
-## 构建与安装
+Clipboard X 把 GNOME 顶栏扩展成一个紧凑的剪切板工作台：搜索和复用文本或图片，只选择
+句子里真正需要的词，保存常用语句，截图、取色，并可选择通过自己配置的服务器在设备间
+共享剪切板快照。
 
-需要 GNOME Shell 50、GJS、Meson、Ninja、GLib、GTK 4、Libadwaita、GdkPixbuf、
-Gettext 和 7-Zip。构建发布 ZIP：
+不配置同步时，它仍然是一套完整的本地工具。历史记录和快捷语句保存在本机；只有用户
+配置并启用兼容服务器后，剪切板同步才会启动。网络词库也只会在用户主动添加或刷新时下载。
+
+> [!IMPORTANT]
+> Clipboard X 当前面向 **GNOME Shell 50**。扩展包元数据不支持更早的 Shell 版本。
+
+## 功能概览
+
+| 剪切板 | 文本工具 | 捕获工具 | 多设备 |
+| --- | --- | --- | --- |
+| 搜索文本与图片 | 单独选择每个词元 | 调用系统截图门户 | 按设备标识远端条目 |
+| 固定重要条目 | 保留链接、邮箱、数字与标点 | 提取 HEX、RGB、HSL、OKLCH 颜色 | 手动或自动发送 |
+| 复制、粘贴或模拟输入 | 添加本地或网络词库 | 调用外部图片编辑命令 | 需要时才获取大体积原文 |
+| 保存可复用的快捷语句 | 完整键盘导航与连选 | 配置全局快捷键 | 显示精确上传/下载进度 |
+
+### 本地优先的历史记录
+
+剪切板内容会成为不可变的本地快照，并按来源设备组织。固定条目不受历史数量限制；隐私
+模式会暂停记录；密码管理器标记的内容默认只保存在内存中。面板宽高、条目数量、主题色、
+操作图标、打开位置和焦点行为均可配置。
+
+### 为选词而设计的分词面板
+
+任意文本条目都可以进入分词面板，选择一个或多个词后直接复制、粘贴或模拟输入。
+Clipboard X 能识别 URL、邮箱、结构化数字、多语言单词、空白与标点。基础分词使用系统
+`Intl.Segmenter`；中文和日文可以同时合并多个用户词库。
+
+### 可见、按需的同步
+
+少量内容完整发送；大量文本先发送截断预览，大图片先发送缩略图，只有其他设备真正使用
+时才物化原文。传输采用流式 I/O，校验大小与 SHA-256，并在面板中显示精确字节进度。
+同步直接由扩展完成，不需要额外安装本地 Service。
+
+## 安装
+
+### 环境要求
+
+- GNOME Shell 50、GJS 1.88 或更高版本；
+- Meson、Ninja、GLib、GTK 4、Libadwaita、GdkPixbuf、Gettext 和 7-Zip；
+- 完整的截图、取色和模拟输入体验需要 Wayland 会话。
+
+构建发布包：
 
 ```sh
 meson setup build -Dtarget=package
@@ -37,105 +67,154 @@ meson compile -C build
 meson install -C build
 ```
 
-产物是 `build/clipboard-x.zip`。安装后需要注销并重新登录 Wayland 会话：
+安装生成的 `build/clipboard-x.zip`：
 
 ```sh
 gnome-extensions install --force build/clipboard-x.zip
 gnome-extensions enable clipboard-x@guleo.github.io
 ```
 
-开发时也可以用 `-Dtarget=local` 安装到当前用户的扩展目录，或用
-`-Dtarget=system --prefix=/usr` 生成系统安装布局。不同 target 请使用不同的构建目录。
+Wayland 下的 GNOME Shell 无法完整热重载扩展代码。首次安装或覆盖已有版本后，如果新版本
+没有立即生效，请注销并重新登录。
 
-## 使用
+## 使用 Clipboard X
 
-扩展首次打开主面板或设置窗口时生成 UUID v4 `DeviceId`。它是同步身份，不会因用户
-修改设备标签而改变。设备标签只是发现设备时显示的友好名称。
+### 1. 打开并配置面板
 
-分词词库统一保存在 `$XDG_DATA_HOME/clipboard-x/dictionaries`。设置中的“剪切板 → 词库”
-可以导入不超过 8 MB、15 万词条的 UTF-8 文本词库，每行写一个词，后面可选跟随词频。词库可以用头部声明语言和名称：
+点击顶栏图标打开 Clipboard X。全局快捷键默认留空；如果需要，请打开扩展设置，在
+**快捷键 → 全局 → 打开剪切板面板**中录入。再次按下同一个面板快捷键即可关闭面板。
+
+第一次打开面板或设置时，Clipboard X 会生成 UUID v4 `DeviceId`，作为稳定的同步身份。
+用户可编辑的设备 Tag 与图标只用于友好展示，不会改变设备身份。
+
+### 2. 复用剪切板历史
+
+点击条目，或聚焦后按 Enter，即可复制内容。根据条目类型，每行还会提供分词或图片编辑、
+固定、同步和删除操作。按 `Ctrl+F` 可以聚焦搜索框。
+
+默认的上下文快捷键如下：
+
+| 剪切板历史中 | 操作 |
+| --- | --- |
+| `v` | 粘贴当前条目 |
+| `p` | 固定或取消固定 |
+| `Delete` | 从本机历史中删除 |
+| `'` | 模拟键盘输入文本 |
+| `Ctrl` + 点击 / `Ctrl+Enter` | 不复制，改为模拟输入 |
+
+所有快捷键都可以在设置中修改或禁用。
+
+### 3. 选择一句话中的部分内容
+
+点击文本条目的分词按钮。方向键用于移动焦点，点击或拖动可以连续选择词元，
+`Shift` + 方向键用于键盘连选。默认按 `c` 复制、`v` 粘贴、`'` 模拟输入选择结果。
+
+中文或日文环境可以打开**设置 → 剪切板 → 词库**，启用系统分词器、导入 UTF-8 词库，
+或添加 HTTP/HTTPS 网络词库位置。词库每行写一个词，后面可以跟词频：
 
 ```text
-# locale: ja
-# name: My Japanese dictionary
-秘密鍵 90
-画像編集 80
+# locale: zh
+# name: 团队术语
+注销密钥 90
+图片编辑 80
 ```
 
-没有 `# locale` 时使用导入界面下拉选择的语言，默认选中当前系统语言。词库导入后可
-直接用系统默认文本编辑器编辑，也可在文件管理器中打开其存储位置。发布包不包含词库，
-安装扩展时也不会自动下载词库；可以通过本地导入或网络位置主动添加。设置中
-可以针对当前语言同时启用多个词库，分词会合并已启用词库；没有匹配项时直接
-使用系统 `Intl.Segmenter`。系统 `Intl.Segmenter` 本身也作为默认启用的词库项显示在
-列表中，可以和用户词库一起开关。
+词库文件保存在 `$XDG_DATA_HOME/clipboard-x/dictionaries`。发布包不会捆绑第三方词库，
+安装、启动或打开面板时也不会静默下载词库。
 
-快捷语句保存在 `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`。首次使用新版存储时，
-已有的 GSettings 快捷语句会迁移到该文件。
+### 4. 保存快捷语句
 
-“导入词库”旁边的“添加网络位置”支持 HTTP/HTTPS UTF-8 词库地址。添加后会主动下载
-一次，之后可以使用词库行上的刷新按钮手动更新；扩展安装、启动和打开面板都不会自动
-联网。
+从面板打开**快捷语句**，点击 `+`，输入内容并按 Enter 确认。快捷语句仅保存在本机，
+文件位置为 `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`。
 
-词库设置只在中文和日文显示语言下出现；其他已支持语言使用系统
-`Intl.Segmenter` 完成基础分词，不显示不相关的词库配置。
+### 5. 截图、取色与图片编辑
 
-图片编辑器优先使用设置中选择的 Desktop Application。选择“自定义命令”时支持：
+- **截图**调用 XDG Screenshot Portal，可用的截图目标取决于本机 Portal 后端。
+- **取色器**从屏幕取色，并写入配置的 HEX、RGB、HSL 或 OKLCH 表示。
+- **图片编辑**调用**设置 → 截图 → 图片编辑**中配置的命令。
 
-- `%u`：图片 URI；
-- `%f`：本地文件路径；
-- `%i`：通过标准输入传递图片字节，该占位符必须是独立参数；
-- `%%`：字面量 `%`。
+图片编辑命令按 argv 解析，不会交给 `sh -c`。它支持 `%u` 表示图片 URI、`%f` 表示本地
+路径、`%i` 表示从标准输入读取图片字节、`%%` 表示字面量百分号。例如：
 
-命令按 argv 解析，不经 `sh -c`，因此不支持管道、重定向或 Shell 展开。例如
-`gradia %i`、`gimp %f` 和 `flatpak run be.alexandervanhee.gradia %u`。
+```text
+gradia %i
+gimp %f
+flatpak run be.alexandervanhee.gradia %u
+```
 
-截图目标取决于本机 Portal 版本。Portal v2 通常支持交互选择和全屏；窗口、区域和
-活动窗口需要实现 `AvailableTargets` 的 Portal v3 后端。扩展会拒绝后端未声明的目标。
+出于安全性和可预测性考虑，不支持管道、重定向或 Shell 展开。
+
+## 同步设备
+
+Clipboard X 使用版本化 HTTP API 连接用户选择的中心服务器。服务器是可以读取内容的存储
+和管理平台，并非端到端加密或无法查看正文的盲中转站；服务器管理员可以查看已上传内容。
+
+连接一台设备：
+
+1. 在兼容服务器中为设备分配独立 API Key，并把设备加入一个 Channel。
+2. 打开**设置 → 同步**。
+3. 输入服务器地址和 API Key，应用设置，刷新 Channel 并选择一个活动 Channel。
+4. 启动同步并测试连接。
+5. 保持默认的**手动**发送模式，通过条目同步按钮发送；或明确改为**自动**发送。
+
+地址可以使用 HTTP 或 HTTPS；省略协议时默认为 HTTP。HTTP 会在网络中明文发送认证信息和
+内容，需要链路机密性时应使用 HTTPS 或可信的私有网络。
+
+服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`；
+各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
+服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
+
+> [!NOTE]
+> 当前在扩展中删除条目，只会删除本设备的本地历史副本，不会请求从整个 Channel 删除。
+> 服务端发出的删除事件则会同步到客户端。
+
+兼容服务器的详细要求见[同步协议](docs/zh-CN/sync-protocol.md)，压力模型见
+[同步性能与压力测试](docs/zh-CN/sync-performance-testing.md)。
 
 ## 模拟键盘输入
 
-模拟键盘输入用于无法或不适合正常粘贴的目标。开始输入前，Clipboard X 会等待触发操作时
-按下的修饰键全部松开；输入过程中，每次发送字符前都会检查全局修饰键状态。用户按下
-Ctrl、Alt、Shift、Super、Meta 或 Hyper 后，扩展会取消当前任务和已经排队的模拟输入，
-并显示通知。修饰键本身仍会传递给前台应用，但取消后不会继续发送后续模拟字符。
+模拟输入适用于目标应用无法正常粘贴的场景，但它并不等同于粘贴。Clipboard X 会等待
+触发动作的修饰键松开；输入过程中检测到 Ctrl、Alt、Shift、Super、Meta 或 Hyper 后会
+取消剩余内容。GNOME Shell 无法可靠获得发送给其他 Wayland 客户端的普通物理按键，因此
+字母和数字仍可能与模拟内容交错。
 
-这个安全熔断只覆盖修饰键。当键盘焦点属于另一个 Wayland 应用时，GNOME Shell 扩展 API
-无法可靠获得普通物理按键事件，因此字母、数字和其他非修饰键不能自动触发取消，仍可能与
-模拟内容交错。在模拟输入结束前不要操作物理键盘；对于长文本、敏感文本或要求内容完全
-准确的场景，只要目标支持，就应优先使用普通剪切板粘贴。
+模拟输入结束前请不要操作物理键盘。对于长文本、敏感内容或要求完全准确的内容，应优先
+使用普通剪切板粘贴。
 
-## 剪切板同步
+## 数据与隐私
 
-在“设置 → 同步”中填写服务器地址、设备 API Key，刷新并选择活动 Channel，然后启动
-同步并测试连接。地址可以是纯 IP、`IP:端口`、HTTP 或 HTTPS；未写协议时按 HTTP 处理，
-扩展不会擅自升级协议。服务器地址、API Key 和活动 Channel 保存在
-`$XDG_DATA_HOME/clipboard-x/sync.json`；非机密的增量游标单独保存在 `sync-state.json`，
-避免设置进程和 Shell 并发保存时互相覆盖。API Key 不写入 GSettings。
+| 数据 | 默认位置 |
+| --- | --- |
+| 历史记录 | `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>` |
+| 快捷语句 | `$XDG_DATA_HOME/clipboard-x/quick-phrases.json` |
+| 词库 | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
+| 同步连接信息 | `$XDG_DATA_HOME/clipboard-x/sync.json` |
+| 同步 cursor | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
 
-扩展直接使用版本化 HTTP API 访问用户选择的可信中心服务器。小文本和小图片立即流式
-上传；大文本只先传截断预览，大图片只先传缩略图，用户真正复制、保存或编辑时才请求
-来源设备提供完整内容。上传和下载按实际字节提供精确进度，并在落盘前校验大小与
-SHA-256。协议端点、字段、状态机和实现要求见 [同步协议（HTTP API v1）](docs/zh-CN/sync-protocol.md)。
+本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读
+[安全与隐私说明](SECURITY.zh-CN.md)。
 
-服务器不是盲中转站：它可以保存、展示和管理已经上传的剪切板内容，管理设备及 Channel；
-网页查看大内容仍可以使用同一套按需物化流程。服务器是同步信任边界，服务器管理员可以
-读取实际上传到服务器的内容。
+## 开发与参与贡献
 
-手动发送是默认策略。自动发送虽然适合自行安装场景，但会在没有逐条用户操作时把
-剪切板交给用户配置的第三方服务器，因此不应直接用于提交 GNOME Extensions 的审核版本。
-自动发送可进一步限制为只有用户收藏条目后才发送；敏感内容同步仍需单独启用。
+欢迎参与 Clipboard X：报告 Bug、提交聚焦的修复、改进 UI、补充协议测试、完善文档，或
+提供经过认真校对的翻译，都很有价值。
 
-## 隐私
+1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/zh-CN/README.md)。
+2. 较大的行为或协议变更应先创建 Issue，讨论并明确范围。
+3. 保持改动聚焦；每次行为变更都要新增或更新测试。
+4. 提交 Pull Request 前运行完整测试，并主动 Review 自己的 Diff。
+5. 公开行为发生变化时，同时更新英文与简体中文文档。
 
-剪切板历史保存在用户数据目录
-`$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，每个来源设备分别存放索引、对象和预览，
-目录权限设为仅当前用户可访问。旧缓存数据会在首次加载时迁移到该结构。
-快捷语句文件、`sync.json` 和 `sync-state.json` 位于同一个用户数据根目录。快捷语句与
-同步进度按私有数据写入；插件不检查或强制修改 `sync.json` 的文件系统权限。
-“隐私模式”会暂停捕获；密码管理器标记的敏感内容默认只保存在内存中，同步敏感内容
-默认关闭。详细的数据流、信任边界和报告方式见 [安全说明](SECURITY.zh-CN.md)。
+最快的交互式开发方式是：
 
-## 测试
+```sh
+tools/run-dev-shell.sh
+```
+
+脚本会完成构建和打包，然后在独立的 Mutter Devkit 会话中启动扩展，使用隔离的 XDG 数据
+和设置，不需要注销宿主桌面。
+
+提交代码前运行：
 
 ```sh
 meson test -C build --print-errorlogs
@@ -144,40 +223,19 @@ gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/shel
 gnome-shell-test-tool --headless --extension build/clipboard-x.zip tests/ui/preferences.smoke.js
 ```
 
-交互式调试可以运行：
+项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
+[参与开发](CONTRIBUTING.zh-CN.md)。安全问题请按照[安全说明](SECURITY.zh-CN.md)中的私密
+渠道报告，不要创建公开 Issue。
 
-```sh
-tools/run-dev-shell.sh
-```
+## 文档
 
-该脚本使用独立的 XDG 数据和配置目录，并让嵌套 GNOME Shell 直接加载
-`build-devkit/clipboard-x@guleo.github.io`。修改代码后关闭 Devkit 窗口并重新运行脚本，
-无需注销宿主桌面，也不会读取宿主桌面的 Clipboard X 配置。
-
-若嵌套 Mutter 能看到 `wl-copy` MIME 却无法完成 selection transfer，可在只验证 UI 与
-生命周期时设置 `CLIPBOARD_X_SKIP_EXTERNAL_SOURCES=1`；这只跳过外部 Wayland/XWayland
-来源用例，不跳过扩展内部的文本、图片、截图、分词、同步进度和生命周期测试。
-翻译加载可以使用 `LC_ALL=zh_CN.UTF-8 CLIPBOARD_X_EXPECT_CHINESE=1
-CLIPBOARD_X_TRANSLATION_ONLY=1` 运行同一个 Shell 冒烟脚本。
-
-项目不使用 ESLint；构建验收使用 Node 语法检查、GJS 测试、协议互操作测试和真实
-GNOME Shell 无头会话。
-
-词库性能对比可以使用独立 benchmark。它会在两个独立的 GJS 子进程中分别测量精简
-词库和外部完整词库的词条数、文件大小、首次加载耗时、缓存后分词耗时和 RSS 增量：
-
-```sh
-curl --fail --location \\
-  https://raw.githubusercontent.com/yanyiwu/cppjieba/master/dict/jieba.dict.utf8 \\
-  --output /tmp/jieba.dict.utf8
-gjs -m tools/benchmark-tokenizer.js /tmp/jieba.dict.utf8 2000
-```
-
-完整词库只作为 benchmark 输入，不会被提交到扩展包；脚本会复用正式的词库解析和
-分词加载路径。
-
-公开文档索引见 [中文文档索引](docs/zh-CN/README.md)。
+- [中文文档索引](docs/zh-CN/README.md)
+- [同步协议（HTTP API v1）](docs/zh-CN/sync-protocol.md)
+- [UI 开发指南](docs/zh-CN/ui-architecture.md)
+- [同步性能与压力测试](docs/zh-CN/sync-performance-testing.md)
+- [安全与隐私](SECURITY.zh-CN.md)
+- [参与开发](CONTRIBUTING.zh-CN.md)
 
 ## 许可证
 
-Clipboard X 以 [GNU GPL v3 或更高版本](LICENSE.md)发布。许可证原文保留其英文法律文本。
+Clipboard X 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。
