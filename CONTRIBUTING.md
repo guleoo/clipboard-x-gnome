@@ -31,9 +31,10 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/u
   by feature domain; tokenization belongs to `src/clipboard/tokenizer/`.
 - `tests/` follows the same domain layout; cross-process fixtures live in `tests/fixtures/`.
 
-Protocol changes must update `docs/sync-protocol.md`, the GJS routes and validators, client tests,
-and the central-server plan together. A breaking change requires a new HTTP API major version; do not
-change the meaning of an existing v1 field in place.
+Clipboard X Server owns the synchronization protocol and its OpenAPI contract. Propose and land protocol
+changes in the Server repository first; then update the GJS routes and validators and the client conformance
+tests here. A breaking change requires a new HTTP API major version; do not change the meaning of an existing
+v1 field in place from this client.
 
 ## Localization
 
@@ -44,9 +45,12 @@ meson compile -C build clipboard-x-pot
 meson compile -C build clipboard-x-update-po
 ```
 
-Then update `po/zh_CN.po` and validate with `msgfmt --check`. Source documentation and code use
-English as the primary language; Chinese documentation is maintained as the `.zh-CN.md` or
-`docs/zh-CN/` counterpart.
+Then update every catalog listed in `po/LINGUAS` and run
+`bash tests/i18n/coverage.sh`. The check rejects missing or fuzzy translations and missing
+image-editor command placeholders. English is the source language and has no PO catalog.
+Machine-translated drafts need native-speaker review before their wording is considered final.
+Chinese documentation is maintained as the
+`.zh-CN.md` or `docs/zh-CN/` counterpart.
 
 ## Code conventions
 

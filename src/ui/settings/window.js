@@ -8,6 +8,8 @@ import {buildEditorArgv} from '../../screenshot/editor-launcher.js';
 import {DictionaryStore} from '../../clipboard/tokenizer/dictionary/store.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {create as createPanelActionsRow} from './panel-actions.js';
+import {create as createRunningAppsRow} from './running-apps.js';
+import {restore as restoreDefaults} from './defaults.js';
 import {deviceIcon} from '../icons/device.js';
 import {create as createSyncGroup} from './sync.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
@@ -27,7 +29,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     window.add(new Adw.PreferencesPage({title: 'Clipboard X'}));
 
     const pages = [
-      ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings)],
+      ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings, window)],
       ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings, window)],
       ['quick-phrases', 'starred-symbolic', this._phrasesPage(settings)],
       ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
@@ -94,7 +96,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     navigation.select_row(navigation.get_row_at_index(0));
   }
 
-  _generalPage(settings) {
+  _generalPage(settings, window) {
     const page = new Adw.PreferencesPage({
       title: _('General'),
       icon_name: 'preferences-desktop-appearance-symbolic',
@@ -162,36 +164,88 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     page.add(actions);
     actions.add(createPanelActionsRow(settings));
 
+    const description = _('Reset all preferences without deleting clipboard history, quick phrases, dictionaries, server connection, or device identity.');
+    const defaults = new Adw.PreferencesGroup();
+    const row = new Adw.ActionRow({
+      title: _('Restore default settings'),
+      subtitle: description,
+    });
+    const button = new Gtk.Button({
+      label: _('Restore'),
+      valign: Gtk.Align.CENTER,
+    });
+    button.connect('clicked', () => {
+      const dialog = new Adw.AlertDialog({
+        heading: _('Restore default settings?'),
+        body: description,
+      });
+      dialog.add_response('cancel', _('Cancel'));
+      dialog.add_response('restore', _('Restore'));
+      dialog.default_response = 'cancel';
+      dialog.close_response = 'cancel';
+      dialog.set_response_appearance('restore', Adw.ResponseAppearance.DESTRUCTIVE);
+      dialog.choose(window, null, (source, result) => {
+        let response;
+        try {
+          response = source.choose_finish(result);
+        } catch (_error) {
+          return;
+        }
+        if (response === 'restore')
+          restoreDefaults(settings);
+      });
+    });
+    row.add_suffix(button);
+    row.activatable_widget = button;
+    defaults.add(row);
+    page.add(defaults);
+
     return page;
   }
 
   _clipboardPage(settings, window) {
     const page = new Adw.PreferencesPage({title: _('Clipboard'), icon_name: 'edit-paste-symbolic'});
-    const history = new Adw.PreferencesGroup({title: _('History')});
+    const history = new Adw.PreferencesGroup({
+      title: _('History'),
+      description: _('Pinned entries are kept when history or storage limits are reached.'),
+    });
     page.add(history);
     history.add(this._rows.spin('history-size', _('History entries'), 1, 10000, 1));
     history.add(this._rows.spin('cache-size-mib', _('Storage size'), 16, 16384, 16, _('MB')));
-    history.add(this._rows.spin('history-retention-days', _('Automatic cleanup'), 0, 3650, 1, _('days; 0 disables')));
+    history.add(this._rows.spin('history-retention-days', _('History retention'), 0, 3650, 1, _('days; 0 disables')));
     history.add(this._rows.spin('capture-size-limit-mib', _('Maximum item size'), 1, 256, 1, _('MB')));
     history.add(this._rows.switch('trim-whitespace', _('Trim surrounding whitespace')));
+
+    const simulatedInput = new Adw.PreferencesGroup({
+      title: _('Simulated input'),
+      description: _('Use slow input if a target application misses simulated keystrokes.'),
+    });
+    page.add(simulatedInput);
+    simulatedInput.add(this._rows.combo('simulated-input-speed', _('Typing speed'), [
+      ['standard', _('Standard')],
+      ['slow', _('Slow')],
+    ]));
 
     const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
 
-    const privacy = new Adw.PreferencesGroup({title: _('Privacy')});
+    const privacy = new Adw.PreferencesGroup({
+      title: _('Privacy'),
+      description: _('Select a running application or enter its window class manually to exclude it.'),
+    });
     page.add(privacy);
     privacy.add(this._rows.switch('private-mode', _('Pause clipboard recording')));
     privacy.add(this._rows.combo('sensitive-content-mode', _('Sensitive content'), [
       ['discard', _('Do not record')],
       ['memory', _('Keep until extension stops')],
-      ['store', _('Store like other history')],
     ]));
     privacy.add(this._rows.stringList(
       'excluded-apps',
       _('Excluded applications'),
       _('Comma-separated window classes'),
     ));
+    privacy.add(createRunningAppsRow(settings));
     const dictionaries = createDictionariesGroup({
       settings,
       store: this._dictionaryStore,
@@ -216,7 +270,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     behavior.add(this._rows.switch(
       'saved-phrase-newest-first',
       _('Place new phrases first'),
-      _('When disabled, new phrases are added at the end'),
     ));
     behavior.add(this._rows.switch(
       'phrase-close-after-copy',
@@ -250,25 +303,31 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
 
     page.add(createSyncGroup(settings, deviceId, this._rows));
 
-    const policy = new Adw.PreferencesGroup({title: _('Transfer policy')});
+    const policy = new Adw.PreferencesGroup({
+      title: _('Transfer policy'),
+      description: _('Previews reduce initial transfer size; originals are fetched when needed.'),
+    });
     page.add(policy);
-    policy.add(this._rows.combo('sync-send-mode', _('Send mode'), [
+    const sendMode = this._rows.combo('sync-send-mode', _('Send mode'), [
       ['disabled', _('Disabled')],
       ['manual', _('Manual')],
       ['automatic', _('Automatic')],
-    ]));
-    policy.add(this._rows.combo('sync-receive-mode', _('Receive mode'), [
+    ]);
+    sendMode.subtitle = _('Automatic sending uploads matching new entries to the configured server.');
+    policy.add(sendMode);
+    const receiveMode = this._rows.combo('sync-receive-mode', _('Receive mode'), [
       ['disabled', _('Disabled')],
       ['history', _('History only')],
       ['activate', _('Activate clipboard')],
-    ]));
+    ]);
+    receiveMode.subtitle = _('Activate clipboard replaces the current clipboard with incoming content.');
+    policy.add(receiveMode);
     policy.add(this._rows.switch('sync-text', _('Text')));
     policy.add(this._rows.switch('sync-html', _('HTML')));
     policy.add(this._rows.switch('sync-images', _('Images')));
-    policy.add(this._rows.switch('sync-sensitive', _('Sensitive content'), _('Disabled by default')));
     policy.add(this._rows.switch(
       'sync-favorites-only',
-      _('Favorites only'),
+      _('Pinned entries only'),
       _('Only applies to automatic sending'),
     ));
     policy.add(this._rows.sizeSpin('text-full-threshold', _('Small text sent in full'), 1, 16384, 1, 1024, _('KB')));
@@ -277,6 +336,9 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     policy.add(this._rows.spin('thumbnail-size', _('Thumbnail dimension'), 64, 1024, 16, _('px')));
     policy.add(this._rows.sizeSpin('thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KB')));
     policy.add(this._rows.spin('sync-transfer-timeout-seconds', _('On-demand timeout'), 5, 3600, 5, _('seconds')));
+    const pollInterval = this._rows.spin('sync-poll-interval-seconds', _('Polling interval'), 2, 60, 1, _('seconds'));
+    pollInterval.subtitle = _('Seconds between checks; longer intervals reduce requests but delay updates.');
+    policy.add(pollInterval);
     return page;
   }
 
@@ -297,24 +359,32 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const page = new Adw.PreferencesPage({title: _('Screenshot'), icon_name: 'camera-photo-symbolic'});
     const screenshot = new Adw.PreferencesGroup({title: _('Screenshot')});
     page.add(screenshot);
-    screenshot.add(this._rows.combo('screenshot-target', _('Default target'), [
+    const screenshotTarget = this._rows.combo('screenshot-target', _('Default target'), [
       ['interactive', _('Interactive')],
       ['screen', _('Full screen')],
       ['window', _('Window')],
       ['area', _('Area')],
       ['active-window', _('Active window')],
-    ]));
+    ]);
+    screenshotTarget.subtitle = _('Available targets depend on the system screenshot portal.');
+    screenshot.add(screenshotTarget);
     screenshot.add(this._rows.switch('screenshot-add-history', _('Add to history')));
     screenshot.add(this._rows.switch('screenshot-write-clipboard', _('Copy screenshot')));
-    screenshot.add(this._rows.switch('screenshot-open-editor', _('Open image editor')));
+    screenshot.add(this._rows.switch('screenshot-open-editor', _('Open image editor'),
+      _('Requires an image editor command below.')));
 
-    const editor = new Adw.PreferencesGroup({title: _('Image editing')});
+    const editor = new Adw.PreferencesGroup({
+      title: _('Image editing'),
+      description: _('Enter a command to enable editing. %u is an image URI, %f a local path, %i image bytes on standard input, and %% a percent sign.'),
+    });
     page.add(editor);
     editor.add(this._rows.entry(
       'editor-command',
       _('Command'),
-      _('%u is the URI, %f is a local path, %i is standard input and %% is a percent sign'),
+      '',
       value => {
+        if (!value)
+          return true;
         try {
           buildEditorArgv(value, 'file:///tmp/clipboard-x.png', '/tmp/clipboard-x.png');
           return true;

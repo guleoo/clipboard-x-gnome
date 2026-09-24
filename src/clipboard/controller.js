@@ -147,7 +147,7 @@ export class ClipboardController extends EventEmitter {
         originDeviceId: identity.deviceId,
         originDeviceTag: identity.deviceTag,
         originDeviceIconKind: identity.deviceIconKind,
-        sensitive: sensitive && sensitiveMode !== 'store',
+        sensitive,
       });
 
       if (this._suppressedHash) {
@@ -203,12 +203,17 @@ export class ClipboardController extends EventEmitter {
     const existingIndex = this._items.findIndex(existing => existing.equals(item));
     if (existingIndex >= 0) {
       const [existing] = this._items.splice(existingIndex, 1);
-      existing.createdAt = Date.now();
-      this._items.push(existing);
+      // Replace a persisted duplicate when the new copy is marked sensitive.
+      const renewed = item.sensitive && !existing.sensitive ? item : existing;
+      renewed.favorite = existing.favorite;
+      renewed.createdAt = Date.now();
+      this._items.push(renewed);
       orderHistory(this._items);
       this._scheduleSave();
+      if (renewed === item)
+        this.emit('item-added', item, source);
       this.emit('changed');
-      return existing;
+      return renewed;
     }
 
     this._items.push(item);

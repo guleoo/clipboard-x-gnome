@@ -10,6 +10,8 @@ export function message(error, _) {
   switch (error?.code) {
   case 'disabled':
     return _('Synchronization is disabled');
+  case 'sensitive_content':
+    return _('Sensitive content');
   case 'server_unavailable':
     return _('Synchronization server is unavailable');
   case 'channel_required':

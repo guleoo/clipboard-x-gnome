@@ -230,7 +230,8 @@ export class HistoryPanel {
       item,
       leading: identity ? this._deviceIcon(identity.iconKind, identity.tag) : null,
       accentColor: this._accentColor,
-      syncButton: this._settings.get_boolean('sync-enabled') ? this._sync.button(item) : null,
+      syncButton: this._settings.get_boolean('sync-enabled') && !item.sensitive
+        ? this._sync.button(item) : null,
       createIconButton: (...args) => this._createIconButton(...args),
       actions: {
         activate: () => this._activate(item),

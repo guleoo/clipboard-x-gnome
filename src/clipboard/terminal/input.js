@@ -3,9 +3,8 @@ import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {typingDelay, typingSequence} from './sequence.js';
+import {typingDelay, typingSequence, typingTiming} from './sequence.js';
 
-const SETTLE_DELAY_MILLISECONDS = 75;
 const INPUT_POLL_MILLISECONDS = 20;
 const INPUT_WAIT_TIMEOUT_MILLISECONDS = 10_000;
 const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
@@ -19,7 +18,7 @@ const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.META_MASK;
 
 export class TerminalInput {
-  constructor({onCancelled = null} = {}) {
+  constructor({onCancelled = null, speed = () => 'standard'} = {}) {
     const seat = Clutter.get_default_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
@@ -30,6 +29,7 @@ export class TerminalInput {
     this._typing = null;
     this._typingRevision = 0;
     this._onCancelled = onCancelled;
+    this._speed = speed;
     this._eventFilterId = Clutter.Event.add_filter(
       null,
       event => this._filterEvent(event),
@@ -58,10 +58,11 @@ export class TerminalInput {
       if (this._destroyed || revision !== this._typingRevision)
         return;
       const typing = {cancelled: false};
+      const speed = this._speed();
       this._typing = typing;
       this._monitoring = true;
       try {
-        if (!await this._prepare())
+        if (!await this._prepare(typingTiming(speed).settle))
           return;
         for (const character of sequence) {
           if (this._destroyed || typing.cancelled)
@@ -71,7 +72,7 @@ export class TerminalInput {
             return;
           }
           this._typeCharacter(character);
-          await this._waitForNextStep(character);
+          await this._waitForNextStep(character, speed);
         }
       } finally {
         if (this._typing === typing)
@@ -178,10 +179,10 @@ export class TerminalInput {
     return true;
   }
 
-  async _prepare() {
+  async _prepare(settleDelay = typingTiming().settle) {
     if (!await this._waitForModifiersReleased())
       return false;
-    await this._settle();
+    await this._settle(settleDelay);
     return !this._destroyed;
   }
 
@@ -216,18 +217,18 @@ export class TerminalInput {
     return Boolean(this._modifierState() & COMMAND_MODIFIER_MASK);
   }
 
-  _settle() {
+  _settle(delay) {
     return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, SETTLE_DELAY_MILLISECONDS, () => {
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
         resolve();
         return GLib.SOURCE_REMOVE;
       });
     });
   }
 
-  _waitForNextStep(character) {
+  _waitForNextStep(character, speed) {
     return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, typingDelay(character), () => {
+      GLib.timeout_add(GLib.PRIORITY_DEFAULT, typingDelay(character, speed), () => {
         resolve();
         return GLib.SOURCE_REMOVE;
       });

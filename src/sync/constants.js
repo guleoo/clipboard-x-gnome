@@ -1,4 +1,3 @@
-export const POLL_INTERVAL_MILLISECONDS = 5000;
 export const MAX_TRANSFER_STATES = 1024;
 
 export const TransferState = Object.freeze({

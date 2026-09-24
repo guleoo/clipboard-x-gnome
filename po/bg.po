@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
-"PO-Revision-Date: 2026-08-19 16:20+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
+"PO-Revision-Date: 2026-09-23 13:10+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: bg\n"
 "Language: bg\n"
@@ -18,27 +18,145 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "Възстановяване на настройките по подразбиране"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "Възстановяване"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "Да се възстановят ли настройките по подразбиране?"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "Нулиране на всички предпочитания, без да се изтриват историята на клипборда, бързите фрази, речниците, връзката със сървъра или самоличността на устройството."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "Симулираното въвеждане от клавиатурата е отменено"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
+"Засечено е въвеждане от физическата клавиатура. Останалата част от "
+"симулираното въвеждане е отменена."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "Редактиране на изображения"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
+msgstr ""
+"Настройте команда за редактор на изображения в Настройки → Снимка на екрана "
+"→ Редактиране на изображения."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "Операцията е неуспешна"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "Синхронизацията е изключена"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "Сървърът за синхронизация е недостъпен"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "Не е настроен активен канал за синхронизация"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "Адресът на сървъра за синхронизация е невалиден"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "Удостоверяването за синхронизация е неуспешно"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "Това устройство е изключено на сървъра за синхронизация"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "Ключът за API не принадлежи на това устройство"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "Това устройство няма достъп до канала за синхронизация"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr ""
+"Елементът от буфера за обмен влиза в конфликт с елемент на сървъра за "
+"синхронизация"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr ""
+"Съдържанието на буфера за обмен още не е готово на устройството източник"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "Устройството източник вече няма това съдържание на буфера за обмен"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr ""
+"Съдържанието на буфера за обмен надвишава ограничението за размер при "
+"синхронизация"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "Синхронизираното съдържание не премина проверката за цялост"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "Времето за прехвърляне при синхронизация изтече"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "Сървърът за синхронизация е зает. Опитайте отново по-късно."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "Сървърът за синхронизация върна невалиден отговор"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "Качването за синхронизация е неуспешно"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "Изтеглянето за синхронизация е неуспешно"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "Заявката за синхронизация е неуспешна"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "Този текст е твърде голям за интерактивна обработка"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "Изтегляне и копиране на оригинала"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "Копиране на оригинала"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -46,21 +164,21 @@ msgstr "Разделяне на текста"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "Редактиране на изображението"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
-msgstr "Махане"
+msgstr "Откачане"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "Закачане"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "Изтриване от локалната история"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "Текст"
 
@@ -68,200 +186,200 @@ msgstr "Текст"
 msgid "Image"
 msgstr "Изображение"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
-msgstr "Въведете за търсене..."
+msgstr "Търсене в историята на буфера за обмен…"
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "Снимка на екрана"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "Избор на цвят"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "Поверителен режим"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "Бързи фрази"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "Изчисти историята"
+msgstr "Изчистване на незакачените елементи от историята"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "Настройки"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "Зареждане на историята на буфера за обмен…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "Историята на буфера за обмен не може да се зареди"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "Няма съвпадащи елементи"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
-msgstr "Буферната памет е празна"
+msgstr "Историята на буфера за обмен е празна"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
 msgstr "Непознато устройство"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "Настройки за синхронизация"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
-msgstr ""
+msgstr "Синхронизиране"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "Синхронизацията е изключена"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
-msgstr "Сървърът за синхронизиране е офлайн"
-
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
+msgstr "Сървърът за синхронизация е извън мрежата"
 
 #: src/ui/panels/history/sync-action.js:58
-msgid "Synchronization server online"
-msgstr "Сървърът за синхронизиране е онлайн"
+msgid "Sync protocol error"
+msgstr "Грешка в протокола за синхронизация"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "Сървърът за синхронизация работи с ограничения"
+
+#: src/ui/panels/history/sync-action.js:64
+msgid "Synchronization server online"
+msgstr "Сървърът за синхронизация е в мрежата"
+
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
 msgstr "Качване"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "Изтегляне"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "Изчакване на другото устройство"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "Подготовка на прехвърлянето"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "Прехвърлянето е неуспешно; натиснете за нов опит"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "Качването завърши"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "Оригиналът е изтеглен"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "Повторен опит за изтегляне на оригинала"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "Изтегляне на оригинала"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "Оригиналът е наличен локално"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
-msgstr "Изпращане към сървъра за синхронизиране"
+msgstr "Изпращане към сървъра за синхронизация"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "Назад към историята на буфера за обмен"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "Добавяне на собствена фраза"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "Въведете собствена фраза…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "Копиране на бързата фраза"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "Изтриване на бързата фраза"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "Няма бързи фрази"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "Изберете една или повече думи"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "Копиране на избраните думи"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "Не са намерени думи"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "Горна лента с инструменти"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "Долна лента"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
-msgstr "Извеждане на иконката"
+msgstr "Показване на иконата"
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
-msgstr ""
+msgstr "Преместване нагоре"
 
 #: src/ui/settings/panel-actions.js:92
 msgid "Move down"
-msgstr ""
+msgstr "Преместване надолу"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "Преместване в долната лента"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "Преместване в горната лента с инструменти"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "Избор на цвят"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
 msgstr "Синхронизация"
 
@@ -291,11 +409,11 @@ msgstr "Въведете HTTP или HTTPS адрес, който предост
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "Отказ"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "Добавяне"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -303,10 +421,9 @@ msgstr "Речници"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
-msgstr ""
-"Речниците, съответстващи на текущия език на интерфейса, се зареждат "
-"автоматично."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
+msgstr "Активираните речници, съответстващи на текущия език на интерфейса, се зареждат автоматично."
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
@@ -360,26 +477,142 @@ msgstr "Премахване на речника"
 msgid "Dictionary import failed"
 msgstr "Неуспешно импортиране на речника"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "Изключено"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "Натиснете, за да зададете клавишна комбинация"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "Натиснете клавишната комбинация…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "Работеща програма"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "Зареждане…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "Изключване на избраната програма"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "Опресняване на работещите програми"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "Няма намерени работещи програми"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "Включете разширението, за да изберете работещи програми"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "Връзка със сървъра"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "Включване на синхронизирането"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "Адрес на сървъра"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "Ключ за API"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "Активен канал"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "Опресняване на каналите"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "Състояние на сървъра"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "Не е проверено"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "Прилагане"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "Проверка на връзката"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "Няма налични канали"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "Настройките за връзка са запазени · Ключът за API е настроен"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "Настройките за връзка са запазени · Ключът за API не е настроен"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "Настройките за връзка са запазени локално"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "Свързване…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "Ограничена работа"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "В мрежата"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "Зареждане на каналите…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "Каналите са опреснени"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "Настройките за връзка не са зададени"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "Настройките за връзка са заредени · Ключът за API е настроен"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "Настройките за връзка са заредени · Ключът за API не е настроен"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "Настройките за връзка са заредени локално"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "Цвят на темата"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "Според системната тема"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -407,135 +640,139 @@ msgstr "Тъмносиво"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "Добавяне на собствен цвят"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "Избор на собствен цвят на темата"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "Общи"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "Външен вид"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "Панел"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "Показване на индикатора в панела"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "Местоположение на панела при скрит индикатор"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
+msgid "Top left"
+msgstr "Горе вляво"
 
 #: src/ui/settings/window.js:112
-msgid "Top left"
-msgstr "Горе, ляво"
+msgid "Top center"
+msgstr "Горе по средата"
 
 #: src/ui/settings/window.js:113
-msgid "Top center"
-msgstr ""
+msgid "Top right"
+msgstr "Горе вдясно"
 
 #: src/ui/settings/window.js:114
-msgid "Top right"
-msgstr ""
+msgid "Center left"
+msgstr "По средата вляво"
 
 #: src/ui/settings/window.js:115
-msgid "Center left"
-msgstr ""
-
-#: src/ui/settings/window.js:116
 msgid "Center"
 msgstr "Център"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:116
 msgid "Center right"
-msgstr ""
+msgstr "По средата вдясно"
+
+#: src/ui/settings/window.js:117
+msgid "Bottom left"
+msgstr "Долу вляво"
 
 #: src/ui/settings/window.js:118
-msgid "Bottom left"
-msgstr "Долу, ляво"
+msgid "Bottom center"
+msgstr "Долу по средата"
 
 #: src/ui/settings/window.js:119
-msgid "Bottom center"
-msgstr ""
-
-#: src/ui/settings/window.js:120
 msgid "Bottom right"
-msgstr ""
+msgstr "Долу вдясно"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "Хоризонтално отместване на панела"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px; положителната стойност мести надясно"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "Вертикално отместване на панела"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px; положителната стойност мести надолу"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "Ширина на панела"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "Височина на панела"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "Вертикално отместване на текста"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "px; отрицателната стойност мести нагоре, положителната — надолу"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "Максимален брой елементи в панела"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "Запазване на състоянието на панела"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
+"Отваряне на предишния изглед вместо винаги да се връща към историята на "
+"буфера за обмен"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "Задържане на клавиатурния фокус в панела"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
+"В края клавишите със стрелки не преместват фокуса извън панела на "
+"разширението"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "Подредба на иконите"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "Използвайте бутоните, за да промените мястото и реда на действията."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "Буфер за обмен"
 
@@ -543,411 +780,458 @@ msgstr "Буфер за обмен"
 msgid "History"
 msgstr "История"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
+"Закачените елементи се запазват и при достигане на ограниченията за история "
+"или място."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "Елементи в историята"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "Размер на хранилището"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "Срок на съхранение на историята"
 
 #: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "дни; 0 изключва"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "Максимален размер на елемент"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
 msgstr "Премахвай интервалите около текста"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "Симулирано въвеждане"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr ""
+"Използвайте бавно въвеждане, ако целевата програма пропуска симулирани "
+"натискания на клавиши."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "Скорост на въвеждане"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "Стандартна"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "Бавна"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "Сегментатор"
 
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
-
-#: src/ui/settings/window.js:184
-msgid "Privacy"
-msgstr ""
-
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
-
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
-
 #: src/ui/settings/window.js:194
+msgid "Show source text preview"
+msgstr "Показване на преглед на оригиналния текст"
+
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "Поверителност"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"Изберете работеща програма или въведете ръчно класа на прозореца ѝ, за да я "
+"изключите."
+
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "Спиране на записването на буфера за обмен"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "Чувствително съдържание"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "Да не се записва"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "Запазване до спиране на разширението"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "Запазване като останалата история"
+
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
 msgstr "Изключени програми"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "Класове на прозорци, разделени със запетаи"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "Поведение"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "Бързите фрази се съхраняват само на това устройство."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "Максимален брой бързи фрази"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "Поставяне на новите фрази най-отгоре"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "Затваряне на панела след копиране"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "Устройство"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
 msgstr "Идентификатор на устройството"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr ""
+msgstr "Етикет на устройството"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "Разпознаваемо име при откриване на устройството"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "Икона на устройството"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
 msgstr "Работен плот"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
 msgstr "Лаптоп"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "Телефон"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "Таблет"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "Сървър"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "Други"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "Връзка със сървъра"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "Включване на синхронизирането"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "Състояние на сървъра"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "Свързване…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "Отваряне"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "Правила за прехвърляне"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"Предварителните прегледи намаляват размера на първоначалното прехвърляне; "
+"оригиналите се изтеглят при нужда."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "Режим на изпращане"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "Ръчно"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "Автоматично"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"Автоматичното изпращане качва новите елементи, които отговарят на условията, "
+"на настроения сървър."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "Режим на получаване"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "Само в историята"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "Прилагане в буфера за обмен"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr ""
+"Прилагането в буфера за обмен заменя текущото му съдържание с полученото."
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
-msgstr ""
+msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "Изображения"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"Позволява изпращане към сървъра на съдържание, отбелязано като чувствително "
+"от мениджърите на пароли."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "Само закачени елементи"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "Важи само при автоматично изпращане"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "Пълно изпращане на малък текст"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
-msgstr ""
+msgstr "KB"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "Преглед на голям текст"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "Пълно изпращане на малки изображения"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "Размер на миниатюрата"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "Ограничение за размера на миниатюрата"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "Време за изчакване при заявка"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "секунди"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
-msgstr ""
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "Интервал на проверка"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr ""
+"Секунди между проверките; по-дългият интервал намалява заявките, но забавя "
+"обновяванията."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "Формат на цвета"
+
+#: src/ui/settings/window.js:315
 msgid "Default format"
 msgstr "Стандартен формат"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:328
 msgid "Default target"
-msgstr ""
+msgstr "Режим на заснемане по подразбиране"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
-msgstr ""
+msgstr "Интерактивен"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "Цял екран"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
-msgstr "Прозорeц"
+msgstr "Прозорец"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
-msgstr "площ"
+msgstr "Област"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
 msgstr "Активен прозорец"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "Наличните режими зависят от системния портал за снимки на екрана."
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "Добавяне към историята"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "Копиране на снимката на екрана"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "Отваряне на редактора на изображения"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "Изисква команда за редактор на изображения по-долу."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"За да включите редактирането, въведете команда. %% е знакът за процент, %u е "
+"URI на изображението, %f е локален път, а %i са байтовете на изображението "
+"през стандартния вход."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "Команда"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "Клавишни комбинации"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
-msgstr "Общи"
+msgstr "Глобални"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"Натиснете клавишна комбинация, след което въведете новата. Backspace я "
+"изключва."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "Показване/скриване на менюто"
+msgstr "Отваряне на панела на буфера за обмен"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "Фокусиране на търсенето в буфера за обмен"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "Спиране или подновяване на записването на буфера за обмен"
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:386
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
+"Активни, когато елемент от историята на буфера за обмен има клавиатурния "
+"фокус."
 
-#: src/ui/settings/window.js:395
+#: src/ui/settings/window.js:390
 msgid "Paste entry"
-msgstr ""
+msgstr "Поставяне на елемента"
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:391
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "Закачане или откачане на елемента"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "Изтриване на елемента"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "Директно въвеждане на елемента"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "Въвеждане на елемента вместо копиране"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "Активни, когато сегмент от текста има клавиатурния фокус."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "Копиране на избраните сегменти"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "Поставяне на избраните сегменти"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "Въвеждане на избраните сегменти"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "Разширяване на избора наляво"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "Разширяване на избора надясно"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "Разширяване на избора нагоре"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "Разширяване на избора надолу"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "Заснемане на екрана"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr ""
+#~ "Речниците, съответстващи на текущия език на интерфейса, се зареждат "
+#~ "автоматично."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "Автоматично изчистване"
+
+#~ msgid "Favorites only"
+#~ msgstr "Само любими"
+
+#~ msgid "Phone"
+#~ msgstr "Телефон"
+
+#~ msgid "Other"
+#~ msgstr "Други"
+
+#~ msgid "Open"
+#~ msgstr "Отваряне"
 
 #, fuzzy
 #~ msgid "Remove network location"

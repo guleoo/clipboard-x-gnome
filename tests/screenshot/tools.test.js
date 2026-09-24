@@ -14,6 +14,17 @@ function assertEqual(actual, expected, message) {
     throw new Error(`${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 }
 
+const projectDirectory = Gio.File.new_for_uri(import.meta.url)
+  .get_parent().get_parent().get_parent().get_path();
+const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
+  GLib.build_filenamev([projectDirectory, 'build']),
+  Gio.SettingsSchemaSource.get_default(),
+  false,
+);
+const schema = schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false);
+assert(schema.get_key('editor-command').get_default_value().deepUnpack() === '',
+  'Image editor command must be unconfigured by default');
+
 async function assertRejects(promise, pattern, message) {
   try {
     await promise;

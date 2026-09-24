@@ -27,6 +27,7 @@ class TestSettings {
       ['text-preview-limit', 4096],
       ['thumbnail-byte-limit', 256 * 1024],
       ['sync-transfer-timeout-seconds', 30],
+      ['sync-poll-interval-seconds', 5],
     ]);
     this._nextSignal = 1;
     this._signals = new Map();
@@ -231,6 +232,15 @@ try {
   await client.start();
   assert(client.connected && client.channels[0].active,
     'client start must authenticate, load the pre-registered device and select its channel');
+  const originalPollSource = client._pollSource;
+  settings._values.set('sync-poll-interval-seconds', 15);
+  for (const {name, callback} of settings._signals.values()) {
+    if (name === 'changed::sync-poll-interval-seconds')
+      callback();
+  }
+  assert(originalPollSource > 0 && client._pollSource > 0
+      && client._pollSource !== originalPollSource,
+  'changing the poll interval must reschedule the running client without reconnecting');
   assert(transport.updatedProfiles.length === 1
       && transport.updatedProfiles[0].tag === 'Test laptop'
       && transport.updatedProfiles[0].iconKind === 'laptop'
@@ -288,6 +298,20 @@ try {
     'preview and eager content must be streamed exactly once');
   assert(client.getTransferForItem(item.id).state === 'completed',
     'completed server progress must replace local streaming progress');
+  const sensitive = ClipboardItem.fromText('local sensitive content', {
+    originDeviceId: deviceId,
+    sensitive: true,
+  });
+  sensitive.primary.path = path;
+  let rejection = null;
+  const uploadedBytes = transport.uploadedBytes;
+  try {
+    await client.publish(sensitive);
+  } catch (error) {
+    rejection = error;
+  }
+  assert(rejection?.code === 'sensitive_content' && transport.uploadedBytes === uploadedBytes,
+    'the sync client must reject sensitive content even when it has a persisted path');
 } finally {
   client.destroy();
   try {

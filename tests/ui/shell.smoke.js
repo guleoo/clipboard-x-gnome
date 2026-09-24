@@ -654,6 +654,15 @@ export async function run() {
   assert(imageItem,
     'Clipboard X did not asynchronously create an image thumbnail');
   assert(imageItem.primary.delivery === 'eager', 'small clipboard image did not use eager delivery');
+  indicator._settings.set_string('editor-command', '');
+  const ensureMaterialized = extensionObject._ensureMaterialized;
+  extensionObject._ensureMaterialized = () => {
+    throw new Error('Unconfigured editor should not materialize the image');
+  };
+  await extensionObject._editItem(imageItem);
+  extensionObject._ensureMaterialized = ensureMaterialized;
+  assert(await extensionObject._launchEditor('file:///tmp/unused-image.png') === null,
+    'Unconfigured screenshot editor should not attempt to launch');
   indicator._settings.set_string('editor-command', '/usr/bin/true %f');
   await extensionObject._editItem(imageItem);
   assert(imageItem.primary.path, 'Immediate image editing did not persist a stable original path');
@@ -747,10 +756,22 @@ export async function run() {
   imageItem.sensitive = true;
   extensionObject._publishAutomatically(imageItem);
   await Scripting.sleep(10);
-  assert(automaticPublishes === 1, 'Automatic policy sent sensitive content without permission');
+  assert(automaticPublishes === 1, 'Automatic policy sent sensitive content');
+  extensionObject._publish = publish;
+  let sensitiveError = null;
+  try {
+    await extensionObject._publish(imageItem);
+  } catch (error) {
+    sensitiveError = error;
+  }
+  assert(sensitiveError?.code === 'sensitive_content',
+    'Manual synchronization must reject sensitive content before persistence');
+  const sensitiveRow = history.entry(imageItem);
+  assert(sensitiveRow.get_children().filter(child => child instanceof St.Button).length === 4,
+    'Sensitive history entries must not expose a synchronization action');
+  sensitiveRow.destroy();
   imageItem.sensitive = false;
   imageItem.favorite = false;
-  extensionObject._publish = publish;
   indicator._settings.set_boolean('sync-favorites-only', false);
   indicator._settings.set_string('sync-send-mode', 'manual');
   indicator._settings.set_boolean('sync-enabled', false);

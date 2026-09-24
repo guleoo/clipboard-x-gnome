@@ -1,5 +1,11 @@
-const ASCII_DELAY_MILLISECONDS = 3;
-const UNICODE_DELAY_MILLISECONDS = 20;
+const TIMING = Object.freeze({
+  standard: {ascii: 3, unicode: 20, settle: 75},
+  slow: {ascii: 15, unicode: 50, settle: 150},
+});
+
+export function typingTiming(speed = 'standard') {
+  return TIMING[speed] ?? TIMING.standard;
+}
 
 export function typingSequence(text) {
   const sequence = [];
@@ -9,8 +15,9 @@ export function typingSequence(text) {
   return sequence;
 }
 
-export function typingDelay(character) {
+export function typingDelay(character, speed = 'standard') {
+  const timing = typingTiming(speed);
   return character.codePointAt(0) <= 0x7f
-    ? ASCII_DELAY_MILLISECONDS
-    : UNICODE_DELAY_MILLISECONDS;
+    ? timing.ascii
+    : timing.unicode;
 }

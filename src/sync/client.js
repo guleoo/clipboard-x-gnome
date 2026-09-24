@@ -14,7 +14,6 @@ import {writeFile} from '../common/files.js';
 import {isUuid} from '../common/uuid.js';
 import {configuration as publicConfiguration} from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
-import {POLL_INTERVAL_MILLISECONDS} from './constants.js';
 import {ensureDeviceIdentity} from './device.js';
 import {SyncError} from './errors.js';
 import {HttpTransport} from './http/transport.js';
@@ -104,6 +103,7 @@ export class SyncClient extends EventEmitter {
       this._settings.connect('changed::device-tag', () => this._queueProfileUpdate().catch(error => this._report(error))),
       this._settings.connect('changed::device-icon-kind', () => this._queueProfileUpdate().catch(error => this._report(error))),
       this._settings.connect('changed::sync-configuration-revision', () => this.restart().catch(error => this._report(error))),
+      this._settings.connect('changed::sync-poll-interval-seconds', () => this._reschedulePoll()),
     );
     await this._connect();
   }
@@ -120,6 +120,8 @@ export class SyncClient extends EventEmitter {
   }
 
   publish(item) {
+    if (item.sensitive)
+      return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
     return this._enqueueTransfer(() => this._publish(item));
   }
 
@@ -320,6 +322,8 @@ export class SyncClient extends EventEmitter {
   }
 
   async _publish(item) {
+    if (item.sensitive)
+      throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
     this._requireConnection();
     if (!isUuid(item.id))
       throw new Error('Item ID must be a UUID v4');
@@ -827,7 +831,7 @@ export class SyncClient extends EventEmitter {
       return;
     this._pollSource = GLib.timeout_add(
       GLib.PRIORITY_DEFAULT,
-      POLL_INTERVAL_MILLISECONDS,
+      this._settings.get_uint('sync-poll-interval-seconds') * 1000,
       () => {
         this._poll().catch(error => {
           if (this._connected)
@@ -840,6 +844,13 @@ export class SyncClient extends EventEmitter {
         return GLib.SOURCE_CONTINUE;
       },
     );
+  }
+
+  _reschedulePoll() {
+    if (this._pollSource)
+      GLib.Source.remove(this._pollSource);
+    this._pollSource = 0;
+    this._schedulePoll();
   }
 
   _enqueueTransfer(operation) {

@@ -47,8 +47,8 @@ server authentication should deploy HTTPS or use a trusted, controlled network.
   boundary-checked. Transfer state, work pages, and change pages have count limits.
 - Thumbnails and truncated text are previews and must never be treated as original content.
 - Logs do not contain clipboard text, API keys, raw server error bodies, or complete sensitive paths.
-- Privacy mode pauses capture. Password-manager-marked content stays in memory by default, and sensitive
-  synchronization is disabled by default.
+- Privacy mode pauses capture. Password-manager-marked content is either discarded or kept only in
+  memory until the extension stops; it cannot be synchronized.
 
 Local history and `sync.json` are not a vault and are not encrypted at rest. Malicious software running
 as the current user, or controlling GNOME Shell, is outside this model. Use privacy mode and disable
@@ -68,7 +68,7 @@ A compatible server must at least:
 - define clear retention, revocation, deletion, and web-access policies;
 - avoid logging or sending clipboard text, API keys, and complete sensitive paths in telemetry.
 
-See the [Synchronization Protocol (HTTP API v1)](docs/sync-protocol.md) for formal fields and state machines.
+See the Server-owned [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) for formal fields and state machines.
 
 ## GNOME Extensions review boundary
 

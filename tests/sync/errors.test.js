@@ -10,6 +10,7 @@ const translations = new Map([
   ['Synchronization server is unavailable', '同步服务器不可用'],
   ['Synchronization authentication failed', '同步认证失败'],
   ['Synchronization request failed', '同步请求失败'],
+  ['Sensitive content', '敏感内容'],
 ]);
 const translate = value => translations.get(value) ?? value;
 
@@ -24,6 +25,11 @@ assertEqual(
   'an unavailable server must have a localized user-facing message',
 );
 assertEqual(
+  message(new SyncError('sensitive_content', 'diagnostic only'), translate),
+  '敏感内容',
+  'sensitive content must expose a localized refusal instead of a diagnostic',
+);
+assertEqual(
   message({code: 'invalid_key', message: 'server-controlled English'}, translate),
   '同步认证失败',
   'a server error must use its code instead of its untrusted message',
@@ -32,6 +38,11 @@ assertEqual(
   message({code: 'request_failed', message: 'diagnostic only'}, translate),
   '同步请求失败',
   'a request failure must have a localized user-facing message',
+);
+assertEqual(
+  message({code: 'http_error', message: 'Bad Gateway'}, translate),
+  '同步请求失败',
+  'an HTTP gateway failure must not display its untranslated diagnostic',
 );
 assertEqual(
   message(new Error('internal diagnostic'), translate),

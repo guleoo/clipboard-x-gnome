@@ -40,11 +40,7 @@ export class HttpClient {
         bytesFromString(JSON.stringify(json)),
       );
     }
-    const input = await this._session.send_async(
-      message,
-      GLib.PRIORITY_DEFAULT,
-      cancellable ?? this._cancellable,
-    );
+    const input = await this._send(message, cancellable);
     try {
       const bytes = await readAll(
         input,
@@ -76,11 +72,7 @@ export class HttpClient {
       onProgress?.(Math.min(completedBytes, size), size);
     });
     try {
-      const input = await this._session.send_async(
-        message,
-        GLib.PRIORITY_DEFAULT,
-        cancellable ?? this._cancellable,
-      );
+      const input = await this._send(message, cancellable);
       try {
         const bytes = await readAll(
           input,
@@ -111,7 +103,7 @@ export class HttpClient {
     const activeCancellable = cancellable ?? this._cancellable;
     const message = this._message('GET', path, query);
     message.request_headers.replace('Accept', mimeType);
-    const input = await this._session.send_async(message, GLib.PRIORITY_DEFAULT, activeCancellable);
+    const input = await this._send(message, activeCancellable);
     try {
       const bytes = await readAll(
         input,
@@ -137,7 +129,7 @@ export class HttpClient {
     const activeCancellable = cancellable ?? this._cancellable;
     const message = this._message('GET', path, query);
     message.request_headers.append('Accept', mimeType);
-    const input = await this._session.send_async(message, GLib.PRIORITY_DEFAULT, activeCancellable);
+    const input = await this._send(message, activeCancellable);
     if (!this._successful(message)) {
       try {
         const bytes = await readAll(input, ERROR_LIMIT_BYTES, activeCancellable);
@@ -212,6 +204,20 @@ export class HttpClient {
 
   abort() {
     this._session.abort();
+  }
+
+  async _send(message, cancellable) {
+    try {
+      return await this._session.send_async(
+        message,
+        GLib.PRIORITY_DEFAULT,
+        cancellable ?? this._cancellable,
+      );
+    } catch (error) {
+      if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        throw error;
+      throw new HttpError(error.message, {code: 'server_unavailable'});
+    }
   }
 
   _message(method, path, query) {

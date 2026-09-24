@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fr_FR\n"
@@ -18,27 +18,144 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "Rétablir les paramètres par défaut"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "Rétablir"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "Rétablir les paramètres par défaut ?"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "Réinitialise toutes les préférences sans supprimer l’historique du presse-papiers, les phrases rapides, les dictionnaires, la connexion au serveur ni l’identité de l’appareil."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "Saisie simulée au clavier annulée"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
+"Une saisie au clavier physique a été détectée. Le reste de la saisie simulée "
+"a été annulé."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "Édition d’image"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
+msgstr ""
+"Configurez une commande d’édition d’image dans Préférences → Capture d’écran "
+"→ Édition d’image."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "Échec de l’opération"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "La synchronisation est désactivée"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "Le serveur de synchronisation est indisponible"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "Aucun canal de synchronisation actif n’est configuré"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "L’adresse du serveur de synchronisation est invalide"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "L’authentification pour la synchronisation a échoué"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "Cet appareil est désactivé sur le serveur de synchronisation"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "La clé API n’appartient pas à cet appareil"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "Cet appareil n’a pas accès au canal de synchronisation"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr ""
+"Cet élément du presse-papiers entre en conflit avec un élément du serveur de "
+"synchronisation"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "Le contenu du presse-papiers n’est pas prêt sur l’appareil source"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "L’appareil source ne possède plus ce contenu du presse-papiers"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr ""
+"Le contenu du presse-papiers dépasse la taille maximale autorisée pour la "
+"synchronisation"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "La vérification de l’intégrité du contenu synchronisé a échoué"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "Le transfert de synchronisation a expiré"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "Le serveur de synchronisation est occupé. Réessayez plus tard."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "Le serveur de synchronisation a renvoyé une réponse invalide"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "L’envoi pour la synchronisation a échoué"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "Le téléchargement pour la synchronisation a échoué"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "La requête de synchronisation a échoué"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "Ce texte est trop volumineux pour être traité de manière interactive"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "Télécharger l’original et le copier"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "Copier l’original"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -46,7 +163,7 @@ msgstr "Segmenter le texte"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr "Modifier"
+msgstr "Modifier l’image"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
@@ -58,9 +175,9 @@ msgstr "Épingler"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr "Supprimer"
+msgstr "Supprimer de l’historique local"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "Texte"
 
@@ -68,177 +185,177 @@ msgstr "Texte"
 msgid "Image"
 msgstr "Image"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
 msgstr "Tapez pour rechercher..."
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "Capture d’écran"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "Choisir une couleur"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "Mode privé"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "Phrases rapides"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "Effacer l'historique"
+msgstr "Effacer les éléments non épinglés de l’historique"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "Préférences"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "Chargement de l’historique du presse-papiers…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "Impossible de charger l’historique du presse-papiers"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "Aucun élément correspondant"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
 msgstr "Le presse-papiers est vide"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
-msgstr "Périphérique inconnu"
+msgstr "Appareil inconnu"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "Paramètres de synchronisation"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
 msgstr "Synchroniser"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "Synchronisation désactivée"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr "Serveur de synchronisation hors ligne"
 
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "Erreur de protocole de synchronisation"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "Serveur de synchronisation en mode dégradé"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr "Serveur de synchronisation en ligne"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
 msgstr "Envoi"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "Téléchargement"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "En attente de l’autre appareil"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "Préparation du transfert"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "Échec du transfert ; activez pour réessayer"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "Envoi terminé"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "Original téléchargé"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "Réessayer de télécharger l’original"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "Télécharger l’original"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "L’original est disponible localement"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr "Envoyer au serveur de synchronisation"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "Retour à l’historique du presse-papiers"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "Ajouter une phrase personnalisée"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "Saisir une phrase personnalisée…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "Copier la phrase rapide"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "Supprimer la phrase rapide"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "Aucune phrase rapide"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "Sélectionnez un ou plusieurs mots"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "Copier les mots sélectionnés"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "Aucun mot trouvé"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "Barre d’outils supérieure"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "Barre inférieure"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
-msgstr ""
+msgstr "Afficher l’icône"
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
@@ -250,18 +367,18 @@ msgstr "Déplacer vers le bas"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "Déplacer vers la barre inférieure"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "Déplacer vers la barre d’outils supérieure"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "Pipette à couleurs"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
 msgstr "Synchronisation"
 
@@ -292,11 +409,11 @@ msgstr ""
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "Annuler"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "Ajouter"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -304,10 +421,9 @@ msgstr "Dictionnaires"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
-msgstr ""
-"Les dictionnaires correspondant à la langue d’affichage actuelle sont "
-"chargés automatiquement."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
+msgstr "Les dictionnaires activés correspondant à la langue d’affichage actuelle sont chargés automatiquement."
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
@@ -362,26 +478,143 @@ msgstr "Supprimer le dictionnaire"
 msgid "Dictionary import failed"
 msgstr "Échec de l’importation du dictionnaire"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "Désactivé"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "Cliquez pour définir un raccourci"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
+msgstr "Appuyez sur le raccourci…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "Application en cours d’exécution"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "Chargement…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "Exclure l’application sélectionnée"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "Actualiser les applications en cours d’exécution"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "Aucune application en cours d’exécution trouvée"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
 msgstr ""
+"Activez l’extension pour choisir parmi les applications en cours d’exécution"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "Connexion au serveur"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "Activer la synchronisation"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "Adresse du serveur"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "Clé API"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "Canal actif"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "Actualiser les canaux"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "État du serveur"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "Non testé"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "Appliquer"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "Tester la connexion"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "Aucun canal disponible"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "Paramètres de connexion enregistrés · clé API configurée"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "Paramètres de connexion enregistrés · clé API non configurée"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "Paramètres de connexion enregistrés localement"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "Connexion en cours…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "Dégradé"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "En ligne"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "Chargement des canaux…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "Canaux actualisés"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "Les paramètres de connexion ne sont pas configurés"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "Paramètres de connexion chargés · clé API configurée"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "Paramètres de connexion chargés · clé API non configurée"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "Paramètres de connexion chargés localement"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "Couleur du thème"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "Suivre le système"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -409,135 +642,141 @@ msgstr "Ardoise"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "Ajouter une couleur personnalisée"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "Choisir une couleur de thème personnalisée"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "Général"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "Apparence"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "Panneau"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "Afficher l’indicateur du panneau"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "Position du panneau lorsque l’indicateur est masqué"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
-
-#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "En haut à gauche"
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:112
 msgid "Top center"
-msgstr ""
+msgstr "En haut au centre"
+
+#: src/ui/settings/window.js:113
+msgid "Top right"
+msgstr "En haut à droite"
 
 #: src/ui/settings/window.js:114
-msgid "Top right"
-msgstr "Haut-droite"
+msgid "Center left"
+msgstr "Au centre à gauche"
 
 #: src/ui/settings/window.js:115
-msgid "Center left"
-msgstr ""
-
-#: src/ui/settings/window.js:116
 msgid "Center"
 msgstr "Centre"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:116
 msgid "Center right"
-msgstr ""
+msgstr "Au centre à droite"
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:117
 msgid "Bottom left"
 msgstr "En bas à gauche"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:118
 msgid "Bottom center"
-msgstr ""
+msgstr "En bas au centre"
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:119
 msgid "Bottom right"
-msgstr "Bas-droite"
+msgstr "En bas à droite"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "Décalage horizontal du panneau"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px ; une valeur positive déplace vers la droite"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "Décalage vertical du panneau"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px ; une valeur positive déplace vers le bas"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "Largeur du panneau"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "Hauteur du panneau"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "Décalage vertical du texte"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
 msgstr ""
+"px ; une valeur négative déplace vers le haut, une valeur positive vers le "
+"bas"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "Nombre maximal d’éléments affichés dans le panneau"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "Conserver l’état du panneau"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
+"Rouvrir la vue précédente au lieu de toujours revenir à l’historique du "
+"presse-papiers"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "Garder le focus clavier dans le panneau"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
+"Sur les bords, les touches fléchées ne déplacent pas le focus hors du "
+"panneau de l’extension"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "Disposition des icônes"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "Utilisez les boutons pour modifier la position et l’ordre des actions."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "Presse-papiers"
 
@@ -545,411 +784,459 @@ msgstr "Presse-papiers"
 msgid "History"
 msgstr "Historique"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
+"Les éléments épinglés sont conservés lorsque les limites de l’historique ou "
+"du stockage sont atteintes."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "Éléments de l’historique"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "Taille du stockage"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
-msgstr "Mio"
-
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+msgstr "Mo"
 
 #: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "Durée de conservation de l’historique"
+
+#: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "jours ; 0 pour désactiver"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "Taille maximale d’un élément"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
 msgstr "Supprimer les espaces autour du texte"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "Saisie simulée"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr ""
+"Utilisez la saisie lente si l’application cible ne reconnaît pas certaines "
+"frappes simulées."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "Vitesse de saisie"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "Normale"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "Lente"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "Segmenteur"
 
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
-
-#: src/ui/settings/window.js:184
-msgid "Privacy"
-msgstr ""
-
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
-
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
-
 #: src/ui/settings/window.js:194
+msgid "Show source text preview"
+msgstr "Afficher un aperçu du texte source"
+
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "Confidentialité"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"Sélectionnez une application en cours d’exécution ou saisissez manuellement "
+"sa classe de fenêtre pour l’exclure."
+
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "Mettre en pause l’enregistrement du presse-papiers"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "Contenu sensible"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "Ne pas enregistrer"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "Conserver jusqu’à l’arrêt de l’extension"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "Stocker comme les autres éléments de l’historique"
+
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
 msgstr "Applications exclues"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "Classes de fenêtre séparées par des virgules"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "Comportement"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "Les phrases rapides sont stockées uniquement sur cet appareil."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "Nombre maximal de phrases rapides"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "Placer les nouvelles phrases en premier"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "Fermer le panneau après la copie"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "Appareil"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
-msgstr "ID de périphérique"
+msgstr "Identifiant de l’appareil"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr "Étiqueter"
+msgstr "Étiquette de l’appareil"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "Nom lisible affiché lors de la découverte des appareils"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "Icône de l’appareil"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
 msgstr "Bureau"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
 msgstr "Ordinateur portable"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "Téléphone"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "Tablette"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "Serveur"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "Autre"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "Connexion au serveur"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "Activer la synchronisation"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "État du serveur"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "Connexion en cours…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "Ouvrir"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "Politique de transfert"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"Les aperçus réduisent la taille du transfert initial ; les originaux sont "
+"récupérés au besoin."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "Mode d’envoi"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "Manuel"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "Automatique"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"L’envoi automatique transfère les nouveaux éléments correspondants vers le "
+"serveur configuré."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "Mode de réception"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "Historique uniquement"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "Activer le presse-papiers"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr ""
+"L’activation du presse-papiers remplace son contenu actuel par le contenu "
+"reçu."
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "Images"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"Autorise l’envoi au serveur des contenus signalés comme sensibles par les "
+"gestionnaires de mots de passe."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "Uniquement les éléments épinglés"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "S’applique uniquement à l’envoi automatique"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "Petits textes envoyés en entier"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "Ko"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "Aperçu des grands textes"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "Petites images envoyées en entier"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "Dimensions de la miniature"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "Taille maximale de la miniature"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "Délai d’attente du téléchargement à la demande"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "secondes"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
-msgstr ""
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "Intervalle d’interrogation"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr ""
+"Secondes entre deux vérifications ; un intervalle plus long réduit les "
+"requêtes, mais retarde les mises à jour."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "Format de couleur"
+
+#: src/ui/settings/window.js:315
 msgid "Default format"
 msgstr "Format par défaut"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:328
 msgid "Default target"
-msgstr ""
+msgstr "Cible par défaut"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
 msgstr "Interactif"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "Écran entier"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "Fenêtre"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
-msgstr "Zone de stockage"
+msgstr "Zone"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
 msgstr "Fenêtre active"
 
-#: src/ui/settings/window.js:348
-msgid "Add to history"
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
 msgstr ""
+"Les cibles disponibles dépendent du portail de capture d’écran du système."
+
+#: src/ui/settings/window.js:337
+msgid "Add to history"
+msgstr "Ajouter à l’historique"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "Copier la capture d’écran"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "Ouvrir l’éditeur d’images"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "Nécessite une commande d’édition d’image ci-dessous."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
+msgstr ""
+"Saisissez une commande pour activer l’édition. %u est l’URI d’une image, %f "
+"un chemin local, %i les octets de l’image sur l’entrée standard et %% un "
+"signe pour cent."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "Commande"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "Raccourcis"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
 msgstr "Global"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"Cliquez sur un raccourci, puis appuyez sur la nouvelle combinaison de "
+"touches. La touche Retour arrière le désactive."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
 msgstr "Afficher/cacher le menu"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "Placer le focus sur la recherche du presse-papiers"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "Suspendre ou reprendre l’enregistrement du presse-papiers"
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:386
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
+"Actif lorsqu’un élément de l’historique du presse-papiers a le focus clavier."
 
-#: src/ui/settings/window.js:395
+#: src/ui/settings/window.js:390
 msgid "Paste entry"
-msgstr ""
+msgstr "Coller l’élément"
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:391
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "Épingler ou désépingler l’élément"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "Supprimer l’élément"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "Saisir directement l’élément"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "Saisir l’élément au lieu de le copier"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "Actif lorsqu’un segment a le focus clavier."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "Copier les segments sélectionnés"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "Coller les segments sélectionnés"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "Saisir les segments sélectionnés"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "Étendre la sélection vers la gauche"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "Étendre la sélection vers la droite"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "Étendre la sélection vers le haut"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "Étendre la sélection vers le bas"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "Prendre une capture d’écran"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr ""
+#~ "Les dictionnaires correspondant à la langue d’affichage actuelle sont "
+#~ "chargés automatiquement."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "Nettoyage automatique"
+
+#~ msgid "Favorites only"
+#~ msgstr "Favoris uniquement"
+
+#~ msgid "Phone"
+#~ msgstr "Téléphone"
+
+#~ msgid "Other"
+#~ msgstr "Autre"
+
+#~ msgid "Open"
+#~ msgstr "Ouvrir"
 
 #, fuzzy
 #~ msgid "Remove network location"

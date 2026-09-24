@@ -2,15 +2,14 @@
 
 > English · [简体中文](zh-CN/README.md)
 
-This directory contains public documentation for extension users, compatible-server developers, and
-contributors. Files without a language suffix are the English primary versions. Simplified Chinese
+This directory contains public documentation for extension users and contributors. Files without a
+language suffix are the English primary versions. Simplified Chinese
 counterparts are kept under `docs/zh-CN/` with the same names.
 
 ## Protocol and synchronization
 
-- [Synchronization Protocol (HTTP API v1)](sync-protocol.md): the public interface between the
-  extension and a user-configured central server, including manifests, previews, on-demand materialization,
-  transfer state, and recovery semantics.
+- [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md):
+  the Server-owned contract followed by this GNOME client and future clients on other platforms.
 - [Synchronization performance and stress testing](sync-performance-testing.md): the daily baseline,
   10x stress matrix, and reproducible Meson commands.
 

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
-"PO-Revision-Date: 2026-08-19 16:20+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
+"PO-Revision-Date: 2026-09-23 13:10+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: tr\n"
 "Language: tr\n"
@@ -18,27 +18,139 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "Varsayılan ayarları geri yükle"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "Geri yükle"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "Varsayılan ayarlar geri yüklensin mi?"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "Pano geçmişini, hızlı ifadeleri, sözlükleri, sunucu bağlantısını veya aygıt kimliğini silmeden tüm tercihleri sıfırlar."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "Benzetimli klavye girişi iptal edildi"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
+"Fiziksel klavyeden giriş algılandı. Kalan benzetimli giriş iptal edildi."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "Resim düzenleme"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
+msgstr ""
+"Tercihler → Ekran Görüntüsü → Resim düzenleme bölümünde bir resim "
+"düzenleyici komutu yapılandırın."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "İşlem başarısız oldu"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "Eşitleme devre dışı"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "Eşitleme sunucusuna ulaşılamıyor"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "Etkin bir eşitleme kanalı yapılandırılmamış"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "Eşitleme sunucusunun adresi geçersiz"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "Eşitleme kimlik doğrulaması başarısız oldu"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "Bu aygıt eşitleme sunucusunda devre dışı bırakılmış"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "API anahtarı bu aygıta ait değil"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "Bu aygıtın eşitleme kanalına erişimi yok"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "Pano öğesi, eşitleme sunucusundaki bir öğeyle çakışıyor"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "Pano içeriği kaynak aygıtta henüz hazır değil"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "Kaynak aygıtta bu pano içeriği artık yok"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "Pano içeriği eşitleme boyutu sınırını aşıyor"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "Eşitlenen içerik bütünlük doğrulamasından geçemedi"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "Eşitleme aktarımının süresi doldu"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "Eşitleme sunucusu meşgul. Daha sonra yeniden deneyin."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "Eşitleme sunucusu geçersiz bir yanıt döndürdü"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "Eşitleme için yükleme başarısız oldu"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "Eşitleme için indirme başarısız oldu"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "Eşitleme isteği başarısız oldu"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "Bu metin etkileşimli işleme için çok büyük"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "Özgün içeriği indir ve kopyala"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "Özgün içeriği kopyala"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -46,21 +158,21 @@ msgstr "Metni bölümlere ayır"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "Resmi düzenle"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
-msgstr "Çıkar"
+msgstr "Sabitlemeyi kaldır"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "Sabitle"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "Yerel geçmişten sil"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "Metin"
 
@@ -68,173 +180,173 @@ msgstr "Metin"
 msgid "Image"
 msgstr "Resim"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
-msgstr "Aramak için buraya yaz..."
+msgstr "Pano geçmişinde ara…"
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "Ekran Görüntüsü"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "Renk seç"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "Gizli kip"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "Hızlı ifadeler"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "Geçmişi temizle"
+msgstr "Sabitlenmemiş geçmişi temizle"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "Tercihler"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "Pano geçmişi yükleniyor…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "Pano geçmişi yüklenemedi"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "Eşleşen öğe yok"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
-msgstr "Pano boş"
+msgstr "Pano geçmişi boş"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
 msgstr "Bilinmeyen aygıt"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "Eşitleme ayarları"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
-msgstr "Eşzamanla"
+msgstr "Eşitle"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "Eşitleme devre dışı"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
-msgstr "Eşzamanlama sunucusu çevrim dışı"
-
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
+msgstr "Eşitleme sunucusu çevrim dışı"
 
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "Eşitleme protokolü hatası"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "Eşitleme sunucusu kısıtlı çalışıyor"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
-msgstr "Eşzamanlama sunucusu çevrim içi"
+msgstr "Eşitleme sunucusu çevrim içi"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
-msgstr "Yüklenen"
+msgstr "Yükleniyor"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "İndiriliyor"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "Diğer aygıt bekleniyor"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "Aktarım hazırlanıyor"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "Aktarım başarısız oldu; yeniden denemek için tıklayın"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "Yükleme tamamlandı"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "Özgün içerik indirildi"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "Özgün içeriği yeniden indirmeyi dene"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "Özgün içeriği indir"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "Özgün içerik yerel olarak mevcut"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
-msgstr "Eşzamanlama sunucusuna gönder"
+msgstr "Eşitleme sunucusuna gönder"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "Pano geçmişine dön"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "Özel ifade ekle"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "Özel bir ifade girin…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "Hızlı ifadeyi kopyala"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "Hızlı ifadeyi sil"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "Hızlı ifade yok"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "Bir veya daha fazla sözcük seçin"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "Seçili sözcükleri kopyala"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "Sözcük bulunamadı"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "Üst araç çubuğu"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "Alt çubuk"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
@@ -250,20 +362,20 @@ msgstr "Aşağı taşı"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "Alt çubuğa taşı"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "Üst araç çubuğuna taşı"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "Renk seçici"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
-msgstr "Eşleme"
+msgstr "Eşitleme"
 
 #: src/ui/settings/panel-actions.js:139
 msgid "Clear history"
@@ -291,11 +403,11 @@ msgstr "UTF-8 sözlük dosyası sunan bir HTTP veya HTTPS URL'si girin."
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "İptal"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "Ekle"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -303,9 +415,11 @@ msgstr "Sözlükler"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
 msgstr ""
-"Geçerli görüntüleme diliyle eşleşen sözlükler otomatik olarak yüklenir."
+"Geçerli görüntüleme diliyle eşleşen etkin sözlükler otomatik olarak "
+"yüklenir."
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
@@ -359,26 +473,142 @@ msgstr "Sözlüğü kaldır"
 msgid "Dictionary import failed"
 msgstr "Sözlük içe aktarılamadı"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "Devre Dışı"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "Kısayol ayarlamak için tıklayın"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "Kısayola basın…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "Çalışan uygulama"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "Yükleniyor…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "Seçili uygulamayı dışla"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "Çalışan uygulamaları yenile"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "Çalışan uygulama bulunamadı"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "Çalışan uygulamaları seçmek için uzantıyı etkinleştirin"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "Sunucu bağlantısı"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "Eşitlemeyi etkinleştir"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "Sunucu adresi"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "API anahtarı"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "Etkin kanal"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "Kanalları yenile"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "Sunucu durumu"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "Sınanmadı"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "Uygula"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "Bağlantıyı sına"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "Kullanılabilir kanal yok"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "Bağlantı ayarları kaydedildi · API anahtarı yapılandırıldı"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "Bağlantı ayarları kaydedildi · API anahtarı yapılandırılmadı"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "Bağlantı ayarları yerel olarak kaydedildi"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "Bağlanıyor…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "Kısıtlı çalışıyor"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "Çevrim içi"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "Kanallar yükleniyor…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "Kanallar yenilendi"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "Bağlantı ayarları yapılandırılmadı"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "Bağlantı ayarları yüklendi · API anahtarı yapılandırıldı"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "Bağlantı ayarları yüklendi · API anahtarı yapılandırılmadı"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "Bağlantı ayarları yerel olarak yüklendi"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "Tema rengi"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "Sistemi izle"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -406,135 +636,135 @@ msgstr "Kayrak"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "Özel renk ekle"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "Özel tema rengi seç"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "Genel"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "Görünüm"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "Panel"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "Panel göstergesini göster"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "Gösterge gizliyken panelin konumu"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
-
-#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "Üst sol"
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:112
 msgid "Top center"
-msgstr ""
+msgstr "Üst orta"
 
-#: src/ui/settings/window.js:114
+#: src/ui/settings/window.js:113
 msgid "Top right"
 msgstr "Üst sağ"
 
-#: src/ui/settings/window.js:115
+#: src/ui/settings/window.js:114
 msgid "Center left"
-msgstr ""
+msgstr "Orta sol"
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:115
 msgid "Center"
 msgstr "Merkez"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:116
 msgid "Center right"
-msgstr ""
+msgstr "Orta sağ"
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:117
 msgid "Bottom left"
 msgstr "Alt sol"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:118
 msgid "Bottom center"
-msgstr ""
+msgstr "Alt orta"
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:119
 msgid "Bottom right"
 msgstr "Alt sağ"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "Yatay panel kaydırması"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px; pozitif değer sağa kaydırır"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "Dikey panel kaydırması"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px; pozitif değer aşağı kaydırır"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "Panel genişliği"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "Panel yüksekliği"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "Metnin dikey kaydırması"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "px; negatif değer yukarı, pozitif değer aşağı kaydırır"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "Panelde gösterilen en fazla öğe sayısı"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "Panel durumunu koru"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
-msgstr ""
+msgstr "Her zaman pano geçmişine dönmek yerine önceki görünümü yeniden aç"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "Klavye odağını panelde tut"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
-msgstr ""
+msgstr "Kenardayken ok tuşları odağı uzantı panelinin dışına taşımaz"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "Simge düzeni"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "Eylemlerin yerini ve sırasını değiştirmek için düğmeleri kullanın."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "Pano"
 
@@ -542,411 +772,451 @@ msgstr "Pano"
 msgid "History"
 msgstr "Geçmiş"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
+"Geçmiş veya depolama sınırına ulaşıldığında sabitlenmiş öğeler korunur."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "Geçmiş öğeleri"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "Depolama boyutu"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "Geçmiş saklama süresi"
 
 #: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "gün; 0 devre dışı bırakır"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "En büyük öğe boyutu"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
 msgstr "Metnin çevresindeki boşlukları sil"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "Benzetimli giriş"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr ""
+"Hedef uygulama benzetimli tuş vuruşlarını kaçırıyorsa yavaş girişi kullanın."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "Yazma hızı"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "Standart"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "Yavaş"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "Belirteç ayırıcı"
 
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
-
-#: src/ui/settings/window.js:184
-msgid "Privacy"
-msgstr ""
-
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
-
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
-
 #: src/ui/settings/window.js:194
+msgid "Show source text preview"
+msgstr "Kaynak metnin önizlemesini göster"
+
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "Gizlilik"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"Dışlamak için çalışan bir uygulama seçin veya pencere sınıfını elle girin."
+
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "Pano kaydını duraklat"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "Hassas içerik"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "Kaydetme"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "Uzantı durana kadar sakla"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "Diğer geçmiş öğeleri gibi sakla"
+
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
 msgstr "Dışlanan Uygulamalar"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "Virgülle ayrılmış pencere sınıfları"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "Davranış"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "Hızlı ifadeler yalnızca bu aygıtta saklanır."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "En fazla hızlı ifade sayısı"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "Yeni ifadeleri başa yerleştir"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "Kopyaladıktan sonra paneli kapat"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "Aygıt"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
 msgstr "Aygıt Kimliği"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr ""
+msgstr "Aygıt etiketi"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "Aygıt keşfi sırasında gösterilen anlaşılır ad"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "Aygıt simgesi"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
 msgstr "Masaüstü"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
 msgstr "Dizüstü"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "Telefon"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "Tablet"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "Sunucu"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "Diğer"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "Sunucu bağlantısı"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "Eşzamanlamayı etkinleştir"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "Sunucu durumu"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "Bağlanıyor…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "Aç"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "Aktarım ilkesi"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"Önizlemeler ilk aktarım boyutunu azaltır; özgün içerikler gerektiğinde "
+"alınır."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "Gönderme kipi"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "Elle"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
-msgstr "Kendiliğinden"
+msgstr "Otomatik"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"Otomatik gönderme, ölçütlere uyan yeni öğeleri yapılandırılmış sunucuya "
+"yükler."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "Alma kipi"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "Yalnızca geçmişe ekle"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "Panoya uygula"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr "Panoya uygulama, geçerli pano içeriğini gelen içerikle değiştirir."
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "Görüntüler"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"Parola yöneticilerinin hassas olarak işaretlediği içeriğin sunucuya "
+"gönderilmesine izin verir."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "Yalnızca sabitlenmiş öğeler"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "Yalnızca otomatik göndermeye uygulanır"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "Tam gönderilecek küçük metinler"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "Büyük metin önizlemesi"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "Tam gönderilecek küçük resimler"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "Küçük resim boyutu"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "Küçük resim boyutu sınırı"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "İsteğe bağlı indirme zaman aşımı"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "saniye"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
-msgstr ""
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "Yoklama aralığı"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr ""
+"Denetimler arasındaki saniye; daha uzun aralıklar istekleri azaltır ancak "
+"güncellemeleri geciktirir."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "Renk biçimi"
+
+#: src/ui/settings/window.js:315
 msgid "Default format"
 msgstr "Öntanımlı biçim"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:328
 msgid "Default target"
-msgstr ""
+msgstr "Öntanımlı yakalama kipi"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
-msgstr ""
+msgstr "Etkileşimli"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "Tam ekran"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "Pencere"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
 msgstr "Alan"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
 msgstr "Etkin pencere"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "Kullanılabilir kipler sistemin ekran görüntüsü portalına bağlıdır."
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "Geçmişe ekle"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "Ekran görüntüsünü kopyala"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "Resim düzenleyiciyi aç"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "Aşağıda resim düzenleyici komutu yapılandırılmalıdır."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"Düzenlemeyi etkinleştirmek için bir komut girin. %u resim URI'sini, %f yerel "
+"yolu, %i standart girdideki resim baytlarını, %% ise yüzde işaretini "
+"belirtir."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "Komut"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "Kısayollar"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
 msgstr "Küresel"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"Bir kısayola tıklayıp yeni tuş birleşimine basın. Geri Sil tuşu kısayolu "
+"devre dışı bırakır."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "Menüyü değiştir"
+msgstr "Pano panelini aç"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "Pano aramasına odaklan"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "Pano kaydını duraklat veya sürdür"
+
+#: src/ui/settings/window.js:386
+msgid "Active while a clipboard history entry has keyboard focus."
+msgstr "Bir pano geçmişi öğesi klavye odağındayken etkindir."
+
+#: src/ui/settings/window.js:390
+msgid "Paste entry"
+msgstr "Öğeyi yapıştır"
 
 #: src/ui/settings/window.js:391
-msgid "Active while a clipboard history entry has keyboard focus."
-msgstr ""
-
-#: src/ui/settings/window.js:395
-msgid "Paste entry"
-msgstr ""
-
-#: src/ui/settings/window.js:396
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "Öğeyi sabitle veya sabitlemeyi kaldır"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "Öğeyi sil"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "Öğeyi doğrudan yaz"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "Öğeyi kopyalamak yerine yaz"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "Bir metin parçası klavye odağındayken etkindir."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "Seçili parçaları kopyala"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "Seçili parçaları yapıştır"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "Seçili parçaları yaz"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "Seçimi sola genişlet"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "Seçimi sağa genişlet"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "Seçimi yukarı genişlet"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "Seçimi aşağı genişlet"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "Ekran görüntüsü al"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr ""
+#~ "Geçerli görüntüleme diliyle eşleşen sözlükler otomatik olarak yüklenir."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "Otomatik temizleme"
+
+#~ msgid "Favorites only"
+#~ msgstr "Yalnızca sık kullanılanlar"
+
+#~ msgid "Phone"
+#~ msgstr "Telefon"
+
+#~ msgid "Other"
+#~ msgstr "Diğer"
+
+#~ msgid "Open"
+#~ msgstr "Aç"
 
 #, fuzzy
 #~ msgid "Remove network location"

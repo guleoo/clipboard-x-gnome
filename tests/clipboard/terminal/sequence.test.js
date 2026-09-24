@@ -1,4 +1,4 @@
-import {typingDelay, typingSequence} from '../../../src/clipboard/terminal/sequence.js';
+import {typingDelay, typingSequence, typingTiming} from '../../../src/clipboard/terminal/sequence.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -66,3 +66,7 @@ assert(typingSequence(systemdUnit).join('') === systemdUnit,
   'long mixed-language multiline input must preserve its exact character order');
 assert(typingDelay('中') > typingDelay('A'),
   'Unicode composition must receive more settling time than mapped ASCII keys');
+assert(typingDelay('A', 'slow') > typingDelay('A')
+    && typingDelay('中', 'slow') > typingDelay('中')
+    && typingTiming('slow').settle > typingTiming().settle,
+  'slow simulated input must allow more time for both key types and target focus');

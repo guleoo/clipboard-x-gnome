@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
-"PO-Revision-Date: 2026-08-19 16:20+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
+"PO-Revision-Date: 2026-09-23 13:10+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: fa\n"
 "Language: fa\n"
@@ -17,27 +17,137 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "بازگرداندن تنظیمات پیش‌فرض"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "بازگرداندن"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "تنظیمات پیش‌فرض بازگردانده شوند؟"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "همهٔ ترجیحات را بدون حذف تاریخچهٔ کلیپ‌بورد، عبارت‌های سریع، واژه‌نامه‌ها، اتصال به سرور یا شناسهٔ دستگاه بازنشانی می‌کند."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "ورودی شبیه‌سازی‌شدهٔ صفحه‌کلید لغو شد"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
+msgstr "ورودی صفحه‌کلید فیزیکی تشخیص داده شد. ادامهٔ ورودی شبیه‌سازی‌شده لغو شد."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "ویرایش تصویر"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
 msgstr ""
+"فرمان ویرایشگر تصویر را در ترجیحات ← نماگرفت ← ویرایش تصویر تنظیم کنید."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "عملیات ناموفق بود"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "همگام‌سازی غیرفعال است"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "کارساز همگام‌سازی در دسترس نیست"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "هیچ کانال همگام‌سازی فعالی تنظیم نشده است"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "نشانی کارساز همگام‌سازی نامعتبر است"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "احراز هویت همگام‌سازی ناموفق بود"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "این افزاره در کارساز همگام‌سازی غیرفعال است"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "کلید API به این افزاره تعلق ندارد"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "این افزاره به کانال همگام‌سازی دسترسی ندارد"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "مورد تخته‌گیره با موردی در کارساز همگام‌سازی تداخل دارد"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "محتوای تخته‌گیره هنوز در افزارهٔ مبدأ آماده نیست"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "افزارهٔ مبدأ دیگر این محتوای تخته‌گیره را ندارد"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "محتوای تخته‌گیره از محدودیت اندازهٔ همگام‌سازی بیشتر است"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "محتوای همگام‌شده بررسی یکپارچگی را نگذراند"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "مهلت انتقال همگام‌سازی پایان یافت"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "کارساز همگام‌سازی مشغول است. بعداً دوباره تلاش کنید."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "کارساز همگام‌سازی پاسخی نامعتبر برگرداند"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "بارگذاری برای همگام‌سازی ناموفق بود"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "بارگیری برای همگام‌سازی ناموفق بود"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "درخواست همگام‌سازی ناموفق بود"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "این متن برای پردازش تعاملی بیش از حد بزرگ است"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "بارگیری اصل و رونوشت آن"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "رونوشت از اصل"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -45,21 +155,21 @@ msgstr "بخش‌بندی متن"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "ویرایش تصویر"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
-msgstr "سنجاق نکردن"
+msgstr "برداشتن سنجاق"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "سنجاق کردن"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "حذف از تاریخچهٔ محلی"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "متن"
 
@@ -67,177 +177,177 @@ msgstr "متن"
 msgid "Image"
 msgstr "تصویر"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
-msgstr "برای جست‌وجو این‌جا بنویسید..."
+msgstr "جست‌وجو در تاریخچهٔ تخته‌گیره…"
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "نماگرفت"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "انتخاب رنگ"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "حالت خصوصی"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "عبارت‌های سریع"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "پاک‌سازی تاریخچه"
+msgstr "پاک‌سازی موارد سنجاق‌نشده از تاریخچه"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "ترجیحات"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "در حال بارگذاری تاریخچهٔ تخته‌گیره…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "بارگذاری تاریخچهٔ تخته‌گیره ممکن نشد"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "مورد مطابقی یافت نشد"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
-msgstr "تخته‌گیره خالیست"
+msgstr "تاریخچهٔ تخته‌گیره خالی است"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
 msgstr "افزارهٔ ناشناخته"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "تنظیمات همگام‌سازی"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
-msgstr ""
+msgstr "همگام‌سازی"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "همگام‌سازی غیرفعال است"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr "سرور همگام‌سازی آفلاین است"
 
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "خطای قرارداد همگام‌سازی"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "کارساز همگام‌سازی با کارایی محدود کار می‌کند"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr "سرور همگام‌سازی آنلاین است"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
-msgstr "بارگذاشتن"
+msgstr "در حال بارگذاری"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "درحال بارگیری"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "در انتظار افزارهٔ دیگر"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "در حال آماده‌سازی انتقال"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "انتقال ناموفق بود؛ برای تلاش دوباره کلیک کنید"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "بارگذاری کامل شد"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "نسخهٔ اصلی بارگیری شد"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "تلاش دوباره برای بارگیری اصل"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "بارگیری نسخهٔ اصلی"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "نسخهٔ اصلی به‌صورت محلی در دسترس است"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr "ارسال به سرور همگام‌سازی"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "بازگشت به تاریخچهٔ تخته‌گیره"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "افزودن عبارت دلخواه"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "عبارت دلخواهی وارد کنید…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "رونوشت از عبارت سریع"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "حذف عبارت سریع"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "هیچ عبارت سریعی وجود ندارد"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "یک یا چند واژه انتخاب کنید"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "رونوشت از واژه‌های برگزیده"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "واژه‌ای پیدا نشد"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "نوار ابزار بالایی"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "نوار پایینی"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
-msgstr ""
+msgstr "نمایش نقشک"
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
@@ -249,20 +359,20 @@ msgstr "حرکت به پایین"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "انتقال به نوار پایینی"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "انتقال به نوار ابزار بالایی"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "رنگ‌بردار"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
-msgstr "هماهنگ سازی"
+msgstr "همگام‌سازی"
 
 #: src/ui/settings/panel-actions.js:139
 msgid "Clear history"
@@ -291,11 +401,11 @@ msgstr ""
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "لغو"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "افزودن"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -303,8 +413,9 @@ msgstr "واژه‌نامه‌ها"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
-msgstr "واژه‌نامه‌های منطبق با زبان نمایش کنونی به‌طور خودکار بارگذاری می‌شوند."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
+msgstr "واژه‌نامه‌های فعال که با زبان نمایش فعلی مطابقت دارند، به‌طور خودکار بارگذاری می‌شوند."
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
@@ -358,26 +469,142 @@ msgstr "حذف واژه‌نامه"
 msgid "Dictionary import failed"
 msgstr "درون‌ریزی واژه‌نامه شکست خورد"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "از کار افتاده"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "برای تعیین میان‌بر کلیک کنید"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "میان‌بر را فشار دهید…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "برنامهٔ در حال اجرا"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "در حال بارگذاری…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "استثنا کردن برنامهٔ برگزیده"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "به‌روزرسانی برنامه‌های در حال اجرا"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "برنامهٔ در حال اجرایی پیدا نشد"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "برای انتخاب برنامه‌های در حال اجرا، افزونه را فعال کنید"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "اتصال به سرور"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "فعال‌سازی همگام‌سازی"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "نشانی کارساز"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "کلید API"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "کانال فعال"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "به‌روزرسانی کانال‌ها"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "وضعیت سرور"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "آزمایش نشده"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "اعمال"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "آزمایش اتصال"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "کانالی در دسترس نیست"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "تنظیمات اتصال ذخیره شد · کلید API تنظیم شده است"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "تنظیمات اتصال ذخیره شد · کلید API تنظیم نشده است"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "تنظیمات اتصال به‌صورت محلی ذخیره شد"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "وصل شدن…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "عملکرد محدود"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "برخط"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "در حال بارگذاری کانال‌ها…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "کانال‌ها به‌روز شدند"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "تنظیمات اتصال پیکربندی نشده‌اند"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "تنظیمات اتصال بارگذاری شد · کلید API تنظیم شده است"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "تنظیمات اتصال بارگذاری شد · کلید API تنظیم نشده است"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "تنظیمات اتصال به‌صورت محلی بارگذاری شد"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "رنگ پوسته"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "پیروی از سامانه"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -405,135 +632,135 @@ msgstr "سنگی"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "افزودن رنگ دلخواه"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "انتخاب رنگ دلخواه برای پوسته"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "عمومی"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "ظاهر"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "پنل"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "نمایش نشانگر پنل"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "موقعیت پنل هنگام پنهان بودن نشانگر"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
-
-#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "بالا چپ"
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:112
 msgid "Top center"
-msgstr ""
+msgstr "بالا وسط"
 
-#: src/ui/settings/window.js:114
+#: src/ui/settings/window.js:113
 msgid "Top right"
 msgstr "بالا راست"
 
-#: src/ui/settings/window.js:115
+#: src/ui/settings/window.js:114
 msgid "Center left"
-msgstr ""
+msgstr "وسط چپ"
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:115
 msgid "Center"
 msgstr "مرکز"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:116
 msgid "Center right"
-msgstr ""
+msgstr "وسط راست"
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:117
 msgid "Bottom left"
 msgstr "پایین چپ"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:118
 msgid "Bottom center"
-msgstr ""
+msgstr "پایین وسط"
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:119
 msgid "Bottom right"
 msgstr "پایین راست"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "جابجایی افقی پنل"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px؛ مقدار مثبت به راست می‌برد"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "جابجایی عمودی پنل"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px؛ مقدار مثبت به پایین می‌برد"
+
+#: src/ui/settings/window.js:137
+msgid "Panel width"
+msgstr "پهنای پنل"
+
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
+msgid "px"
+msgstr "px"
 
 #: src/ui/settings/window.js:138
-msgid "Panel width"
-msgstr ""
-
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
-msgid "px"
-msgstr "تد"
-
-#: src/ui/settings/window.js:139
 msgid "Panel height"
-msgstr ""
+msgstr "بلندی پنل"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "جابجایی عمودی متن"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "px؛ مقدار منفی به بالا و مثبت به پایین می‌برد"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "بیشینهٔ موارد نمایشی در پنل"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "نگه‌داشتن وضعیت پنل"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
-msgstr ""
+msgstr "به‌جای بازگشت همیشگی به تاریخچهٔ تخته‌گیره، نمای پیشین را دوباره باز کنید"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "نگه‌داشتن تمرکز صفحه‌کلید در پنل"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
-msgstr ""
+msgstr "در لبه‌ها، کلیدهای جهت‌نما تمرکز را به بیرون پنل افزونه نمی‌برند"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "چینش نقشک‌ها"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "برای تغییر مکان و ترتیب کنش‌ها از دکمه‌ها استفاده کنید."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "تخته‌گیره"
 
@@ -541,411 +768,451 @@ msgstr "تخته‌گیره"
 msgid "History"
 msgstr "تاریخچه"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
+"موارد سنجاق‌شده حتی پس از رسیدن به محدودیت تاریخچه یا فضای ذخیره‌سازی نگه "
+"داشته می‌شوند."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "موارد تاریخچه"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "اندازهٔ فضای ذخیره‌سازی"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "مگابایتی"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "مدت نگهداری تاریخچه"
 
 #: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "روز؛ ۰ غیرفعال می‌کند"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "بیشینهٔ اندازهٔ هر مورد"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
 msgstr "برداشتن فاصلهٔ دور متن"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "ورودی شبیه‌سازی‌شده"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr ""
+"اگر برنامهٔ مقصد برخی کلیدهای شبیه‌سازی‌شده را دریافت نمی‌کند، ورودی آهسته را "
+"به‌کار ببرید."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "سرعت نوشتن"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "معمولی"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "آهسته"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "بخش‌بند متن"
 
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
-
-#: src/ui/settings/window.js:184
-msgid "Privacy"
-msgstr ""
-
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
-
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
-
 #: src/ui/settings/window.js:194
-msgid "Excluded applications"
-msgstr "برنامه‌های خارج شده"
+msgid "Show source text preview"
+msgstr "نمایش پیش‌نمایش متن اصلی"
 
-#: src/ui/settings/window.js:195
-msgid "Comma-separated window classes"
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "حریم خصوصی"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
 msgstr ""
+"برنامه‌ای در حال اجرا برگزینید یا کلاس پنجرهٔ آن را برای استثنا کردن دستی وارد "
+"کنید."
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "توقف موقت ثبت تخته‌گیره"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "محتوای حساس"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "ثبت نشود"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "تا توقف افزونه نگه داشته شود"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "مانند دیگر موارد تاریخچه ذخیره شود"
+
+#: src/ui/settings/window.js:209
+msgid "Excluded applications"
+msgstr "برنامه‌های مستثناشده"
+
+#: src/ui/settings/window.js:210
+msgid "Comma-separated window classes"
+msgstr "کلاس‌های پنجره جداشده با ویرگول"
+
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "رفتار"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "عبارت‌های سریع فقط در این افزاره ذخیره می‌شوند."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "بیشینهٔ تعداد عبارت‌های سریع"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "قرار دادن عبارت‌های تازه در ابتدا"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "بستن پنل پس از رونوشت"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "افزاره"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
 msgstr "شناسه دستگاه"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr ""
+msgstr "برچسب افزاره"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "نام خوانایی که هنگام یافتن افزاره نمایش داده می‌شود"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "نقشک افزاره"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
 msgstr "رومیزی"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
-msgstr ""
+msgstr "رایانهٔ همراه"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "تلفن"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "رایانک"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "سرور"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "سایر"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "اتصال به سرور"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "فعال‌سازی همگام‌سازی"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "وضعیت سرور"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "وصل شدن…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "گشودن"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "سیاست انتقال"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"پیش‌نمایش‌ها حجم انتقال آغازین را کم می‌کنند؛ نسخه‌های اصلی هنگام نیاز دریافت "
+"می‌شوند."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "حالت ارسال"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "دستی"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "خودکار"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr "ارسال خودکار موارد تازهٔ منطبق را به کارساز تنظیم‌شده بارگذاری می‌کند."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "حالت دریافت"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "فقط در تاریخچه"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "قرار دادن در تخته‌گیره"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr ""
+"قرار دادن در تخته‌گیره، محتوای کنونی آن را با محتوای دریافتی جایگزین می‌کند."
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
 msgstr "اچ‌تی‌ام‌ال"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "تصاویر"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"اجازه می‌دهد محتوایی که مدیرهای گذرواژه حساس نشان‌گذاری کرده‌اند به کارساز "
+"فرستاده شود."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "فقط موارد سنجاق‌شده"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "فقط برای ارسال خودکار کاربرد دارد"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "ارسال کامل متن‌های کوچک"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "کیلوبایت"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "پیش‌نمایش متن‌های بزرگ"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "ارسال کامل تصویرهای کوچک"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "ابعاد بندانگشتی"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "محدودیت اندازهٔ بندانگشتی"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "مهلت بارگیری هنگام درخواست"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "ثانیه"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
-msgstr ""
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "فاصلهٔ بررسی دوره‌ای"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr ""
+"ثانیه‌های میان بررسی‌ها؛ فاصلهٔ بیشتر درخواست‌ها را کم می‌کند ولی به‌روزرسانی را "
+"به تأخیر می‌اندازد."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "قالب رنگ"
+
+#: src/ui/settings/window.js:315
 msgid "Default format"
 msgstr "قالب پیش‌گزیده"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:328
 msgid "Default target"
-msgstr ""
+msgstr "حالت پیش‌گزیدهٔ نماگرفت"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
 msgstr "تعاملی"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "تمام‌صفحه"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "پنجره‌"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
-msgstr "محیط"
+msgstr "ناحیه"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
 msgstr "پنجرهٔ فعّال"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "حالت‌های موجود به درگاه نماگرفت سامانه بستگی دارند."
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "افزودن به تاریخچه"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "رونوشت از نماگرفت"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "گشودن ویرایشگر تصویر"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "نیازمند تنظیم فرمان ویرایشگر تصویر در پایین است."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"برای فعال‌سازی ویرایش، فرمانی وارد کنید. %% علامت درصد است؛ %u نشانی تصویر، "
+"%f مسیر محلی و %i بایت‌های تصویر در ورودی استاندارد هستند."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "فرمان"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "میان‌برها"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
-msgstr "عمومی"
+msgstr "سراسری"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"روی میان‌بر کلیک کنید و ترکیب کلید تازه را فشار دهید. Backspace آن را غیرفعال "
+"می‌کند."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "تغییر وضعیت فهرست"
+msgstr "گشودن پنل تخته‌گیره"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "تمرکز روی جست‌وجوی تخته‌گیره"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "توقف موقت یا ادامهٔ ثبت تخته‌گیره"
+
+#: src/ui/settings/window.js:386
+msgid "Active while a clipboard history entry has keyboard focus."
+msgstr "هنگامی فعال است که موردی از تاریخچهٔ تخته‌گیره تمرکز صفحه‌کلید دارد."
+
+#: src/ui/settings/window.js:390
+msgid "Paste entry"
+msgstr "چسباندن مورد"
 
 #: src/ui/settings/window.js:391
-msgid "Active while a clipboard history entry has keyboard focus."
-msgstr ""
-
-#: src/ui/settings/window.js:395
-msgid "Paste entry"
-msgstr ""
-
-#: src/ui/settings/window.js:396
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "سنجاق کردن یا برداشتن سنجاق مورد"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "حذف مورد"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "نوشتن مستقیم مورد"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "نوشتن مورد به‌جای رونوشت"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "هنگامی فعال است که بخشی از متن تمرکز صفحه‌کلید دارد."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "رونوشت از بخش‌های برگزیده"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "چسباندن بخش‌های برگزیده"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "نوشتن بخش‌های برگزیده"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "گسترش گزینش به چپ"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "گسترش گزینش به راست"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "گسترش گزینش به بالا"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "گسترش گزینش به پایین"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "گرفتن نماگرفت"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr "واژه‌نامه‌های منطبق با زبان نمایش کنونی به‌طور خودکار بارگذاری می‌شوند."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "پاک‌سازی خودکار"
+
+#~ msgid "Favorites only"
+#~ msgstr "فقط برگزیده‌ها"
+
+#~ msgid "Phone"
+#~ msgstr "تلفن"
+
+#~ msgid "Other"
+#~ msgstr "سایر"
+
+#~ msgid "Open"
+#~ msgstr "گشودن"
 
 #, fuzzy
 #~ msgid "Remove network location"

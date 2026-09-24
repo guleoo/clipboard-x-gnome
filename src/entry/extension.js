@@ -16,6 +16,7 @@ import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
 import {SyncClient} from '../sync/client.js';
+import {RunningAppsBridge} from './running-apps.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
 import {Indicator} from '../ui/indicator.js';
@@ -38,6 +39,7 @@ export default class ClipboardXExtension extends Extension {
       sourceItem: itemId => this._controller.items.find(item => item.id === itemId) ?? null,
     });
     this._terminalInput = new TerminalInput({
+      speed: () => this._settings.get_string('simulated-input-speed'),
       onCancelled: () => Main.notify(
         _('Simulated keyboard input cancelled'),
         _('Physical keyboard input was detected. The remaining simulated input was cancelled.'),
@@ -74,6 +76,13 @@ export default class ClipboardXExtension extends Extension {
     };
     this._indicator = new Indicator(this._settings, this._controller, actions);
     Main.panel.addToStatusArea('clipboard-x', this._indicator, 1);
+    this._runningAppsBridge = new RunningAppsBridge();
+    try {
+      this._runningAppsBridge.start();
+    } catch (error) {
+      console.warn(`Clipboard X: running applications are unavailable (${diagnosticCode(error)})`);
+      this._runningAppsBridge.stop();
+    }
 
     this._settingsSignals.push(
       this._settings.connect('changed::show-indicator', () => this._updateIndicatorVisibility()),
@@ -114,6 +123,8 @@ export default class ClipboardXExtension extends Extension {
   }
 
   disable() {
+    this._runningAppsBridge?.stop();
+    this._runningAppsBridge = null;
     this._unbindShortcuts();
     this._portal?.cancel();
     this._colorPicker?.close();
@@ -157,6 +168,8 @@ export default class ClipboardXExtension extends Extension {
   }
 
   async _publish(item) {
+    if (item.sensitive)
+      throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
     if (!this._settings.get_boolean('sync-enabled'))
       throw new SyncError('disabled', 'Synchronization is disabled');
     await this._controller.persist();
@@ -166,7 +179,7 @@ export default class ClipboardXExtension extends Extension {
   _publishAutomatically(item) {
     if (!this._settings.get_boolean('sync-enabled')
         || this._settings.get_string('sync-send-mode') !== 'automatic'
-        || (item.sensitive && !this._settings.get_boolean('sync-sensitive'))
+        || item.sensitive
         || (this._settings.get_boolean('sync-favorites-only') && !item.favorite))
       return;
     this._publish(item).catch(error => this._reportError(error));
@@ -199,12 +212,15 @@ export default class ClipboardXExtension extends Extension {
   }
 
   async _editItem(item) {
+    const command = this._editorCommand();
+    if (!command)
+      return;
     await this._ensureMaterialized(item);
     await this._controller.persist();
     const path = item.primary?.path;
     if (!path)
       throw new Error('The original image is not available locally');
-    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes);
+    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes, command);
   }
 
   async _activateItem(item) {
@@ -258,9 +274,20 @@ export default class ClipboardXExtension extends Extension {
       await this._activateItem(item);
   }
 
-  _launchEditor(uri, bytes = null) {
+  _editorCommand() {
+    const command = this._settings.get_string('editor-command');
+    if (command.trim())
+      return command;
+    Main.notify(_('Image editing'),
+      _('Configure an image editor command in Preferences → Screenshot → Image editing.'));
+    return null;
+  }
+
+  _launchEditor(uri, bytes = null, command = this._editorCommand()) {
+    if (!command)
+      return null;
     return launchEditor({
-      command: this._settings.get_string('editor-command'),
+      command,
       uri,
       bytes,
     });

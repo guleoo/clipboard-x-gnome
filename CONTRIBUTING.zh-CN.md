@@ -30,9 +30,9 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/u
   组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
 - `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`。
 
-同步协议改动必须同时更新 `docs/zh-CN/sync-protocol.md`、英文主文档、GJS 路由/校验器、客户端测试和中心
-服务器开发计划。兼容性破坏必须创建新的 HTTP API 主版本，不能原地改变 v1 的既有字段
-或语义。
+同步协议及其 OpenAPI 契约由 Clipboard X Server 负责制定。协议变更应先在 Server 仓库提出并
+落地，再更新本仓库的 GJS 路由、校验器与客户端兼容性测试。兼容性破坏必须创建新的 HTTP API
+主版本，客户端不能反向原地改变 v1 的既有字段或语义。
 
 ## 本地化
 
@@ -43,8 +43,9 @@ meson compile -C build clipboard-x-pot
 meson compile -C build clipboard-x-update-po
 ```
 
-然后补齐 `po/zh_CN.po`，并使用 `msgfmt --check` 验证。源码语言为英语；英语无需单独
-PO 文件。
+然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/i18n/coverage.sh`。
+检查会拒绝缺失或 fuzzy 的译文，以及图片编辑命令说明中丢失的占位符。
+源码语言为英语，无需单独的英文 PO 文件。机器翻译草稿仍需母语者审校措辞。
 
 ## 代码约定
 

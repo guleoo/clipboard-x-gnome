@@ -106,6 +106,14 @@
       <default>['&lt;Control&gt;Return']</default>
       <summary>Context shortcut for typing the active history entry</summary>
     </key>
+    <key name="simulated-input-speed" type="s">
+      <choices>
+        <choice value="standard"/>
+        <choice value="slow"/>
+      </choices>
+      <default>'standard'</default>
+      <summary>Timing profile for simulated keyboard input</summary>
+    </key>
     <key name="tokenizer-copy-shortcut" type="as">
       <default>['c']</default>
       <summary>Context shortcut for copying selected tokens</summary>
@@ -239,7 +247,6 @@
       <choices>
         <choice value="discard"/>
         <choice value="memory"/>
-        <choice value="store"/>
       </choices>
       <default>'memory'</default>
       <summary>Handling policy for clipboard content marked by password managers</summary>
@@ -247,6 +254,11 @@
     <key name="sync-enabled" type="b">
       <default>false</default>
       <summary>Enable synchronization</summary>
+    </key>
+    <key name="sync-poll-interval-seconds" type="u">
+      <default>5</default>
+      <range min="2" max="60"/>
+      <summary>Seconds between synchronization polls</summary>
     </key>
     <key name="sync-configuration-revision" type="u">
       <default>0</default>
@@ -281,10 +293,6 @@
     <key name="sync-images" type="b">
       <default>true</default>
       <summary>Synchronize image content</summary>
-    </key>
-    <key name="sync-sensitive" type="b">
-      <default>false</default>
-      <summary>Allow content marked sensitive to be synchronized</summary>
     </key>
     <key name="sync-favorites-only" type="b">
       <default>false</default>
@@ -340,7 +348,7 @@
       <summary>Open screenshots in the configured image editor</summary>
     </key>
     <key name="editor-command" type="s">
-      <default>'gradia %i'</default>
+      <default>''</default>
       <summary>Advanced image editor argv template</summary>
     </key>
     <key name="color-format" type="s">

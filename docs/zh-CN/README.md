@@ -8,8 +8,8 @@
 
 ## 协议与同步
 
-- [同步协议（HTTP API v1）](sync-protocol.md)：扩展与用户自建中心服务器之间的公开接口、
-  清单、预览、按需物化、传输状态和恢复语义。
+- [同步协议（HTTP API v1）](https://github.com/Guleo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md)：
+  由 Server 负责制定，当前 GNOME 客户端及未来其他平台客户端共同遵循。
 - [同步性能与压力测试指南](sync-performance-testing.md)：日常基线、10 倍压力矩阵和可重复
   的 Meson 测试命令。
 

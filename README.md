@@ -2,9 +2,9 @@
 
 # clipboard-x-gnome
 
-**Clipboard X — a local-first clipboard workspace for GNOME Shell.**
+**Clipboard X — a GNOME clipboard extension built around your workflow.**
 
-History · Token selection · Quick phrases · Device sync · Screenshots · Color picking
+History · Token selection · Quick phrases · Device sync · Screenshot editing · Quick color picking
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
@@ -23,40 +23,25 @@ locally; clipboard synchronization starts only after you configure and enable a 
 Network dictionaries are downloaded only when you explicitly add or refresh them.
 
 > [!IMPORTANT]
-> Clipboard X currently targets **GNOME Shell 50**. Earlier Shell releases are not supported by the
-> packaged extension metadata.
+> Clipboard X currently declares support for **GNOME Shell 50**. Other Shell versions are not listed
+> in the packaged extension metadata.
 
-## At a glance
+## Features
 
-| Clipboard | Text tools | Capture tools | Devices |
-| --- | --- | --- | --- |
-| Search text and images | Select individual tokens | Use the system screenshot portal | Identify remote entries by device |
-| Pin important entries | Preserve links, email, numbers, and punctuation | Pick HEX, RGB, HSL, or OKLCH colors | Send manually or automatically |
-| Copy, paste, or simulate typing | Add local or network dictionaries | Launch an image editor command | Fetch large originals only when used |
-| Keep reusable quick phrases | Navigate and select by keyboard | Configure global shortcuts | Show exact upload/download progress |
+- **Clipboard history** — Search local snapshots of text and images, with source-device icons for remote entries in multi-device history.
+- **Token selection** — Select words or ranges to copy, paste, or type; preserve links, email addresses, numbers, whitespace, and punctuation.
+- **Custom dictionaries** — Use the system `Intl.Segmenter` or combine local and network dictionaries for Chinese and Japanese.
+- **Quick phrases** — Save and reuse frequently used text locally.
+- **Privacy mode** — Pause history capture; password-manager-marked content stays in memory by default.
+- **Keyboard-friendly** — Work with clipboard entries and their actions using only the keyboard.
+- **Keyboard shortcuts** — Configure shortcuts to open the panel and act on entries or selected tokens; use arrow keys to navigate.
+- **Screenshots and editing** — Capture from the panel and open copied images with an editor command you configure.
+- **Color picker** — Copy a screen color as HEX, RGB, HSL, or OKLCH text.
+- **Device synchronization** — Send entries manually or automatically through a self-hosted `clipboard-x-server` and its Channels, with remote entries identified by device.
+- **Lazy transfers** — Send previews of large text and images first, fetch originals when needed, and show verified, byte-accurate progress without a separate local service.
+- **Customizable panel** — Adjust size, visible item count, accent color, position, focus behavior, and action icons.
 
-### Local-first history
-
-Clipboard contents become immutable local snapshots organized by source device. Pinned entries survive
-history limits, privacy mode pauses capture, and password-manager-marked content is kept in memory by
-default. The panel width, height, item count, accent color, actions, position, and focus behavior are all
-configurable.
-
-### Purpose-built token selection
-
-Open the tokenizer from any text entry, select one or more tokens, then copy, paste, or type the result.
-Clipboard X recognizes URLs, email addresses, structured numbers, multilingual words, whitespace, and
-punctuation. It uses `Intl.Segmenter` as the system baseline and can merge multiple user dictionaries for
-Chinese and Japanese.
-
-### Lazy, visible synchronization
-
-Small content is sent in full. Large text starts with a truncated preview and large images with a
-thumbnail; the original is materialized only when another device actually uses it. Transfers stream data,
-verify size and SHA-256, and expose byte-accurate progress in the panel. Synchronization runs directly in
-the extension—there is no separate local service to install.
-
-## Install
+## Manual installation
 
 ### Requirements
 
@@ -79,8 +64,10 @@ gnome-extensions install --force build/clipboard-x-gnome.zip
 gnome-extensions enable clipboard-x@guleo.github.io
 ```
 
-GNOME Shell on Wayland cannot reload all extension code in place. After the first installation—or after
-replacing an installed build—log out and back in if the new version is not loaded.
+GNOME Shell on Wayland cannot reload all extension code in place.
+
+After the first installation or when replacing an existing build, log out and back in if the new version
+is not loaded.
 
 ## Use Clipboard X
 
@@ -108,9 +95,27 @@ Default contextual shortcuts are:
 | `'` | Simulate typing its text |
 | `Ctrl` + click / `Ctrl+Enter` | Simulate typing instead of copying |
 
-All shortcuts can be changed or disabled in Preferences.
+The keyboard shortcuts in the table can be changed or disabled in Preferences; `Ctrl` + click is fixed.
 
-### 3. Select part of a sentence
+### 3. Simulated keyboard input
+
+Use simulated typing when the target application does not accept normal paste:
+
+1. Focus the target text field, then open Clipboard X.
+2. For a text history entry, use `Ctrl` + click, `Ctrl+Enter`, or focus it and press `'`. In the token panel, select the words you need and press `'`.
+3. The panel closes and Clipboard X types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
+
+Simulated typing is **not** a reliable substitute for pasting. Pressing Ctrl, Alt, Shift, Super, Meta,
+or Hyper during typing cancels the remaining input and displays a GNOME notification. GNOME Shell
+cannot reliably detect ordinary physical key presses sent to another Wayland client, so letters and
+numbers may still interleave with the simulated text. Do not use the keyboard until typing finishes;
+text already entered before cancellation is not undone. Prefer normal paste for long, sensitive, or
+exact content.
+
+If an application misses keystrokes, select **Slow** under **Preferences → Clipboard → Simulated input**.
+This changes the typing interval; it cannot guarantee that another application accepts every key.
+
+### 4. Tokenization mode
 
 Press the token button on a text entry. Move with the arrow keys, click or drag across tokens to select
 them, and use `Shift` + arrow keys for keyboard range selection. The default actions are `c` to copy,
@@ -130,16 +135,20 @@ per line with an optional frequency:
 Dictionary files are stored in `$XDG_DATA_HOME/clipboard-x/dictionaries`. Release archives do not bundle
 or silently download third-party dictionaries.
 
-### 4. Keep quick phrases
+### 5. Keep quick phrases
 
 Open **Quick phrases** from the panel, press `+`, enter a phrase, and confirm with Enter. Quick phrases
 are local-only and stored in `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`.
 
-### 5. Capture, pick, and edit
+### 6. Capture, pick, and edit
 
 - **Screenshot** calls the XDG Screenshot Portal. Available targets depend on the local portal backend.
 - **Color picker** samples the screen and writes the configured HEX, RGB, HSL, or OKLCH representation.
 - **Image editing** launches the command configured under **Preferences → Screenshot → Image editing**.
+
+The editor command is empty by default. Clicking an image's edit button without configuring one prompts
+you to set a command. You can use Gradia by entering `gradia %i` (or
+`flatpak run be.alexandervanhee.gradia %u` for its Flatpak installation).
 
 The editor command is parsed as argv and never passed through `sh -c`. It supports `%u` for an image URI,
 `%f` for a local path, `%i` for image bytes on standard input, and `%%` for a literal percent sign. For
@@ -155,17 +164,23 @@ Pipes, redirection, and shell expansion are intentionally unsupported.
 
 ## Synchronize devices
 
-Clipboard X speaks a versioned HTTP API to a central server chosen by the user. The server is a readable
-storage and management platform—not an end-to-end encrypted or blind relay. Its administrators can inspect
-content uploaded to it.
+Synchronization uses the separately deployed, self-hosted `clipboard-x-server` project. The GNOME
+extension is its client; it does not bundle or start the server. They communicate through a versioned
+HTTP API. The server is a readable storage and management platform—not an end-to-end encrypted or blind
+relay. Its administrators can inspect content uploaded to it.
 
 To connect a device:
 
-1. Give the device its own API key on a compatible server and add it to a Channel.
+1. Deploy `clipboard-x-server`, register the device's generated DeviceId, issue its own API key, and add it to a Channel.
 2. Open **Preferences → Synchronization**.
 3. Enter the server address and API key, apply the settings, refresh Channels, and select one.
 4. Enable synchronization and test the connection.
 5. Keep the default **Manual** send mode and use an entry's sync button, or explicitly choose **Automatic**.
+
+**Preferences → Synchronization → Polling interval** controls how often this device checks for updates;
+longer intervals reduce server requests but delay incoming items. To stop recording from an application,
+choose it from **Preferences → Clipboard → Privacy → Running application** or enter its window class under
+**Excluded applications**.
 
 Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends both credentials and content
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
@@ -179,18 +194,8 @@ metadata and previews first; complete large objects remain lazy.
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
 > request a Channel-wide deletion. Server-originated removal events do propagate to clients.
 
-See the [Synchronization Protocol](docs/sync-protocol.md) for compatible-server requirements and
+See the [protocol maintained by clipboard-x-server](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) for API details and
 [Synchronization performance testing](docs/sync-performance-testing.md) for the stress model.
-
-## Simulated keyboard input
-
-Simulated input is useful where normal paste is unavailable, but it is not equivalent to pasting. Clipboard X
-waits for the triggering modifiers to be released and cancels when Ctrl, Alt, Shift, Super, Meta, or Hyper is
-detected during typing. GNOME Shell cannot reliably observe ordinary physical key presses sent to another
-Wayland client, so letters and numbers may still interleave with simulated text.
-
-Do not use the physical keyboard until simulated typing finishes. Prefer normal clipboard paste for long,
-sensitive, or exact content.
 
 ## Data and privacy
 
@@ -242,7 +247,7 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [Synchronization Protocol (HTTP API v1)](docs/sync-protocol.md)
+- [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)
 - [Security and privacy](SECURITY.md)

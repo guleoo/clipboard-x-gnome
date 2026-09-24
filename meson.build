@@ -73,8 +73,11 @@ else
 endif
 
 test_runner = find_program('gjs')
+test('translations', find_program('bash'), args: [meson.current_source_dir() / 'tests/i18n/coverage.sh'])
 test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
+test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
+test('running-apps', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/running-apps.test.js'])
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/device-icons.test.js'])
 test('sync-icon-color', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/icon-color.test.js'])
@@ -90,6 +93,7 @@ test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tes
 test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'])
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
+test('sync-protocol-ownership', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol-ownership.test.js'])
 test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
@@ -114,6 +118,10 @@ test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() /
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])
 test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/focus-grid.test.js'])
 test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-actions.test.js'])
+test('settings-defaults', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/ui/settings-defaults.test.js'],
+  env: {'GSETTINGS_BACKEND': 'memory'})
+test('shortcut-capture', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/shortcut-capture.test.js'])
 test('string-choice', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/string-choice.test.js'])
 test(
   'stress',

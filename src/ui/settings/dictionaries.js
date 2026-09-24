@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import {disconnectWhenUnrooted} from './lifecycle.js';
 
 import {
   DICTIONARY_LOCALES,
@@ -99,7 +100,7 @@ export function create({settings, store, window}) {
     return null;
   const group = new Adw.PreferencesGroup({
     title: _('Dictionaries'),
-    description: _('Dictionaries matching the current display language are loaded automatically.'),
+    description: _('Enabled dictionaries matching the current display language are loaded automatically.'),
   });
   const languages = languageChoices(languageNames);
   const currentLocale = selectLocale(languageNames);
@@ -130,6 +131,7 @@ export function create({settings, store, window}) {
 
   let dictionaryRows = [];
   let refreshing = false;
+  let changingSelection = false;
   const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
   const matchingDictionaries = () => {
     const locales = new Set(localeCandidates([selectedLocale()]));
@@ -156,7 +158,12 @@ export function create({settings, store, window}) {
       : [...enabled].sort((left, right) => left.localeCompare(right));
     if (JSON.stringify(settings.get_strv('tokenizer-dictionary-files')) === JSON.stringify(next))
       return;
-    settings.set_strv('tokenizer-dictionary-files', next);
+    changingSelection = true;
+    try {
+      settings.set_strv('tokenizer-dictionary-files', next);
+    } finally {
+      changingSelection = false;
+    }
     bumpRevision(settings);
   };
   const enableDictionaryFile = fileName => {
@@ -270,6 +277,11 @@ export function create({settings, store, window}) {
   };
 
   localeRow.connect('notify::selected', refresh);
+  const selectionSignal = settings.connect('changed::tokenizer-dictionary-files', () => {
+    if (!changingSelection)
+      refresh();
+  });
+  disconnectWhenUnrooted(group, () => settings.disconnect(selectionSignal));
 
   addNetworkButton.connect('clicked', async () => {
     const source = await requestNetworkLocation(window);

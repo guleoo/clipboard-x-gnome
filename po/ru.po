@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ru\n"
@@ -19,27 +19,139 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "Восстановить настройки по умолчанию"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "Восстановить"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "Восстановить настройки по умолчанию?"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "Сбрасывает все параметры, не удаляя историю буфера обмена, быстрые фразы, словари, подключение к серверу и идентификатор устройства."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "Имитация ввода с клавиатуры отменена"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
+"Обнаружен ввод с физической клавиатуры. Оставшийся имитируемый ввод отменён."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "Редактирование изображений"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
+msgstr ""
+"Настройте команду редактора в разделе «Параметры → Снимок экрана → "
+"Редактирование изображений»."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "Не удалось выполнить операцию"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "Синхронизация отключена"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "Сервер синхронизации недоступен"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "Активный канал синхронизации не настроен"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "Недопустимый адрес сервера синхронизации"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "Не удалось пройти проверку подлинности для синхронизации"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "Это устройство отключено на сервере синхронизации"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "Ключ API не принадлежит этому устройству"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "У этого устройства нет доступа к каналу синхронизации"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "Элемент буфера обмена конфликтует с элементом на сервере синхронизации"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "Содержимое буфера обмена ещё не готово на исходном устройстве"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "На исходном устройстве больше нет этого содержимого буфера обмена"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "Размер содержимого буфера обмена превышает предел синхронизации"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "Синхронизированное содержимое не прошло проверку целостности"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "Срок передачи для синхронизации истёк"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "Сервер синхронизации занят. Повторите попытку позже."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "Сервер синхронизации вернул недопустимый ответ"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "Не удалось отправить данные для синхронизации"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "Не удалось загрузить синхронизированные данные"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "Запрос синхронизации завершился ошибкой"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "Этот текст слишком велик для интерактивной обработки"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "Загрузить оригинал и скопировать"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "Скопировать оригинал"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -47,7 +159,7 @@ msgstr "Разбить текст"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "Редактировать изображение"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
@@ -55,13 +167,13 @@ msgstr "Открепить"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "Закрепить"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "Удалить из локальной истории"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "Текст"
 
@@ -69,173 +181,173 @@ msgstr "Текст"
 msgid "Image"
 msgstr "Изображение"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
 msgstr "Введите здесь для поиска..."
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "Снимок экрана"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "Выбрать цвет"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "Приватный режим"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "Быстрые фразы"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "Очистить историю"
+msgstr "Очистить историю, кроме закреплённых элементов"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "Настройки"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "Загрузка истории буфера обмена…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "Не удалось загрузить историю буфера обмена"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "Совпадающих элементов нет"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
 msgstr "Буфер обмена пуст"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
 msgstr "Неизвестное устройство"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "Настройки синхронизации"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
 msgstr "Синхронизировать"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "Синхронизация отключена"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr "Сервер синхронизации не в сети"
 
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "Ошибка протокола синхронизации"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "Работа сервера синхронизации ограничена"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr "Сервер синхронизации в сети"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
 msgstr "Раздача"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "Загрузка"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "Ожидание другого устройства"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "Подготовка передачи"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "Передача не удалась; активируйте для повторной попытки"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "Отправка завершена"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "Оригинал загружен"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "Повторить загрузку оригинала"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "Загрузить оригинал"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "Оригинал доступен локально"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr "Отправить на сервер синхронизации"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "Вернуться к истории буфера обмена"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "Добавить свою фразу"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "Введите свою фразу…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "Скопировать быструю фразу"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "Удалить быструю фразу"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "Быстрых фраз нет"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "Выберите одно или несколько слов"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "Скопировать выбранные слова"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "Слова не найдены"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "Верхняя панель инструментов"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "Нижняя панель"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
@@ -251,18 +363,18 @@ msgstr "Сдвинуть вниз"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "Переместить на нижнюю панель"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "Переместить на верхнюю панель инструментов"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "Пипетка"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
 msgstr "Синхронизация"
 
@@ -292,11 +404,11 @@ msgstr "Введите адрес HTTP или HTTPS, предоставляющ�
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "Отмена"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "Добавить"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -304,9 +416,10 @@ msgstr "Словари"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
 msgstr ""
-"Словари, соответствующие текущему языку интерфейса, загружаются "
+"Включённые словари, соответствующие текущему языку интерфейса, загружаются "
 "автоматически."
 
 #: src/ui/settings/dictionaries.js:107
@@ -361,26 +474,142 @@ msgstr "Удалить словарь"
 msgid "Dictionary import failed"
 msgstr "Не удалось импортировать словарь"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "Выключено"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "Нажмите, чтобы задать сочетание клавиш"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "Нажмите сочетание клавиш…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "Работающее приложение"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "Загрузка…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "Исключить выбранное приложение"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "Обновить список работающих приложений"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "Работающие приложения не найдены"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "Включите расширение, чтобы выбрать работающее приложение"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "Подключение к серверу"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "Включить синхронизацию"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "Адрес сервера"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "Ключ API"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "Активный канал"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "Обновить каналы"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "Состояние сервера"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "Не проверено"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "Применить"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "Проверить соединение"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "Нет доступных каналов"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "Настройки соединения сохранены · ключ API задан"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "Настройки соединения сохранены · ключ API не задан"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "Настройки соединения сохранены локально"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "Подключение…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "Ограниченная работа"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "В сети"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "Загрузка каналов…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "Список каналов обновлён"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "Настройки соединения не заданы"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "Настройки соединения загружены · ключ API задан"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "Настройки соединения загружены · ключ API не задан"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "Локальные настройки соединения загружены"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "Цвет темы"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "Как в системе"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -408,135 +637,138 @@ msgstr "Серо-голубой"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "Добавить свой цвет"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "Выбрать свой цвет темы"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "Общие"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "Внешний вид"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "Панель"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "Показывать индикатор на панели"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "Положение панели при скрытом индикаторе"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
-
-#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "Вверху слева"
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:112
 msgid "Top center"
-msgstr ""
+msgstr "Сверху по центру"
+
+#: src/ui/settings/window.js:113
+msgid "Top right"
+msgstr "Вверху справа"
 
 #: src/ui/settings/window.js:114
-msgid "Top right"
-msgstr "Верхняя-правая"
+msgid "Center left"
+msgstr "По центру слева"
 
 #: src/ui/settings/window.js:115
-msgid "Center left"
-msgstr ""
+msgid "Center"
+msgstr "По центру"
 
 #: src/ui/settings/window.js:116
-msgid "Center"
-msgstr "Центральный"
+msgid "Center right"
+msgstr "По центру справа"
 
 #: src/ui/settings/window.js:117
-msgid "Center right"
-msgstr ""
-
-#: src/ui/settings/window.js:118
 msgid "Bottom left"
 msgstr "Снизу слева"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:118
 msgid "Bottom center"
-msgstr ""
+msgstr "Снизу по центру"
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:119
 msgid "Bottom right"
-msgstr "Правая-нижняя"
+msgstr "Снизу справа"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "Смещение панели по горизонтали"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "пикс.; положительное значение сдвигает вправо"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "Смещение панели по вертикали"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "пикс.; положительное значение сдвигает вниз"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "Ширина панели"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "пикс"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "Высота панели"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "Смещение текста по вертикали"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "пикс.; отрицательное значение сдвигает вверх, положительное — вниз"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "Максимум элементов на панели"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "Сохранять состояние панели"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
+"Открывать предыдущий экран вместо постоянного возврата к истории буфера "
+"обмена"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "Удерживать фокус клавиатуры на панели"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
+"На краю панели клавиши со стрелками не переводят фокус за пределы расширения"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "Расположение значков"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "Используйте кнопки, чтобы менять положение и порядок действий."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "Буфер обмена"
 
@@ -544,411 +776,454 @@ msgstr "Буфер обмена"
 msgid "History"
 msgstr "История"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
+"Закреплённые элементы сохраняются при достижении лимита истории или "
+"хранилища."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "Элементов в истории"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "Размер хранилища"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "МБ"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "Срок хранения истории"
 
 #: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "дней; 0 — отключить"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "Максимальный размер элемента"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
 msgstr "Удалить пробелы в тексте"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "Имитация ввода"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr ""
+"Используйте медленный ввод, если приложение пропускает имитируемые нажатия "
+"клавиш."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "Скорость ввода"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "Обычная"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "Медленная"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "Токенизатор"
 
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
-
-#: src/ui/settings/window.js:184
-msgid "Privacy"
-msgstr ""
-
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
-
-#: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
-
-#: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
-
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
-
 #: src/ui/settings/window.js:194
+msgid "Show source text preview"
+msgstr "Показывать исходный текст"
+
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "Конфиденциальность"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"Выберите работающее приложение или введите класс его окна вручную, чтобы "
+"исключить его."
+
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "Приостановить запись буфера обмена"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "Конфиденциальное содержимое"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "Не записывать"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "Хранить до остановки расширения"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "Хранить как другие элементы истории"
+
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
 msgstr "Исключённые приложения"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "Классы окон через запятую"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "Поведение"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "Быстрые фразы хранятся только на этом устройстве."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "Максимум быстрых фраз"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "Новые фразы в начале"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "Закрывать панель после копирования"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "Устройство"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
 msgstr "ID устройства"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr ""
+msgstr "Метка устройства"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "Понятное имя, отображаемое при обнаружении устройства"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "Значок устройства"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
 msgstr "Рабочий стол"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
 msgstr "Лэптоп"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "Телефон"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "Планшет"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "Сервер"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "Прочие вопросы"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "Подключение к серверу"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "Включить синхронизацию"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "Состояние сервера"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "Подключение…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "Открыть"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "Правила передачи"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"Предпросмотр уменьшает объём первоначальной передачи; оригиналы загружаются "
+"по запросу."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "Режим отправки"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "Вручную"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "Автоматически"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"При автоматической отправке подходящие новые элементы загружаются на "
+"настроенный сервер."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "Режим получения"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "Только история"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "Поместить в буфер обмена"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr ""
+"Этот режим заменяет текущее содержимое буфера обмена полученным содержимым."
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "Изображения"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"Разрешает отправлять на сервер содержимое, помеченное менеджерами паролей "
+"как конфиденциальное."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "Только закреплённые элементы"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "Применяется только к автоматической отправке"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "Небольшие тексты отправляются целиком"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "КБ"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "Предпросмотр больших текстов"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "Небольшие изображения отправляются целиком"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "Размер миниатюры"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "Предельный объём миниатюры"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "Время ожидания загрузки по запросу"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "сек"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
-msgstr ""
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "Интервал опроса"
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr ""
+"Секунды между проверками; большие интервалы снижают число запросов, но "
+"задерживают обновления."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "Формат цвета"
+
+#: src/ui/settings/window.js:315
 msgid "Default format"
 msgstr "Исходный формат"
 
-#: src/ui/settings/window.js:341
+#: src/ui/settings/window.js:328
 msgid "Default target"
-msgstr ""
+msgstr "Область по умолчанию"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
 msgstr "Интерактив"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "Весь экран"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "Окно"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
 msgstr "Область"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
 msgstr "Активное окно"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "Доступные области зависят от системного портала снимков экрана."
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "Добавить в историю"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "Скопировать снимок экрана"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "Открыть редактор изображений"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "Ниже необходимо задать команду редактора изображений."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"Для редактирования задайте команду. %u — URI изображения, %f — локальный "
+"путь, %i — байты изображения в стандартном вводе, %% — знак процента."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "Команда"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "Горячие клавиши"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
 msgstr "Глобальные"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
-msgstr ""
+msgstr "Нажмите на сочетание и введите новое. Backspace отключает его."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "Показать меню"
+msgstr "Открыть панель буфера обмена"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "Перейти к поиску в буфере обмена"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "Приостановить или возобновить запись буфера обмена"
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:386
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
+"Действует, когда элемент истории буфера обмена находится в фокусе клавиатуры."
 
-#: src/ui/settings/window.js:395
+#: src/ui/settings/window.js:390
 msgid "Paste entry"
-msgstr ""
+msgstr "Вставить элемент"
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:391
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "Закрепить или открепить элемент"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "Удалить элемент"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "Ввести элемент напрямую"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "Ввести элемент вместо копирования"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "Действует, когда выделенное слово находится в фокусе клавиатуры."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "Скопировать выбранные слова"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "Вставить выбранные слова"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "Ввести выбранные слова"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "Расширить выделение влево"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "Расширить выделение вправо"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "Расширить выделение вверх"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "Расширить выделение вниз"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "Сделать снимок экрана"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr ""
+#~ "Словари, соответствующие текущему языку интерфейса, загружаются "
+#~ "автоматически."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "Автоматическая очистка"
+
+#~ msgid "Favorites only"
+#~ msgstr "Только избранное"
+
+#~ msgid "Phone"
+#~ msgstr "Телефон"
+
+#~ msgid "Other"
+#~ msgstr "Прочие вопросы"
+
+#~ msgid "Open"
+#~ msgstr "Открыть"
 
 #, fuzzy
 #~ msgid "Remove network location"

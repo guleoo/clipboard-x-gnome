@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: ja\n"
@@ -18,35 +18,148 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "設定を初期値に戻す"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "初期値に戻す"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "設定を初期値に戻しますか？"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "すべての設定を初期値に戻します。クリップボード履歴、定型文、辞書、サーバー接続、デバイス ID は削除されません。"
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "キー入力のシミュレーションを中止しました"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
 msgstr ""
+"実際のキーボード入力を検出したため、残りのキー入力シミュレーションを中止しま"
+"した。"
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "画像編集"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
+msgstr ""
+"設定 → スクリーンショット → 画像編集で画像エディターのコマンドを設定してくだ"
+"さい。"
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "操作に失敗しました"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "同期は無効です"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "同期サーバーに接続できません"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "使用する同期チャンネルが選択されていません"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "同期サーバーのアドレスが正しくありません"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "同期の認証に失敗しました"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "このデバイスは同期サーバーで無効になっています"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "この API キーはこのデバイスに割り当てられていません"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "このデバイスには同期チャンネルへのアクセス権がありません"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "クリップボードの項目が同期サーバー上の項目と競合しています"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "送信元デバイスでクリップボードの内容がまだ準備できていません"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "送信元デバイスには、このクリップボードの内容が残っていません"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "クリップボードの内容が同期のサイズ制限を超えています"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "同期した内容の整合性検証に失敗しました"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "同期転送の有効期限が切れました"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "同期サーバーが混み合っています。後でもう一度お試しください。"
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "同期サーバーから無効な応答が返されました"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "同期用のアップロードに失敗しました"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "同期用のダウンロードに失敗しました"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "同期リクエストに失敗しました"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "このテキストは大きすぎるため、分割画面で処理できません"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "元のデータをダウンロードしてコピー"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "元のデータをコピー"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
-msgstr "テキストを分割"
+msgstr "単語分割"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "画像を編集"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
@@ -54,13 +167,13 @@ msgstr "ピン留めを外す"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "ピン留めする"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "ローカルの履歴から削除"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "テキスト"
 
@@ -68,177 +181,177 @@ msgstr "テキスト"
 msgid "Image"
 msgstr "画像"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
-msgstr "検索ワードを入力..."
+msgstr "クリップボードの履歴を検索…"
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "スクリーンショット"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "色を選択"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
-msgstr "プライベートモード"
+msgstr "プライバシーモード"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
-msgstr "クイックフレーズ"
+msgstr "定型文"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "履歴を消去"
+msgstr "ピン留めしていない項目を履歴から削除"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "設定"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "クリップボードの履歴を読み込み中…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "クリップボードの履歴を読み込めませんでした"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "一致する項目はありません"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
-msgstr "クリップボードの内容"
+msgstr "クリップボードの履歴は空です"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
-msgstr "未知のデバイス"
+msgstr "不明なデバイス"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "同期設定"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
-msgstr "同期"
+msgstr "同期する"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "同期は無効です"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
 msgstr "同期サーバーはオフラインです"
 
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "同期プロトコルエラー"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "同期サーバーの機能が低下しています"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
 msgstr "同期サーバーはオンラインです"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
-msgstr ""
+msgstr "アップロード中"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "ダウンロード中"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "相手のデバイスを待っています"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "転送を準備中"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "転送に失敗しました。押すと再試行します"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "アップロード完了"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "元のデータをダウンロードしました"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "元のデータのダウンロードを再試行"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "元のデータをダウンロード"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "元のデータはローカルにあります"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
 msgstr "同期サーバーに送信"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "クリップボードの履歴に戻る"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "定型文を追加"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "定型文を入力…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "定型文をコピー"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "定型文を削除"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "定型文はありません"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "語句を 1 つ以上選択してください"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "選択した語句をコピー"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "分割できる語句がありません"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "上部ツールバー"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "下部バー"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
-msgstr ""
+msgstr "アイコンを表示"
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
@@ -250,20 +363,20 @@ msgstr "下へ移動"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "下部バーへ移動"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "上部ツールバーへ移動"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "カラーピッカー"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
-msgstr "同期化"
+msgstr "同期"
 
 #: src/ui/settings/panel-actions.js:139
 msgid "Clear history"
@@ -283,20 +396,20 @@ msgstr "HTTP(S) URL"
 
 #: src/ui/settings/dictionaries.js:77
 msgid "Add network dictionary location"
-msgstr "ネットワーク辞書の場所を追加"
+msgstr "ネットワーク上の辞書を追加"
 
 #: src/ui/settings/dictionaries.js:78
 msgid "Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file."
 msgstr ""
-"UTF-8 の辞書ファイルを提供する HTTP または HTTPS の URL を入力してください。"
+"UTF-8 形式の辞書ファイルの HTTP または HTTPS の URL を入力してください。"
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "キャンセル"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "追加"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -304,12 +417,13 @@ msgstr "辞書"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
-msgstr "現在の表示言語に一致する辞書を自動的に読み込みます。"
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
+msgstr "有効化された辞書のうち、現在の表示言語に一致するものを自動的に読み込みます。"
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
-msgstr "インポートする言語"
+msgstr "インポート時の言語"
 
 #: src/ui/settings/dictionaries.js:111
 msgid "Used when the dictionary does not declare “# locale: language-code”."
@@ -321,7 +435,7 @@ msgstr "辞書をインポート"
 
 #: src/ui/settings/dictionaries.js:116
 msgid "UTF-8 text; one word and optional frequency per line"
-msgstr "UTF-8 テキスト。1 行に 1 語と任意の出現頻度"
+msgstr "UTF-8 テキスト。1 行に 1 語、必要に応じて頻度を記入"
 
 #: src/ui/settings/dictionaries.js:119
 msgid "Import…"
@@ -333,11 +447,11 @@ msgstr "ネットワークの場所を追加"
 
 #: src/ui/settings/dictionaries.js:176
 msgid "System tokenizer"
-msgstr "システムの分かち書き"
+msgstr "システム標準の単語分割機能"
 
 #: src/ui/settings/dictionaries.js:187
 msgid "entries"
-msgstr "エントリー"
+msgstr "語"
 
 #: src/ui/settings/dictionaries.js:215
 msgid "Edit dictionary"
@@ -345,7 +459,7 @@ msgstr "辞書を編集"
 
 #: src/ui/settings/dictionaries.js:223
 msgid "Open containing folder"
-msgstr "格納フォルダーを開く"
+msgstr "保存先のフォルダーを開く"
 
 #: src/ui/settings/dictionaries.js:232
 msgid "Refresh dictionary"
@@ -359,26 +473,142 @@ msgstr "辞書を削除"
 msgid "Dictionary import failed"
 msgstr "辞書のインポートに失敗しました"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "無効"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "クリックしてショートカットを設定"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "ショートカットキーを押してください…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "実行中のアプリケーション"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "読み込み中…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "選択したアプリケーションを除外"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "実行中のアプリケーションを更新"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "実行中のアプリケーションが見つかりません"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "実行中のアプリケーションから選ぶには拡張機能を有効にしてください"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "サーバー接続"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "同期を有効化"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "サーバーアドレス"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "API キー"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "使用するチャンネル"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "チャンネルを更新"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "サーバーの状態"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "未テスト"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "適用"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "接続をテスト"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "利用可能なチャンネルはありません"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "接続設定を保存しました · API キー設定済み"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "接続設定を保存しました · API キー未設定"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "接続設定をローカルに保存しました"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "接続中…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "機能低下"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "オンライン"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "チャンネルを読み込み中…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "チャンネルを更新しました"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "接続設定が未設定です"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "接続設定を読み込みました · API キー設定済み"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "接続設定を読み込みました · API キー未設定"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "ローカルの接続設定を読み込みました"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "テーマカラー"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "システムに合わせる"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -394,11 +624,11 @@ msgstr "緑"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Orange"
-msgstr "橙"
+msgstr "オレンジ"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Pink"
-msgstr "桃"
+msgstr "ピンク"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Slate"
@@ -406,547 +636,582 @@ msgstr "青灰"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "カスタムカラーを追加"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "カスタムテーマカラーを選択"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "全般"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "外観"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "パネル"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "トップバーのアイコンを表示"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "アイコンを非表示にした場合のパネル位置"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
-
-#: src/ui/settings/window.js:112
 msgid "Top left"
 msgstr "左上"
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:112
 msgid "Top center"
-msgstr ""
+msgstr "上中央"
+
+#: src/ui/settings/window.js:113
+msgid "Top right"
+msgstr "右上"
 
 #: src/ui/settings/window.js:114
-msgid "Top right"
-msgstr "上右"
+msgid "Center left"
+msgstr "左中央"
 
 #: src/ui/settings/window.js:115
-msgid "Center left"
-msgstr ""
+msgid "Center"
+msgstr "中央"
 
 #: src/ui/settings/window.js:116
-msgid "Center"
-msgstr "センター"
+msgid "Center right"
+msgstr "右中央"
 
 #: src/ui/settings/window.js:117
-msgid "Center right"
-msgstr ""
-
-#: src/ui/settings/window.js:118
 msgid "Bottom left"
 msgstr "左下"
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:118
 msgid "Bottom center"
-msgstr ""
+msgstr "下中央"
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:119
 msgid "Bottom right"
-msgstr "下右"
+msgstr "右下"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "パネルの水平方向の位置調整"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px。正の値で右へ移動"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "パネルの垂直方向の位置調整"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px。正の値で下へ移動"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "パネルの幅"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "パネルの高さ"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "テキストの垂直方向の位置調整"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "px。負の値で上へ、正の値で下へ移動"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "パネルに表示する項目の最大数"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "パネルの状態を保持"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
-msgstr ""
+msgstr "毎回クリップボードの履歴に戻らず、前回の画面を開きます"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "キーボードフォーカスをパネル内に保持"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
-msgstr ""
+msgstr "端に達しても、矢印キーでフォーカスが拡張機能のパネル外へ移動しません"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "アイコンの配置"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "ボタンを使って操作の配置と順序を変更します。"
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
 msgstr "クリップボード"
 
 #: src/ui/settings/window.js:172
 msgid "History"
-msgstr "ファイル履歴"
+msgstr "履歴"
 
-#: src/ui/settings/window.js:174
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
+msgstr "ピン留めした項目は、履歴や保存容量の上限に達しても保持されます。"
+
+#: src/ui/settings/window.js:176
 msgid "History entries"
-msgstr ""
+msgstr "履歴の最大件数"
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:177
 msgid "Storage size"
-msgstr "ストレージサイズ"
+msgstr "履歴の保存容量上限"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "履歴の保存期間"
 
 #: src/ui/settings/window.js:178
+msgid "days; 0 disables"
+msgstr "日（0 で無効）"
+
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "項目の最大サイズ"
+
+#: src/ui/settings/window.js:180
 msgid "Trim surrounding whitespace"
-msgstr "テキスト周りのホワイトスペースを削除する"
+msgstr "テキストの前後の空白を削除"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
-msgid "Tokenizer"
-msgstr "トークナイザー"
-
-#: src/ui/settings/window.js:182
-msgid "Show source text preview"
-msgstr ""
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "キー入力のシミュレーション"
 
 #: src/ui/settings/window.js:184
-msgid "Privacy"
+msgid "Use slow input if a target application misses simulated keystrokes."
 msgstr ""
+"対象アプリケーションでキー入力の一部が認識されない場合は、低速入力を使用して"
+"ください。"
 
-#: src/ui/settings/window.js:186
-msgid "Pause clipboard recording"
-msgstr ""
-
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
-msgid "Sensitive content"
-msgstr ""
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "入力速度"
 
 #: src/ui/settings/window.js:188
-msgid "Do not record"
-msgstr ""
+msgid "Standard"
+msgstr "標準"
 
 #: src/ui/settings/window.js:189
-msgid "Keep until extension stops"
-msgstr ""
+msgid "Slow"
+msgstr "低速"
 
-#: src/ui/settings/window.js:190
-msgid "Store like other history"
-msgstr ""
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
+msgid "Tokenizer"
+msgstr "単語分割"
 
 #: src/ui/settings/window.js:194
+msgid "Show source text preview"
+msgstr "元のテキストのプレビューを表示"
+
+#: src/ui/settings/window.js:197
+msgid "Privacy"
+msgstr "プライバシー"
+
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"実行中のアプリケーションから選ぶか、ウィンドウクラスを手入力して除外します。"
+
+#: src/ui/settings/window.js:201
+msgid "Pause clipboard recording"
+msgstr "クリップボードの記録を一時停止"
+
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
+msgid "Sensitive content"
+msgstr "機密性の高い内容"
+
+#: src/ui/settings/window.js:203
+msgid "Do not record"
+msgstr "記録しない"
+
+#: src/ui/settings/window.js:204
+msgid "Keep until extension stops"
+msgstr "拡張機能の停止まで保持"
+
+#: src/ui/settings/window.js:205
+msgid "Store like other history"
+msgstr "通常の履歴と同様に保存"
+
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
 msgstr "除外アプリケーション"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "ウィンドウクラスをカンマ区切りで入力"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "動作"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "定型文はこのデバイスにのみ保存されます。"
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "定型文の最大件数"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "新しい定型文を先頭に追加"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "コピー後にパネルを閉じる"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "デバイス"
 
-#: src/ui/settings/window.js:234
+#: src/ui/settings/window.js:249
 msgid "Device ID"
 msgstr "デバイスID"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Device tag"
-msgstr ""
+msgstr "デバイスのタグ"
 
-#: src/ui/settings/window.js:239
+#: src/ui/settings/window.js:254
 msgid "Friendly name shown during device discovery"
-msgstr ""
+msgstr "デバイス検出時に表示する識別しやすい名前"
 
-#: src/ui/settings/window.js:240
+#: src/ui/settings/window.js:255
 msgid "Device icon"
-msgstr ""
+msgstr "デバイスのアイコン"
 
-#: src/ui/settings/window.js:241
+#: src/ui/settings/window.js:256
 msgid "Desktop"
-msgstr "デスクトップ"
+msgstr "デスクトップ PC"
 
-#: src/ui/settings/window.js:242
+#: src/ui/settings/window.js:257
 msgid "Laptop"
 msgstr "ノートパソコン"
 
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "電話"
-
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:258
 msgid "Tablet"
 msgstr "タブレット"
 
-#: src/ui/settings/window.js:245
+#: src/ui/settings/window.js:259
 msgid "Server"
 msgstr "サーバー"
 
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "その他"
-
-#: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "サーバー接続"
-
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "同期を有効化"
-
-
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "サーバーの状態"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "接続中…"
-
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
-
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
-
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
-
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "開く"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "転送ルール"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"プレビューで初回の転送量を抑え、必要になったときに元のデータを取得します。"
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "送信モード"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "手動"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "自動"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"自動送信では、条件に一致する新しい項目を設定済みのサーバーにアップロードしま"
+"す。"
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "受信モード"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "履歴に追加のみ"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
-msgstr ""
+msgstr "クリップボードに反映"
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
+msgstr "クリップボードに反映すると、現在の内容が受信した内容に置き換わります。"
+
+#: src/ui/settings/window.js:290
 msgid "HTML"
 msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "画像"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"パスワードマネージャーが機密情報として指定した内容もサーバーへ送信できるよう"
+"にします。"
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "ピン留めした項目のみ"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "自動送信にのみ適用されます"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "短いテキストを全文送信する上限"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "長いテキストのプレビューサイズ"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "小さい画像をそのまま送信する上限"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "サムネイルの最大辺の長さ"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "サムネイルのサイズ上限"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "オンデマンド転送のタイムアウト"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "秒"
 
-#: src/ui/settings/window.js:326
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "同期の確認間隔"
+
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
+msgstr "確認の間隔（秒）。長くするとリクエストは減りますが、更新が遅れます。"
+
+#: src/ui/settings/window.js:313
 msgid "Color format"
-msgstr ""
+msgstr "色の形式"
+
+#: src/ui/settings/window.js:315
+msgid "Default format"
+msgstr "既定の形式"
 
 #: src/ui/settings/window.js:328
-msgid "Default format"
-msgstr "デフォルトの書式"
-
-#: src/ui/settings/window.js:341
 msgid "Default target"
-msgstr ""
+msgstr "既定の撮影対象"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
-msgstr ""
+msgstr "画面上で選択"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "画面全体"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "ウィンドウ"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
-msgstr "面積"
+msgstr "範囲"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
-msgstr ""
+msgstr "アクティブなウィンドウ"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "選択できる対象はシステムのスクリーンショットポータルに依存します。"
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "履歴に追加"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "スクリーンショットをコピー"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "画像エディターを開く"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "下で画像エディターのコマンドを設定する必要があります。"
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"編集を有効にするにはコマンドを入力してください。%u は画像の URI、%f はローカ"
+"ルパス、%i は標準入力で渡す画像データ、%% はパーセント記号です。"
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
 msgstr "コマンド"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "ショートカット"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
 msgstr "グローバル"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"ショートカットをクリックして新しいキーの組み合わせを押してください。"
+"Backspace で無効にできます。"
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "メニュー"
+msgstr "クリップボードパネルを開く"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "クリップボード検索にフォーカス"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "クリップボードの記録を一時停止または再開"
+
+#: src/ui/settings/window.js:386
+msgid "Active while a clipboard history entry has keyboard focus."
+msgstr "クリップボード履歴の項目にキーボードフォーカスがある場合に有効です。"
+
+#: src/ui/settings/window.js:390
+msgid "Paste entry"
+msgstr "項目を貼り付け"
 
 #: src/ui/settings/window.js:391
-msgid "Active while a clipboard history entry has keyboard focus."
-msgstr ""
-
-#: src/ui/settings/window.js:395
-msgid "Paste entry"
-msgstr ""
-
-#: src/ui/settings/window.js:396
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "項目のピン留めを切り替え"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "項目を削除"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "項目を直接入力"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "コピーせずに項目をキー入力"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "分割した語句にキーボードフォーカスがある場合に有効です。"
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "選択した語句をコピー"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "選択した語句を貼り付け"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "選択した語句をキー入力"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "選択範囲を左に拡張"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "選択範囲を右に拡張"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "選択範囲を上に拡張"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "選択範囲を下に拡張"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "スクリーンショットを撮る"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr "現在の表示言語に一致する辞書を自動的に読み込みます。"
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "履歴の自動削除"
+
+#~ msgid "Favorites only"
+#~ msgstr "ピン留めした項目のみ"
+
+#~ msgid "Phone"
+#~ msgstr "電話"
+
+#~ msgid "Other"
+#~ msgstr "その他"
+
+#~ msgid "Open"
+#~ msgstr "開く"
 
 #, fuzzy
 #~ msgid "Remove network location"

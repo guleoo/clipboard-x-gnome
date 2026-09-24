@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-24 10:14+0800\n"
+"POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
 "Last-Translator: Clipboard X contributors\n"
 "Language-Team: kn\n"
@@ -17,27 +17,137 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/entry/extension.js:38
-msgid "Simulated keyboard input paused"
-msgstr ""
+#: src/ui/settings/window.js:170
+msgid "Restore default settings"
+msgstr "ಪೂರ್ವನಿಯೋಜಿತ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಿ"
 
-#: src/entry/extension.js:39
+#: src/ui/settings/window.js:174 src/ui/settings/window.js:183
+msgid "Restore"
+msgstr "ಮರುಸ್ಥಾಪಿಸಿ"
+
+#: src/ui/settings/window.js:179
+msgid "Restore default settings?"
+msgstr "ಪೂರ್ವನಿಯೋಜಿತ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಬೇಕೇ?"
+
+#: src/ui/settings/window.js:167
 msgid ""
-"Do not press other keys during simulated typing. Input will resume after the "
-"keyboard is idle."
-msgstr ""
+"Reset all preferences without deleting clipboard history, quick phrases, "
+"dictionaries, server connection, or device identity."
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸ, ತ್ವರಿತ ಪದಗುಚ್ಛಗಳು, ನಿಘಂಟುಗಳು, ಸರ್ವರ್ ಸಂಪರ್ಕ ಅಥವಾ ಸಾಧನದ ಗುರುತನ್ನು ಅಳಿಸದೆ ಎಲ್ಲಾ ಆದ್ಯತೆಗಳನ್ನು ಮರುಹೊಂದಿಸುತ್ತದೆ."
 
-#: src/ui/indicator.js:279
-msgid "This text is too large for interactive processing"
+#: src/entry/extension.js:44
+msgid "Simulated keyboard input cancelled"
+msgstr "ಅನುಕರಿಸಿದ ಕೀಲಿಮಣೆ ಇನ್‌ಪುಟ್ ರದ್ದಾಗಿದೆ"
+
+#: src/entry/extension.js:45
+msgid ""
+"Physical keyboard input was detected. The remaining simulated input was "
+"cancelled."
+msgstr "ಭೌತಿಕ ಕೀಲಿಮಣೆ ಇನ್‌ಪುಟ್ ಪತ್ತೆಯಾಗಿದೆ. ಉಳಿದ ಅನುಕರಿಸಿದ ಇನ್‌ಪುಟ್ ರದ್ದಾಗಿದೆ."
+
+#: src/entry/extension.js:279 src/ui/settings/window.js:343
+msgid "Image editing"
+msgstr "ಚಿತ್ರ ಸಂಪಾದನೆ"
+
+#: src/entry/extension.js:280
+msgid ""
+"Configure an image editor command in Preferences → Screenshot → Image "
+"editing."
 msgstr ""
+"ಆದ್ಯತೆಗಳು → ತೆರೆಚಿತ್ರ → ಚಿತ್ರ ಸಂಪಾದನೆ ವಿಭಾಗದಲ್ಲಿ ಚಿತ್ರ ಸಂಪಾದಕದ ಆಜ್ಞೆಯನ್ನು ಹೊಂದಿಸಿ."
+
+#: src/entry/extension.js:348
+msgid "Operation failed"
+msgstr "ಕಾರ್ಯಾಚರಣೆ ವಿಫಲವಾಗಿದೆ"
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:115
+msgid "Synchronization is disabled"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ನಿಷ್ಕ್ರಿಯವಾಗಿದೆ"
+
+#: src/sync/errors.js:14
+msgid "Synchronization server is unavailable"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಲಭ್ಯವಿಲ್ಲ"
+
+#: src/sync/errors.js:16
+msgid "No active synchronization channel is configured"
+msgstr "ಯಾವುದೇ ಸಕ್ರಿಯ ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಚಾನೆಲ್ ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
+
+#: src/sync/errors.js:18
+msgid "Synchronization server address is invalid"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ವಿಳಾಸ ಅಮಾನ್ಯವಾಗಿದೆ"
+
+#: src/sync/errors.js:21
+msgid "Synchronization authentication failed"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ದೃಢೀಕರಣ ವಿಫಲವಾಗಿದೆ"
+
+#: src/sync/errors.js:23
+msgid "This device is disabled on the synchronization server"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್‌ನಲ್ಲಿ ಈ ಸಾಧನವನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"
+
+#: src/sync/errors.js:25
+msgid "The API key does not belong to this device"
+msgstr "API ಕೀ ಈ ಸಾಧನಕ್ಕೆ ಸೇರಿಲ್ಲ"
+
+#: src/sync/errors.js:27
+msgid "This device does not have access to the synchronization channel"
+msgstr "ಈ ಸಾಧನಕ್ಕೆ ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಚಾನೆಲ್ ಪ್ರವೇಶವಿಲ್ಲ"
+
+#: src/sync/errors.js:29
+msgid "The clipboard item conflicts with an item on the synchronization server"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಅಂಶವು ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್‌ನ ಅಂಶದೊಂದಿಗೆ ಸಂಘರ್ಷಿಸುತ್ತದೆ"
+
+#: src/sync/errors.js:31
+msgid "The clipboard content is not ready on the source device"
+msgstr "ಮೂಲ ಸಾಧನದಲ್ಲಿ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ವಿಷಯ ಇನ್ನೂ ಸಿದ್ಧವಾಗಿಲ್ಲ"
+
+#: src/sync/errors.js:33
+msgid "The source device no longer has this clipboard content"
+msgstr "ಮೂಲ ಸಾಧನದಲ್ಲಿ ಈ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ವಿಷಯ ಇನ್ನು ಇಲ್ಲ"
+
+#: src/sync/errors.js:36
+msgid "The clipboard content exceeds the synchronization size limit"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ವಿಷಯವು ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಗಾತ್ರದ ಮಿತಿಯನ್ನು ಮೀರಿದೆ"
+
+#: src/sync/errors.js:39
+msgid "The synchronized content failed integrity verification"
+msgstr "ಸಿಂಕ್ರೊನೈಸ್ ಮಾಡಿದ ವಿಷಯದ ಸಮಗ್ರತೆ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ"
+
+#: src/sync/errors.js:41
+msgid "The synchronization transfer expired"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ವರ್ಗಾವಣೆಯ ಅವಧಿ ಮುಗಿದಿದೆ"
+
+#: src/sync/errors.js:43
+msgid "The synchronization server is busy. Try again later."
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಕಾರ್ಯನಿರತವಾಗಿದೆ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+
+#: src/sync/errors.js:46
+msgid "The synchronization server returned an invalid response"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಅಮಾನ್ಯ ಪ್ರತಿಕ್ರಿಯೆ ನೀಡಿದೆ"
+
+#: src/sync/errors.js:49
+msgid "Synchronization upload failed"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಅಪ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ"
+
+#: src/sync/errors.js:52
+msgid "Synchronization download failed"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಡೌನ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ"
+
+#: src/sync/errors.js:56 src/ui/settings/sync.js:52 src/ui/settings/sync.js:118
+#: src/ui/settings/sync.js:163
+msgid "Synchronization request failed"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ವಿನಂತಿ ವಿಫಲವಾಗಿದೆ"
+
+#: src/ui/indicator.js:276
+msgid "This text is too large for interactive processing"
+msgstr "ಸಂವಾದಾತ್ಮಕ ಪ್ರಕ್ರಿಯೆಗೆ ಈ ಪಠ್ಯ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ"
 
 #: src/ui/panels/history/item.js:61
 msgid "Download original and copy"
-msgstr ""
+msgstr "ಮೂಲವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ ನಕಲಿಸಿ"
 
 #: src/ui/panels/history/item.js:62
 msgid "Copy original"
-msgstr ""
+msgstr "ಮೂಲವನ್ನು ನಕಲಿಸಿ"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
 msgid "Segment text"
@@ -45,21 +155,21 @@ msgstr "ಪಠ್ಯವನ್ನು ವಿಭಜಿಸಿ"
 
 #: src/ui/panels/history/item.js:74
 msgid "Edit image"
-msgstr ""
+msgstr "ಚಿತ್ರವನ್ನು ಸಂಪಾದಿಸಿ"
 
 #: src/ui/panels/history/item.js:80
 msgid "Unpin"
-msgstr ""
+msgstr "ಪಿನ್ ತೆಗೆದುಹಾಕಿ"
 
 #: src/ui/panels/history/item.js:80
 msgid "Pin"
-msgstr ""
+msgstr "ಪಿನ್ ಮಾಡಿ"
 
 #: src/ui/panels/history/item.js:95
 msgid "Delete from local history"
-msgstr ""
+msgstr "ಸ್ಥಳೀಯ ಇತಿಹಾಸದಿಂದ ಅಳಿಸಿ"
 
-#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:306
+#: src/ui/panels/history/item.js:125 src/ui/settings/window.js:289
 msgid "Text"
 msgstr "ಪಠ್ಯ"
 
@@ -67,202 +177,202 @@ msgstr "ಪಠ್ಯ"
 msgid "Image"
 msgstr "ಚಿತ್ರ"
 
-#: src/ui/panels/history/panel.js:74
+#: src/ui/panels/history/panel.js:67
 msgid "Search clipboard history…"
-msgstr "ಹುಡುಕಲು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ..."
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸದಲ್ಲಿ ಹುಡುಕಿ…"
 
-#: src/ui/panels/history/panel.js:94 src/ui/settings/panel-actions.js:134
-#: src/ui/settings/window.js:338 src/ui/settings/window.js:339
-#: src/ui/settings/window.js:423
+#: src/ui/panels/history/panel.js:87 src/ui/settings/panel-actions.js:134
+#: src/ui/settings/window.js:325 src/ui/settings/window.js:326
+#: src/ui/settings/window.js:418
 msgid "Screenshot"
 msgstr "ತೆರೆಚಿತ್ರ"
 
-#: src/ui/panels/history/panel.js:100 src/ui/settings/window.js:421
+#: src/ui/panels/history/panel.js:93 src/ui/settings/window.js:416
 msgid "Pick color"
 msgstr "ಬಣ್ಣವನ್ನು ಆರಿಸಿ"
 
-#: src/ui/panels/history/panel.js:106 src/ui/panels/history/panel.js:418
+#: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
 msgid "Privacy mode"
 msgstr "ಖಾಸಗಿ ಮೋಡ್"
 
-#: src/ui/panels/history/panel.js:112 src/ui/panels/quick-phrases/panel.js:53
-#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:209
+#: src/ui/panels/history/panel.js:105 src/ui/panels/quick-phrases/panel.js:54
+#: src/ui/settings/panel-actions.js:136 src/ui/settings/window.js:225
 msgid "Quick phrases"
 msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟುಗಳು"
 
-#: src/ui/panels/history/panel.js:147 src/ui/settings/window.js:385
+#: src/ui/panels/history/panel.js:140 src/ui/settings/window.js:380
 msgid "Clear unpinned history"
-msgstr "ಇತಿಹಾಸವನ್ನು ಅಳಿಸಿ"
+msgstr "ಪಿನ್ ಮಾಡದ ಅಂಶಗಳನ್ನು ಇತಿಹಾಸದಿಂದ ಅಳಿಸಿ"
 
-#: src/ui/panels/history/panel.js:152 src/ui/settings/panel-actions.js:140
+#: src/ui/panels/history/panel.js:145 src/ui/settings/panel-actions.js:140
 msgid "Preferences"
 msgstr "ಆದ್ಯತೆಗಳು"
 
-#: src/ui/panels/history/panel.js:202
+#: src/ui/panels/history/panel.js:195
 msgid "Loading clipboard history…"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸವನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…"
 
-#: src/ui/panels/history/panel.js:207
+#: src/ui/panels/history/panel.js:200
 msgid "Clipboard history could not be loaded"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸವನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "No matching entries"
-msgstr ""
+msgstr "ಹೊಂದುವ ಅಂಶಗಳಿಲ್ಲ"
 
-#: src/ui/panels/history/panel.js:219
+#: src/ui/panels/history/panel.js:212
 msgid "Clipboard history is empty"
-msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಖಾಲಿಯಾಗಿದೆ"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸ ಖಾಲಿಯಾಗಿದೆ"
 
-#: src/ui/panels/history/panel.js:437
+#: src/ui/panels/history/panel.js:429
 msgid "Unknown device"
-msgstr ""
+msgstr "ಅಜ್ಞಾತ ಸಾಧನ"
 
-#: src/ui/panels/history/sync-action.js:21
+#: src/ui/panels/history/sync-action.js:22
 msgid "Synchronization settings"
-msgstr ""
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
 
-#: src/ui/panels/history/sync-action.js:29
+#: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
-msgstr ""
+msgstr "ಸಿಂಕ್ರೊನೈಸ್ ಮಾಡಿ"
 
-#: src/ui/panels/history/sync-action.js:48
+#: src/ui/panels/history/sync-action.js:49
 msgid "Sync disabled"
-msgstr ""
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ನಿಷ್ಕ್ರಿಯವಾಗಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:51
+#: src/ui/panels/history/sync-action.js:52
 msgid "Synchronization server offline"
-msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಪೂರೈಕೆಗಣಕ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದೆ"
-
-#: src/ui/panels/history/sync-action.js:54
-msgid "Sync protocol error"
-msgstr ""
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದೆ"
 
 #: src/ui/panels/history/sync-action.js:58
+msgid "Sync protocol error"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಪ್ರೋಟೋಕಾಲ್ ದೋಷ"
+
+#: src/ui/panels/history/sync-action.js:63
+msgid "Synchronization server degraded"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಸೀಮಿತವಾಗಿ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿದೆ"
+
+#: src/ui/panels/history/sync-action.js:64
 msgid "Synchronization server online"
-msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಪೂರೈಕೆಗಣಕ ಆನ್‌ಲೈನ್‌ನಲ್ಲಿದೆ"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್ ಆನ್‌ಲೈನ್‌ನಲ್ಲಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Uploading"
-msgstr ""
+msgstr "ಅಪ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:81
+#: src/ui/panels/history/sync-action.js:88
 msgid "Downloading"
 msgstr "ಇಳಿಸಿಕೊಳ್ಳಲಾಗುತ್ತಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:85
-msgid "Waiting for peer device"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:86
-msgid "Preparing transfer"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:92
+msgid "Waiting for peer device"
+msgstr "ಇನ್ನೊಂದು ಸಾಧನಕ್ಕಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ"
+
+#: src/ui/panels/history/sync-action.js:93
+msgid "Preparing transfer"
+msgstr "ವರ್ಗಾವಣೆಯನ್ನು ಸಿದ್ಧಪಡಿಸಲಾಗುತ್ತಿದೆ"
+
+#: src/ui/panels/history/sync-action.js:102
 msgid "Transfer failed; activate to retry"
-msgstr ""
+msgstr "ವರ್ಗಾವಣೆ ವಿಫಲವಾಗಿದೆ; ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲು ಒತ್ತಿ"
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:109
 msgid "Upload completed"
-msgstr ""
+msgstr "ಅಪ್‌ಲೋಡ್ ಪೂರ್ಣಗೊಂಡಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:99
+#: src/ui/panels/history/sync-action.js:110
 msgid "Original downloaded"
-msgstr ""
+msgstr "ಮೂಲವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:104
-msgid "Synchronization is disabled"
-msgstr ""
-
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Retry original download"
-msgstr ""
+msgstr "ಮೂಲ ಡೌನ್‌ಲೋಡ್ ಅನ್ನು ಮರುಪ್ರಯತ್ನಿಸಿ"
 
-#: src/ui/panels/history/sync-action.js:110
+#: src/ui/panels/history/sync-action.js:121
 msgid "Download original"
-msgstr ""
+msgstr "ಮೂಲವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ"
 
-#: src/ui/panels/history/sync-action.js:115
+#: src/ui/panels/history/sync-action.js:126
 msgid "Original is available locally"
-msgstr ""
+msgstr "ಮೂಲವು ಸ್ಥಳೀಯವಾಗಿ ಲಭ್ಯವಿದೆ"
 
-#: src/ui/panels/history/sync-action.js:116
+#: src/ui/panels/history/sync-action.js:127
 msgid "Send to synchronization server"
-msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಪೂರೈಕೆಗಣಕಕ್ಕೆ ಕಳುಹಿಸಿ"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸರ್ವರ್‌ಗೆ ಕಳುಹಿಸಿ"
 
-#: src/ui/panels/quick-phrases/panel.js:42 src/ui/panels/tokenizer/panel.js:51
+#: src/ui/panels/quick-phrases/panel.js:43 src/ui/panels/tokenizer/panel.js:51
 msgid "Back to clipboard history"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸಕ್ಕೆ ಹಿಂತಿರುಗಿ"
 
-#: src/ui/panels/quick-phrases/panel.js:48
+#: src/ui/panels/quick-phrases/panel.js:49
 msgid "Add custom phrase"
-msgstr ""
+msgstr "ಸ್ವಂತ ನುಡಿಗಟ್ಟನ್ನು ಸೇರಿಸಿ"
 
-#: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:67
 msgid "Enter a custom phrase…"
-msgstr ""
+msgstr "ಸ್ವಂತ ನುಡಿಗಟ್ಟನ್ನು ನಮೂದಿಸಿ…"
 
-#: src/ui/panels/quick-phrases/panel.js:145
+#: src/ui/panels/quick-phrases/panel.js:149
 msgid "Copy quick phrase"
-msgstr ""
+msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟನ್ನು ನಕಲಿಸಿ"
 
-#: src/ui/panels/quick-phrases/panel.js:151
+#: src/ui/panels/quick-phrases/panel.js:155
 msgid "Delete quick phrase"
-msgstr ""
+msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟನ್ನು ಅಳಿಸಿ"
 
-#: src/ui/panels/quick-phrases/panel.js:166
+#: src/ui/panels/quick-phrases/panel.js:170
 msgid "No quick phrases"
-msgstr ""
+msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟುಗಳಿಲ್ಲ"
 
 #: src/ui/panels/tokenizer/panel.js:83 src/ui/panels/tokenizer/panel.js:381
 msgid "Select one or more words"
-msgstr ""
+msgstr "ಒಂದು ಅಥವಾ ಹೆಚ್ಚಿನ ಪದಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ"
 
 #: src/ui/panels/tokenizer/panel.js:92
 msgid "Copy selected words"
-msgstr ""
+msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ನಕಲಿಸಿ"
 
 #: src/ui/panels/tokenizer/panel.js:226
 msgid "No words found"
-msgstr ""
+msgstr "ಯಾವುದೇ ಪದಗಳು ಕಂಡುಬಂದಿಲ್ಲ"
 
 #: src/ui/settings/panel-actions.js:22
 msgid "Top toolbar"
-msgstr ""
+msgstr "ಮೇಲಿನ ಉಪಕರಣಪಟ್ಟಿ"
 
 #: src/ui/settings/panel-actions.js:23
 msgid "Footer"
-msgstr ""
+msgstr "ಕೆಳಗಿನ ಉಪಕರಣಪಟ್ಟಿ"
 
 #: src/ui/settings/panel-actions.js:77
 msgid "Show icon"
-msgstr ""
+msgstr "ಚಿಹ್ನೆಯನ್ನು ತೋರಿಸಿ"
 
 #: src/ui/settings/panel-actions.js:84
 msgid "Move up"
-msgstr ""
+msgstr "ಮೇಲಕ್ಕೆ ಸರಿಸಿ"
 
 #: src/ui/settings/panel-actions.js:92
 msgid "Move down"
-msgstr ""
+msgstr "ಕೆಳಕ್ಕೆ ಸರಿಸಿ"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to footer"
-msgstr ""
+msgstr "ಕೆಳಗಿನ ಉಪಕರಣಪಟ್ಟಿಗೆ ಸರಿಸಿ"
 
 #: src/ui/settings/panel-actions.js:101
 msgid "Move to top toolbar"
-msgstr ""
+msgstr "ಮೇಲಿನ ಉಪಕರಣಪಟ್ಟಿಗೆ ಸರಿಸಿ"
 
-#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:325
-#: src/ui/settings/window.js:419
+#: src/ui/settings/panel-actions.js:135 src/ui/settings/window.js:312
+#: src/ui/settings/window.js:414
 msgid "Color picker"
-msgstr ""
+msgstr "ಬಣ್ಣ ಆಯ್ಕೆಗಾರ"
 
-#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:231
+#: src/ui/settings/panel-actions.js:138 src/ui/settings/window.js:246
 msgid "Synchronization"
-msgstr "ಹೊಂದಾಣಿಕೆ"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್"
 
 #: src/ui/settings/panel-actions.js:139
 msgid "Clear history"
@@ -290,11 +400,11 @@ msgstr "UTF-8 ನಿಘಂಟು ಕಡತವನ್ನು ಒದಗಿಸುವ 
 
 #: src/ui/settings/dictionaries.js:81
 msgid "Cancel"
-msgstr ""
+msgstr "ರದ್ದುಮಾಡಿ"
 
 #: src/ui/settings/dictionaries.js:82
 msgid "Add"
-msgstr ""
+msgstr "ಸೇರಿಸಿ"
 
 #: src/ui/settings/dictionaries.js:101
 msgid "Dictionaries"
@@ -302,8 +412,9 @@ msgstr "ನಿಘಂಟುಗಳು"
 
 #: src/ui/settings/dictionaries.js:102
 msgid ""
-"Dictionaries matching the current display language are loaded automatically."
-msgstr "ಪ್ರಸ್ತುತ ಪ್ರದರ್ಶನ ಭಾಷೆಗೆ ಹೊಂದುವ ನಿಘಂಟುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
+"Enabled dictionaries matching the current display language are loaded "
+"automatically."
+msgstr "ಪ್ರಸ್ತುತ ಪ್ರದರ್ಶನ ಭಾಷೆಗೆ ಹೊಂದುವ ಸಕ್ರಿಯಗೊಳಿಸಿದ ನಿಘಂಟುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
 
 #: src/ui/settings/dictionaries.js:107
 msgid "Language for import"
@@ -357,26 +468,142 @@ msgstr "ನಿಘಂಟನ್ನು ತೆಗೆದುಹಾಕಿ"
 msgid "Dictionary import failed"
 msgstr "ನಿಘಂಟನ್ನು ಆಮದು ಮಾಡಲಾಗಲಿಲ್ಲ"
 
-#: src/ui/settings/rows.js:101 src/ui/settings/rows.js:111
-#: src/ui/settings/window.js:297 src/ui/settings/window.js:302
+#: src/ui/settings/rows.js:114 src/ui/settings/rows.js:124
+#: src/ui/settings/window.js:276 src/ui/settings/window.js:283
 msgid "Disabled"
 msgstr "ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"
 
-#: src/ui/settings/rows.js:106
+#: src/ui/settings/rows.js:119
 msgid "Click to set a shortcut"
-msgstr ""
+msgstr "ಶಾರ್ಟ್‌ಕಟ್ ಹೊಂದಿಸಲು ಕ್ಲಿಕ್ ಮಾಡಿ"
 
-#: src/ui/settings/rows.js:127
+#: src/ui/settings/rows.js:140
 msgid "Press shortcut…"
-msgstr ""
+msgstr "ಶಾರ್ಟ್‌ಕಟ್ ಕೀಲಿಗಳನ್ನು ಒತ್ತಿ…"
+
+#: src/ui/settings/running-apps.js:12
+msgid "Running application"
+msgstr "ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್"
+
+#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:147
+msgid "Loading…"
+msgstr "ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…"
+
+#: src/ui/settings/running-apps.js:19
+msgid "Exclude selected application"
+msgstr "ಆಯ್ಕೆಮಾಡಿದ ಅಪ್ಲಿಕೇಶನ್ ಅನ್ನು ಹೊರತುಪಡಿಸಿ"
+
+#: src/ui/settings/running-apps.js:26
+msgid "Refresh running applications"
+msgstr "ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್‌ಗಳನ್ನು ನವೀಕರಿಸಿ"
+
+#: src/ui/settings/running-apps.js:42
+msgid "No running applications found"
+msgstr "ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ"
+
+#: src/ui/settings/running-apps.js:46
+msgid "Enable the extension to choose running applications"
+msgstr "ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್‌ಗಳನ್ನು ಆಯ್ಕೆ ಮಾಡಲು ವಿಸ್ತರಣೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ"
+
+#: src/ui/settings/sync.js:14
+msgid "Server connection"
+msgstr "ಸರ್ವರ್ ಸಂಪರ್ಕ"
+
+#: src/ui/settings/sync.js:15
+msgid "Enable synchronization"
+msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸಕ್ರಿಯಗೊಳಿಸಿ"
+
+#: src/ui/settings/sync.js:17
+msgid "Server address"
+msgstr "ಸರ್ವರ್ ವಿಳಾಸ"
+
+#: src/ui/settings/sync.js:20
+msgid "API key"
+msgstr "API ಕೀ"
+
+#: src/ui/settings/sync.js:23
+msgid "Active channel"
+msgstr "ಸಕ್ರಿಯ ಚಾನೆಲ್"
+
+#: src/ui/settings/sync.js:28
+msgid "Refresh channels"
+msgstr "ಚಾನೆಲ್‌ಗಳನ್ನು ನವೀಕರಿಸಿ"
+
+#: src/ui/settings/sync.js:33
+msgid "Server status"
+msgstr "ಸರ್ವರ್ ಸ್ಥಿತಿ"
+
+#: src/ui/settings/sync.js:33
+msgid "Not tested"
+msgstr "ಇನ್ನೂ ಪರೀಕ್ಷಿಸಲಾಗಿಲ್ಲ"
+
+#: src/ui/settings/sync.js:35
+msgid "Apply"
+msgstr "ಅನ್ವಯಿಸಿ"
+
+#: src/ui/settings/sync.js:36
+msgid "Test connection"
+msgstr "ಸಂಪರ್ಕವನ್ನು ಪರೀಕ್ಷಿಸಿ"
+
+#: src/ui/settings/sync.js:57 src/ui/settings/sync.js:142
+msgid "No available channels"
+msgstr "ಲಭ್ಯವಿರುವ ಚಾನೆಲ್‌ಗಳಿಲ್ಲ"
+
+#: src/ui/settings/sync.js:113
+msgid "Connection settings saved · API key configured"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ · API ಕೀ ಹೊಂದಿಸಲಾಗಿದೆ"
+
+#: src/ui/settings/sync.js:114
+msgid "Connection settings saved · API key not configured"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ · API ಕೀ ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
+
+#: src/ui/settings/sync.js:117
+msgid "Connection settings saved locally"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಸ್ಥಳೀಯವಾಗಿ ಉಳಿಸಲಾಗಿದೆ"
+
+#: src/ui/settings/sync.js:124
+msgid "Connecting…"
+msgstr "ಸಂಪರ್ಕಿತಗೊಳ್ಳುತ್ತಿದೆ…"
+
+#: src/ui/settings/sync.js:131
+msgid "Degraded"
+msgstr "ಸೀಮಿತ ಕಾರ್ಯನಿರ್ವಹಣೆ"
+
+#: src/ui/settings/sync.js:132
+msgid "Online"
+msgstr "ಆನ್‌ಲೈನ್"
+
+#: src/ui/settings/sync.js:137
+msgid "Loading channels…"
+msgstr "ಚಾನೆಲ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…"
+
+#: src/ui/settings/sync.js:141
+msgid "Channels refreshed"
+msgstr "ಚಾನೆಲ್‌ಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ"
+
+#: src/ui/settings/sync.js:152
+msgid "Connection settings are not configured"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
+
+#: src/ui/settings/sync.js:158
+msgid "Connection settings loaded · API key configured"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಿದೆ · API ಕೀ ಹೊಂದಿಸಲಾಗಿದೆ"
+
+#: src/ui/settings/sync.js:159
+msgid "Connection settings loaded · API key not configured"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗಿದೆ · API ಕೀ ಹೊಂದಿಸಲಾಗಿಲ್ಲ"
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded locally"
+msgstr "ಸಂಪರ್ಕ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಸ್ಥಳೀಯವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗಿದೆ"
 
 #: src/ui/settings/theme-color.js:31
 msgid "Theme color"
-msgstr ""
+msgstr "ಥೀಮ್ ಬಣ್ಣ"
 
 #: src/ui/settings/theme-color.js:126
 msgid "Follow system"
-msgstr ""
+msgstr "ವ್ಯವಸ್ಥೆಯ ಥೀಮ್ ಬಣ್ಣವನ್ನು ಅನುಸರಿಸಿ"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Blue"
@@ -384,7 +611,7 @@ msgstr "ನೀಲಿ"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Teal"
-msgstr "ತಿಳೀ"
+msgstr "ನೀಲಿ-ಹಸಿರು"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Green"
@@ -392,559 +619,596 @@ msgstr "ಹಸಿರು"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Orange"
-msgstr ""
+msgstr "ಕಿತ್ತಳೆ ಬಣ್ಣ"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Pink"
-msgstr ""
+msgstr "ಗುಲಾಬಿ ಬಣ್ಣ"
 
 #: src/ui/settings/theme-color.js:127
 msgid "Slate"
-msgstr ""
+msgstr "ನೀಲಿ-ಬೂದು ಬಣ್ಣ"
 
 #: src/ui/settings/theme-color.js:141
 msgid "Add custom color"
-msgstr ""
+msgstr "ಸ್ವಂತ ಬಣ್ಣವನ್ನು ಸೇರಿಸಿ"
 
 #: src/ui/settings/theme-color.js:151
 msgid "Choose custom theme color"
-msgstr ""
+msgstr "ಸ್ವಂತ ಥೀಮ್ ಬಣ್ಣವನ್ನು ಆರಿಸಿ"
 
-#: src/ui/settings/window.js:101
+#: src/ui/settings/window.js:100
 msgid "General"
 msgstr "ಸಾಮಾನ್ಯ"
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:103
 msgid "Appearance"
 msgstr "ಗೋಚರಿಕೆ"
 
-#: src/ui/settings/window.js:108
+#: src/ui/settings/window.js:107
 msgid "Panel"
-msgstr ""
+msgstr "ಫಲಕ"
+
+#: src/ui/settings/window.js:109
+msgid "Show panel indicator"
+msgstr "ಫಲಕದ ಸೂಚಕವನ್ನು ತೋರಿಸಿ"
 
 #: src/ui/settings/window.js:110
-msgid "Show panel indicator"
-msgstr ""
+msgid "Panel position when indicator is hidden"
+msgstr "ಸೂಚಕವನ್ನು ಮರೆಮಾಡಿದಾಗ ಫಲಕದ ಸ್ಥಾನ"
 
 #: src/ui/settings/window.js:111
-msgid "Panel position when indicator is hidden"
-msgstr ""
+msgid "Top left"
+msgstr "ಮೇಲಿನ ಎಡಭಾಗ"
 
 #: src/ui/settings/window.js:112
-msgid "Top left"
-msgstr ""
+msgid "Top center"
+msgstr "ಮೇಲಿನ ಮಧ್ಯಭಾಗ"
 
 #: src/ui/settings/window.js:113
-msgid "Top center"
-msgstr ""
+msgid "Top right"
+msgstr "ಮೇಲಿನ ಬಲಭಾಗ"
 
 #: src/ui/settings/window.js:114
-msgid "Top right"
-msgstr ""
+msgid "Center left"
+msgstr "ಮಧ್ಯದ ಎಡಭಾಗ"
 
 #: src/ui/settings/window.js:115
-msgid "Center left"
-msgstr ""
-
-#: src/ui/settings/window.js:116
 msgid "Center"
 msgstr "ಕೇಂದ್ರ"
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:116
 msgid "Center right"
-msgstr ""
+msgstr "ಮಧ್ಯದ ಬಲಭಾಗ"
+
+#: src/ui/settings/window.js:117
+msgid "Bottom left"
+msgstr "ಕೆಳಗಿನ ಎಡಭಾಗ"
 
 #: src/ui/settings/window.js:118
-msgid "Bottom left"
-msgstr ""
+msgid "Bottom center"
+msgstr "ಕೆಳಗಿನ ಮಧ್ಯಭಾಗ"
 
 #: src/ui/settings/window.js:119
-msgid "Bottom center"
-msgstr ""
-
-#: src/ui/settings/window.js:120
 msgid "Bottom right"
-msgstr ""
+msgstr "ಕೆಳಗಿನ ಬಲಭಾಗ"
 
-#: src/ui/settings/window.js:124
+#: src/ui/settings/window.js:123
 msgid "Horizontal panel offset"
-msgstr ""
+msgstr "ಫಲಕದ ಅಡ್ಡ ಸರಿತ"
 
-#: src/ui/settings/window.js:128
+#: src/ui/settings/window.js:127
 msgid "px; positive moves right"
-msgstr ""
+msgstr "px; ಧನಾತ್ಮಕ ಮೌಲ್ಯ ಬಲಕ್ಕೆ ಸರಿಸುತ್ತದೆ"
 
-#: src/ui/settings/window.js:132
+#: src/ui/settings/window.js:131
 msgid "Vertical panel offset"
-msgstr ""
+msgstr "ಫಲಕದ ಲಂಬ ಸರಿತ"
 
-#: src/ui/settings/window.js:136
+#: src/ui/settings/window.js:135
 msgid "px; positive moves down"
-msgstr ""
+msgstr "px; ಧನಾತ್ಮಕ ಮೌಲ್ಯ ಕೆಳಕ್ಕೆ ಸರಿಸುತ್ತದೆ"
 
-#: src/ui/settings/window.js:138
+#: src/ui/settings/window.js:137
 msgid "Panel width"
-msgstr ""
+msgstr "ಫಲಕದ ಅಗಲ"
 
-#: src/ui/settings/window.js:138 src/ui/settings/window.js:139
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:137 src/ui/settings/window.js:138
+#: src/ui/settings/window.js:302
 msgid "px"
 msgstr "px"
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:138
 msgid "Panel height"
-msgstr ""
+msgstr "ಫಲಕದ ಎತ್ತರ"
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:141
 msgid "Text vertical offset"
-msgstr ""
+msgstr "ಪಠ್ಯದ ಲಂಬ ಸರಿತ"
 
-#: src/ui/settings/window.js:146
+#: src/ui/settings/window.js:145
 msgid "px; negative moves up, positive moves down"
-msgstr ""
+msgstr "px; ಋಣಾತ್ಮಕ ಮೌಲ್ಯ ಮೇಲಕ್ಕೆ, ಧನಾತ್ಮಕ ಮೌಲ್ಯ ಕೆಳಕ್ಕೆ ಸರಿಸುತ್ತದೆ"
 
-#: src/ui/settings/window.js:148
+#: src/ui/settings/window.js:147
 msgid "Maximum entries shown in panel"
-msgstr ""
+msgstr "ಫಲಕದಲ್ಲಿ ತೋರಿಸುವ ಗರಿಷ್ಠ ಅಂಶಗಳು"
+
+#: src/ui/settings/window.js:150
+msgid "Preserve panel state"
+msgstr "ಫಲಕದ ಸ್ಥಿತಿಯನ್ನು ಉಳಿಸಿ"
 
 #: src/ui/settings/window.js:151
-msgid "Preserve panel state"
-msgstr ""
-
-#: src/ui/settings/window.js:152
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
-msgstr ""
+msgstr "ಪ್ರತಿ ಬಾರಿ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸಕ್ಕೆ ಮರಳುವ ಬದಲು ಹಿಂದಿನ ನೋಟವನ್ನು ಮತ್ತೆ ತೆರೆಯಿರಿ"
+
+#: src/ui/settings/window.js:155
+msgid "Keep keyboard focus in panel"
+msgstr "ಕೀಲಿಮಣೆ ಫೋಕಸ್ ಅನ್ನು ಫಲಕದಲ್ಲೇ ಇರಿಸಿ"
 
 #: src/ui/settings/window.js:156
-msgid "Keep keyboard focus in panel"
-msgstr ""
-
-#: src/ui/settings/window.js:157
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
-msgstr ""
+msgstr "ಅಂಚಿನಲ್ಲಿ ಬಾಣದ ಕೀಲಿಗಳು ಫೋಕಸ್ ಅನ್ನು ವಿಸ್ತರಣೆಯ ಫಲಕದ ಹೊರಗೆ ಸರಿಸುವುದಿಲ್ಲ"
+
+#: src/ui/settings/window.js:160
+msgid "Icon layout"
+msgstr "ಚಿಹ್ನೆಗಳ ವಿನ್ಯಾಸ"
 
 #: src/ui/settings/window.js:161
-msgid "Icon layout"
-msgstr ""
-
-#: src/ui/settings/window.js:162
 msgid "Use the buttons to change action placement and order."
-msgstr ""
+msgstr "ಕ್ರಿಯೆಗಳ ಸ್ಥಾನ ಮತ್ತು ಕ್ರಮವನ್ನು ಬದಲಾಯಿಸಲು ಗುಂಡಿಗಳನ್ನು ಬಳಸಿ."
 
-#: src/ui/settings/window.js:171 src/ui/settings/window.js:390
+#: src/ui/settings/window.js:170 src/ui/settings/window.js:385
 msgid "Clipboard"
-msgstr "ನಕಲುಫಲಕ"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್"
 
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "ಇತಿಹಾಸ"
 
-#: src/ui/settings/window.js:174
-msgid "History entries"
-msgstr ""
+#: src/ui/settings/window.js:173
+msgid "Pinned entries are kept when history or storage limits are reached."
+msgstr "ಇತಿಹಾಸ ಅಥವಾ ಸಂಗ್ರಹಣೆ ಮಿತಿ ತಲುಪಿದರೂ ಪಿನ್ ಮಾಡಿದ ಅಂಶಗಳನ್ನು ಉಳಿಸಲಾಗುತ್ತದೆ."
 
-#: src/ui/settings/window.js:175
+#: src/ui/settings/window.js:176
+msgid "History entries"
+msgstr "ಇತಿಹಾಸದ ಅಂಶಗಳು"
+
+#: src/ui/settings/window.js:177
 msgid "Storage size"
 msgstr "ಸಂಗ್ರಹಣೆ ಗಾತ್ರ"
 
-#: src/ui/settings/window.js:175 src/ui/settings/window.js:177
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:177 src/ui/settings/window.js:179
+#: src/ui/settings/window.js:301
 msgid "MB"
 msgstr "MB"
 
-#: src/ui/settings/window.js:176
-msgid "Automatic cleanup"
-msgstr ""
-
-#: src/ui/settings/window.js:176
-msgid "days; 0 disables"
-msgstr ""
-
-#: src/ui/settings/window.js:177
-msgid "Maximum item size"
-msgstr ""
+#: src/ui/settings/window.js:178
+msgid "History retention"
+msgstr "ಇತಿಹಾಸವನ್ನು ಉಳಿಸುವ ಅವಧಿ"
 
 #: src/ui/settings/window.js:178
-msgid "Trim surrounding whitespace"
-msgstr "ಪಠ್ಯದ ಸುತ್ತಲಿನ ಖಾಲಿ ಸ್ಥಳವನ್ನು ತೆಗೆದುಹಾಕಿ"
+msgid "days; 0 disables"
+msgstr "ದಿನಗಳು; 0 ನಿಷ್ಕ್ರಿಯಗೊಳಿಸುತ್ತದೆ"
 
-#: src/ui/settings/window.js:180 src/ui/settings/window.js:404
+#: src/ui/settings/window.js:179
+msgid "Maximum item size"
+msgstr "ಅಂಶದ ಗರಿಷ್ಠ ಗಾತ್ರ"
+
+#: src/ui/settings/window.js:180
+msgid "Trim surrounding whitespace"
+msgstr "ಪಠ್ಯದ ಆರಂಭ ಮತ್ತು ಕೊನೆಯ ಖಾಲಿ ಅಕ್ಷರಗಳನ್ನು ತೆಗೆದುಹಾಕಿ"
+
+#: src/ui/settings/window.js:183
+msgid "Simulated input"
+msgstr "ಅನುಕರಿಸಿದ ಇನ್‌ಪುಟ್"
+
+#: src/ui/settings/window.js:184
+msgid "Use slow input if a target application misses simulated keystrokes."
+msgstr "ಗುರಿ ಅಪ್ಲಿಕೇಶನ್ ಅನುಕರಿಸಿದ ಕೀಲಿಯೊತ್ತುವಿಕೆಗಳನ್ನು ತಪ್ಪಿಸಿದರೆ ನಿಧಾನ ಇನ್‌ಪುಟ್ ಬಳಸಿ."
+
+#: src/ui/settings/window.js:187
+msgid "Typing speed"
+msgstr "ಟೈಪಿಂಗ್ ವೇಗ"
+
+#: src/ui/settings/window.js:188
+msgid "Standard"
+msgstr "ಸಾಮಾನ್ಯ"
+
+#: src/ui/settings/window.js:189
+msgid "Slow"
+msgstr "ನಿಧಾನ"
+
+#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
 msgid "Tokenizer"
 msgstr "ಪದ ವಿಭಜಕ"
 
-#: src/ui/settings/window.js:182
+#: src/ui/settings/window.js:194
 msgid "Show source text preview"
-msgstr ""
+msgstr "ಮೂಲ ಪಠ್ಯದ ಮುನ್ನೋಟ ತೋರಿಸಿ"
 
-#: src/ui/settings/window.js:184
+#: src/ui/settings/window.js:197
 msgid "Privacy"
 msgstr "ಗೌಪ್ಯತೆ"
 
-#: src/ui/settings/window.js:186
+#: src/ui/settings/window.js:198
+msgid ""
+"Select a running application or enter its window class manually to exclude "
+"it."
+msgstr ""
+"ಹೊರತುಪಡಿಸಲು ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್ ಆಯ್ಕೆಮಾಡಿ ಅಥವಾ ಅದರ ವಿಂಡೊ ವರ್ಗವನ್ನು ಕೈಯಾರೆ "
+"ನಮೂದಿಸಿ."
+
+#: src/ui/settings/window.js:201
 msgid "Pause clipboard recording"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ದಾಖಲಿಸುವುದನ್ನು ವಿರಾಮಗೊಳಿಸಿ"
 
-#: src/ui/settings/window.js:187 src/ui/settings/window.js:309
+#: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"
-msgstr ""
+msgstr "ಸೂಕ್ಷ್ಮ ವಿಷಯ"
 
-#: src/ui/settings/window.js:188
+#: src/ui/settings/window.js:203
 msgid "Do not record"
-msgstr ""
+msgstr "ದಾಖಲಿಸಬೇಡಿ"
 
-#: src/ui/settings/window.js:189
+#: src/ui/settings/window.js:204
 msgid "Keep until extension stops"
-msgstr ""
+msgstr "ವಿಸ್ತರಣೆ ನಿಲ್ಲುವವರೆಗೆ ಉಳಿಸಿ"
 
-#: src/ui/settings/window.js:190
+#: src/ui/settings/window.js:205
 msgid "Store like other history"
-msgstr ""
+msgstr "ಇತರೆ ಇತಿಹಾಸದಂತೆ ಸಂಗ್ರಹಿಸಿ"
 
-#: src/ui/settings/window.js:194
+#: src/ui/settings/window.js:209
 msgid "Excluded applications"
-msgstr ""
+msgstr "ಹೊರತುಪಡಿಸಿದ ಅಪ್ಲಿಕೇಶನ್‌ಗಳು"
 
-#: src/ui/settings/window.js:195
+#: src/ui/settings/window.js:210
 msgid "Comma-separated window classes"
-msgstr ""
+msgstr "ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ವಿಂಡೊ ವರ್ಗಗಳು"
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:229
 msgid "Behavior"
 msgstr "ವರ್ತನೆ"
 
-#: src/ui/settings/window.js:214
+#: src/ui/settings/window.js:230
 msgid "Quick phrases are stored only on this device."
-msgstr ""
+msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟುಗಳನ್ನು ಈ ಸಾಧನದಲ್ಲೇ ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ."
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:233
 msgid "Maximum quick phrases"
-msgstr ""
+msgstr "ತ್ವರಿತ ನುಡಿಗಟ್ಟುಗಳ ಗರಿಷ್ಠ ಸಂಖ್ಯೆ"
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:236
 msgid "Place new phrases first"
-msgstr ""
+msgstr "ಹೊಸ ನುಡಿಗಟ್ಟುಗಳನ್ನು ಮೊದಲು ಇರಿಸಿ"
 
-#: src/ui/settings/window.js:221
-msgid "When disabled, new phrases are added at the end"
-msgstr ""
-
-#: src/ui/settings/window.js:225
+#: src/ui/settings/window.js:240
 msgid "Close panel after copying"
-msgstr ""
+msgstr "ನಕಲಿಸಿದ ನಂತರ ಫಲಕವನ್ನು ಮುಚ್ಚಿ"
 
-#: src/ui/settings/window.js:232
+#: src/ui/settings/window.js:247
 msgid "Device"
 msgstr "ಸಾಧನ"
 
-#: src/ui/settings/window.js:234
-msgid "Device ID"
-msgstr ""
-
-#: src/ui/settings/window.js:239
-msgid "Device tag"
-msgstr ""
-
-#: src/ui/settings/window.js:239
-msgid "Friendly name shown during device discovery"
-msgstr ""
-
-#: src/ui/settings/window.js:240
-msgid "Device icon"
-msgstr ""
-
-#: src/ui/settings/window.js:241
-msgid "Desktop"
-msgstr "ಗಣಕತೆರೆ"
-
-#: src/ui/settings/window.js:242
-msgid "Laptop"
-msgstr ""
-
-#: src/ui/settings/window.js:243
-msgid "Phone"
-msgstr "ದೂರವಾಣಿ"
-
-#: src/ui/settings/window.js:244
-msgid "Tablet"
-msgstr "ಕಿಸೆಗಣಕ (ಟ್ಯಾಬ್ಲೆಟ್)"
-
-#: src/ui/settings/window.js:245
-msgid "Server"
-msgstr "ಪೂರೈಕೆಗಣಕ"
-
-#: src/ui/settings/window.js:246
-msgid "Other"
-msgstr "ಇತರೆ"
-
 #: src/ui/settings/window.js:249
-msgid "Server connection"
-msgstr "ಪೂರೈಕೆಗಣಕ ಸಂಪರ್ಕ"
+msgid "Device ID"
+msgstr "ಸಾಧನ ID"
 
-#: src/ui/settings/window.js:251
-msgid "Enable synchronization"
-msgstr "ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸಕ್ರಿಯಗೊಳಿಸಿ"
+#: src/ui/settings/window.js:254
+msgid "Device tag"
+msgstr "ಸಾಧನ ಟ್ಯಾಗ್"
 
+#: src/ui/settings/window.js:254
+msgid "Friendly name shown during device discovery"
+msgstr "ಸಾಧನ ಪತ್ತೆಯ ಸಮಯದಲ್ಲಿ ತೋರಿಸುವ ಗುರುತಿಸಬಹುದಾದ ಹೆಸರು"
 
-#: src/ui/settings/window.js:252
-msgid "Server status"
-msgstr "ಪೂರೈಕೆಗಣಕದ ಸ್ಥಿತಿ"
-
-#: src/ui/settings/window.js:252
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/window.js:253
-msgid "Test connection"
-msgstr ""
+#: src/ui/settings/window.js:255
+msgid "Device icon"
+msgstr "ಸಾಧನ ಚಿಹ್ನೆ"
 
 #: src/ui/settings/window.js:256
-msgid "Connecting…"
-msgstr "ಸಂಪರ್ಕಿತಗೊಳ್ಳುತ್ತಿದೆ…"
+msgid "Desktop"
+msgstr "ಡೆಸ್ಕ್‌ಟಾಪ್ ಗಣಕ"
 
-#: src/ui/settings/window.js:267
-msgid "item limit"
-msgstr ""
+#: src/ui/settings/window.js:257
+msgid "Laptop"
+msgstr "ಲ್ಯಾಪ್‌ಟಾಪ್"
 
-#: src/ui/settings/window.js:268
-msgid "preview limit"
-msgstr ""
+#: src/ui/settings/window.js:258
+msgid "Tablet"
+msgstr "ಟ್ಯಾಬ್ಲೆಟ್"
 
-#: src/ui/settings/window.js:280
-msgid "Service preferences"
-msgstr ""
+#: src/ui/settings/window.js:259
+msgid "Server"
+msgstr "ಸರ್ವರ್"
 
-#: src/ui/settings/window.js:281
-msgid "Provided by the external synchronization Service"
-msgstr ""
-
-#: src/ui/settings/window.js:283
-msgid "Open"
-msgstr "ತೆರೆ"
-
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:271
 msgid "Transfer policy"
-msgstr ""
+msgstr "ವರ್ಗಾವಣೆ ನೀತಿ"
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:272
+msgid ""
+"Previews reduce initial transfer size; originals are fetched when needed."
+msgstr ""
+"ಮುನ್ನೋಟಗಳು ಆರಂಭಿಕ ವರ್ಗಾವಣೆ ಗಾತ್ರವನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತವೆ; ಅಗತ್ಯವಿದ್ದಾಗ ಮೂಲಗಳನ್ನು "
+"ಪಡೆಯಲಾಗುತ್ತದೆ."
+
+#: src/ui/settings/window.js:275
 msgid "Send mode"
-msgstr ""
+msgstr "ಕಳುಹಿಸುವ ವಿಧಾನ"
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:277
 msgid "Manual"
 msgstr "ಕೈಯಾರೆ"
 
-#: src/ui/settings/window.js:299
+#: src/ui/settings/window.js:278
 msgid "Automatic"
 msgstr "ಸ್ವಯಂಚಾಲಿತ"
 
-#: src/ui/settings/window.js:301
+#: src/ui/settings/window.js:280
+msgid ""
+"Automatic sending uploads matching new entries to the configured server."
+msgstr ""
+"ಸ್ವಯಂಚಾಲಿತ ಕಳುಹಿಸುವಿಕೆ ಹೊಂದುವ ಹೊಸ ಅಂಶಗಳನ್ನು ಹೊಂದಿಸಿದ ಸರ್ವರ್‌ಗೆ ಅಪ್‌ಲೋಡ್ ಮಾಡುತ್ತದೆ."
+
+#: src/ui/settings/window.js:282
 msgid "Receive mode"
-msgstr ""
+msgstr "ಸ್ವೀಕರಿಸುವ ವಿಧಾನ"
 
-#: src/ui/settings/window.js:303
+#: src/ui/settings/window.js:284
 msgid "History only"
-msgstr ""
+msgstr "ಇತಿಹಾಸಕ್ಕೆ ಮಾತ್ರ"
 
-#: src/ui/settings/window.js:304
+#: src/ui/settings/window.js:285
 msgid "Activate clipboard"
+msgstr "ಪ್ರಸ್ತುತ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಹೊಂದಿಸಿ"
+
+#: src/ui/settings/window.js:287
+msgid ""
+"Activate clipboard replaces the current clipboard with incoming content."
 msgstr ""
+"ಪ್ರಸ್ತುತ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಹೊಂದಿಸಿದರೆ ಬರುವ ವಿಷಯವು ಈಗಿನ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ವಿಷಯವನ್ನು ಬದಲಿಸುತ್ತದೆ."
 
-#: src/ui/settings/window.js:307
+#: src/ui/settings/window.js:290
 msgid "HTML"
-msgstr "HTML "
+msgstr "HTML"
 
-#: src/ui/settings/window.js:308
+#: src/ui/settings/window.js:291
 msgid "Images"
 msgstr "ಚಿತ್ರಗಳು"
 
-#: src/ui/settings/window.js:309
-msgid "Disabled by default"
+#: src/ui/settings/window.js:293
+msgid ""
+"Allows content marked sensitive by password managers to be sent to the "
+"server."
 msgstr ""
+"ಪಾಸ್‌ವರ್ಡ್ ನಿರ್ವಾಹಕರು ಸೂಕ್ಷ್ಮವೆಂದು ಗುರುತಿಸಿದ ವಿಷಯವನ್ನು ಸರ್ವರ್‌ಗೆ ಕಳುಹಿಸಲು ಅನುಮತಿಸುತ್ತದೆ."
 
-#: src/ui/settings/window.js:312
-msgid "Favorites only"
-msgstr ""
+#: src/ui/settings/window.js:296
+msgid "Pinned entries only"
+msgstr "ಪಿನ್ ಮಾಡಿದ ಅಂಶಗಳು ಮಾತ್ರ"
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:297
 msgid "Only applies to automatic sending"
-msgstr ""
+msgstr "ಸ್ವಯಂಚಾಲಿತ ಕಳುಹಿಸುವಿಕೆಗೆ ಮಾತ್ರ ಅನ್ವಯಿಸುತ್ತದೆ"
 
-#: src/ui/settings/window.js:315
+#: src/ui/settings/window.js:299
 msgid "Small text sent in full"
-msgstr ""
+msgstr "ಸಣ್ಣ ಪಠ್ಯವನ್ನು ಪೂರ್ಣವಾಗಿ ಕಳುಹಿಸಿ"
 
-#: src/ui/settings/window.js:315 src/ui/settings/window.js:316
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:299 src/ui/settings/window.js:300
+#: src/ui/settings/window.js:303
 msgid "KB"
 msgstr "KB"
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:300
 msgid "Large text preview"
-msgstr ""
+msgstr "ದೊಡ್ಡ ಪಠ್ಯದ ಮುನ್ನೋಟ"
 
-#: src/ui/settings/window.js:317
+#: src/ui/settings/window.js:301
 msgid "Small images sent in full"
-msgstr ""
+msgstr "ಸಣ್ಣ ಚಿತ್ರಗಳನ್ನು ಪೂರ್ಣವಾಗಿ ಕಳುಹಿಸಿ"
 
-#: src/ui/settings/window.js:318
+#: src/ui/settings/window.js:302
 msgid "Thumbnail dimension"
-msgstr ""
+msgstr "ಚಿಕ್ಕಚಿತ್ರದ ಆಯಾಮ"
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:303
 msgid "Thumbnail size limit"
-msgstr ""
+msgstr "ಚಿಕ್ಕಚಿತ್ರದ ಗಾತ್ರದ ಮಿತಿ"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304
 msgid "On-demand timeout"
-msgstr ""
+msgstr "ಬೇಡಿಕೆಯ ಮೇರೆಗೆ ಪಡೆಯುವ ಸಮಯ ಮಿತಿ"
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:304 src/ui/settings/window.js:305
 msgid "seconds"
 msgstr "ಸೆಕೆಂಡುಗಳು"
 
-#: src/ui/settings/window.js:326
-msgid "Color format"
+#: src/ui/settings/window.js:305
+msgid "Polling interval"
+msgstr "ಪರಿಶೀಲನೆಯ ಮಧ್ಯಂತರ"
+
+#: src/ui/settings/window.js:306
+msgid ""
+"Seconds between checks; longer intervals reduce requests but delay updates."
 msgstr ""
+"ಪರಿಶೀಲನೆಗಳ ನಡುವಿನ ಸೆಕೆಂಡುಗಳು; ಹೆಚ್ಚು ಮಧ್ಯಂತರವು ವಿನಂತಿಗಳನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತದೆ ಆದರೆ "
+"ನವೀಕರಣಗಳನ್ನು ತಡಗೊಳಿಸುತ್ತದೆ."
+
+#: src/ui/settings/window.js:313
+msgid "Color format"
+msgstr "ಬಣ್ಣದ ಸ್ವರೂಪ"
+
+#: src/ui/settings/window.js:315
+msgid "Default format"
+msgstr "ಪೂರ್ವನಿಯೋಜಿತ ಸ್ವರೂಪ"
 
 #: src/ui/settings/window.js:328
-msgid "Default format"
-msgstr ""
-
-#: src/ui/settings/window.js:341
 msgid "Default target"
-msgstr ""
+msgstr "ಪೂರ್ವನಿಯೋಜಿತ ಸೆರೆಹಿಡಿಯುವ ಗುರಿ"
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:329
 msgid "Interactive"
-msgstr ""
+msgstr "ಸಂವಾದಾತ್ಮಕ"
 
-#: src/ui/settings/window.js:343
+#: src/ui/settings/window.js:330
 msgid "Full screen"
-msgstr ""
+msgstr "ಪೂರ್ಣ ತೆರೆ"
 
-#: src/ui/settings/window.js:344
+#: src/ui/settings/window.js:331
 msgid "Window"
 msgstr "ವಿಂಡೊ"
 
-#: src/ui/settings/window.js:345
+#: src/ui/settings/window.js:332
 msgid "Area"
-msgstr "ಜಾಗ"
+msgstr "ಆಯ್ದ ಪ್ರದೇಶ"
 
-#: src/ui/settings/window.js:346
+#: src/ui/settings/window.js:333
 msgid "Active window"
-msgstr ""
+msgstr "ಸಕ್ರಿಯ ವಿಂಡೊ"
 
-#: src/ui/settings/window.js:348
+#: src/ui/settings/window.js:335
+msgid "Available targets depend on the system screenshot portal."
+msgstr "ಲಭ್ಯವಿರುವ ಗುರಿಗಳು ವ್ಯವಸ್ಥೆಯ ತೆರೆಚಿತ್ರ ಪೋರ್ಟಲ್ ಮೇಲೆ ಅವಲಂಬಿತವಾಗಿವೆ."
+
+#: src/ui/settings/window.js:337
 msgid "Add to history"
+msgstr "ಇತಿಹಾಸಕ್ಕೆ ಸೇರಿಸಿ"
+
+#: src/ui/settings/window.js:338
+msgid "Copy screenshot"
+msgstr "ತೆರೆಚಿತ್ರವನ್ನು ನಕಲಿಸಿ"
+
+#: src/ui/settings/window.js:339
+msgid "Open image editor"
+msgstr "ಚಿತ್ರ ಸಂಪಾದಕವನ್ನು ತೆರೆಯಿರಿ"
+
+#: src/ui/settings/window.js:340
+msgid "Requires an image editor command below."
+msgstr "ಕೆಳಗೆ ಚಿತ್ರ ಸಂಪಾದಕದ ಆಜ್ಞೆಯನ್ನು ನೀಡಬೇಕು."
+
+#: src/ui/settings/window.js:344
+msgid ""
+"Enter a command to enable editing. %u is an image URI, %f a local path, %i "
+"image bytes on standard input, and %% a percent sign."
 msgstr ""
+"ಸಂಪಾದನೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು ಆಜ್ಞೆ ನಮೂದಿಸಿ. %u ಚಿತ್ರದ URI, %f ಸ್ಥಳೀಯ ಮಾರ್ಗ, %i "
+"ಪ್ರಮಾಣಿತ ಇನ್‌ಪುಟ್‌ನಲ್ಲಿನ ಚಿತ್ರದ ಬೈಟ್‌ಗಳು ಮತ್ತು %% ಶೇಕಡಾ ಚಿಹ್ನೆ."
 
 #: src/ui/settings/window.js:349
-msgid "Copy screenshot"
-msgstr ""
-
-#: src/ui/settings/window.js:350
-msgid "Open image editor"
-msgstr ""
-
-#: src/ui/settings/window.js:352
-msgid "Image editing"
-msgstr ""
-
-#: src/ui/settings/window.js:356
 msgid "Command"
-msgstr "ಆದೇಶ"
+msgstr "ಆಜ್ಞೆ"
 
-#: src/ui/settings/window.js:357
-msgid ""
-"%u is the URI, %f is a local path, %i is standard input and %% is a percent "
-"sign"
-msgstr ""
-
-#: src/ui/settings/window.js:373
+#: src/ui/settings/window.js:368
 msgid "Shortcuts"
 msgstr "ಶಾರ್ಟ್‌ಕಟ್‌ಗಳು"
 
-#: src/ui/settings/window.js:377
+#: src/ui/settings/window.js:372
 msgid "Global"
 msgstr "ಜಾಗತಿಕ"
 
-#: src/ui/settings/window.js:378
+#: src/ui/settings/window.js:373
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
+"ಶಾರ್ಟ್‌ಕಟ್ ಮೇಲೆ ಕ್ಲಿಕ್ ಮಾಡಿ, ನಂತರ ಹೊಸ ಕೀ ಸಂಯೋಜನೆಯನ್ನು ಒತ್ತಿ. ಬ್ಯಾಕ್‌ಸ್ಪೇಸ್ ಅದನ್ನು "
+"ನಿಷ್ಕ್ರಿಯಗೊಳಿಸುತ್ತದೆ."
 
-#: src/ui/settings/window.js:382
+#: src/ui/settings/window.js:377
 msgid "Open clipboard panel"
-msgstr "ಮೆನು ಪರಿವರ್ತನೆ ಮಾಡಿ"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಫಲಕವನ್ನು ತೆರೆಯಿರಿ"
 
-#: src/ui/settings/window.js:383
+#: src/ui/settings/window.js:378
 msgid "Focus clipboard search"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಹುಡುಕಾಟಕ್ಕೆ ಫೋಕಸ್ ನೀಡಿ"
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:379
 msgid "Pause or resume clipboard recording"
-msgstr ""
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ದಾಖಲಿಸುವುದನ್ನು ವಿರಾಮಗೊಳಿಸಿ ಅಥವಾ ಮುಂದುವರಿಸಿ"
+
+#: src/ui/settings/window.js:386
+msgid "Active while a clipboard history entry has keyboard focus."
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಇತಿಹಾಸದ ಅಂಶಕ್ಕೆ ಕೀಲಿಮಣೆ ಫೋಕಸ್ ಇದ್ದಾಗ ಸಕ್ರಿಯವಾಗಿರುತ್ತದೆ."
+
+#: src/ui/settings/window.js:390
+msgid "Paste entry"
+msgstr "ಅಂಶವನ್ನು ಅಂಟಿಸಿ"
 
 #: src/ui/settings/window.js:391
-msgid "Active while a clipboard history entry has keyboard focus."
-msgstr ""
-
-#: src/ui/settings/window.js:395
-msgid "Paste entry"
-msgstr ""
-
-#: src/ui/settings/window.js:396
 msgid "Pin or unpin entry"
-msgstr ""
+msgstr "ಅಂಶವನ್ನು ಪಿನ್ ಮಾಡಿ ಅಥವಾ ಪಿನ್ ತೆಗೆದುಹಾಕಿ"
 
-#: src/ui/settings/window.js:397
+#: src/ui/settings/window.js:392
 msgid "Delete entry"
-msgstr ""
+msgstr "ಅಂಶವನ್ನು ಅಳಿಸಿ"
 
-#: src/ui/settings/window.js:398
+#: src/ui/settings/window.js:393
 msgid "Type entry directly"
-msgstr ""
+msgstr "ಅಂಶವನ್ನು ನೇರವಾಗಿ ಟೈಪ್ ಮಾಡಿ"
 
-#: src/ui/settings/window.js:399
+#: src/ui/settings/window.js:394
 msgid "Type entry instead of copying"
-msgstr ""
+msgstr "ನಕಲಿಸುವ ಬದಲು ಅಂಶವನ್ನು ಟೈಪ್ ಮಾಡಿ"
+
+#: src/ui/settings/window.js:400
+msgid "Active while a token has keyboard focus."
+msgstr "ಪದದ ಮೇಲೆ ಕೀಲಿಮಣೆ ಫೋಕಸ್ ಇದ್ದಾಗ ಸಕ್ರಿಯವಾಗಿರುತ್ತದೆ."
+
+#: src/ui/settings/window.js:404
+msgid "Copy selected tokens"
+msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ನಕಲಿಸಿ"
 
 #: src/ui/settings/window.js:405
-msgid "Active while a token has keyboard focus."
-msgstr ""
+msgid "Paste selected tokens"
+msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ಅಂಟಿಸಿ"
+
+#: src/ui/settings/window.js:406
+msgid "Type selected tokens"
+msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ"
+
+#: src/ui/settings/window.js:407
+msgid "Extend selection left"
+msgstr "ಆಯ್ಕೆಯನ್ನು ಎಡಕ್ಕೆ ವಿಸ್ತರಿಸಿ"
+
+#: src/ui/settings/window.js:408
+msgid "Extend selection right"
+msgstr "ಆಯ್ಕೆಯನ್ನು ಬಲಕ್ಕೆ ವಿಸ್ತರಿಸಿ"
 
 #: src/ui/settings/window.js:409
-msgid "Copy selected tokens"
-msgstr ""
+msgid "Extend selection upward"
+msgstr "ಆಯ್ಕೆಯನ್ನು ಮೇಲಕ್ಕೆ ವಿಸ್ತರಿಸಿ"
 
 #: src/ui/settings/window.js:410
-msgid "Paste selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:411
-msgid "Type selected tokens"
-msgstr ""
-
-#: src/ui/settings/window.js:412
-msgid "Extend selection left"
-msgstr ""
-
-#: src/ui/settings/window.js:413
-msgid "Extend selection right"
-msgstr ""
-
-#: src/ui/settings/window.js:414
-msgid "Extend selection upward"
-msgstr ""
-
-#: src/ui/settings/window.js:415
 msgid "Extend selection downward"
-msgstr ""
+msgstr "ಆಯ್ಕೆಯನ್ನು ಕೆಳಕ್ಕೆ ವಿಸ್ತರಿಸಿ"
 
-#: src/ui/settings/window.js:425
+#: src/ui/settings/window.js:420
 msgid "Take screenshot"
-msgstr ""
+msgstr "ತೆರೆಚಿತ್ರ ತೆಗೆದುಕೊಳ್ಳಿ"
+
+#~ msgid ""
+#~ "Dictionaries matching the current display language are loaded "
+#~ "automatically."
+#~ msgstr ""
+#~ "ಪ್ರಸ್ತುತ ಪ್ರದರ್ಶನ ಭಾಷೆಗೆ ಹೊಂದುವ ನಿಘಂಟುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
+
+#~ msgid "Automatic cleanup"
+#~ msgstr "ಸ್ವಯಂಚಾಲಿತ ಸ್ವಚ್ಛಗೊಳಿಸುವಿಕೆ"
+
+#~ msgid "Favorites only"
+#~ msgstr "ಮೆಚ್ಚಿನವುಗಳು ಮಾತ್ರ"
+
+#~ msgid "Phone"
+#~ msgstr "ದೂರವಾಣಿ"
+
+#~ msgid "Other"
+#~ msgstr "ಇತರೆ"
+
+#~ msgid "Open"
+#~ msgstr "ತೆರೆ"
 
 #, fuzzy
 #~ msgid "Remove network location"
