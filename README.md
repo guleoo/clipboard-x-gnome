@@ -14,13 +14,14 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 </div>
 
-Clipboard X turns the GNOME top bar into a compact workspace for everything that passes through your
-clipboard. Search and reuse text or images, select exactly the words you need, keep reusable phrases,
-take screenshots, pick colors, and optionally share clipboard snapshots through a server you control.
+Copied a link and lost it a moment later? Need just a few words from a sentence, not the whole thing?
+Clipboard X puts those little chores within reach of the GNOME top bar. Open the panel to find text and
+images you copied, pick the words you need, or save a phrase you use often. Screenshots and color picking
+are there too.
 
-The extension is designed to stay useful without synchronization. History and quick phrases are stored
-locally; clipboard synchronization starts only after you configure and enable a compatible server.
-Network dictionaries are downloaded only when you explicitly add or refresh them.
+It works just as well on one computer: history and quick phrases stay local. When you want to share
+clipboard snapshots across devices, connect your own `clipboard-x-server`. Network dictionaries are
+fetched only when you add or refresh them yourself.
 
 > [!IMPORTANT]
 > Clipboard X currently declares support for **GNOME Shell 50**. Other Shell versions are not listed
@@ -33,7 +34,6 @@ Network dictionaries are downloaded only when you explicitly add or refresh them
 - **Custom dictionaries** — Use the system `Intl.Segmenter` or combine local and network dictionaries for Chinese and Japanese.
 - **Quick phrases** — Save and reuse frequently used text locally.
 - **Privacy mode** — Pause history capture; password-manager-marked content stays in memory by default.
-- **Keyboard-friendly** — Work with clipboard entries and their actions using only the keyboard.
 - **Keyboard shortcuts** — Configure shortcuts to open the panel and act on entries or selected tokens; use arrow keys to navigate.
 - **Screenshots and editing** — Capture from the panel and open copied images with an editor command you configure.
 - **Color picker** — Copy a screen color as HEX, RGB, HSL, or OKLCH text.
@@ -41,9 +41,15 @@ Network dictionaries are downloaded only when you explicitly add or refresh them
 - **Lazy transfers** — Send previews of large text and images first, fetch originals when needed, and show verified, byte-accurate progress without a separate local service.
 - **Customizable panel** — Adjust size, visible item count, accent color, position, focus behavior, and action icons.
 
-## Manual installation
+## Installation
 
-### Requirements
+The recommended route is the [GNOME Shell Extensions website](https://extensions.gnome.org/). Search for
+**Clipboard X**, check that the listing supports **GNOME Shell 50**, and install it. You can then enable
+the extension and open its preferences in the Extensions app or Extension Manager.
+
+### Install from source
+
+#### Requirements
 
 - GNOME Shell 50 and GJS 1.88 or later;
 - Meson, Ninja, GLib, GTK 4, Libadwaita, GdkPixbuf, Gettext, and 7-Zip;
@@ -105,15 +111,18 @@ Use simulated typing when the target application does not accept normal paste:
 2. For a text history entry, use `Ctrl` + click, `Ctrl+Enter`, or focus it and press `'`. In the token panel, select the words you need and press `'`.
 3. The panel closes and Clipboard X types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
-Simulated typing is **not** a reliable substitute for pasting. Pressing Ctrl, Alt, Shift, Super, Meta,
-or Hyper during typing cancels the remaining input and displays a GNOME notification. GNOME Shell
-cannot reliably detect ordinary physical key presses sent to another Wayland client, so letters and
-numbers may still interleave with the simulated text. Do not use the keyboard until typing finishes;
-text already entered before cancellation is not undone. Prefer normal paste for long, sensitive, or
-exact content.
+Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical
+key presses sent to another Wayland client, so letters and numbers may interleave with the simulated
+text. Do not use the keyboard until typing finishes. Cancellation does not undo text already entered;
+prefer normal paste for long, sensitive, or exact content.
 
 If an application misses keystrokes, select **Slow** under **Preferences → Clipboard → Simulated input**.
 This changes the typing interval; it cannot guarantee that another application accepts every key.
+
+> [!IMPORTANT]
+> During simulated typing, GNOME Shell can detect accidental modifier-key presses, but not all physical
+> key presses. Pressing Ctrl, Alt, Shift, Super, Meta, or Hyper cancels the remaining input and shows a
+> GNOME notification.
 
 ### 4. Tokenization mode
 
@@ -132,13 +141,13 @@ per line with an optional frequency:
 图片编辑 80
 ```
 
-Dictionary files are stored in `$XDG_DATA_HOME/clipboard-x/dictionaries`. Release archives do not bundle
-or silently download third-party dictionaries.
+Release archives do not bundle third-party dictionaries, and the extension does not silently download
+them when installed, started, or opened.
 
 ### 5. Keep quick phrases
 
 Open **Quick phrases** from the panel, press `+`, enter a phrase, and confirm with Enter. Quick phrases
-are local-only and stored in `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`.
+stay local.
 
 ### 6. Capture, pick, and edit
 
@@ -146,9 +155,7 @@ are local-only and stored in `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`.
 - **Color picker** samples the screen and writes the configured HEX, RGB, HSL, or OKLCH representation.
 - **Image editing** launches the command configured under **Preferences → Screenshot → Image editing**.
 
-The editor command is empty by default. Clicking an image's edit button without configuring one prompts
-you to set a command. You can use Gradia by entering `gradia %i` (or
-`flatpak run be.alexandervanhee.gradia %u` for its Flatpak installation).
+For example, enter `gradia %i` to use Gradia.
 
 The editor command is parsed as argv and never passed through `sh -c`. It supports `%u` for an image URI,
 `%f` for a local path, `%i` for image bytes on standard input, and `%%` for a literal percent sign. For
@@ -164,10 +171,7 @@ Pipes, redirection, and shell expansion are intentionally unsupported.
 
 ## Synchronize devices
 
-Synchronization uses the separately deployed, self-hosted `clipboard-x-server` project. The GNOME
-extension is its client; it does not bundle or start the server. They communicate through a versioned
-HTTP API. The server is a readable storage and management platform—not an end-to-end encrypted or blind
-relay. Its administrators can inspect content uploaded to it.
+Synchronization is off by default. Deploy your own `clipboard-x-server`, then configure and enable it.
 
 To connect a device:
 
@@ -220,7 +224,7 @@ careful translations all help.
 2. Open an issue before a large behavioral or protocol change so its scope can be agreed first.
 3. Keep changes focused and add or update tests for every behavior change.
 4. Run the complete test suite and review your own diff before submitting a pull request.
-5. Update both English and Simplified Chinese documentation when public behavior changes.
+5. Update the documentation when public behavior changes.
 
 The fastest interactive development loop is:
 
