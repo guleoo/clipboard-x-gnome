@@ -425,7 +425,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['history-pin-shortcut', _('Pin or unpin entry')],
       ['history-delete-shortcut', _('Delete entry')],
       ['history-type-shortcut', _('Type entry directly')],
-      ['history-type-activation-shortcut', _('Type entry instead of copying')],
     ])
       history.add(this._rows.shortcut(key, title, true));
 

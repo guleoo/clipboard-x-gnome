@@ -20,8 +20,8 @@ assert(capture(Gdk.KEY_f, 41, control).accelerator === '<Control>f',
   'Ctrl+F must be captured as a combination');
 assert(capture(Gdk.KEY_F, 41, control | shift).accelerator === '<Shift><Control>f',
   'Ctrl+Shift+F must retain both modifiers');
-assert(capture(Gdk.KEY_Return, 36, control, true).accelerator === '<Control>Return',
-  'contextual Ctrl+Enter must use the format expected by the panel matcher');
+assert(capture(Gdk.KEY_x, 53, control, true).accelerator === '<Control>x',
+  'contextual key combinations must use the format expected by the panel matcher');
 assert(capture(Gdk.KEY_a, 38, 0, true).accelerator === 'a',
   'contextual single-key shortcuts must keep working');
 assert(capture(Gdk.KEY_F1, 67, alt).action === 'save',

@@ -102,10 +102,6 @@
       <default>['apostrophe']</default>
       <summary>Context shortcut for typing a history entry</summary>
     </key>
-    <key name="history-type-activation-shortcut" type="as">
-      <default>['&lt;Control&gt;Return']</default>
-      <summary>Context shortcut for typing the active history entry</summary>
-    </key>
     <key name="simulated-input-speed" type="s">
       <choices>
         <choice value="standard"/>

@@ -14,14 +14,14 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 </div>
 
-Copied a link and lost it a moment later? Need just a few words from a sentence, not the whole thing?
-Clipboard X puts those little chores within reach of the GNOME top bar. Open the panel to find text and
-images you copied, pick the words you need, or save a phrase you use often. Screenshots and color picking
-are there too.
+Clipboard X is a GNOME Shell extension that brings text and image history, token selection, and quick
+phrases together in a top-bar panel. It also provides screenshot capture, color picking, and a way to
+open images in a configured editor. To share clipboard snapshots across devices, connect a
+`clipboard-x-server` that you configure yourself.
 
-It works just as well on one computer: history and quick phrases stay local. When you want to share
-clipboard snapshots across devices, connect your own `clipboard-x-server`. Network dictionaries are
-fetched only when you add or refresh them yourself.
+By default, history and quick phrases stay on this device. Clipboard synchronization requires a
+configured server and must be enabled explicitly; network dictionaries are downloaded only when added
+or refreshed by the user.
 
 > [!IMPORTANT]
 > Clipboard X currently declares support for **GNOME Shell 50**. Other Shell versions are not listed
@@ -99,7 +99,7 @@ Default contextual shortcuts are:
 | `p` | Pin or unpin it |
 | `Delete` | Delete it from local history |
 | `'` | Simulate typing its text |
-| `Ctrl` + click / `Ctrl+Enter` | Simulate typing instead of copying |
+| `Ctrl` + click | Simulate typing instead of copying |
 
 The keyboard shortcuts in the table can be changed or disabled in Preferences; `Ctrl` + click is fixed.
 
@@ -108,7 +108,7 @@ The keyboard shortcuts in the table can be changed or disabled in Preferences; `
 Use simulated typing when the target application does not accept normal paste:
 
 1. Focus the target text field, then open Clipboard X.
-2. For a text history entry, use `Ctrl` + click, `Ctrl+Enter`, or focus it and press `'`. In the token panel, select the words you need and press `'`.
+2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the token panel, select the words you need and press `'`.
 3. The panel closes and Clipboard X types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
 Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical

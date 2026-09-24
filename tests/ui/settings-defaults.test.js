@@ -20,6 +20,8 @@ const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
 const settings = new Gio.Settings({
   settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false),
 });
+assert(!settings.list_keys().includes('history-type-activation-shortcut'),
+  'the redundant Ctrl+Enter typing shortcut must not remain in preferences');
 const deviceId = GLib.uuid_string_random();
 settings.set_string('device-id', deviceId);
 settings.set_strv('saved-phrases', ['Keep this phrase']);

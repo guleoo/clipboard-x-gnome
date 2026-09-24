@@ -50,6 +50,18 @@ function simulatedInputGuide(path, useHeading, guideTitle, syncHeading, required
 const english = features('README.md', '## Features', '## Installation');
 const chinese = features('README.zh-CN.md', '## 功能', '## 安装');
 
+for (const [path, claims] of [
+  ['README.md', ['`clipboard-x-server`', 'stay on this device', 'network dictionaries']],
+  ['README.zh-CN.md', ['`clipboard-x-server`', '本机保存', '网络词库']],
+]) {
+  const [ok, contents] = root.resolve_relative_path(path).load_contents(null);
+  if (!ok)
+    throw new Error(`Cannot read ${path}`);
+  const introduction = new TextDecoder().decode(contents).split('> [!IMPORTANT]')[0].toLowerCase();
+  if (claims.some(claim => !introduction.includes(claim)))
+    throw new Error(`${path} must explain local use, optional server sync, and dictionary downloads`);
+}
+
 for (const [path, heading, fallback] of [
   ['README.md', '## Installation', '### Install from source'],
   ['README.zh-CN.md', '## 安装', '### 从源码安装'],
@@ -58,6 +70,8 @@ for (const [path, heading, fallback] of [
   if (!ok)
     throw new Error(`Cannot read ${path}`);
   const document = new TextDecoder().decode(contents);
+  if (document.includes('Ctrl+Enter'))
+    throw new Error(`${path} still documents the removed Ctrl+Enter typing shortcut`);
   const installStart = document.indexOf(`${heading}\n`);
   const fallbackStart = document.indexOf(`${fallback}\n`, installStart);
   if (installStart < 0 || fallbackStart <= installStart
@@ -76,9 +90,9 @@ for (const [name, items, expected] of [
 }
 
 simulatedInputGuide('README.md', '## Use Clipboard X', 'Simulated keyboard input',
-  '## Synchronize devices', ['Ctrl+Enter', 'token panel', 'modifier-key presses', 'ordinary physical key presses', 'does not undo']);
+  '## Synchronize devices', ['`Ctrl` + click', 'token panel', 'modifier-key presses', 'ordinary physical key presses', 'does not undo']);
 simulatedInputGuide('README.zh-CN.md', '## 使用 Clipboard X', '模拟键盘输入',
-  '## 同步设备', ['Ctrl+Enter', '分词面板', '修饰键', '普通物理按键', '不会撤销']);
+  '## 同步设备', ['`Ctrl` + 点击', '分词面板', '修饰键', '普通物理按键', '不会撤销']);
 
 for (const [path, heading, items, separation] of [
   ['README.md', '## Synchronize devices', english, 'Deploy your own'],

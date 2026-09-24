@@ -247,10 +247,6 @@ export class HistoryPanel {
   }
 
   handleEntryKey(item, event) {
-    if (matchesShortcut(this._settings, 'history-type-activation-shortcut', event)) {
-      this._type(item);
-      return Clutter.EVENT_STOP;
-    }
     if (matchesShortcut(this._settings, 'history-paste-shortcut', event)) {
       this._paste(item);
     } else if (matchesShortcut(this._settings, 'history-pin-shortcut', event)) {

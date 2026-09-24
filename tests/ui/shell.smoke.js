@@ -407,9 +407,9 @@ export async function run() {
   assert(history.handleEntryKey(
     capturedText,
     entryEvent(Clutter.KEY_Return, Clutter.ModifierType.CONTROL_MASK),
-  ) === Clutter.EVENT_STOP, 'Ctrl+Enter did not invoke clipboard entry typing');
+  ) === Clutter.EVENT_PROPAGATE, 'Ctrl+Enter should not invoke clipboard entry typing');
   await Scripting.sleep(10);
-  assert(itemCommands.join(',') === `paste:${capturedText.id},type:${capturedText.id},type:${capturedText.id}`,
+  assert(itemCommands.join(',') === `paste:${capturedText.id},type:${capturedText.id}`,
     'Clipboard entry keyboard commands invoked the wrong actions');
   indicator._settings.set_strv('history-paste-shortcut', ['x']);
   assert(history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_v)) === Clutter.EVENT_PROPAGATE,
