@@ -67,7 +67,7 @@ Install the generated `build/clipboard-x-gnome.zip`:
 
 ```sh
 gnome-extensions install --force build/clipboard-x-gnome.zip
-gnome-extensions enable clipboard-x@guleo.github.io
+gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
 GNOME Shell on Wayland cannot reload all extension code in place.
@@ -198,7 +198,7 @@ metadata and previews first; complete large objects remain lazy.
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
 > request a Channel-wide deletion. Server-originated removal events do propagate to clients.
 
-See the [protocol maintained by clipboard-x-server](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) for API details and
+See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) for API details and
 [Synchronization performance testing](docs/sync-performance-testing.md) for the stress model.
 
 ## Data and privacy
@@ -251,7 +251,7 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
+- [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)
 - [Security and privacy](SECURITY.md)
@@ -260,3 +260,4 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## License
 
 Clipboard X is free software released under the [GNU GPL v3 or later](LICENSE.md).
+Created by [guleoo](https://github.com/guleoo), with contributions from the community.

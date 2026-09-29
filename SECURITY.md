@@ -68,7 +68,7 @@ A compatible server must at least:
 - define clear retention, revocation, deletion, and web-access policies;
 - avoid logging or sending clipboard text, API keys, and complete sensitive paths in telemetry.
 
-See the Server-owned [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md) for formal fields and state machines.
+See the Server-owned [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) for formal fields and state machines.
 
 ## GNOME Extensions review boundary
 

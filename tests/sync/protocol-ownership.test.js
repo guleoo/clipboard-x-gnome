@@ -4,8 +4,8 @@ const root = Gio.File.new_for_uri(import.meta.url)
   .get_parent()
   .get_parent()
   .get_parent();
-const serverProtocol = 'https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md';
-const serverProtocolChinese = 'https://github.com/Guleo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md';
+const serverProtocol = 'https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md';
+const serverProtocolChinese = 'https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md';
 
 function assert(condition, message) {
   if (!condition)

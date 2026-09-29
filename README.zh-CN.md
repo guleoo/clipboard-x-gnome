@@ -64,7 +64,7 @@ meson install -C build
 
 ```sh
 gnome-extensions install --force build/clipboard-x-gnome.zip
-gnome-extensions enable clipboard-x@guleo.github.io
+gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
 Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
@@ -229,7 +229,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/u
 ## 文档
 
 - [中文文档索引](docs/zh-CN/README.md)
-- [同步协议（HTTP API v1）](https://github.com/Guleo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
+- [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/zh-CN/ui-architecture.md)
 - [同步性能与压力测试](docs/zh-CN/sync-performance-testing.md)
 - [安全与隐私](SECURITY.zh-CN.md)
@@ -238,3 +238,4 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/u
 ## 许可证
 
 Clipboard X 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。
+项目作者是 [guleoo](https://github.com/guleoo)，也欢迎社区参与贡献。

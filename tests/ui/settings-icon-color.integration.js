@@ -33,7 +33,7 @@ const resource = Gio.Resource.load('/usr/share/gnome-shell/org.gnome.Shell.Exten
 resource._register();
 const directory = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_path();
 const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
-  GLib.build_filenamev([directory, 'build', 'clipboard-x@guleo.github.io', 'schemas']),
+  GLib.build_filenamev([directory, 'build', 'clipboard-x@guleoo.github.io', 'schemas']),
   Gio.SettingsSchemaSource.get_default(),
   false,
 );

@@ -9,7 +9,7 @@ gnome = import('gnome')
 fs = import('fs')
 i18n = import('i18n')
 
-extension_uuid = 'clipboard-x@guleo.github.io'
+extension_uuid = 'clipboard-x@guleoo.github.io'
 schema_id = 'org.gnome.shell.extensions.clipboard-x'
 target = get_option('target')
 

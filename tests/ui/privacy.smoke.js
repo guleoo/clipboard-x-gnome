@@ -3,7 +3,7 @@ import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 
-const UUID = 'clipboard-x@guleo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 
 export const METRICS = {};
 

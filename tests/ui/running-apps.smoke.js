@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 
-const UUID = 'clipboard-x@guleo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 const BUS_NAME = 'org.gnome.Shell.Extensions.ClipboardX';
 const OBJECT_PATH = '/org/gnome/Shell/Extensions/ClipboardX';
 

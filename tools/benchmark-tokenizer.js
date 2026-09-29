@@ -13,7 +13,7 @@ const SENTENCES = [
   '剪切板分词工具需要保留中文标点、URL 和邮箱地址。',
   'Clipboard X supports lazy loading for large images and long text snapshots.',
   '请检查设备同步状态，并确认图片编辑器命令可以正常启动。',
-  'https://github.com/Guleo/clipboard-x-gnome/issues/123 联系 dev@example.com。',
+  'https://github.com/guleoo/clipboard-x-gnome/issues/123 联系 dev@example.com。',
   '截图完成后可以使用系统默认图片编辑器继续处理。',
 ];
 

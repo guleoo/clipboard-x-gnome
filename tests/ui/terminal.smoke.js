@@ -4,7 +4,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-const UUID = 'clipboard-x@guleo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 const STATUS_AREA_NAME = 'clipboard-x';
 const TEST_DIRECTORY = Gio.File.new_for_uri(import.meta.url).get_parent().get_path();
 const TARGET_TITLE = 'Clipboard X Typing Target';

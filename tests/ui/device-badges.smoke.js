@@ -2,7 +2,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import St from 'gi://St';
 
-const UUID = 'clipboard-x@guleo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 
 function assert(condition, message) {
   if (!condition)

@@ -35,7 +35,7 @@ class ReleasePackageTest(unittest.TestCase):
             "prefs.js": b"preferences",
             "metadata.json": json.dumps(
                 {
-                    "uuid": "clipboard-x@guleo.github.io",
+                    "uuid": "clipboard-x@guleoo.github.io",
                     "settings-schema": "org.gnome.shell.extensions.clipboard-x",
                     "version-name": "0.1.0",
                     "shell-version": ["50"],

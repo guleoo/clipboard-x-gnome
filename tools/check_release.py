@@ -95,7 +95,7 @@ def validate(project_root, archive, tag=None):
             raise ReleaseError(f"Archive checksum failed: {damaged}")
         metadata = json.loads(package.read("metadata.json"))
 
-    if metadata.get("uuid") != "clipboard-x@guleo.github.io":
+    if metadata.get("uuid") != "clipboard-x@guleoo.github.io":
         raise ReleaseError("Extension UUID is incorrect")
     if metadata.get("settings-schema") != "org.gnome.shell.extensions.clipboard-x":
         raise ReleaseError("Extension settings schema is incorrect")

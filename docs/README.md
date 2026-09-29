@@ -8,7 +8,7 @@ counterparts are kept under `docs/zh-CN/` with the same names.
 
 ## Protocol and synchronization
 
-- [Synchronization Protocol (HTTP API v1)](https://github.com/Guleo/clipboard-x-server/blob/master/docs/protocol.md):
+- [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md):
   the Server-owned contract followed by this GNOME client and future clients on other platforms.
 - [Synchronization performance and stress testing](sync-performance-testing.md): the daily baseline,
   10x stress matrix, and reproducible Meson commands.

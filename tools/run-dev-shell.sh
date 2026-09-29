@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-extension_uuid='clipboard-x@guleo.github.io'
+extension_uuid='clipboard-x@guleoo.github.io'
 
 if [[ "${CLIPBOARD_X_DEV_SESSION:-0}" == '1' ]]; then
   if [[ -z "${CLIPBOARD_X_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_DEV_ROOT/config" ]]; then

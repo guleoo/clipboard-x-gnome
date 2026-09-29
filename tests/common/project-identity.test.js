@@ -23,12 +23,24 @@ const packageScript = read('tools/package.sh');
 
 assert(packageDocument.name === 'clipboard-x-gnome',
   'the Node package must use the public project name');
-assert(metadataTemplate.url === 'https://github.com/Guleo/clipboard-x-gnome',
-  'extension metadata must link to the renamed repository');
+assert(packageDocument.author?.name === 'guleoo'
+    && packageDocument.author.url === 'https://github.com/guleoo',
+  'package metadata must identify the author');
+assert(packageDocument.license === 'GPL-3.0-or-later',
+  'package license must match Meson');
+assert(packageDocument.homepage === 'https://github.com/guleoo/clipboard-x-gnome'
+    && packageDocument.repository?.url === 'https://github.com/guleoo/clipboard-x-gnome.git'
+    && packageDocument.bugs?.url === 'https://github.com/guleoo/clipboard-x-gnome/issues',
+  'package links must use the actual GitHub account');
+assert(metadataTemplate.url === packageDocument.homepage,
+  'extension metadata must link to the public repository');
 assert(metadataTemplate.uuid === '@uuid@' && metadataTemplate['gettext-domain'] === 'clipboard-x',
-  'renaming the project must not change the installed extension identity');
+  'extension metadata must use the configured UUID and gettext domain');
 assert(/project\(\s*'clipboard-x-gnome'/u.test(meson),
   'Meson must use the public project name');
+assert(meson.includes("extension_uuid = 'clipboard-x@guleoo.github.io'")
+    && read('src/entry/constants.js').includes("UUID = 'clipboard-x@guleoo.github.io'"),
+  'build and runtime extension identities must match the author namespace');
 assert(meson.includes("meson.project_build_root() / 'clipboard-x-gnome.zip'"),
   'Meson must publish the renamed archive');
 assert(Object.values(packageDocument.scripts).filter(value => value.includes('--extension '))

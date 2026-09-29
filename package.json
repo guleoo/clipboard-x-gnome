@@ -1,6 +1,19 @@
 {
   "name": "clipboard-x-gnome",
   "version": "0.1.0",
+  "author": {
+    "name": "guleoo",
+    "url": "https://github.com/guleoo"
+  },
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/guleoo/clipboard-x-gnome",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guleoo/clipboard-x-gnome.git"
+  },
+  "bugs": {
+    "url": "https://github.com/guleoo/clipboard-x-gnome/issues"
+  },
   "private": true,
   "type": "module",
   "scripts": {

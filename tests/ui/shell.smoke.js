@@ -6,7 +6,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-const UUID = 'clipboard-x@guleo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 const STATUS_AREA_NAME = 'clipboard-x';
 const TEST_DIRECTORY = Gio.File.new_for_uri(import.meta.url).get_parent().get_path();
 
