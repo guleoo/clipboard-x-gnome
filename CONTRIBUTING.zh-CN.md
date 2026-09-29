@@ -57,3 +57,28 @@ meson compile -C build clipboard-x-update-po
 - 新协议数据先校验类型、数量和大小，再分配或读取负载。
 
 发布 ZIP 必须是最小运行时集合，不能包含测试、协议源码或翻译源码。
+
+## 发布版本
+
+[发布工作流](.github/workflows/release.yml)会在每次推送和 Pull Request 时，使用 Fedora 44 / GNOME 50
+环境检查 JavaScript 语法、运行完整 Meson 测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
+翻译。Pull Request 不会触发发布。
+
+发布前，把 `meson.build` 和 `package.json` 中的版本号同步改为 `X.Y.Z`，运行上述开发检查，
+然后推送提交及带注释的 `vX.Y.Z` 标签。例如：
+
+```sh
+git tag -a v0.1.0 -m 'Clipboard X 0.1.0'
+git push origin master v0.1.0
+```
+
+标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
+停止。标签构建通过后，会创建附带 `clipboard-x-gnome.zip` 的 GitHub Release。不要自行设置由
+GNOME 扩展网站管理的数字型 `metadata.version`。
+
+向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，
+把仓库 Actions 变量 `EGO_UPLOAD_ENABLED` 设为 `true`，并设置有权上传该扩展的账号所对应的
+仓库密钥 `EGO_USER`、`EGO_PASSWORD`。标签构建通过后，工作流会用 `gnome-extensions upload`
+提交同一个经过检查的 ZIP；密码通过标准输入传递，CLI 的登录令牌缓存只保留在临时 CI 环境。
+不设置该变量就不会上传；开启后缺少任一密钥，上传任务会明确失败。上传成功只代表**已送审**，
+不代表已经通过审核或在商店中可见。

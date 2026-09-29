@@ -64,3 +64,31 @@ Chinese documentation is maintained as the
 
 Release ZIPs must contain only the runtime extension, schemas, CSS, metadata, and compiled translations;
 they must not include tests, protocol source, dictionaries, or the central server.
+
+## Releases
+
+The [release workflow](.github/workflows/release.yml) runs on every push and pull request in a
+Fedora 44 / GNOME 50 environment. It checks JavaScript syntax, runs the full Meson suite, builds the
+extension ZIP, and verifies that the archive contains exactly the runtime files and compiled catalogs.
+Pull requests cannot publish a release.
+
+To release, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
+run the development checks above, then push the commit and an annotated `vX.Y.Z` tag. For example:
+
+```sh
+git tag -a v0.1.0 -m 'Clipboard X 0.1.0'
+git push origin master v0.1.0
+```
+
+The tag must match both project versions and the generated `metadata.json` `version-name`, or the
+workflow stops before publication. A passing tag build creates a GitHub Release with
+`clipboard-x-gnome.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
+
+Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
+set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets
+`EGO_USER` and `EGO_PASSWORD` for an account authorized to upload this extension. On a passing
+release tag, the workflow submits the same checked ZIP with `gnome-extensions upload`; it passes the
+password via standard input and keeps the CLI token cache in the disposable CI environment. Without
+the variable, no upload is attempted. If the variable is enabled but either secret is missing, the
+upload job fails clearly. Upload success means **submitted for review**, not yet approved or visible
+in the GNOME extension store.

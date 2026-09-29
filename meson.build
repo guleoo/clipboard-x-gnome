@@ -75,6 +75,7 @@ endif
 test_runner = find_program('gjs')
 test('translations', find_program('bash'), args: [meson.current_source_dir() / 'tests/i18n/coverage.sh'])
 test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
+test('release-package', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_package.test.py'])
 test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('running-apps', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/running-apps.test.js'])
