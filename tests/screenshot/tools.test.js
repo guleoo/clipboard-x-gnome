@@ -14,10 +14,10 @@ function assertEqual(actual, expected, message) {
     throw new Error(`${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 }
 
-const projectDirectory = Gio.File.new_for_uri(import.meta.url)
-  .get_parent().get_parent().get_parent().get_path();
+const buildDirectory = GLib.getenv('CBX_TEST_BUILD_DIR');
+assert(buildDirectory, 'Screenshot tests must run through Meson');
 const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
-  GLib.build_filenamev([projectDirectory, 'build']),
+  buildDirectory,
   Gio.SettingsSchemaSource.get_default(),
   false,
 );

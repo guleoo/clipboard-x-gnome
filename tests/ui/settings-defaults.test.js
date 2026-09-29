@@ -11,9 +11,10 @@ function assert(condition, message) {
 if (GLib.getenv('GSETTINGS_BACKEND') !== 'memory')
   throw new Error('Settings reset tests require the memory GSettings backend');
 
-const directory = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_path();
+const buildDirectory = GLib.getenv('CBX_TEST_BUILD_DIR');
+assert(buildDirectory, 'Settings reset tests must run through Meson');
 const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
-  GLib.build_filenamev([directory, 'build']),
+  buildDirectory,
   Gio.SettingsSchemaSource.get_default(),
   false,
 );

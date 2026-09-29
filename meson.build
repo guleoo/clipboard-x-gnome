@@ -76,6 +76,7 @@ test_runner = find_program('gjs')
 test('translations', find_program('bash'), args: [meson.current_source_dir() / 'tests/i18n/coverage.sh'])
 test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
 test('release-package', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_package.test.py'])
+test('release-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_script.test.py'])
 test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('running-apps', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/running-apps.test.js'])
@@ -91,7 +92,9 @@ test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_di
 test('clipboard-history-order', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/order.test.js'])
 test('clipboard-storage', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/storage.test.js'])
 test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tests/color-picker/color.test.js'])
-test('screenshot', test_runner, args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'])
+test('screenshot', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'],
+  env: {'CBX_TEST_BUILD_DIR': meson.project_build_root()})
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
 test('sync-protocol-ownership', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol-ownership.test.js'])
@@ -121,7 +124,7 @@ test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests
 test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-actions.test.js'])
 test('settings-defaults', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/ui/settings-defaults.test.js'],
-  env: {'GSETTINGS_BACKEND': 'memory'})
+  env: {'GSETTINGS_BACKEND': 'memory', 'CBX_TEST_BUILD_DIR': meson.project_build_root()})
 test('shortcut-capture', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/shortcut-capture.test.js'])
 test('string-choice', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/string-choice.test.js'])
 test(

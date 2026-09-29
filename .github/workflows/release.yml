@@ -19,7 +19,7 @@ jobs:
       - name: Install GNOME 50 build dependencies
         run: >-
           dnf install -y
-          7zip dbus-daemon gettext gjs glib2 gnome-shell
+          7zip dbus-daemon gettext git gjs glib2 gnome-shell
           gtk4 libadwaita libsoup3 meson ninja-build nodejs python3
       - name: Configure and build
         run: |

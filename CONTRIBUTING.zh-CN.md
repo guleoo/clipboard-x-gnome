@@ -64,13 +64,19 @@ meson compile -C build clipboard-x-update-po
 环境检查 JavaScript 语法、运行完整 Meson 测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
 翻译。Pull Request 不会触发发布。
 
-发布前，把 `meson.build` 和 `package.json` 中的版本号同步改为 `X.Y.Z`，运行上述开发检查，
-然后推送提交及带注释的 `vX.Y.Z` 标签。例如：
+仅需在本地构建发布包、不安装到桌面且不改动 Git 状态时，运行：
 
 ```sh
-git tag -a v0.1.0 -m 'Clipboard X 0.1.0'
-git push origin master v0.1.0
+./tools/release.sh
 ```
+
+生成的文件在 `build/release/clipboard-x-gnome.zip`。脚本使用独立的 package 构建目录，检查
+JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
+
+需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，
+再运行 `./tools/release.sh --publish`。脚本会额外推送当前分支、创建带注释的 `vX.Y.Z` 标签并
+推送标签。如果有多个远端，可用 `--remote NAME` 指定。发布要求工作区干净、Git 认证可用；
+脚本不会强制推送，也不会覆盖远端已有的同名标签。
 
 标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
 停止。标签构建通过后，会创建附带 `clipboard-x-gnome.zip` 的 GitHub Release。不要自行设置由

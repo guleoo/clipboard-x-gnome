@@ -72,13 +72,20 @@ Fedora 44 / GNOME 50 environment. It checks JavaScript syntax, runs the full Mes
 extension ZIP, and verifies that the archive contains exactly the runtime files and compiled catalogs.
 Pull requests cannot publish a release.
 
-To release, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
-run the development checks above, then push the commit and an annotated `vX.Y.Z` tag. For example:
+To build a local release ZIP without installing it into the desktop or changing Git state, run:
 
 ```sh
-git tag -a v0.1.0 -m 'Clipboard X 0.1.0'
-git push origin master v0.1.0
+./tools/release.sh
 ```
+
+The result is `build/release/clipboard-x-gnome.zip`. The script configures a dedicated package build,
+checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
+
+To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
+commit all changes, then run `./tools/release.sh --publish`. This additionally pushes the current
+branch, creates an annotated `vX.Y.Z` tag, and pushes the tag to its configured remote. If multiple
+remotes are available, specify one with `--remote NAME`. Publishing requires a clean working tree
+and working Git credentials; it never force-pushes or overwrites an existing remote tag.
 
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
