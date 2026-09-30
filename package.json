@@ -7,13 +7,6 @@
   },
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/guleoo/clipboard-x-gnome",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/guleoo/clipboard-x-gnome.git"
-  },
-  "bugs": {
-    "url": "https://github.com/guleoo/clipboard-x-gnome/issues"
-  },
   "private": true,
   "type": "module",
   "scripts": {
