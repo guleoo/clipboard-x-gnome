@@ -9,7 +9,7 @@ single bilingual file per version, with English followed by Simplified Chinese.
 
 ## Releases
 
-- [1.0.0 release notes](release/release_1.0.0.md): initial stable release features, installation, and known limitations.
+- [1.0.0 release notes](release/release_1.0.0.md): initial stable release features and bug fixes.
 
 ## Protocol and synchronization
 
