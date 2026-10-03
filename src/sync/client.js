@@ -219,6 +219,7 @@ export class SyncClient extends EventEmitter {
     if (this._connected && this._remoteTransferIds.has(transferId)) {
       try {
         await this._transport.cancel(transferId);
+        this._remoteTransferIds.delete(transferId);
       } catch (error) {
         if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
           throw error;
@@ -235,7 +236,7 @@ export class SyncClient extends EventEmitter {
       throw new Error('Synchronization transfer ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const transfer = validateTransfer(await this._transport.transfer(transferId), deviceId);
-    this._remoteTransferIds.add(transferId);
+    this._observeRemoteTransfer(transfer);
     return transfer;
   }
 
@@ -244,7 +245,7 @@ export class SyncClient extends EventEmitter {
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const values = validateTransfers(await this._transport.transfers(), deviceId);
     for (const transfer of values) {
-      this._remoteTransferIds.add(transfer.transferId);
+      this._observeRemoteTransfer(transfer);
       this._recordTransfer(transfer, true);
     }
     return values;
@@ -379,7 +380,7 @@ export class SyncClient extends EventEmitter {
       transfer = publication.transfer;
       if (transfer.kind !== 'publish' || transfer.direction !== 'upload')
         throw new Error('Synchronization server returned an invalid publication transfer');
-      this._remoteTransferIds.add(transfer.transferId);
+      this._observeRemoteTransfer(transfer);
       this._operations.set(transfer.transferId, cancellable);
       const requested = [
         ...publication.previewIds.map(id => [`preview:${id}`, id, true]),
@@ -418,6 +419,7 @@ export class SyncClient extends EventEmitter {
         (await this._transport.completeUpload(publication.uploadId)).transfer,
         deviceId,
       );
+      this._observeRemoteTransfer(completed);
       this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
       return {itemId: publication.itemId, transferId: completed.transferId};
     } catch (error) {
@@ -455,7 +457,7 @@ export class SyncClient extends EventEmitter {
         if (request.transfer.kind !== 'content' || request.transfer.direction !== 'download'
             || request.transfer.itemId !== item.id)
           throw new Error('Synchronization server returned an invalid content request transfer');
-        this._remoteTransferIds.add(request.transfer.transferId);
+        this._observeRemoteTransfer(request.transfer);
         this._recordTransfer(request.transfer, true);
         if (!TERMINAL_TRANSFER_STATES.has(request.transfer.state))
           await this._waitForTransfer(request.transfer.transferId);
@@ -644,14 +646,14 @@ export class SyncClient extends EventEmitter {
         || accepted.transfer.totalBytes !== representation.size)
       throw new Error('Synchronization server returned an inconsistent source upload size');
     if (accepted.transfer.state === 'completed') {
-      this._remoteTransferIds.add(accepted.transfer.transferId);
+      this._observeRemoteTransfer(accepted.transfer);
       this._recordTransfer(accepted.transfer, true);
       return;
     }
     if (TERMINAL_TRANSFER_STATES.has(accepted.transfer.state))
       throw new Error(accepted.transfer.errorMessage || `Transfer ${accepted.transfer.state}`);
     const cancellable = this._newOperationCancellable();
-    this._remoteTransferIds.add(accepted.transfer.transferId);
+    this._observeRemoteTransfer(accepted.transfer);
     this._operations.set(accepted.transfer.transferId, cancellable);
     this._recordTransfer(accepted.transfer, true);
     try {
@@ -676,6 +678,7 @@ export class SyncClient extends EventEmitter {
         (await this._transport.completeUpload(accepted.uploadId)).transfer,
         deviceId,
       );
+      this._observeRemoteTransfer(completed);
       this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
     } catch (error) {
       this._recordTransfer({
@@ -715,6 +718,15 @@ export class SyncClient extends EventEmitter {
       }, this._settings.get_uint('sync-transfer-timeout-seconds') * 1000);
       this._transferWaiters.set(transferId, {resolve, reject, timeout});
     });
+  }
+
+  _observeRemoteTransfer(transfer) {
+    // Only confirmed server terminal states release remote cancellation markers.
+    // A local failed upload can still leave an active transfer on the server.
+    if (TERMINAL_TRANSFER_STATES.has(transfer.state))
+      this._remoteTransferIds.delete(transfer.transferId);
+    else
+      this._remoteTransferIds.add(transfer.transferId);
   }
 
   _recordTransfer(transfer, immediate = false) {

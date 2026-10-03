@@ -298,6 +298,8 @@ try {
     'preview and eager content must be streamed exactly once');
   assert(client.getTransferForItem(item.id).state === 'completed',
     'completed server progress must replace local streaming progress');
+  assert(client._remoteTransferIds.size === 0,
+    'confirmed upload completion must release remote cancellation markers');
   const sensitive = ClipboardItem.fromText('local sensitive content', {
     originDeviceId: deviceId,
     sensitive: true,
@@ -345,3 +347,58 @@ try {
 } finally {
   channelRequiredClient.destroy();
 }
+
+const retentionTransport = new TestTransport();
+retentionTransport.itemId = GLib.uuid_string_random();
+retentionTransport.totalBytes = 10;
+let cancellations = 0;
+retentionTransport.cancel = async () => { cancellations++; };
+let remoteState = 'queued';
+retentionTransport.transfer = async () => retentionTransport._transfer(remoteState, 0);
+const retentionClient = new SyncClient(new TestSettings(), {
+  configurationStore: new TestStore(), transportFactory: () => retentionTransport,
+});
+try {
+  await retentionClient.start();
+  const active = await retentionClient.getTransfer(transferId);
+  assert(retentionClient._transfers.get(transferId) === null,
+    'a standalone transfer lookup need not be present in the UI tracker');
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
+    'a looked-up remote task must remain cancellable and release its marker after DELETE');
+
+  await retentionClient.getTransfer(transferId);
+  retentionClient._recordTransfer(active, true);
+  for (let index = 0; index < 1100; index++)
+    retentionClient._recordTransfer({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
+  assert(!retentionClient._transfers.get(transferId), 'fixture must evict the active UI record');
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 2, 'UI eviction must not silently disable remote cancellation');
+
+  await retentionClient.getTransfer(transferId);
+  retentionClient._recordTransfer({...active, state: 'failed'}, true);
+  assert(retentionClient._remoteTransferIds.has(transferId),
+    'a local failure is not proof that the server has finished the task');
+  remoteState = 'failed';
+  await retentionClient.getTransfer(transferId);
+  assert(retentionClient._remoteTransferIds.size === 0,
+    'confirmed server failure must release remote cancellation state');
+
+  remoteState = 'queued';
+  retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
+  await retentionClient.getTransfer(transferId);
+  try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
+  assert(retentionClient._remoteTransferIds.has(transferId),
+    'a failed remote cancellation must retain the ability to retry');
+
+  const localId = GLib.uuid_string_random();
+  const localOperation = new Gio.Cancellable();
+  retentionClient._operations.set(localId, localOperation);
+  await retentionClient.cancelTransfer(localId);
+  assert(localOperation.is_cancelled() && cancellations === 2,
+    'local-only download cancellation must not call the server DELETE endpoint');
+} finally {
+  retentionClient.destroy();
+}
+assert(retentionClient._remoteTransferIds.size === 0,
+  'destroy must clear markers for still-active or unconfirmed remote tasks');
