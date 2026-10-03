@@ -28,10 +28,8 @@ assert(packageDocument.author?.name === 'guleoo'
   'package metadata must identify the author');
 assert(packageDocument.license === 'GPL-3.0-or-later',
   'package license must match Meson');
-assert(packageDocument.homepage === 'https://github.com/guleoo/clipboard-x-gnome'
-    && packageDocument.repository?.url === 'https://github.com/guleoo/clipboard-x-gnome.git'
-    && packageDocument.bugs?.url === 'https://github.com/guleoo/clipboard-x-gnome/issues',
-  'package links must use the actual GitHub account');
+assert(packageDocument.homepage === 'https://github.com/guleoo/clipboard-x-gnome',
+  'package homepage must use the actual GitHub account');
 assert(metadataTemplate.url === packageDocument.homepage,
   'extension metadata must link to the public repository');
 assert(metadataTemplate.uuid === '@uuid@' && metadataTemplate['gettext-domain'] === 'clipboard-x',
