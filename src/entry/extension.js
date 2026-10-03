@@ -187,6 +187,8 @@ export default class ClipboardXExtension extends Extension {
 
   async _takeScreenshot() {
     const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
+    if (uri === null)
+      return;
     const addToHistory = this._settings.get_boolean('screenshot-add-history');
     const item = addToHistory
       ? await this._controller.addFromUri(uri, 'screenshot')

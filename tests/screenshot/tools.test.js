@@ -172,12 +172,33 @@ const deniedPortal = new ScreenshotPortal({
 });
 await assertRejects(deniedPortal.capture('screen'), /denied/u, 'denied screenshot');
 
+const userCancelConnection = new FakePortalConnection({mode: 'cancelled'});
+const userCancelPortal = new ScreenshotPortal({connection: userCancelConnection, timeoutMilliseconds: 100});
+assert(await userCancelPortal.capture('interactive') === null,
+  'User cancellation must resolve without a screenshot or an error');
+assert(userCancelConnection._subscriptions.size === 0 && userCancelPortal._request === null,
+  'User cancellation must release the request and signal subscription');
+userCancelConnection.mode = 'success';
+assert(await userCancelPortal.capture('interactive') === uri,
+  'A new screenshot must be allowed after user cancellation');
+
 const cancelConnection = new FakePortalConnection({mode: 'pending'});
 const cancelPortal = new ScreenshotPortal({connection: cancelConnection, timeoutMilliseconds: 100});
 const cancelled = cancelPortal.capture('interactive');
 setTimeout(() => cancelPortal.cancel(), 10);
-await assertRejects(cancelled, /cancelled/u, 'explicit cancellation');
+assert(await cancelled === null, 'Explicit cancellation must finish without an error');
 assert(cancelConnection.closeCount === 1, 'cancellation must close the Portal request');
+assert(cancelConnection._subscriptions.size === 0 && cancelPortal._request === null,
+  'Explicit cancellation must clean up request resources');
+
+const earlyCancelConnection = new FakePortalConnection({mode: 'pending'});
+const earlyCancelPortal = new ScreenshotPortal({connection: earlyCancelConnection, timeoutMilliseconds: 100});
+const earlyCancelled = earlyCancelPortal.capture('interactive');
+earlyCancelPortal.cancel();
+assert(await earlyCancelled === null && earlyCancelConnection.lastOptions === null,
+  'Cancellation during capability discovery must not start a screenshot');
+assert(earlyCancelConnection._subscriptions.size === 0 && earlyCancelPortal._request === null,
+  'Early cancellation must leave no request resources');
 
 const timeoutConnection = new FakePortalConnection({mode: 'pending'});
 const timeoutPortal = new ScreenshotPortal({connection: timeoutConnection, timeoutMilliseconds: 10});
@@ -196,7 +217,7 @@ const pendingCapture = concurrentPortal.capture('interactive');
 await assertRejects(concurrentPortal.capture('screen'), /already active/u, 'concurrent screenshot request');
 await new Promise(resolve => setTimeout(resolve, 10));
 concurrentPortal.cancel();
-await assertRejects(pendingCapture, /cancelled/u, 'concurrent request cleanup');
+assert(await pendingCapture === null, 'Concurrent request cleanup must finish without an error');
 
 const oldPortal = new ScreenshotPortal({
   connection: new FakePortalConnection({version: 2, targets: 0}),
