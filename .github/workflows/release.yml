@@ -62,6 +62,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: ${{ needs.distcheck.outputs.artifact-name }}
@@ -70,6 +71,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
+          notes_file="docs/release/release_${GITHUB_REF_NAME#v}.md"
+          if [[ ! -f "$notes_file" ]]; then
+            echo "Release notes are missing: $notes_file" >&2
+            exit 1
+          fi
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
                 --json assets --jq '.assets[].name' | grep -Fxq "$ARCHIVE_NAME"; then
@@ -81,7 +87,7 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
               --repo "$GITHUB_REPOSITORY" --verify-tag \
-              --title "Clipboard X ${GITHUB_REF_NAME#v}" --generate-notes
+              --title "Clipboard X ${GITHUB_REF_NAME#v}" --notes-file "$notes_file"
           fi
 
   ego-upload:

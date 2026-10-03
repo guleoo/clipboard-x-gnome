@@ -1,6 +1,6 @@
 # Clipboard X UI development guide
 
-> English · [简体中文](zh-CN/ui-architecture.md)
+> English · [简体中文](ui-architecture_CN.md)
 
 This document records the component boundaries and UI conventions that new panels and controls must
 follow. Extend these boundaries instead of putting state and widgets back into `Indicator`.

@@ -18,8 +18,8 @@ meson install -C build
 Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
 ```
 
 ## 目录结构
@@ -46,6 +46,8 @@ meson compile -C build clipboard-x-update-po
 然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/i18n/coverage.sh`。
 检查会拒绝缺失或 fuzzy 的译文，以及图片编辑命令说明中丢失的占位符。
 源码语言为英语，无需单独的英文 PO 文件。机器翻译草稿仍需母语者审校措辞。
+仓库根目录的中文文档使用 `.zh-CN.md`；`docs/` 中的指南平铺存放，中文使用 `{name}_CN.md`。
+各版本发布说明统一放在 `docs/release/`，每个版本一个文件，先英文、后中文。
 
 ## 代码约定
 
@@ -71,7 +73,7 @@ meson compile -C build clipboard-x-update-po
 ```
 
 生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
-`clipboard-x-gnome_0.1.0.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
+`clipboard-x-gnome_1.0.0.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
 
 需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，
@@ -82,6 +84,8 @@ JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本�
 标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
 停止。标签构建通过后，会创建附带 `clipboard-x-gnome_<version>.zip` 的 GitHub Release。不要自行设置由
 GNOME 扩展网站管理的数字型 `metadata.version`。
+打标签前添加 `docs/release/release_<version>.md`，先写英文发布说明，再写中文。
+工作流使用此文件作为 GitHub Release 正文；缺少文件时不会创建 Release。
 
 向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，
 把仓库 Actions 变量 `EGO_UPLOAD_ENABLED` 设为 `true`，并设置有权上传该扩展的账号所对应的

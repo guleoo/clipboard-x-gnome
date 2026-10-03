@@ -1,10 +1,15 @@
 # clipboard-x-gnome documentation
 
-> English · [简体中文](zh-CN/README.md)
+> English · [简体中文](README_CN.md)
 
-This directory contains public documentation for extension users and contributors. Files without a
-language suffix are the English primary versions. Simplified Chinese
-counterparts are kept under `docs/zh-CN/` with the same names.
+This directory contains public documentation for extension users and contributors. Guides live directly
+in `docs/`; versioned release notes live in `docs/release/`. English primary versions use `{name}.md`,
+and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Release notes are a
+single bilingual file per version, with English followed by Simplified Chinese.
+
+## Releases
+
+- [1.0.0 release notes](release/release_1.0.0.md): initial stable release features, installation, and known limitations.
 
 ## Protocol and synchronization
 
@@ -26,6 +31,6 @@ counterparts are kept under `docs/zh-CN/` with the same names.
 ## Language policy
 
 English is the primary language for project documentation. Every public guide has a Simplified Chinese
-counterpart in `docs/zh-CN/`; links at the top of each page provide the language switch. Legal texts,
+counterpart named `{name}_CN.md` in the same directory; links at the top of each page provide the language switch. Legal texts,
 including `LICENSE.md`, retain their original English wording and are not mirrored as translated legal
-documents.
+documents. Release notes use a single bilingual file instead of separate language files.

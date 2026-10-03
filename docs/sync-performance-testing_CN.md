@@ -1,6 +1,6 @@
 # 同步性能与压力测试指南
 
-> 简体中文 · [English](../sync-performance-testing.md)
+> 简体中文 · [English](sync-performance-testing.md)
 
 本文面向扩展和兼容服务器的开发者，说明如何验证同步实现的吞吐、进度、内存和恢复行为。
 

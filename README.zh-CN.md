@@ -60,10 +60,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome_0.1.0.zip`：
+安装生成的 `build/clipboard-x-gnome_1.0.0.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_0.1.0.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.0.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -199,7 +199,7 @@ flatpak run be.alexandervanhee.gradia %u
 欢迎参与 Clipboard X：报告 Bug、提交聚焦的修复、改进 UI、补充协议测试、完善文档，或
 提供经过认真校对的翻译，都很有价值。
 
-1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/zh-CN/README.md)。
+1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/README_CN.md)。
 2. 较大的行为或协议变更应先创建 Issue，讨论并明确范围。
 3. 保持改动聚焦；每次行为变更都要新增或更新测试。
 4. 提交 Pull Request 前运行完整测试，并主动 Review 自己的 Diff。
@@ -219,8 +219,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -229,10 +229,11 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip t
 
 ## 文档
 
-- [中文文档索引](docs/zh-CN/README.md)
+- [中文文档索引](docs/README_CN.md)
+- [1.0.0 发布说明](docs/release/release_1.0.0.md#简体中文)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
-- [UI 开发指南](docs/zh-CN/ui-architecture.md)
-- [同步性能与压力测试](docs/zh-CN/sync-performance-testing.md)
+- [UI 开发指南](docs/ui-architecture_CN.md)
+- [同步性能与压力测试](docs/sync-performance-testing_CN.md)
 - [安全与隐私](SECURITY.zh-CN.md)
 - [参与开发](CONTRIBUTING.zh-CN.md)
 

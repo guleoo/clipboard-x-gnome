@@ -1,6 +1,6 @@
 # Synchronization performance and stress testing
 
-> English · [简体中文](zh-CN/sync-performance-testing.md)
+> English · [简体中文](sync-performance-testing_CN.md)
 
 This guide is for extension and compatible-server developers. It defines how to verify synchronization
 throughput, progress reporting, memory use, event-loop responsiveness, and recovery behavior.

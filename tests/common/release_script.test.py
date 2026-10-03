@@ -15,6 +15,13 @@ PROJECT = SCRIPT.parent.parent
 
 
 class ReleaseScriptTest(unittest.TestCase):
+    def test_release_workflow_uses_versioned_bilingual_notes(self):
+        workflow = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn('notes_file="docs/release/release_${GITHUB_REF_NAME#v}.md"', workflow)
+        self.assertIn('if [[ ! -f "$notes_file" ]]', workflow)
+        self.assertIn('--notes-file "$notes_file"', workflow)
+        self.assertNotIn('--generate-notes', workflow)
+
     def test_shell_test_commands_use_the_current_versioned_archive(self):
         package = json.loads((PROJECT / "package.json").read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as temporary:

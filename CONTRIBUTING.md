@@ -19,8 +19,8 @@ the complete Meson test suite. Changes involving extension lifecycle, panels, cl
 or preferences must also run:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
 ```
 
 ## Repository layout
@@ -50,7 +50,8 @@ Then update every catalog listed in `po/LINGUAS` and run
 image-editor command placeholders. English is the source language and has no PO catalog.
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the
-`.zh-CN.md` or `docs/zh-CN/` counterpart.
+`.zh-CN.md` counterpart for repository-root files, or a `{name}_CN.md` counterpart directly in `docs/`.
+Each version has one bilingual release note in `docs/release/`, with English followed by Simplified Chinese.
 
 ## Code conventions
 
@@ -79,7 +80,7 @@ To build a local release ZIP without installing it into the desktop or changing 
 ```
 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
-`clipboard-x-gnome_0.1.0.zip`. The version comes from Meson. The script configures a dedicated package build,
+`clipboard-x-gnome_1.0.0.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
@@ -91,6 +92,8 @@ and working Git credentials; it never force-pushes or overwrites an existing rem
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
 `clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
+Before tagging, add `docs/release/release_<version>.md` with English release notes followed by Simplified
+Chinese. The workflow uses this file as the GitHub Release description and requires it to exist.
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
 set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets

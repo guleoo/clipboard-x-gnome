@@ -1,6 +1,6 @@
 # Clipboard X 界面开发指南
 
-> 简体中文 · [English](../ui-architecture.md)
+> 简体中文 · [English](ui-architecture.md)
 
 本文记录当前已经确认的组件边界与界面约定。后续增加面板或调整 UI 时，应优先扩展这些边界，避免把状态与控件重新堆回 `Indicator`。
 

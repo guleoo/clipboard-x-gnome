@@ -20,7 +20,7 @@ function read(relativePath) {
 
 assert(!root.resolve_relative_path('docs/sync-protocol.md').query_exists(null),
   'the client repository must not carry a second authoritative protocol copy');
-assert(!root.resolve_relative_path('docs/zh-CN/sync-protocol.md').query_exists(null),
+assert(!root.resolve_relative_path('docs/sync-protocol_CN.md').query_exists(null),
   'the client repository must not carry a translated protocol copy');
 assert(read('README.md').includes(serverProtocol),
   'the English client documentation must follow the Server-owned protocol');

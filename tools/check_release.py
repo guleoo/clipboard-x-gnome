@@ -111,7 +111,7 @@ def validate(project_root, archive, tag=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
-    parser.add_argument("--tag", help="Release tag, for example v0.1.0")
+    parser.add_argument("--tag", help="Release tag, for example v1.0.0")
     arguments = parser.parse_args()
     try:
         version = validate(Path(__file__).resolve().parent.parent, arguments.archive, arguments.tag)
