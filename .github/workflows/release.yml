@@ -14,6 +14,9 @@ jobs:
     name: Build, test, and check ZIP
     runs-on: ubuntu-latest
     container: fedora:44
+    outputs:
+      archive-name: ${{ steps.package.outputs.archive-name }}
+      artifact-name: ${{ steps.package.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@v4
       - name: Install GNOME 50 build dependencies
@@ -30,18 +33,24 @@ jobs:
       - name: Run test suite
         run: dbus-run-session -- meson test -C build --print-errorlogs
       - name: Create and validate release ZIP
+        id: package
         shell: bash
         run: |
           meson install -C build
+          version=$(meson introspect --projectinfo build |
+            python3 -c 'import json, sys; print(json.load(sys.stdin)["version"])')
+          archive_name="clipboard-x-gnome_${version}.zip"
+          printf 'archive-name=%s\n' "$archive_name" >> "$GITHUB_OUTPUT"
+          printf 'artifact-name=%s\n' "${archive_name%.zip}" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            python3 tools/check_release.py build/clipboard-x-gnome.zip --tag "$GITHUB_REF_NAME"
+            python3 tools/check_release.py "build/$archive_name" --tag "$GITHUB_REF_NAME"
           else
-            python3 tools/check_release.py build/clipboard-x-gnome.zip
+            python3 tools/check_release.py "build/$archive_name"
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: clipboard-x-gnome-zip
-          path: build/clipboard-x-gnome.zip
+          name: ${{ steps.package.outputs.artifact-name }}
+          path: build/${{ steps.package.outputs.archive-name }}
           if-no-files-found: error
           retention-days: 14
 
@@ -55,21 +64,22 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: clipboard-x-gnome-zip
+          name: ${{ needs.distcheck.outputs.artifact-name }}
       - name: Create release with extension ZIP
         env:
           GH_TOKEN: ${{ github.token }}
+          ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                --json assets --jq '.assets[].name' | grep -Fxq clipboard-x-gnome.zip; then
+                --json assets --jq '.assets[].name' | grep -Fxq "$ARCHIVE_NAME"; then
               echo 'Release ZIP already exists; leaving the published asset untouched.'
             else
-              gh release upload "$GITHUB_REF_NAME" clipboard-x-gnome.zip \
+              gh release upload "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
                 --repo "$GITHUB_REPOSITORY"
             fi
           else
-            gh release create "$GITHUB_REF_NAME" clipboard-x-gnome.zip \
+            gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
               --repo "$GITHUB_REPOSITORY" --verify-tag \
               --title "Clipboard X ${GITHUB_REF_NAME#v}" --generate-notes
           fi
@@ -85,13 +95,14 @@ jobs:
         run: dnf install -y gnome-shell
       - uses: actions/download-artifact@v4
         with:
-          name: clipboard-x-gnome-zip
+          name: ${{ needs.distcheck.outputs.artifact-name }}
       - name: Upload ZIP for GNOME review
         shell: bash
         env:
           EGO_USER: ${{ secrets.EGO_USER }}
           EGO_PASSWORD: ${{ secrets.EGO_PASSWORD }}
           XDG_CACHE_HOME: /tmp/clipboard-x-ego-cache
+          ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
           if [[ -z "$EGO_USER" || -z "$EGO_PASSWORD" ]]; then
             echo 'EGO_USER and EGO_PASSWORD repository secrets are required.' >&2
@@ -100,4 +111,4 @@ jobs:
           install -d -m 700 "$XDG_CACHE_HOME"
           printf '%s\n' "$EGO_PASSWORD" | gnome-extensions upload \
             --user "$EGO_USER" --password-file=- --accept-tos \
-            clipboard-x-gnome.zip
+            "$ARCHIVE_NAME"

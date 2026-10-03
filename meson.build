@@ -12,6 +12,7 @@ i18n = import('i18n')
 extension_uuid = 'clipboard-x@guleoo.github.io'
 schema_id = 'org.gnome.shell.extensions.clipboard-x'
 target = get_option('target')
+release_archive = 'clipboard-x-gnome_@0@.zip'.format(meson.project_version())
 
 if target == 'local'
   data_home = run_command(
@@ -138,7 +139,7 @@ if target == 'package'
   meson.add_install_script(
     find_program('bash'),
     meson.project_source_root() / 'tools' / 'package.sh',
-    meson.project_build_root() / 'clipboard-x-gnome.zip',
+    meson.project_build_root() / release_archive,
     extension_dir,
     'org.gnome.shell.extensions.clipboard-x.gschema.xml',
     meson.project_source_root() / 'src',

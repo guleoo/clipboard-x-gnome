@@ -63,10 +63,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x-gnome.zip`:
+Install the generated `build/clipboard-x-gnome_0.1.0.zip`:
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome.zip
+gnome-extensions install --force build/clipboard-x-gnome_0.1.0.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -240,8 +240,8 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
 ```
 
 Clipboard X does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,

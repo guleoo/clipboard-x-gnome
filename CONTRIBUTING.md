@@ -19,8 +19,8 @@ the complete Meson test suite. Changes involving extension lifecycle, panels, cl
 or preferences must also run:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
 ```
 
 ## Repository layout
@@ -78,7 +78,8 @@ To build a local release ZIP without installing it into the desktop or changing 
 ./tools/release.sh
 ```
 
-The result is `build/release/clipboard-x-gnome.zip`. The script configures a dedicated package build,
+The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
+`clipboard-x-gnome_0.1.0.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
@@ -89,7 +90,7 @@ and working Git credentials; it never force-pushes or overwrites an existing rem
 
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
-`clipboard-x-gnome.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
+`clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
 set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets

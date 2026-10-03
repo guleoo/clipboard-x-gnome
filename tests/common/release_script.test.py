@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Check the local release command's safe defaults and publish guard."""
 
+import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -9,9 +11,29 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "tools/release.sh"
+PROJECT = SCRIPT.parent.parent
 
 
 class ReleaseScriptTest(unittest.TestCase):
+    def test_shell_test_commands_use_the_current_versioned_archive(self):
+        package = json.loads((PROJECT / "package.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as temporary:
+            tool = Path(temporary) / "gnome-shell-test-tool"
+            tool.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n', encoding="utf-8")
+            tool.chmod(0o755)
+            env = {**os.environ, "PATH": f"{temporary}:{os.environ['PATH']}"}
+            for name in ("test:shell", "test:device-badges"):
+                with self.subTest(script=name):
+                    result = subprocess.run(
+                        package["scripts"][name], shell=True, cwd=PROJECT,
+                        env=env, capture_output=True, text=True, check=True,
+                    )
+                    arguments = result.stdout.splitlines()
+                    self.assertEqual(
+                        arguments[arguments.index("--extension") + 1],
+                        f"build/clipboard-x-gnome_{package['version']}.zip",
+                    )
+
     def run_script(self, path, *arguments):
         return subprocess.run(
             ["bash", str(path), *arguments],

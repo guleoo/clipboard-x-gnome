@@ -18,8 +18,8 @@ meson install -C build
 Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip tests/ui/preferences.smoke.js
 ```
 
 ## 目录结构
@@ -70,7 +70,8 @@ meson compile -C build clipboard-x-update-po
 ./tools/release.sh
 ```
 
-生成的文件在 `build/release/clipboard-x-gnome.zip`。脚本使用独立的 package 构建目录，检查
+生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
+`clipboard-x-gnome_0.1.0.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
 
 需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，
@@ -79,7 +80,7 @@ JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本�
 脚本不会强制推送，也不会覆盖远端已有的同名标签。
 
 标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
-停止。标签构建通过后，会创建附带 `clipboard-x-gnome.zip` 的 GitHub Release。不要自行设置由
+停止。标签构建通过后，会创建附带 `clipboard-x-gnome_<version>.zip` 的 GitHub Release。不要自行设置由
 GNOME 扩展网站管理的数字型 `metadata.version`。
 
 向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，

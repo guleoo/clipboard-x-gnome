@@ -3,7 +3,6 @@ set -euo pipefail
 
 project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 build_dir="$project_root/build/release"
-archive="$build_dir/clipboard-x-gnome.zip"
 publish=false
 remote=''
 
@@ -86,6 +85,7 @@ meson install -C "$build_dir"
 
 version=$(meson introspect --projectinfo "$build_dir" |
   python3 -c 'import json, sys; print(json.load(sys.stdin)["version"])')
+archive="$build_dir/clipboard-x-gnome_${version}.zip"
 tag="v$version"
 python3 tools/check_release.py "$archive" --tag "$tag"
 printf 'Release ZIP: %s\n' "$archive"

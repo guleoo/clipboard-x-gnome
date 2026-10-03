@@ -41,10 +41,12 @@ assert(/project\(\s*'clipboard-x-gnome'/u.test(meson),
 assert(meson.includes("extension_uuid = 'clipboard-x@guleoo.github.io'")
     && read('src/entry/constants.js').includes("UUID = 'clipboard-x@guleoo.github.io'"),
   'build and runtime extension identities must match the author namespace');
-assert(meson.includes("meson.project_build_root() / 'clipboard-x-gnome.zip'"),
-  'Meson must publish the renamed archive');
+assert(meson.includes("release_archive = 'clipboard-x-gnome_@0@.zip'.format(meson.project_version())")
+    && meson.includes('meson.project_build_root() / release_archive'),
+  'Meson must include the project version in the release archive name');
 assert(Object.values(packageDocument.scripts).filter(value => value.includes('--extension '))
-  .every(value => value.includes('build/clipboard-x-gnome.zip')),
-  'Shell test scripts must consume the renamed archive');
+  .every(value => value.includes('build/clipboard-x-gnome_')
+    && value.includes("require('./package.json').version")),
+  'Shell test scripts must consume the archive matching the project version');
 assert(packageScript.includes('basename -- "$archive"'),
   'the packager must derive its temporary archive name from the requested artifact');
