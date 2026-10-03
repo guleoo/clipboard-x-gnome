@@ -153,6 +153,7 @@ stay local.
 
 - **Screenshot** calls the XDG Screenshot Portal. Available targets depend on the local portal backend.
 - **Color picker** samples the screen and writes the configured HEX, RGB, HSL, or OKLCH representation.
+  Use the arrow keys to move the sampling point one pixel at a time.
 - **Image editing** launches the command configured under **Preferences → Screenshot → Image editing**.
 
 For example, enter `gradia %i` to use Gradia.
@@ -260,4 +261,3 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## License
 
 Clipboard X is free software released under the [GNU GPL v3 or later](LICENSE.md).
-Created by [guleoo](https://github.com/guleoo), with contributions from the community.

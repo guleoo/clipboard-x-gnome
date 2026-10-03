@@ -143,6 +143,7 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 
 - **截图**调用 XDG Screenshot Portal，可用的截图目标取决于本机 Portal 后端。
 - **取色器**从屏幕取色，并写入配置的 HEX、RGB、HSL 或 OKLCH 表示。
+  取色时可使用方向键移动采样点，每次移动一个像素。
 - **图片编辑**调用**设置 → 截图 → 图片编辑**中配置的命令。
 
 例如，填入 `gradia %i` 即可使用 Gradia。
@@ -238,4 +239,3 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_0.1.0.zip t
 ## 许可证
 
 Clipboard X 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。
-项目作者是 [guleoo](https://github.com/guleoo)，也欢迎社区参与贡献。
