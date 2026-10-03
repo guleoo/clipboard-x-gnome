@@ -28,13 +28,6 @@ with optional synchronization through a self-hosted `clipboard-x-server`.
   sensitive marked content or retain it only in memory. Sensitive content is never synchronized.
   The interface includes English and 25 translated languages.
 
-### Bug fixes
-
-- Allow Right Arrow to move from an empty search field or the end of its text to the toolbar without
-  interfering with text selections or modifier-key editing.
-- Fix color-picker arrows skipping pixel cells on scaled displays and losing steps during rapid input.
-- Stop reporting screenshot failure when the user cancels; genuine failures still produce an error.
-
 ## 简体中文
 
 Clipboard X 1.0.0 是 `clipboard-x-gnome` 的首个正式版本。它将剪切板历史、分词选择、
@@ -58,10 +51,3 @@ Clipboard X 1.0.0 是 `clipboard-x-gnome` 的首个正式版本。它将剪切�
 - **面板与快捷键配置**：调整面板尺寸、位置、主题色、显示的操作按钮和快捷键。
 - **隐私与多语言**：隐私模式暂停记录，支持排除应用；带敏感标记的内容可丢弃或仅留在
   内存中，禁止同步。界面提供英文及 25 种翻译语言。
-
-### Bug 修复
-
-- 修复搜索框无法通过右方向键移到右侧按钮的问题；为空或光标在末尾时可移出，
-  不影响选区与带修饰键的文字编辑。
-- 修复缩放显示下取色方向键跳过像素格，以及快速连续按键时丢失移动步数的问题。
-- 修复用户主动取消截图仍弹出失败提示的问题，保留真正失败时的错误提示。
