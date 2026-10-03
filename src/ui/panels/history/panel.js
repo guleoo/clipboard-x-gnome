@@ -71,11 +71,7 @@ export class HistoryPanel {
           this._requestRefresh();
       },
       onFocusChanged: () => this._updateSearchStyle(),
-      onKeyPress: event => matchesShortcut(
-        this._settings,
-        'history-search-shortcut',
-        event,
-      ) ? Clutter.EVENT_STOP : Clutter.EVENT_PROPAGATE,
+      onKeyPress: event => this._handleSearchKey(event),
     });
     searchToolbar.add_child(this.searchEntry);
     this.toolbar = new St.BoxLayout({
@@ -304,6 +300,15 @@ export class HistoryPanel {
         global.stage.set_key_focus(this.searchEntry.clutter_text);
       return GLib.SOURCE_REMOVE;
     });
+  }
+
+  _handleSearchKey(event) {
+    if (matchesShortcut(this._settings, 'history-search-shortcut', event))
+      return Clutter.EVENT_STOP;
+    if ([Clutter.KEY_Right, Clutter.KEY_KP_Right].includes(event.get_key_symbol())
+        && this.searchEntry.atEnd)
+      return this._handlePanelKey(event);
+    return Clutter.EVENT_PROPAGATE;
   }
 
   resetSearch() {

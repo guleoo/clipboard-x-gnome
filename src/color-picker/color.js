@@ -29,6 +29,14 @@ export function sampleRegion(x, y, scale, textureWidth, textureHeight, radius = 
   };
 }
 
+// Coordinates are logical stage positions; movement is in screenshot pixel cells.
+export function moveSample(x, y, dx, dy, scale, textureWidth, textureHeight) {
+  return [
+    clamp(Math.round(x * scale) + dx, 0, textureWidth - 1) / scale,
+    clamp(Math.round(y * scale) + dy, 0, textureHeight - 1) / scale,
+  ];
+}
+
 export function formatColor(rgb, format = 'hex') {
   const normalized = rgb.map(value => clamp(Math.round(value), 0, 255));
   if (format === 'rgb')

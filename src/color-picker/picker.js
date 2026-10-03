@@ -6,7 +6,7 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {formatColor, sampleRegion} from './color.js';
+import {formatColor, moveSample, sampleRegion} from './color.js';
 import {diagnosticCode} from '../common/errors.js';
 
 const LENS_RADIUS = 5;
@@ -143,10 +143,10 @@ class ColorPicker extends St.Widget {
   async _sample(x, y) {
     if (!this._texture || this._closed)
       return;
-    this._pendingCoords = [
-      Math.min(Math.max(Math.round(x), 0), Math.max(0, global.stage.width - 1)),
-      Math.min(Math.max(Math.round(y), 0), Math.max(0, global.stage.height - 1)),
-    ];
+    this._pendingCoords = moveSample(
+      x, y, 0, 0, this._scale,
+      this._texture.get_width(), this._texture.get_height(),
+    );
     if (this._sampling)
       return;
 
@@ -259,10 +259,16 @@ class ColorPicker extends St.Widget {
       [Clutter.KEY_j, [0, 1]],
     ]);
     if (directions.has(key)) {
+      if (!this._texture)
+        return Clutter.EVENT_STOP;
       const [dx, dy] = directions.get(key);
       const multiplier = event.get_state() & Clutter.ModifierType.CONTROL_MASK ? 8 : 1;
-      const [x, y] = this._coords;
-      this._sample(x + dx * multiplier, y + dy * multiplier)
+      const [x, y] = this._pendingCoords ?? this._coords;
+      const coords = moveSample(
+        x, y, dx * multiplier, dy * multiplier, this._scale,
+        this._texture.get_width(), this._texture.get_height(),
+      );
+      this._sample(...coords)
         .catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
       return Clutter.EVENT_STOP;
     }

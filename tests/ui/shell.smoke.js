@@ -828,14 +828,17 @@ export async function run() {
   assert(extensionObject._colorPicker._rgb?.length === 3, 'Color picker did not sample the stage texture');
   const pickedColor = extensionObject._colorPicker;
   const [pickerX, pickerY] = pickedColor._coords;
-  const movementKey = pickerX < global.stage.width - 1 ? Clutter.KEY_Right : Clutter.KEY_Left;
+  const pixelX = Math.round(pickerX * pickedColor._scale);
+  const movementKey = pixelX < pickedColor._texture.get_width() - 1
+    ? Clutter.KEY_Right : Clutter.KEY_Left;
   pickedColor.vfunc_key_press_event({
     get_key_symbol: () => movementKey,
     get_state: () => 0,
   });
   await Scripting.sleep(100);
-  assert(Math.abs(pickedColor._coords[0] - pickerX) === 1 && pickedColor._coords[1] === pickerY,
-    'Color picker keyboard movement did not advance by one logical pixel');
+  assert(Math.abs(Math.round(pickedColor._coords[0] * pickedColor._scale) - pixelX) === 1
+      && pickedColor._coords[1] === pickerY,
+    'Color picker keyboard movement did not advance by one screenshot pixel cell');
   pickedColor._onPicked(pickedColor._rgb);
   pickedColor.close();
   await Scripting.sleep(300);
