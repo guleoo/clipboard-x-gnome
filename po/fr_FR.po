@@ -1254,3 +1254,15 @@ msgstr "Prendre une capture d’écran"
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr ""
 #~ "Mots séparés par des virgules ; les mots personnalisés sont prioritaires"
+
+msgid "Use sha256sum for file verification"
+msgstr "Utiliser sha256sum pour vérifier les fichiers"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Réduit l’utilisation de la mémoire lors du téléchargement de fichiers volumineux ; nécessite sha256sum et relit chaque fichier téléchargé."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Installez sha256sum (généralement fourni par coreutils) pour activer la vérification externe des fichiers."
+
+msgid "File verification with sha256sum failed"
+msgstr "La vérification du fichier avec sha256sum a échoué"

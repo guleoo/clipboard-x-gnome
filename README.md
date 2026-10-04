@@ -187,6 +187,13 @@ longer intervals reduce server requests but delay incoming items. To stop record
 choose it from **Preferences → Clipboard → Privacy → Running application** or enter its window class under
 **Excluded applications**.
 
+**Preferences → Synchronization → Use sha256sum for file verification** is off by default.
+Enable it to use native streaming and `sha256sum` for lower-memory large-file downloads.
+The switch checks the dependency before enabling; install the package providing `sha256sum`
+(usually `coreutils`) if prompted. Verification reads the downloaded file again; missing or failed
+verification never bypasses the integrity check. With the switch off, the existing GLib verification
+requires no additional command but can have higher peak memory use for large files.
+
 Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends both credentials and content
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
 

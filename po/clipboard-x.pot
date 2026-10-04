@@ -1160,3 +1160,19 @@ msgstr ""
 #: src/ui/settings/window.js:453
 msgid "Take screenshot"
 msgstr ""
+
+#: src/ui/settings/file-verification.js
+msgid "Use sha256sum for file verification"
+msgstr ""
+
+#: src/ui/settings/file-verification.js
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr ""
+
+#: src/sync/errors.js
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr ""
+
+#: src/sync/errors.js
+msgid "File verification with sha256sum failed"
+msgstr ""

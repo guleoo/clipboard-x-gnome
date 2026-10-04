@@ -1254,3 +1254,15 @@ msgstr "Λήψη στιγμιοτύπου οθόνης"
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr ""
 #~ "Λέξεις χωρισμένες με κόμματα· οι προσαρμοσμένες λέξεις έχουν προτεραιότητα"
+
+msgid "Use sha256sum for file verification"
+msgstr "Χρήση του sha256sum για επαλήθευση αρχείων"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Μειώνει τη χρήση μνήμης κατά τη λήψη μεγάλων αρχείων· απαιτεί το sha256sum και διαβάζει ξανά κάθε ληφθέν αρχείο."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Εγκαταστήστε το sha256sum (συνήθως παρέχεται από το coreutils) για να ενεργοποιήσετε την εξωτερική επαλήθευση αρχείων."
+
+msgid "File verification with sha256sum failed"
+msgstr "Η επαλήθευση του αρχείου με το sha256sum απέτυχε"

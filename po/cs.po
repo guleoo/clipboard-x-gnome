@@ -1233,3 +1233,15 @@ msgstr "Pořídit snímek obrazovky"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Slova oddělená čárkami; vlastní slova mají přednost"
+
+msgid "Use sha256sum for file verification"
+msgstr "Používat sha256sum k ověřování souborů"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Snižuje využití paměti při stahování velkých souborů; vyžaduje sha256sum a znovu čte každý stažený soubor."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Nainstalujte sha256sum (obvykle součást coreutils), abyste povolili externí ověřování souborů."
+
+msgid "File verification with sha256sum failed"
+msgstr "Ověření souboru pomocí sha256sum selhalo"

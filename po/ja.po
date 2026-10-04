@@ -1228,3 +1228,15 @@ msgstr "スクリーンショットを撮る"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "カンマ区切りの単語。カスタム単語を優先します"
+
+msgid "Use sha256sum for file verification"
+msgstr "ファイルの検証に sha256sum を使用する"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "大きなファイルのダウンロード時のメモリ使用量を削減します。sha256sum が必要で、ダウンロードした各ファイルを再度読み込みます。"
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "外部ツールによるファイル検証を有効にするには、sha256sum（通常は coreutils に含まれます）をインストールしてください。"
+
+msgid "File verification with sha256sum failed"
+msgstr "sha256sum によるファイルの検証に失敗しました"

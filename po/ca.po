@@ -1251,3 +1251,15 @@ msgstr "Fes una captura de pantalla"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Paraules separades per comes; les personalitzades tenen prioritat"
+
+msgid "Use sha256sum for file verification"
+msgstr "Utilitza sha256sum per verificar els fitxers"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Redueix l'ús de memòria en les baixades de fitxers grans; requereix sha256sum i torna a llegir cada fitxer baixat."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Instal·leu sha256sum (normalment inclòs a coreutils) per habilitar la verificació externa de fitxers."
+
+msgid "File verification with sha256sum failed"
+msgstr "Ha fallat la verificació del fitxer amb sha256sum"

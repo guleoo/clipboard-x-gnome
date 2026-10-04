@@ -100,7 +100,14 @@ test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'test
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
 test('sync-protocol-ownership', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol-ownership.test.js'])
 test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])
+test('sync-file-verifier', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/file-verifier.test.js'])
+test('file-verification-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/file-verification.test.js'])
+test('sync-http-failures', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/sync/http-failures.test.js'],
+  env: {'CBX_TEST_PYTHON': find_program('python3').full_path()},
+  timeout: 30)
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
+test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
 test(
   'sync-stress',
@@ -115,6 +122,8 @@ test(
   args: ['-m', meson.current_source_dir() / 'tests/sync/stream-stress.test.js'],
   timeout: 60,
   suite: 'stress',
+  env: {'CBX_TEST_PYTHON': find_program('python3').full_path()},
+  is_parallel: false,
 )
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/dictionary.test.js'])

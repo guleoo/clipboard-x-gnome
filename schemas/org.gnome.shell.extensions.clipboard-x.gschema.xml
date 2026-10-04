@@ -251,6 +251,10 @@
       <default>false</default>
       <summary>Enable synchronization</summary>
     </key>
+    <key name="sync-use-sha256sum" type="b">
+      <default>false</default>
+      <summary>Use sha256sum and native file streaming to verify downloaded content</summary>
+    </key>
     <key name="sync-poll-interval-seconds" type="u">
       <default>5</default>
       <range min="2" max="60"/>

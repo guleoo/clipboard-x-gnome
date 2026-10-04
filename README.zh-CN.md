@@ -172,6 +172,11 @@ flatpak run be.alexandervanhee.gradia %u
 4. 启动同步并测试连接。
 5. 保持默认的**手动**发送模式，通过条目同步按钮发送；或明确改为**自动**发送。
 
+**设置 → 同步 → 使用 sha256sum 校验文件**默认关闭。开启后使用原生流式下载和
+`sha256sum`，降低大文件下载的内存峰值。开启前会检查依赖；缺失时按提示安装提供
+`sha256sum` 的软件包（通常是 `coreutils`）。校验会再次读取下载的文件；依赖失效或校验失败
+不会跳过完整性检查。关闭时仍使用现有 GLib 校验，无需额外命令，但大文件内存峰值可能较高。
+
 服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`；
 各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。

@@ -1241,3 +1241,15 @@ msgstr "Egin pantaila-argazkia"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Komaz bereizitako hitzak; hitz pertsonalizatuek lehentasuna dute"
+
+msgid "Use sha256sum for file verification"
+msgstr "Erabili sha256sum fitxategiak egiaztatzeko"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Fitxategi handiak deskargatzean memoria gutxiago erabiltzen du; sha256sum behar du eta deskargatutako fitxategi bakoitza berriro irakurtzen du."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Instalatu sha256sum (normalean coreutils-ek ematen du) fitxategien kanpoko egiaztapena gaitzeko."
+
+msgid "File verification with sha256sum failed"
+msgstr "Fitxategia sha256sum bidez egiaztatzeak huts egin du"

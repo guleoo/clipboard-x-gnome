@@ -300,6 +300,27 @@ try {
     'completed server progress must replace local streaming progress');
   assert(client._remoteTransferIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
+  const verificationModes = [];
+  transport.downloadContent = async (_channelId, _itemId, _contentId, _targetPath, options) => {
+    verificationModes.push(options.useSha256sum);
+    options.onProgress(item.primary.size);
+    if (options.useSha256sum) {
+      options.onVerifying();
+      assert(client.getTransferForItem(_itemId).state === 'verifying',
+        'external hashing must expose the verifying transfer state');
+    }
+    return {path, size: item.primary.size, sha256: item.primary.sha256};
+  };
+  const firstDownload = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
+  const secondDownload = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
+  await client._downloadRepresentation(channelId, firstDownload, firstDownload.primary);
+  settings._values.set('sync-use-sha256sum', true);
+  await client._downloadRepresentation(channelId, secondDownload, secondDownload.primary);
+  settings._values.set('sync-use-sha256sum', false);
+  assert(verificationModes.join() === 'false,true',
+    'each download must use the current verification option without restarting the connection');
+  assert(client.getTransferForItem(secondDownload.id).state === 'completed',
+    'verified downloads must finish only after the hashing operation completes');
   const sensitive = ClipboardItem.fromText('local sensitive content', {
     originDeviceId: deviceId,
     sensitive: true,

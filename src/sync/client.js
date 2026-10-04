@@ -512,12 +512,19 @@ export class SyncClient extends EventEmitter {
           expectedBytes: representation.size,
           expectedSha256: representation.sha256,
           mimeType: representation.mimeType,
+          useSha256sum: this._settings.get_boolean('sync-use-sha256sum'),
           cancellable,
           onProgress: completedBytes => this._recordTransfer({
             ...transfer,
             completedBytes,
             updatedAt: Date.now(),
           }),
+          onVerifying: () => this._recordTransfer({
+            ...transfer,
+            state: 'verifying',
+            completedBytes: representation.size,
+            updatedAt: Date.now(),
+          }, true),
         },
       );
       representation.path = result.path;

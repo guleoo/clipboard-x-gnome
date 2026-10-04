@@ -1242,3 +1242,15 @@ msgstr "Ota kuvankaappaus"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Pilkuilla erotetut sanat; mukautetut sanat ovat etusijalla"
+
+msgid "Use sha256sum for file verification"
+msgstr "Käytä sha256sum-ohjelmaa tiedostojen tarkistamiseen"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Vähentää muistinkäyttöä suuria tiedostoja ladattaessa; vaatii sha256sum-ohjelman ja lukee jokaisen ladatun tiedoston uudelleen."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Asenna sha256sum (sisältyy yleensä coreutils-pakettiin) ottaaksesi ulkoisen tiedostojen tarkistuksen käyttöön."
+
+msgid "File verification with sha256sum failed"
+msgstr "Tiedoston tarkistus sha256sum-ohjelmalla epäonnistui"

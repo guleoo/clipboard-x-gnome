@@ -1225,3 +1225,15 @@ msgstr "ತೆರೆಚಿತ್ರ ತೆಗೆದುಕೊಳ್ಳಿ"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಪದಗಳು; ಕಸ್ಟಮ್ ಪದಗಳಿಗೆ ಆದ್ಯತೆ"
+
+msgid "Use sha256sum for file verification"
+msgstr "ಕಡತಗಳ ಪರಿಶೀಲನೆಗೆ sha256sum ಬಳಸಿ"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "ದೊಡ್ಡ ಕಡತಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡುವಾಗ ಮೆಮೊರಿ ಬಳಕೆಯನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತದೆ; sha256sum ಅಗತ್ಯವಿದೆ ಮತ್ತು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಪ್ರತಿ ಕಡತವನ್ನು ಮತ್ತೆ ಓದುತ್ತದೆ."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "ಬಾಹ್ಯ ಕಡತ ಪರಿಶೀಲನೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು sha256sum ಅನ್ನು ಸ್ಥಾಪಿಸಿ (ಸಾಮಾನ್ಯವಾಗಿ coreutils ಜೊತೆ ಲಭ್ಯವಿರುತ್ತದೆ)."
+
+msgid "File verification with sha256sum failed"
+msgstr "sha256sum ಬಳಸಿ ಕಡತ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ"

@@ -1371,3 +1371,15 @@ msgstr "截图"
 
 #~ msgid "Waiting for source"
 #~ msgstr "等待源设备"
+
+msgid "Use sha256sum for file verification"
+msgstr "使用 sha256sum 校验文件"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "降低大文件下载的内存占用；需要 sha256sum，并会再次读取下载的文件。"
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "请安装 sha256sum（通常由 coreutils 提供），然后再启用外部文件校验。"
+
+msgid "File verification with sha256sum failed"
+msgstr "使用 sha256sum 校验文件失败"

@@ -12,6 +12,7 @@ import {create as createRunningAppsRow} from './running-apps.js';
 import {restore as restoreDefaults} from './defaults.js';
 import {deviceIcon} from '../icons/device.js';
 import {create as createSyncGroup} from './sync.js';
+import {create as createFileVerificationRow} from './file-verification.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
@@ -339,6 +340,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const pollInterval = this._rows.spin('sync-poll-interval-seconds', _('Polling interval'), 2, 60, 1, _('seconds'));
     pollInterval.subtitle = _('Seconds between checks; longer intervals reduce requests but delay updates.');
     policy.add(pollInterval);
+    policy.add(createFileVerificationRow(settings, _));
     return page;
   }
 

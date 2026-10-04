@@ -1240,3 +1240,15 @@ msgstr "Сделать снимок экрана"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Слова через запятую; пользовательские слова имеют приоритет"
+
+msgid "Use sha256sum for file verification"
+msgstr "Использовать sha256sum для проверки файлов"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Снижает потребление памяти при скачивании больших файлов; требует sha256sum и повторно читает каждый скачанный файл."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Установите sha256sum (обычно входит в coreutils), чтобы включить внешнюю проверку файлов."
+
+msgid "File verification with sha256sum failed"
+msgstr "Не удалось проверить файл с помощью sha256sum"

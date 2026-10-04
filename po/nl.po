@@ -1247,3 +1247,15 @@ msgstr "Schermafdruk maken"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Komma-gescheiden woorden; aangepaste woorden krijgen voorrang"
+
+msgid "Use sha256sum for file verification"
+msgstr "sha256sum gebruiken voor bestandsverificatie"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Vermindert het geheugengebruik bij het downloaden van grote bestanden; vereist sha256sum en leest elk gedownload bestand opnieuw."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Installeer sha256sum (doorgaans onderdeel van coreutils) om externe bestandsverificatie in te schakelen."
+
+msgid "File verification with sha256sum failed"
+msgstr "Bestandsverificatie met sha256sum is mislukt"

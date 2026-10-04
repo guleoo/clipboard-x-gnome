@@ -1229,3 +1229,15 @@ msgstr "گرفتن نماگرفت"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "واژه‌ها با ویرگول جدا شوند؛ واژه‌های سفارشی اولویت دارند"
+
+msgid "Use sha256sum for file verification"
+msgstr "استفاده از sha256sum برای بررسی صحت پرونده‌ها"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "مصرف حافظه را هنگام بارگیری پرونده‌های بزرگ کاهش می‌دهد؛ به sha256sum نیاز دارد و هر پروندهٔ بارگیری‌شده را دوباره می‌خواند."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "برای فعال کردن بررسی خارجی صحت پرونده‌ها، sha256sum را نصب کنید (معمولاً در coreutils ارائه می‌شود)."
+
+msgid "File verification with sha256sum failed"
+msgstr "بررسی صحت پرونده با sha256sum شکست خورد"

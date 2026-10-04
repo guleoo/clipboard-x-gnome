@@ -14,6 +14,10 @@ export function message(error, _) {
     return _('Sensitive content');
   case 'server_unavailable':
     return _('Synchronization server is unavailable');
+  case 'file_verifier_unavailable':
+    return _('Install sha256sum (usually provided by coreutils) to enable external file verification.');
+  case 'file_verification_failed':
+    return _('File verification with sha256sum failed');
   case 'channel_required':
     return _('No active synchronization channel is configured');
   case 'invalid_server_address':
