@@ -19,7 +19,8 @@ journalctl --user -b -f -o cat --grep='Clipboard X '
 如果桌面会话日志不在用户 journal 中，去掉 `--user` 再查询。日志访问权限取决于发行版的
 设置，插件本身不需要 `sudo`。
 
-插件生成的诊断消息统一以 `Clipboard X ` 开头，使用普通文本：
+插件和开发脚本的诊断日志统一使用英文，不随界面语言变化；GNOME 和其他工具仍保留其自身的
+输出语言。插件生成的诊断消息统一以 `Clipboard X ` 开头，使用普通文本：
 
 ```text
 Clipboard X [INFO] sync initialize completed · 187 ms

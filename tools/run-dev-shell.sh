@@ -7,7 +7,7 @@ for argument in "$@"; do
     --verbose) dev_verbose=1 ;;
     --help|-h)
       printf '%s\n' 'Usage: tools/run-dev-shell.sh [--verbose]' \
-        '默认显示构建摘要、插件日志和系统异常；--verbose 显示全部原始输出。'
+        'Shows build summaries, plugin logs and system warnings/errors; --verbose shows all raw output.'
       exit 0
       ;;
     *) printf 'Unknown option: %s\n' "$argument" >&2; exit 2 ;;
@@ -18,7 +18,7 @@ extension_uuid='clipboard-x@guleoo.github.io'
 
 if [[ "${CLIPBOARD_X_DEV_SESSION:-0}" == '1' ]]; then
   if [[ -z "${CLIPBOARD_X_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_DEV_ROOT/config" ]]; then
-    printf '%s\n' 'Clipboard X [ERROR] 拒绝在未隔离的配置目录中启动 Devkit。' >&2
+    printf '%s\n' 'Clipboard X [ERROR] Refusing to start Devkit without an isolated configuration directory.' >&2
     exit 1
   fi
   gsettings set org.gnome.shell disable-user-extensions false
@@ -41,7 +41,7 @@ format_output() {
     return 0
   else
     dev_formatter_status=$?
-    printf '[WARN] 日志显示过滤失败 · exit %s；切换为原始输出。\n' "$dev_formatter_status" >&2
+    printf '[WARN] Log filtering failed · exit %s; switching to raw output.\n' "$dev_formatter_status" >&2
     # This shell keeps the input pipe open while awk exits; cat drains the rest.
     cat || return
     return "$dev_formatter_status"
@@ -50,14 +50,14 @@ format_output() {
 
 report_exit() {
   if [[ "$1" != '0' && "$1" != '130' && "$1" != '143' ]]; then
-    printf '[ERROR] 开发会话退出 · exit %s；完整输出见 journal 或 --verbose。\n' "$1" >&2
+    printf '[ERROR] Development session exited · exit %s; see journal or --verbose for full output.\n' "$1" >&2
   fi
 }
 
 if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
   if command -v systemd-cat >/dev/null 2>&1 && command -v tee >/dev/null 2>&1; then
-    printf '%s\n' 'Clipboard X Devkit 日志同时显示在终端并写入系统 journal。' \
-      "查看：journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
+    printf '%s\n' 'Clipboard X Devkit logs are displayed in the terminal and saved to the system journal.' \
+      "View: journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
     exec {dev_journal_fd}> >(systemd-cat --identifier=clipboard-x-devkit --priority=info)
     dev_journal_pid=$!
     trap 'exec {dev_journal_fd}>&-; kill "$dev_journal_pid" 2>/dev/null || true; wait "$dev_journal_pid" 2>/dev/null || true' EXIT
@@ -82,13 +82,13 @@ if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
     fi
     exec {dev_journal_fd}>&-
     if ! wait "$dev_journal_pid"; then
-      printf '%s\n' 'journal 转发失败；会话输出仍显示在终端。' >&2
+      printf '%s\n' 'Journal forwarding failed; session output is still available in the terminal.' >&2
     fi
     trap - EXIT INT TERM
     report_exit "$dev_session_status"
     exit "$dev_session_status"
   fi
-  printf '%s\n' '未找到 systemd-cat 或 tee；构建和会话输出仅显示在终端，不额外保存日志文件。' >&2
+  printf '%s\n' 'systemd-cat or tee not found; build and session output is only displayed in the terminal. No log files are created.' >&2
   if env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path" "$@" 2>&1 \
     | format_output; then
     exit 0
@@ -104,7 +104,7 @@ if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
 fi
 
 if [[ ! -x /usr/lib/mutter-devkit ]]; then
-  printf '%s\n' 'Clipboard X [ERROR] 缺少 /usr/lib/mutter-devkit，请先安装 mutter-devkit。' >&2
+  printf '%s\n' 'Clipboard X [ERROR] /usr/lib/mutter-devkit not found; install mutter-devkit first.' >&2
   exit 1
 fi
 
@@ -118,12 +118,12 @@ build_extension() {
   meson install -C "$build_dir" || return
 }
 
-printf '%s\n' 'Clipboard X [BUILD] 构建与打包开始'
+printf '%s\n' 'Clipboard X [BUILD] Building and packaging extension'
 if build_extension; then
-  printf '%s\n' 'Clipboard X [BUILD] 构建与打包完成'
+  printf '%s\n' 'Clipboard X [BUILD] Build and packaging completed'
 else
   dev_build_status=$?
-  printf 'Clipboard X [ERROR] 构建失败 · exit %s；完整输出见 journal 或 --verbose\n' "$dev_build_status" >&2
+  printf 'Clipboard X [ERROR] Build failed · exit %s; see journal or --verbose for full output.\n' "$dev_build_status" >&2
   exit "$dev_build_status"
 fi
 
@@ -135,15 +135,15 @@ mkdir -p \
   "$extension_parent"
 
 if [[ -e "$extension_link" && ! -L "$extension_link" ]]; then
-  printf 'Clipboard X [ERROR] 隔离扩展路径已存在且不是符号链接：%s\n' "$extension_link" >&2
+  printf 'Clipboard X [ERROR] Isolated extension path already exists and is not a symlink: %s\n' "$extension_link" >&2
   exit 1
 fi
 
 ln -sfn "$extension_build" "$extension_link"
 
-printf 'Clipboard X Devkit 构建：%s\n' "$extension_build"
-printf 'Clipboard X Devkit 配置：%s\n' "$dev_root"
-printf '%s\n' 'Clipboard X [INFO] devkit 启动开发会话'
+printf 'Clipboard X Devkit build: %s\n' "$extension_build"
+printf 'Clipboard X Devkit configuration: %s\n' "$dev_root"
+printf '%s\n' 'Clipboard X [INFO] devkit Starting development session'
 
 exec env \
   CLIPBOARD_X_DEV_SESSION=1 \

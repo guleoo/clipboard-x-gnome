@@ -89,7 +89,7 @@ exit "${TEST_SESSION_EXIT:-0}"
         self.assertTrue(any(line.startswith("settings:set org.gnome.shell enabled-extensions") for line in lines))
         self.assertEqual(lines[-1], "shell:--devkit")
         self.assertIn("journalctl --user", result.stdout)
-        self.assertIn("[BUILD] 构建与打包完成", result.stdout)
+        self.assertIn("[BUILD] Build and packaging completed", result.stdout)
         self.assertIn("[INFO] extension enable", result.stdout)
         self.assertNotIn("GNOME Shell-Message", result.stdout)
         self.assertNotIn("Installing", result.stdout)
@@ -100,7 +100,9 @@ exit "${TEST_SESSION_EXIT:-0}"
         self.assertEqual(journal_text.count("build output"), 3)
         for message in ["session stdout", "session stderr", "Clipboard X [INFO] extension enable"]:
             self.assertEqual(journal_text.count(message), 1)
-        self.assertNotIn("日志同时显示", journal_text)
+        self.assertNotIn("logs are displayed", journal_text)
+        self.assertNotRegex(result.stdout + result.stderr + journal_text, r"[\u3400-\u9fff]",
+                            "development diagnostics must use English regardless of the system locale")
         self.assert_process_gone(self.root / "journal.pid")
         self.assertFalse((self.root / "build with spaces/logs").exists())
 
@@ -110,21 +112,21 @@ exit "${TEST_SESSION_EXIT:-0}"
                 self.trace.unlink(missing_ok=True)
                 result = self.run_script(TEST_BUILD_EXIT="37", TEST_FAIL_STAGE=stage)
                 self.assertEqual(result.returncode, 37)
-                self.assertIn("[ERROR] 构建失败", result.stdout)
+                self.assertIn("[ERROR] Build failed", result.stdout)
                 self.assertNotIn("shell:", self.trace.read_text())
-                self.assertNotIn("构建与打包完成", result.stdout)
+                self.assertNotIn("Build and packaging completed", result.stdout)
 
     def test_session_failure_keeps_exit_status(self):
         result = self.run_script(TEST_SESSION_EXIT="29")
         self.assertEqual(result.returncode, 29)
-        self.assertIn("[ERROR] 开发会话退出 · exit 29", result.stderr)
+        self.assertIn("[ERROR] Development session exited · exit 29", result.stderr)
 
     def test_isolation_path_conflict_is_visible(self):
         extension = self.root / "runtime/clipboard-x-devkit/data/gnome-shell/extensions/clipboard-x@guleoo.github.io"
         extension.mkdir(parents=True)
         result = self.run_script()
         self.assertEqual(result.returncode, 1)
-        self.assertIn("[ERROR] 隔离扩展路径已存在", result.stdout)
+        self.assertIn("[ERROR] Isolated extension path already exists", result.stdout)
         self.assertNotIn("shell:", self.trace.read_text())
 
     def test_interrupt_keeps_signal_status(self):
@@ -150,7 +152,7 @@ exit "${TEST_SESSION_EXIT:-0}"
         result = self.run_script(TEST_JOURNAL_FAIL="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("[INFO] extension enable", result.stdout)
-        self.assertIn("journal 转发失败", result.stderr)
+        self.assertIn("Journal forwarding failed", result.stderr)
         self.assert_process_gone(self.root / "journal.pid")
 
     def test_gjs_console_reaches_terminal_and_journal_once(self):
@@ -180,7 +182,7 @@ console.error("Clipboard X [ERROR] {marker}-error");'
 """)
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertNotIn("journal 转发失败", result.stderr)
+        self.assertNotIn("Journal forwarding failed", result.stderr)
         deadline = time.monotonic() + 3
         while True:
             query = subprocess.run(["journalctl", "--user", "-b", "-o", "cat",
@@ -254,7 +256,7 @@ printf '(gnome-shell:123): Gjs-CRITICAL: Object St.BoxLayout (0x456), has been a
         self.executable(self.bin / "awk", "exit 19\n")
         result = self.run_script()
         self.assertEqual(result.returncode, 19)
-        self.assertIn("切换为原始输出", result.stderr)
+        self.assertIn("switching to raw output", result.stderr)
         self.assertIn("session stdout", result.stdout)
         self.assert_process_gone(self.root / "journal.pid")
 
@@ -283,7 +285,7 @@ printf '(gnome-shell:123): Gjs-CRITICAL: Object St.BoxLayout (0x456), has been a
             os.kill(int(shell_pid.read_text()), signal.SIGTERM)
             stdout, stderr = process.communicate(timeout=5)
             self.assertEqual(process.returncode, 143)
-            self.assertIn("切换为原始输出", stderr)
+            self.assertIn("switching to raw output", stderr)
             self.assertIn("session stdout", live_output + stdout)
             self.assert_process_gone(shell_pid)
             self.assert_process_gone(self.root / "journal.pid")

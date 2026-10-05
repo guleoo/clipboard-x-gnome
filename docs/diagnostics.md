@@ -20,7 +20,9 @@ journalctl --user -b -f -o cat --grep='Clipboard X '
 If the desktop session's messages are not in the user journal, run the same command without `--user`.
 Journal access depends on your distribution's permissions. No `sudo` is needed by the extension.
 
-Every extension-generated diagnostic message starts with `Clipboard X ` and uses plain text:
+Plugin and development-script diagnostics use English regardless of the interface language;
+GNOME and other tools keep their own output language. Every extension-generated diagnostic message
+starts with `Clipboard X ` and uses plain text:
 
 ```text
 Clipboard X [INFO] sync initialize completed · 187 ms
