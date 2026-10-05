@@ -42,21 +42,31 @@ remain translated and intentionally brief; journal diagnostics provide the techn
 ## Development sessions
 
 `tools/run-dev-shell.sh` uses `systemd-cat`, when available, to route build output and the isolated
-Devkit session's stdout/stderr into the system journal under `clipboard-x-devkit`. After the initial
-instructions, the launching terminal no longer displays live child-process output. In another terminal:
+Devkit session's stdout/stderr into the system journal under `clipboard-x-devkit`. The same output is
+also displayed live in the launching terminal; no extra terminal or journal follower is needed.
+The script combines stdout and stderr, then uses `tee` to display and forward the stream once.
+With stderr connected to a regular pipe, the
+[GLib default log writer](https://docs.gtk.org/glib/func.log_writer_default.html) emits standard-stream
+output instead of writing directly to journald. This avoids forwarding the same GJS message twice.
+Both streams use journal priority `info`; the JSON `level` still identifies plugin warnings/errors.
+To view the saved stream separately:
 
 ```sh
 journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-shell)"
 ```
 
-The `+` combines the Devkit output with native Shell journal messages. GJS console messages can write
-directly to the journal without the Devkit tag: **do not use the tag alone to find plugin errors**.
+The `+` combines the Devkit output with native Shell journal messages. Host sessions and processes
+launched separately can write GJS messages directly to the journal without the Devkit tag:
+**do not use the tag alone to find all plugin errors**.
 Use the `Clipboard X ` filter above for the extension's own diagnostics. The full Shell query also
 includes the host Shell; PID and the `session` field help distinguish processes.
 
-The wrapper preserves build/session exit codes and signal handling; it does not create log files.
-Without `systemd-cat`, stdout/stderr remain in the terminal and a warning explains that those streams
-are not automatically retained. Standard GJS journal logging remains controlled by the platform.
+The wrapper preserves build/session exit codes and Ctrl+C, reaps its forwarding process on exit, and
+does not create log files. Terminal output belongs to this invocation; the script does not subscribe
+to other Shell processes' logs. A journal-forwarding failure produces a warning but leaves terminal
+output and the development session available. Without `systemd-cat` or `tee`, stdout/stderr remain in
+the terminal and a warning explains that those streams are not automatically retained. Native GJS
+logging follows the platform's output routing; it does not independently guarantee journal storage.
 
 ## Sharing a report
 

@@ -24,14 +24,36 @@ extension_link="$extension_parent/$extension_uuid"
 extension_build="$build_dir/$extension_uuid"
 
 if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
-  if command -v systemd-cat >/dev/null 2>&1; then
-    printf '%s\n' 'Clipboard X Devkit 日志写入系统 journal，不再在此终端实时输出。' \
+  if command -v systemd-cat >/dev/null 2>&1 && command -v tee >/dev/null 2>&1; then
+    printf '%s\n' 'Clipboard X Devkit 日志同时显示在终端并写入系统 journal。' \
       "查看：journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
-    exec env CLIPBOARD_X_DEV_JOURNAL=1 \
-      systemd-cat --identifier=clipboard-x-devkit --priority=info --stderr-priority=warning \
-      "$script_path"
+    exec {dev_journal_fd}> >(systemd-cat --identifier=clipboard-x-devkit --priority=info)
+    dev_journal_pid=$!
+    trap 'exec {dev_journal_fd}>&-; kill "$dev_journal_pid" 2>/dev/null || true; wait "$dev_journal_pid" 2>/dev/null || true' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    # The worker sees a regular pipe, so GLib writes to stderr rather than directly
+    # to journald. tee forwards that output once, while keeping the terminal live.
+    if (
+      exec {dev_journal_fd}>&-
+      exec env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path"
+    ) 2>&1 | tee --output-error=warn-nopipe "/dev/fd/$dev_journal_fd"; then
+      dev_session_status=0
+    else
+      dev_pipeline_status=("${PIPESTATUS[@]}")
+      dev_session_status=${dev_pipeline_status[0]}
+      if [[ "$dev_session_status" == '0' ]]; then
+        dev_session_status=${dev_pipeline_status[1]}
+      fi
+    fi
+    exec {dev_journal_fd}>&-
+    if ! wait "$dev_journal_pid"; then
+      printf '%s\n' 'journal 转发失败；会话输出仍显示在终端。' >&2
+    fi
+    trap - EXIT INT TERM
+    exit "$dev_session_status"
   fi
-  printf '%s\n' '未找到 systemd-cat；构建和会话输出仅显示在终端，不额外保存日志文件。' >&2
+  printf '%s\n' '未找到 systemd-cat 或 tee；构建和会话输出仅显示在终端，不额外保存日志文件。' >&2
 fi
 
 if [[ ! -x /usr/lib/mutter-devkit ]]; then

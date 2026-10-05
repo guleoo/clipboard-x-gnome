@@ -42,20 +42,28 @@ journal 中查看。
 ## 开发会话
 
 `tools/run-dev-shell.sh` 在存在 `systemd-cat` 时，将构建输出及独立 Devkit 会话的标准输出、
-标准错误接入系统 journal，标识为 `clipboard-x-devkit`。显示启动说明后，当前终端不再
-实时输出子进程日志；可以另开终端查看：
+标准错误接入系统 journal，标识为 `clipboard-x-devkit`，同时在启动终端实时显示，不需要
+额外打开终端或启动 journal 跟随器。脚本合并标准输出和标准错误，通过 `tee` 显示并转发
+一次。标准错误接到普通管道时，[GLib 默认日志写入器](https://docs.gtk.org/glib/func.log_writer_default.html)
+会输出到标准流，而不是直接写 journald，因此不会把同一条 GJS 消息重复转发。
+合并流统一使用 journal 的 `info` 优先级，插件 JSON 中的 `level` 仍区分警告与错误。
+如果需要单独查看已保存的输出，可以运行：
 
 ```sh
 journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-shell)"
 ```
 
-`+` 将 Devkit 输出与 Shell 原生 journal 消息合并查询。GJS console 消息可能直接写 journal，
-不携带 Devkit 标识，**不能仅按这个标识查找插件报错**。查看插件自身的诊断时，使用上面的
+`+` 将 Devkit 输出与 Shell 原生 journal 消息合并查询。宿主会话及独立启动的进程，其 GJS
+消息可能直接写 journal，不携带 Devkit 标识，**不能仅按这个标识查找所有插件报错**。
+查看插件自身的诊断时，使用上面的
 `Clipboard X ` 筛选即可。完整 Shell 查询也会包含宿主 Shell，可以用 PID 和 `session`
 区分不同进程。
 
-包装保留构建、会话退出码与信号处理方式，不创建日志文件。没有 `systemd-cat` 时，输出仍
-显示在终端，脚本会说明这些输出没有自动留存；标准 GJS journal 日志仍由平台负责。
+包装保留构建、会话退出码和 Ctrl+C 行为，退出时回收转发进程，不创建日志文件。
+终端显示的是本次启动的输出，脚本不订阅其他 Shell 进程的日志。journal 转发失败时会给出
+警告，但终端输出和开发会话仍可继续。没有 `systemd-cat` 或 `tee` 时，输出仍显示在终端，
+脚本会说明这些输出没有自动留存。原生 GJS 日志遵循平台的输出路由，本身不保证另外写入
+journal。
 
 ## 提交问题反馈
 
