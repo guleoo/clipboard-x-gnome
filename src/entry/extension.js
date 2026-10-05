@@ -11,7 +11,7 @@ import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
-import {diagnosticCode} from '../common/errors.js';
+import {createLogger} from '../common/logger.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
@@ -30,8 +30,11 @@ const SHORTCUT_KEYS = Object.freeze([
   'clear-history-shortcut',
 ]);
 
+const logger = createLogger('extension');
+
 export default class ClipboardXExtension extends Extension {
   enable() {
+    logger.info('enable');
     this._settings = this.getSettings();
     this._controller = new ClipboardController(this._settings);
     this._portal = new ScreenshotPortal();
@@ -80,7 +83,7 @@ export default class ClipboardXExtension extends Extension {
     try {
       this._runningAppsBridge.start();
     } catch (error) {
-      console.warn(`Clipboard X: running applications are unavailable (${diagnosticCode(error)})`);
+      logger.warn('running-applications', error);
       this._runningAppsBridge.stop();
     }
 
@@ -117,12 +120,14 @@ export default class ClipboardXExtension extends Extension {
       },
     );
 
-    this._controller.start().catch(error => this._reportError(error));
+    logger.run('initialize-clipboard', () => this._controller.start())
+      .catch(error => this._reportError(error));
     this._indicator.setSyncStatus('offline');
     this._sync.start().catch(error => this._reportError(error));
   }
 
   disable() {
+    logger.info('disable');
     this._runningAppsBridge?.stop();
     this._runningAppsBridge = null;
     this._unbindShortcuts();
@@ -327,8 +332,8 @@ export default class ClipboardXExtension extends Extension {
           actions[key],
         );
         this._boundShortcuts.push(key);
-      } catch (_error) {
-        console.error(`Clipboard X: invalid ${key} was ignored`);
+      } catch (error) {
+        logger.warn('bind-shortcut', error);
       }
     }
     this._shortcutBound = this._boundShortcuts.length > 0;
@@ -344,9 +349,7 @@ export default class ClipboardXExtension extends Extension {
   _reportError(error) {
     if (error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
       return;
-    console.error(
-      `Clipboard X: operation failed (${diagnosticCode(error)}): ${error?.message ?? String(error)}`,
-    );
+    logger.error('operation', error);
     Main.notifyError(
       'Clipboard X',
       syncErrorMessage(error, _) || _('Operation failed'),

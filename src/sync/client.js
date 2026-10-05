@@ -11,6 +11,7 @@ import {devicePaths} from '../clipboard/history/paths.js';
 import {bytesFromString, sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {writeFile} from '../common/files.js';
+import {createLogger} from '../common/logger.js';
 import {isUuid} from '../common/uuid.js';
 import {configuration as publicConfiguration} from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
@@ -40,12 +41,14 @@ export class SyncClient extends EventEmitter {
     configurationStore = new SyncConfigurationStore(),
     transportFactory = (configuration, options) => new HttpTransport(configuration, options),
     sourceItem = () => null,
+    logger = createLogger('sync'),
   } = {}) {
     super();
     this._settings = settings;
     this._configurationStore = configurationStore;
     this._transportFactory = transportFactory;
     this._sourceItem = sourceItem;
+    this._logger = logger;
     this._settingsSignals = [];
     this._transport = null;
     this._cancellable = null;
@@ -122,11 +125,11 @@ export class SyncClient extends EventEmitter {
   publish(item) {
     if (item.sensitive)
       return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
-    return this._enqueueTransfer(() => this._publish(item));
+    return this._logger.run('publish', () => this._enqueueTransfer(() => this._publish(item)), {quiet: true});
   }
 
   materialize(item) {
-    return this._materialize(item);
+    return this._logger.run('materialize', () => this._materialize(item), {quiet: true});
   }
 
   async getChanges(cursor, options = {}) {
@@ -276,38 +279,46 @@ export class SyncClient extends EventEmitter {
   async _connect() {
     if (this._destroyed || !this._settings.get_boolean('sync-enabled'))
       return;
+    return this._logger.run('initialize', scope => this._initialize(scope));
+  }
+
+  async _initialize(scope) {
     const generation = ++this._generation;
-    this._storedConfiguration = await this._configurationStore.load();
+    this._storedConfiguration = await scope.step('configuration', () => this._configurationStore.load());
     this._applyPublicConfiguration();
     if (!this._storedConfiguration.serverAddress || !this._storedConfiguration.apiKey) {
       this._setStatus('offline', null, 'not-configured');
+      this._logger.info('not-configured');
       return;
     }
 
-    this._cancellable = new Gio.Cancellable();
-    const identity = ensureDeviceIdentity(this._settings);
-    this._transport = this._transportFactory(this._storedConfiguration, {
-      deviceId: identity.deviceId,
-      cancellable: this._cancellable,
+    const identity = scope.step('transport', () => {
+      this._cancellable = new Gio.Cancellable();
+      const value = ensureDeviceIdentity(this._settings);
+      this._transport = this._transportFactory(this._storedConfiguration, {
+        deviceId: value.deviceId,
+        cancellable: this._cancellable,
+      });
+      return value;
     });
     try {
-      this._capabilities = validateStatus(await this._transport.status());
+      this._capabilities = await scope.step('status', async () => validateStatus(await this._transport.status()));
       if (this._destroyed || generation !== this._generation)
         return;
       this._connected = true;
-      const currentDevice = validateDevice(await this._transport.device(), identity.deviceId);
+      const currentDevice = await scope.step('device', async () => validateDevice(await this._transport.device(), identity.deviceId));
       this._devices.set(currentDevice.deviceId, currentDevice);
-      await this._queueProfileUpdate(true);
-      await this.listChannels();
+      await scope.step('profile', () => this._queueProfileUpdate(true));
+      await scope.step('channels', () => this.listChannels());
       if (this._channels.length > 0
           && !this._channels.some(channel => channel.id === this._storedConfiguration.activeChannelId)) {
         this._storedConfiguration.activeChannelId = this._channels[0].id;
-        await this._saveConnection();
-        await this.listChannels();
+        await scope.step('channel-selection', () => this._saveConnection());
+        await scope.step('channels', () => this.listChannels());
       }
       this._applyPublicConfiguration();
-      await this.listTransfers();
-      await this._poll();
+      await scope.step('transfers', () => this.listTransfers());
+      await this._poll(scope);
       this._setStatus(this._capabilities.status, this._capabilities, 'online');
       this._schedulePoll();
     } catch (error) {
@@ -582,14 +593,20 @@ export class SyncClient extends EventEmitter {
     return [];
   }
 
-  async _poll() {
+  async _poll(scope = null) {
     if (this._polling || !this._connected || this._destroyed)
       return;
     this._polling = true;
     try {
-      await this._syncChanges();
-      await this._syncWork();
-      await this._refreshActiveTransfers();
+      const poll = async context => {
+        await context.step('changes', () => this._syncChanges());
+        await context.step('work', () => this._syncWork());
+        await context.step('transfer-refresh', () => this._refreshActiveTransfers());
+      };
+      if (scope)
+        await poll(scope);
+      else
+        await this._logger.run('poll', poll, {quiet: true});
       if (this._status?.state === 'error')
         this._setStatus(this._capabilities.status, this._capabilities, 'online');
     } finally {
@@ -907,7 +924,7 @@ export class SyncClient extends EventEmitter {
 
   _report(error) {
     if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-      console.error(`Clipboard X sync operation failed (code ${error.code ?? 'unknown'})`);
+      this._logger.error('background', error);
   }
 
   _resetRuntime(error) {

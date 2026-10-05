@@ -80,6 +80,8 @@ test('release-package', find_program('python3'), args: [meson.current_source_dir
 test('release-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_script.test.py'])
 test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
+test('logger', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/logger.test.js'])
+test('dev-shell-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/dev_shell_script.test.py'])
 test('running-apps', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/running-apps.test.js'])
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/device-icons.test.js'])

@@ -23,6 +23,17 @@ extension_parent="$dev_root/data/gnome-shell/extensions"
 extension_link="$extension_parent/$extension_uuid"
 extension_build="$build_dir/$extension_uuid"
 
+if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
+  if command -v systemd-cat >/dev/null 2>&1; then
+    printf '%s\n' 'Clipboard X Devkit 日志写入系统 journal，不再在此终端实时输出。' \
+      "查看：journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
+    exec env CLIPBOARD_X_DEV_JOURNAL=1 \
+      systemd-cat --identifier=clipboard-x-devkit --priority=info --stderr-priority=warning \
+      "$script_path"
+  fi
+  printf '%s\n' '未找到 systemd-cat；构建和会话输出仅显示在终端，不额外保存日志文件。' >&2
+fi
+
 if [[ ! -x /usr/lib/mutter-devkit ]]; then
   printf '%s\n' '缺少 /usr/lib/mutter-devkit，请先安装 mutter-devkit。' >&2
   exit 1

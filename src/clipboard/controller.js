@@ -14,11 +14,12 @@ import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
 import {sha256} from '../common/bytes.js';
-import {diagnosticCode} from '../common/errors.js';
+import {createLogger} from '../common/logger.js';
 import {loadFile, writeFile} from '../common/files.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 
 const CLIPBOARD = St.ClipboardType.CLIPBOARD;
+const logger = createLogger('clipboard');
 
 export class ClipboardController extends EventEmitter {
   constructor(settings) {
@@ -61,7 +62,7 @@ export class ClipboardController extends EventEmitter {
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
         this._error = error;
-        console.error(`Clipboard X: unable to load history (${diagnosticCode(error)})`);
+        logger.error('load-history', error);
       }
     } finally {
       this._loading = false;
@@ -80,7 +81,7 @@ export class ClipboardController extends EventEmitter {
             this._captureQueued = true;
             return;
           }
-          this.capture().catch(error => console.error(`Clipboard X: capture failed (${diagnosticCode(error)})`));
+          this.capture().catch(error => logger.error('capture', error));
         }
       },
     );
@@ -126,7 +127,7 @@ export class ClipboardController extends EventEmitter {
           bytes = await this._readSelectionContent(mimeType, this._captureLimitBytes());
         } catch (error) {
           if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-            console.warn(`Clipboard X: rejected ${normalizedMimeType} representation (${diagnosticCode(error)})`);
+            logger.warn('read-representation', error);
           continue;
         }
         if (!bytes || bytes.get_size() === 0)
@@ -165,7 +166,7 @@ export class ClipboardController extends EventEmitter {
       this._captureInProgress = false;
       if (this._captureQueued && !this._destroyed) {
         this._captureQueued = false;
-        this.capture().catch(error => console.error(`Clipboard X: queued capture failed (${diagnosticCode(error)})`));
+        this.capture().catch(error => logger.error('queued-capture', error));
       }
     }
   }
@@ -315,7 +316,7 @@ export class ClipboardController extends EventEmitter {
         derivedFrom: representation.id,
       };
     } catch (error) {
-      console.warn(`Clipboard X: thumbnail unavailable (${diagnosticCode(error)})`);
+      logger.warn('thumbnail', error);
     }
   }
 
@@ -416,7 +417,7 @@ export class ClipboardController extends EventEmitter {
     this._saveTimeout = setTimeout(() => {
       this._saveTimeout = 0;
       this._store.save(this._items, this._cancellable)
-        .catch(error => console.error(`Clipboard X: unable to save history (${diagnosticCode(error)})`));
+        .catch(error => logger.error('save-history', error));
     }, 150);
   }
 

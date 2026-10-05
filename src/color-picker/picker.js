@@ -7,10 +7,11 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {formatColor, moveSample, sampleRegion} from './color.js';
-import {diagnosticCode} from '../common/errors.js';
+import {createLogger} from '../common/logger.js';
 
 const LENS_RADIUS = 5;
 const LENS_CELL_SIZE = 10;
+const logger = createLogger('color-picker');
 
 const ColorLens = GObject.registerClass(
 class ColorLens extends St.DrawingArea {
@@ -124,7 +125,7 @@ class ColorPicker extends St.Widget {
     }
     this.grab_key_focus();
     this._initialize().catch(error => {
-      console.error(`Clipboard X color picker failed (${diagnosticCode(error)})`);
+      logger.error('pick', error);
       this.close();
     });
   }
@@ -223,7 +224,7 @@ class ColorPicker extends St.Widget {
 
   vfunc_motion_event(event) {
     const [x, y] = event.get_coords();
-    this._sample(x, y).catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
+    this._sample(x, y).catch(error => logger.error('sample', error));
     return Clutter.EVENT_STOP;
   }
 
@@ -269,7 +270,7 @@ class ColorPicker extends St.Widget {
         this._texture.get_width(), this._texture.get_height(),
       );
       this._sample(...coords)
-        .catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
+        .catch(error => logger.error('sample', error));
       return Clutter.EVENT_STOP;
     }
 

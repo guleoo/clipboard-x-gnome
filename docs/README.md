@@ -20,6 +20,7 @@ single bilingual file per version, with English followed by Simplified Chinese.
 
 ## Extension development
 
+- [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.
 - [UI development guide](ui-architecture.md): panels, controls, focus grids, lifecycle, and CSS conventions.
 - [Contributing](../CONTRIBUTING.md): build, test, layout, protocol changes, and code conventions.
 

@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {SyncClient} from '../../src/sync/client.js';
+import {createLogger} from '../../src/common/logger.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -423,3 +424,64 @@ try {
 }
 assert(retentionClient._remoteTransferIds.size === 0,
   'destroy must clear markers for still-active or unconfirmed remote tasks');
+
+// Exercise the actual initialization pipeline, not a synthetic list of stage names.
+for (const phase of ['configuration', 'transport', 'status', 'device', 'profile',
+  'channels', 'channel-selection', 'transfers', 'changes', 'work', 'transfer-refresh']) {
+  const records = [];
+  const localStore = new TestStore();
+  const localTransport = new TestTransport();
+  const failure = new Error('private clipboard and server response must not appear');
+  const fail = () => { throw failure; };
+  const methods = {status: 'status', device: 'device', profile: 'updateProfile',
+    channels: 'channels', transfers: 'transfers', changes: 'changes', work: 'work'};
+  if (phase === 'configuration')
+    localStore.load = fail;
+  else if (phase === 'channel-selection') {
+    localStore.value.activeChannelId = '';
+    localStore.saveConnection = fail;
+  } else if (methods[phase])
+    localTransport[methods[phase]] = fail;
+  const diagnosticClient = new SyncClient(new TestSettings(), {
+    configurationStore: localStore,
+    transportFactory: phase === 'transport' ? fail : () => localTransport,
+    logger: createLogger('sync', {sink: record => records.push(record)}),
+  });
+  if (phase === 'transfer-refresh')
+    diagnosticClient._refreshActiveTransfers = fail;
+  try {
+    let caught = null;
+    try { await diagnosticClient.start(); } catch (error) { caught = error; }
+    assert(caught === failure, `initialization must preserve the original ${phase} failure`);
+    const failed = records.filter(record => record.outcome === 'failed');
+    assert(failed.length === 1 && failed[0].phase === phase,
+      `initialization failure must identify the exact ${phase} stage once`);
+    assert(!JSON.stringify(records).includes(failure.message), 'initialization logs must omit raw error text');
+  } finally {
+    diagnosticClient.destroy();
+  }
+}
+
+const pollRecords = [];
+const pollClient = new SyncClient(new TestSettings(), {
+  configurationStore: new TestStore(), transportFactory: () => new TestTransport(),
+  logger: createLogger('sync', {sink: record => pollRecords.push(record)}),
+});
+try {
+  await pollClient.start();
+  pollRecords.length = 0;
+  await pollClient._poll();
+  assert(pollRecords.length === 0, 'healthy polling must remain silent');
+  for (const [phase, method] of [['changes', '_syncChanges'], ['work', '_syncWork'],
+    ['transfer-refresh', '_refreshActiveTransfers']]) {
+    const originalMethod = pollClient[method];
+    pollClient[method] = () => { throw new Error('poll failure'); };
+    try { await pollClient._poll(); } catch (_) {}
+    pollClient[method] = originalMethod;
+    assert(pollRecords.at(-1).operation === 'poll' && pollRecords.at(-1).phase === phase,
+      `background failures must retain their ${phase} stage`);
+    assert(!pollClient._polling, 'diagnostics must not leave polling locked after a failure');
+  }
+} finally {
+  pollClient.destroy();
+}

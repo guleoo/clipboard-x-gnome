@@ -1,7 +1,9 @@
 import GObject from 'gi://GObject';
 import St from 'gi://St';
+import {createLogger} from '../../common/logger.js';
 
 const DEFAULT_ICON_SIZE = 16;
+const logger = createLogger('ui');
 
 export const IconButton = GObject.registerClass(
 class IconButton extends St.Button {
@@ -12,7 +14,7 @@ class IconButton extends St.Button {
     selectable = false,
     onActivate = null,
     onKeyPress = null,
-    onError = logError,
+    onError = error => logger.error('icon-activate', error),
   } = {}) {
     super._init({
       can_focus: true,

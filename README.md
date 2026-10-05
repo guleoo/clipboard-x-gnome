@@ -242,6 +242,7 @@ tools/run-dev-shell.sh
 
 It builds and packages the extension, then starts it in an isolated Mutter Devkit session with separate
 XDG data and settings. The host desktop does not need to log out.
+Logs use the system journal; see [Logs and troubleshooting](docs/diagnostics.md) for the commands.
 
 Before submitting code:
 

@@ -218,6 +218,7 @@ tools/run-dev-shell.sh
 
 脚本会完成构建和打包，然后在独立的 Mutter Devkit 会话中启动扩展，使用隔离的 XDG 数据
 和设置，不需要注销宿主桌面。
+日志沿用系统 journal，查看命令见[日志与问题排查](docs/diagnostics_CN.md)。
 
 提交代码前运行：
 
