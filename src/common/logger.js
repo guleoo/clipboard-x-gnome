@@ -3,7 +3,6 @@ import GLib from 'gi://GLib';
 
 // Keep only bounded diagnostic metadata, never messages, arguments or response bodies.
 const failures = new WeakMap();
-const session = GLib.uuid_string_random();
 const sourceRoot = import.meta.url.slice(0, -'common/logger.js'.length);
 // A server can supply arbitrary error codes. Only known codes may reach diagnostics.
 const codes = new Set([
@@ -73,7 +72,19 @@ function cancelled(error) {
 }
 
 function defaultSink(record) {
-  const line = `Clipboard X ${JSON.stringify(record)}`;
+  let line = `Clipboard X [${record.level.toUpperCase()}] ${record.module} ${record.operation}`;
+  if (record.outcome)
+    line += ` ${record.outcome}`;
+  if (record.outcome === 'failed' && record.phase && record.phase !== 'begin')
+    line += ` at ${record.phase}`;
+  if (record.error)
+    line += ` · ${record.error.type}:${record.error.code}`;
+  if (Number.isFinite(record.durationMs))
+    line += ` · ${record.durationMs} ms`;
+  if (record.error?.frames.length)
+    line += ` · ${record.error.frames.slice(0, 3).join(' ← ')}`;
+  for (const cause of record.causes ?? [])
+    line += ` · caused by ${cause.type}:${cause.code}${cause.frames[0] ? ` at ${cause.frames[0]}` : ''}`;
   if (record.level === 'error')
     console.error(line);
   else if (record.level === 'warn')
@@ -84,14 +95,12 @@ function defaultSink(record) {
 
 export function createLogger(module, {
   sink = defaultSink,
-  now = () => new Date().toISOString(),
   monotonic = () => GLib.get_monotonic_time() / 1000,
-  identifier = () => GLib.uuid_string_random(),
 } = {}) {
   const write = (level, operation, fields = {}) => {
     // Diagnostics must not replace the application's error or abort its cleanup.
     try {
-      sink({time: now(), level, session, module: token(module, 'unknown'),
+      sink({level, module: token(module, 'unknown'),
         operation: token(operation, 'unknown'), ...fields});
     } catch (_) {
       // A broken console/log sink is deliberately non-fatal.
@@ -104,7 +113,7 @@ export function createLogger(module, {
     const isCancelled = cancelled(error);
     write(isCancelled ? 'info' : level, operation, {
       outcome: isCancelled ? 'cancelled' : 'failed',
-      ...(context ? {id: context.id, phase: context.phase, durationMs: context.durationMs} : {id: identifier()}),
+      ...(context ? {phase: context.phase, durationMs: context.durationMs} : {}),
       error: diagnostic(error),
       causes: causes(error),
     });
@@ -116,28 +125,23 @@ export function createLogger(module, {
     warn: (operation, error) => report('warn', operation, error),
     error: (operation, error) => report('error', operation, error),
     async run(operation, callback, {quiet = false} = {}) {
-      const id = identifier();
       const started = monotonic();
       let phase = 'begin';
-      if (!quiet)
-        write('info', operation, {id, phase, outcome: 'started'});
       const scope = {
         step(name, action) {
           phase = token(name, 'unknown');
-          if (!quiet)
-            write('info', operation, {id, phase, outcome: 'started'});
           return action();
         },
       };
       try {
         const result = await callback(scope);
         if (!quiet)
-          write('info', operation, {id, phase, outcome: 'completed',
+          write('info', operation, {outcome: 'completed',
             durationMs: Math.max(0, Math.round(monotonic() - started))});
         return result;
       } catch (error) {
         if (error && typeof error === 'object')
-          failures.set(error, {id, phase, reported: false,
+          failures.set(error, {phase, reported: false,
             durationMs: Math.max(0, Math.round(monotonic() - started))});
         report('error', operation, error);
         throw error;

@@ -1,11 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+dev_verbose=0
+for argument in "$@"; do
+  case "$argument" in
+    --verbose) dev_verbose=1 ;;
+    --help|-h)
+      printf '%s\n' 'Usage: tools/run-dev-shell.sh [--verbose]' \
+        '默认显示构建摘要、插件日志和系统异常；--verbose 显示全部原始输出。'
+      exit 0
+      ;;
+    *) printf 'Unknown option: %s\n' "$argument" >&2; exit 2 ;;
+  esac
+done
+
 extension_uuid='clipboard-x@guleoo.github.io'
 
 if [[ "${CLIPBOARD_X_DEV_SESSION:-0}" == '1' ]]; then
   if [[ -z "${CLIPBOARD_X_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_DEV_ROOT/config" ]]; then
-    printf '%s\n' '拒绝在未隔离的配置目录中启动 Devkit。' >&2
+    printf '%s\n' 'Clipboard X [ERROR] 拒绝在未隔离的配置目录中启动 Devkit。' >&2
     exit 1
   fi
   gsettings set org.gnome.shell disable-user-extensions false
@@ -23,6 +36,24 @@ extension_parent="$dev_root/data/gnome-shell/extensions"
 extension_link="$extension_parent/$extension_uuid"
 extension_build="$build_dir/$extension_uuid"
 
+format_output() {
+  if awk -v verbose="$dev_verbose" -f "$script_dir/dev-output.awk"; then
+    return 0
+  else
+    dev_formatter_status=$?
+    printf '[WARN] 日志显示过滤失败 · exit %s；切换为原始输出。\n' "$dev_formatter_status" >&2
+    # This shell keeps the input pipe open while awk exits; cat drains the rest.
+    cat || return
+    return "$dev_formatter_status"
+  fi
+}
+
+report_exit() {
+  if [[ "$1" != '0' && "$1" != '130' && "$1" != '143' ]]; then
+    printf '[ERROR] 开发会话退出 · exit %s；完整输出见 journal 或 --verbose。\n' "$1" >&2
+  fi
+}
+
 if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
   if command -v systemd-cat >/dev/null 2>&1 && command -v tee >/dev/null 2>&1; then
     printf '%s\n' 'Clipboard X Devkit 日志同时显示在终端并写入系统 journal。' \
@@ -36,39 +67,65 @@ if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
     # to journald. tee forwards that output once, while keeping the terminal live.
     if (
       exec {dev_journal_fd}>&-
-      exec env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path"
-    ) 2>&1 | tee --output-error=warn-nopipe "/dev/fd/$dev_journal_fd"; then
+      exec env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path" "$@"
+    ) 2>&1 | tee --output-error=warn-nopipe "/dev/fd/$dev_journal_fd" \
+      | format_output; then
       dev_session_status=0
     else
       dev_pipeline_status=("${PIPESTATUS[@]}")
       dev_session_status=${dev_pipeline_status[0]}
-      if [[ "$dev_session_status" == '0' ]]; then
-        dev_session_status=${dev_pipeline_status[1]}
-      fi
+      for status in "${dev_pipeline_status[@]:1}"; do
+        if [[ "$dev_session_status" == '0' ]]; then
+          dev_session_status=$status
+        fi
+      done
     fi
     exec {dev_journal_fd}>&-
     if ! wait "$dev_journal_pid"; then
       printf '%s\n' 'journal 转发失败；会话输出仍显示在终端。' >&2
     fi
     trap - EXIT INT TERM
+    report_exit "$dev_session_status"
     exit "$dev_session_status"
   fi
   printf '%s\n' '未找到 systemd-cat 或 tee；构建和会话输出仅显示在终端，不额外保存日志文件。' >&2
+  if env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path" "$@" 2>&1 \
+    | format_output; then
+    exit 0
+  else
+    dev_pipeline_status=("${PIPESTATUS[@]}")
+    if [[ "${dev_pipeline_status[0]}" != '0' ]]; then
+      report_exit "${dev_pipeline_status[0]}"
+      exit "${dev_pipeline_status[0]}"
+    fi
+    report_exit "${dev_pipeline_status[1]}"
+    exit "${dev_pipeline_status[1]}"
+  fi
 fi
 
 if [[ ! -x /usr/lib/mutter-devkit ]]; then
-  printf '%s\n' '缺少 /usr/lib/mutter-devkit，请先安装 mutter-devkit。' >&2
+  printf '%s\n' 'Clipboard X [ERROR] 缺少 /usr/lib/mutter-devkit，请先安装 mutter-devkit。' >&2
   exit 1
 fi
 
-if [[ -f "$build_dir/build.ninja" ]]; then
-  meson setup --reconfigure "$build_dir" "$project_dir" -Dtarget=package
-else
-  meson setup "$build_dir" "$project_dir" -Dtarget=package
-fi
+build_extension() {
+  if [[ -f "$build_dir/build.ninja" ]]; then
+    meson setup --reconfigure "$build_dir" "$project_dir" -Dtarget=package || return
+  else
+    meson setup "$build_dir" "$project_dir" -Dtarget=package || return
+  fi
+  meson compile -C "$build_dir" || return
+  meson install -C "$build_dir" || return
+}
 
-meson compile -C "$build_dir"
-meson install -C "$build_dir"
+printf '%s\n' 'Clipboard X [BUILD] 构建与打包开始'
+if build_extension; then
+  printf '%s\n' 'Clipboard X [BUILD] 构建与打包完成'
+else
+  dev_build_status=$?
+  printf 'Clipboard X [ERROR] 构建失败 · exit %s；完整输出见 journal 或 --verbose\n' "$dev_build_status" >&2
+  exit "$dev_build_status"
+fi
 
 mkdir -p \
   "$dev_root/config" \
@@ -78,7 +135,7 @@ mkdir -p \
   "$extension_parent"
 
 if [[ -e "$extension_link" && ! -L "$extension_link" ]]; then
-  printf '隔离扩展路径已存在且不是符号链接：%s\n' "$extension_link" >&2
+  printf 'Clipboard X [ERROR] 隔离扩展路径已存在且不是符号链接：%s\n' "$extension_link" >&2
   exit 1
 fi
 
@@ -86,6 +143,7 @@ ln -sfn "$extension_build" "$extension_link"
 
 printf 'Clipboard X Devkit 构建：%s\n' "$extension_build"
 printf 'Clipboard X Devkit 配置：%s\n' "$dev_root"
+printf '%s\n' 'Clipboard X [INFO] devkit 启动开发会话'
 
 exec env \
   CLIPBOARD_X_DEV_SESSION=1 \
@@ -94,4 +152,4 @@ exec env \
   XDG_DATA_HOME="$dev_root/data" \
   XDG_CACHE_HOME="$dev_root/cache" \
   XDG_STATE_HOME="$dev_root/state" \
-  dbus-run-session -- "$script_path"
+  dbus-run-session -- "$script_path" "$@"

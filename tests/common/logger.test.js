@@ -8,12 +8,9 @@ function assert(condition, message) {
 
 const records = [];
 const sourceRoot = import.meta.url.replace('tests/common/logger.test.js', 'src/');
-let counter = 0;
 let time = 100;
 const logger = createLogger('sync', {
   sink: record => records.push(record),
-  identifier: () => `operation-${++counter}`,
-  now: () => '2026-10-05T00:00:00.000Z',
   monotonic: () => time,
 });
 const failure = new Error('CLIPBOARD_SECRET API_KEY_SECRET http://credential@server/path');
@@ -48,7 +45,7 @@ assert(records.length === count, 'successful background polling must produce no 
 try {
   await logger.run('retry', scope => scope.step('status', () => { throw failure; }), {quiet: true});
 } catch (_) {}
-assert(records.at(-1).phase === 'status' && records.at(-1).id !== failed.id,
+assert(records.at(-1).phase === 'status' && records.at(-1).operation === 'retry',
   'a new operation must record a reused error object with its new context');
 const unknown = {code: 'API_KEY_SECRET', constructor: {name: 'CLIPBOARD_SECRET'},
   message: 'CLIPBOARD_SECRET', stack: Array(100).fill(`x@${sourceRoot}sync/client.js:1:2`).join('\n')};
@@ -69,8 +66,10 @@ release(8);
 assert(await first === 8, 'successful values must be returned unchanged');
 const firstRecords = records.filter(record => record.operation === 'first');
 const secondRecords = records.filter(record => record.operation === 'second');
-assert(new Set(firstRecords.map(record => record.id)).size === 1
-  && firstRecords[0].id !== secondRecords[0].id, 'concurrent operations must keep independent IDs');
+assert(firstRecords.length === 1 && secondRecords.length === 1
+  && firstRecords[0].outcome === 'completed', 'only one summary is written per successful operation');
+assert(!records.some(record => 'id' in record || 'session' in record || 'time' in record),
+  'logging must not retain redundant timestamps or correlation UUIDs');
 
 const cancel = Object.assign(new Error('PRIVATE_USER'), {
   matches: (_domain, code) => code === Gio.IOErrorEnum.CANCELLED,
@@ -91,4 +90,33 @@ try {
   await broken.run('failure', () => { throw original; });
 } catch (error) {
   assert(error === original, 'sink errors must not replace application failures');
+}
+
+// Inspect the production console writer in a real GJS process, not a mock serializer.
+const program = `import(${JSON.stringify(`${sourceRoot}common/logger.js`)}).then(async ({createLogger}) => {
+  let time = 0;
+  const plain = createLogger('sync', {monotonic: () => time});
+  plain.info('enable');
+  await plain.run('initialize', scope => scope.step('channels', () => { time += 10; }));
+  const error = Object.assign(new Error('CLIPBOARD_SECRET API_KEY_SECRET'), {code: 'server_unavailable'});
+  error.stack = ${JSON.stringify(`fn@${sourceRoot}sync/client.js:42:9`)};
+  try { await plain.run('connect', scope => scope.step('device', () => { throw error; })); } catch (_) {}
+});`;
+const process = Gio.Subprocess.new(['gjs', '-c', program],
+  Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+const [ok, stdout, stderr] = process.communicate_utf8(null, null);
+assert(ok && process.get_successful(), 'production log probe must complete successfully');
+const output = `${stdout}\n${stderr}`.split('\n').filter(line => line.includes('Clipboard X ['));
+assert(output.length === 3, 'only one line per info, summary and failure must be emitted');
+assert(output[0].includes('Clipboard X [INFO] sync enable'), 'info output must be plain readable text');
+assert(output[1].includes('Clipboard X [INFO] sync initialize completed · 10 ms'),
+  'successful initialization must produce just its readable summary');
+assert(output[2].includes('Clipboard X [ERROR] sync connect failed at device'),
+  'failures must retain their severity and readable operation/stage');
+assert(output[2].includes('server_unavailable') && output[2].includes('/sync/client.js:42:9'),
+  'plain errors must include safe diagnostics and source positions');
+for (const line of output) {
+  assert(!line.includes('{') && !line.includes('"level"'), 'production output must not be JSON');
+  assert(!line.includes('CLIPBOARD_SECRET') && !line.includes('API_KEY_SECRET'),
+    'plain formatting must retain the privacy boundary');
 }
