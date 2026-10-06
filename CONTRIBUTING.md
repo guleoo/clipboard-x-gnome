@@ -92,7 +92,7 @@ and working Git credentials; it never force-pushes or overwrites an existing rem
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
 `clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
-Before tagging, add `docs/release/release_<version>.md` with English release notes followed by Simplified
+Before tagging, add `docs/release/v<version>.md` with English release notes followed by Simplified
 Chinese. The workflow uses this file as the GitHub Release description and requires it to exist.
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,

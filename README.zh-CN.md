@@ -236,7 +236,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip t
 ## 文档
 
 - [中文文档索引](docs/README_CN.md)
-- [1.0.0 发布说明](docs/release/release_1.0.0.md#简体中文)
+- [1.0.0 发布说明](docs/release/v1.0.0.md#主要功能)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/ui-architecture_CN.md)
 - [同步性能与压力测试](docs/sync-performance-testing_CN.md)

@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
-          notes_file="docs/release/release_${GITHUB_REF_NAME#v}.md"
+          notes_file="docs/release/${GITHUB_REF_NAME}.md"
           if [[ ! -f "$notes_file" ]]; then
             echo "Release notes are missing: $notes_file" >&2
             exit 1

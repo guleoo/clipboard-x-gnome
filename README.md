@@ -260,7 +260,7 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [1.0.0 release notes](docs/release/release_1.0.0.md)
+- [1.0.0 release notes](docs/release/v1.0.0.md)
 - [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)

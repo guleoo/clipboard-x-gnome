@@ -84,7 +84,7 @@ JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本�
 标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
 停止。标签构建通过后，会创建附带 `clipboard-x-gnome_<version>.zip` 的 GitHub Release。不要自行设置由
 GNOME 扩展网站管理的数字型 `metadata.version`。
-打标签前添加 `docs/release/release_<version>.md`，先写英文发布说明，再写中文。
+打标签前添加 `docs/release/v<version>.md`，先写英文发布说明，再写中文。
 工作流使用此文件作为 GitHub Release 正文；缺少文件时不会创建 Release。
 
 向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，

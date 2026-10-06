@@ -17,10 +17,25 @@ PROJECT = SCRIPT.parent.parent
 class ReleaseScriptTest(unittest.TestCase):
     def test_release_workflow_uses_versioned_bilingual_notes(self):
         workflow = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-        self.assertIn('notes_file="docs/release/release_${GITHUB_REF_NAME#v}.md"', workflow)
+        self.assertIn('notes_file="docs/release/${GITHUB_REF_NAME}.md"', workflow)
         self.assertIn('if [[ ! -f "$notes_file" ]]', workflow)
         self.assertIn('--notes-file "$notes_file"', workflow)
         self.assertNotIn('--generate-notes', workflow)
+
+    def test_release_notes_path_matches_the_tag(self):
+        workflow = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        assignment = next(line.strip() for line in workflow.splitlines()
+                          if line.strip().startswith("notes_file="))
+        for tag in ("v1.0.0", "v2.7.3"):
+            with self.subTest(tag=tag):
+                result = subprocess.run(
+                    ["bash", "-c", assignment + '\n test -n "$notes_file" && printf "%s" "$notes_file"'],
+                    env={**os.environ, "GITHUB_REF_NAME": tag},
+                    capture_output=True, text=True, check=True,
+                )
+                self.assertEqual(result.stdout, f"docs/release/{tag}.md")
+        version = json.loads((PROJECT / "package.json").read_text(encoding="utf-8"))["version"]
+        self.assertTrue((PROJECT / "docs/release" / f"v{version}.md").is_file())
 
     def test_shell_test_commands_use_the_current_versioned_archive(self):
         package = json.loads((PROJECT / "package.json").read_text(encoding="utf-8"))
