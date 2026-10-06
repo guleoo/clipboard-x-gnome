@@ -194,6 +194,65 @@ export async function run() {
       && indicator._quickPhrases.rows[0].focusActors.every(actor =>
         foreground(actor).join(',') === phraseForeground.join(',')),
     'Quick-phrase content and actions did not use the shared content-item foreground');
+  const quickPhrases = indicator._quickPhrases;
+  const phraseCommands = [];
+  const originalTypeText = indicator._actions.typeText;
+  const originalPasteText = indicator._actions.pasteText;
+  const phraseShortcutKeys = ['history-type-shortcut', 'history-paste-shortcut', 'history-delete-shortcut'];
+  const originalPhraseShortcuts = phraseShortcutKeys.map(key => indicator._settings.get_strv(key));
+  const focusPhrase = (actionIndex = 0) => {
+    indicator.menu.open();
+    indicator._openPhrases();
+    quickPhrases.focusAnchor.cancel();
+    quickPhrases.rows[0].focusActors[actionIndex].grab_key_focus();
+  };
+  indicator._actions.typeText = async text => phraseCommands.push(`type:${text}`);
+  indicator._actions.pasteText = async text => phraseCommands.push(`paste:${text}`);
+  try {
+    indicator._settings.set_strv('history-type-shortcut', ['apostrophe']);
+    indicator._settings.set_strv('history-paste-shortcut', ['v']);
+    indicator._settings.set_strv('history-delete-shortcut', ['Delete']);
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_STOP
+        && !indicator.menu.isOpen,
+    'Quick-phrase typing shortcut must be consumed and close the menu');
+    focusPhrase(1);
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_v)) === Clutter.EVENT_STOP
+        && !indicator.menu.isOpen,
+    'Quick-phrase paste shortcut must also work while its action icon is focused');
+    assert(phraseCommands.join(',') === 'type:Local smoke-test phrase,paste:Local smoke-test phrase',
+      'Quick-phrase shortcuts did not send the focused text to the correct actions');
+    indicator._settings.set_strv('history-type-shortcut', ['<Control>t']);
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_PROPAGATE,
+      'Quick phrases kept the old simulated-input shortcut after reconfiguration');
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_t, Clutter.ModifierType.CONTROL_MASK))
+        === Clutter.EVENT_STOP,
+    'Quick phrases did not honor a configured shortcut with modifiers');
+    indicator._settings.set_strv('history-type-shortcut', []);
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_PROPAGATE,
+      'A disabled quick-phrase typing shortcut must not run');
+    indicator._settings.set_strv('history-type-shortcut', ['apostrophe']);
+    quickPhrases.showForm();
+    const beforeInput = phraseCommands.length;
+    for (const key of [Clutter.KEY_v, Clutter.KEY_apostrophe, Clutter.KEY_Delete]) {
+      assert(indicator._handleMenuKey(capturedKeyEvent(key)) === Clutter.EVENT_PROPAGATE,
+        'Entry shortcuts must not intercept text editing in the quick-phrase form');
+    }
+    assert(phraseCommands.length === beforeInput && quickPhrases.phrases.length === 1,
+      'Editing a quick phrase triggered a clipboard action or deletion');
+    quickPhrases.hideForm();
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_Delete)) === Clutter.EVENT_STOP,
+      'Quick-phrase deletion shortcut was not consumed');
+    assert(await waitUntil(() => !quickPhrases.phrases.includes('Local smoke-test phrase')),
+      'Quick-phrase deletion shortcut did not delete the focused phrase');
+    await quickPhrases.replace(['Local smoke-test phrase']);
+  } finally {
+    indicator._actions.typeText = originalTypeText;
+    indicator._actions.pasteText = originalPasteText;
+    phraseShortcutKeys.forEach((key, index) => indicator._settings.set_strv(key, originalPhraseShortcuts[index]));
+  }
   indicator._quickPhrases.showForm();
   assert(indicator._quickPhrases.form.get_children().length === 1,
     'Quick-phrase form must contain only the text entry');

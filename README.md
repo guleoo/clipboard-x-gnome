@@ -147,7 +147,8 @@ them when installed, started, or opened.
 ### 5. Keep quick phrases
 
 Open **Quick phrases** from the panel, press `+`, enter a phrase, and confirm with Enter. Quick phrases
-stay local.
+stay local. Focus a phrase and press `v` to paste, `'` to simulate typing, or `Delete` to remove it.
+These actions share the clipboard-entry shortcut settings; the add-phrase input keeps normal text editing.
 
 ### 6. Capture, pick, and edit
 
