@@ -15,7 +15,8 @@ export function create({
   item,
   leading = null,
   accentColor = null,
-  syncButton = null,
+  actionOrder,
+  createSyncButton,
   createIconButton,
   actions,
 }) {
@@ -62,40 +63,47 @@ export function create({
     : _('Copy original');
   row.setContent(content);
 
-  row.addAction(item.isText
-    ? createIconButton(
+  const buttons = {
+    tokenize: () => createIconButton(
       'format-text-plaintext-symbolic',
       _('Segment text'),
       actions.tokenize,
       {showTooltip: false},
-    )
-    : createIconButton(
+    ),
+    edit: () => createIconButton(
       'document-edit-symbolic',
       _('Edit image'),
       actions.edit,
       {showTooltip: false},
-    ));
-  const pinButton = createIconButton(
-    'view-pin-symbolic',
-    item.favorite ? _('Unpin') : _('Pin'),
-    actions.togglePin,
-    {showTooltip: false, stateful: true},
-  );
-  pinButton.toggle_mode = true;
-  pinButton.selected = item.favorite;
-  if (item.favorite)
-    pinButton.add_style_class_name('cbx-pinned');
-  if (item.favorite && accentColor)
-    pinButton.set_style(`color: ${accentColor};`);
-  row.addAction(pinButton);
-  if (syncButton)
-    row.addAction(syncButton);
-  row.addAction(createIconButton(
-    'user-trash-symbolic',
-    _('Delete from local history'),
-    actions.remove,
-    {showTooltip: false},
-  ));
+    ),
+    pin: () => {
+      const button = createIconButton(
+        'view-pin-symbolic',
+        item.favorite ? _('Unpin') : _('Pin'),
+        actions.togglePin,
+        {showTooltip: false, stateful: true},
+      );
+      button.toggle_mode = true;
+      button.selected = item.favorite;
+      if (item.favorite)
+        button.add_style_class_name('cbx-pinned');
+      if (item.favorite && accentColor)
+        button.set_style(`color: ${accentColor};`);
+      return button;
+    },
+    sync: createSyncButton,
+    delete: () => createIconButton(
+      'user-trash-symbolic',
+      _('Delete from local history'),
+      actions.remove,
+      {showTooltip: false},
+    ),
+  };
+  for (const action of actionOrder) {
+    const button = buttons[action]();
+    button._clipboardXEntryAction = action;
+    row.addAction(button);
+  }
   row._clipboardXFocusRow = row.focusActors;
   for (const actor of row._clipboardXFocusRow)
     actor._clipboardXHistoryRow = row;

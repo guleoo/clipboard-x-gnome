@@ -35,6 +35,11 @@ settings.set_int('panel-width', 480);
 settings.set_uint('text-full-threshold', 131072);
 settings.set_strv('tokenizer-dictionary-files', ['zh--user.dict']);
 settings.set_boolean('sync-enabled', true);
+assert(settings.get_strv('entry-actions').join() === 'tokenize,edit,pin,sync,delete',
+  'Entry action defaults must preserve the original order');
+assert(settings.get_strv('entry-hidden-actions').length === 0, 'Entry actions must be visible by default');
+settings.set_strv('entry-actions', ['delete', 'pin', 'sync', 'edit', 'tokenize']);
+settings.set_strv('entry-hidden-actions', ['pin', 'delete']);
 
 restore(settings);
 

@@ -14,6 +14,7 @@ follow. Extend these boundaries instead of putting state and widgets back into `
 - `ui/navigation/focus-grid.js`: two-dimensional keyboard navigation inside a panel. Each panel owns
   its matrix; no global focus listener repairs focus.
 - `ui/layouts/panel-actions.js`: layout model and validation for top and bottom actions.
+- `ui/layouts/entry-actions.js`: clipboard-entry action order, visibility, and content-type eligibility.
 - `ui/controls/`: public Shell controls. Controls provide structure and generic state; they do not read
   clipboard, synchronization, or panel settings.
 - `ui/panels/`: independently switchable panels. Each panel owns its actor, scroll area, state, focus
@@ -48,6 +49,9 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   phrases; default footer actions are privacy, synchronization, clear, and settings. Settings control
   order and placement.
 - Content rows use “left content, right actions” with one row-level hover background.
+- History action icons have their own order and visibility settings. Hidden icons are not created or
+  added to the focus matrix; their keyboard shortcuts remain available. Sync remains unavailable for
+  private items and while synchronization is off. The panel sync icon toggles the synchronization setting.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, token buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.

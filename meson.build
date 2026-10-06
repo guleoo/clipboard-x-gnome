@@ -134,6 +134,7 @@ test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() /
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])
 test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/focus-grid.test.js'])
 test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-actions.test.js'])
+test('entry-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/entry-actions.test.js'])
 test('settings-defaults', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/ui/settings-defaults.test.js'],
   env: {'GSETTINGS_BACKEND': 'memory', 'CBX_TEST_BUILD_DIR': meson.project_build_root()})

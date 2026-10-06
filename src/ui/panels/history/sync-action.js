@@ -17,11 +17,17 @@ export class SyncAction {
     this._closeMenu = closeMenu;
     this._transfers = new Map();
     this._buttons = new Map();
+    this._status = 'offline';
+    this._capabilities = null;
+    this._accentColor = null;
     this.statusButton = createIconButton(
       'network-offline-symbolic',
-      _('Synchronization settings'),
-      () => this._runAndClose(() => actions.openPreferences()),
+      _('Synchronization'),
+      () => settings.set_boolean('sync-enabled', !settings.get_boolean('sync-enabled')),
+      {stateful: true},
     );
+    this._enabledSignal = settings.connect('changed::sync-enabled', () => this._updateStatus());
+    this._updateStatus();
   }
 
   button(item) {
@@ -42,6 +48,26 @@ export class SyncAction {
   }
 
   setStatus(status, capabilities = null) {
+    this._status = status;
+    this._capabilities = capabilities;
+    this._updateStatus();
+  }
+
+  setAccent(color) {
+    this._accentColor = color;
+    this._updateSelected();
+  }
+
+  _updateSelected() {
+    const enabled = this._settings.get_boolean('sync-enabled');
+    this.statusButton.selected = enabled;
+    this.statusButton.set_style(enabled && this._accentColor
+      ? `color: ${this._accentColor};` : '');
+  }
+
+  _updateStatus() {
+    const status = this._status;
+    const capabilities = this._capabilities;
     let iconName;
     let text;
     if (!this._settings.get_boolean('sync-enabled')) {
@@ -66,6 +92,7 @@ export class SyncAction {
     }
     this._setIcon(this.statusButton, iconName);
     this._setHint(this.statusButton, text);
+    this._updateSelected();
   }
 
   setTransfer(transfer) {
@@ -76,6 +103,7 @@ export class SyncAction {
   }
 
   destroy() {
+    this._settings.disconnect(this._enabledSignal);
     this._buttons.clear();
     this._transfers.clear();
   }

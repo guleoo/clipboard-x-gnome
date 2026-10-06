@@ -10,6 +10,7 @@ import {PanelFooter} from '../../controls/panel-footer.js';
 import {deviceIcon} from '../../icons/device.js';
 import {SearchEntry} from '../../controls/search-entry.js';
 import {normalize as normalizeActions, normalizeHidden} from '../../layouts/panel-actions.js';
+import {visible as visibleEntryActions} from '../../layouts/entry-actions.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 import {create as createItem} from './item.js';
@@ -176,6 +177,8 @@ export class HistoryPanel {
       settings.connect('changed::panel-toolbar-actions', () => this._updateActions()),
       settings.connect('changed::panel-footer-actions', () => this._updateActions()),
       settings.connect('changed::panel-hidden-actions', () => this._updateActions()),
+      settings.connect('changed::entry-actions', () => this._requestRefresh()),
+      settings.connect('changed::entry-hidden-actions', () => this._requestRefresh()),
     ];
   }
 
@@ -226,8 +229,16 @@ export class HistoryPanel {
       item,
       leading: identity ? this._deviceIcon(identity.iconKind, identity.tag) : null,
       accentColor: this._accentColor,
-      syncButton: this._settings.get_boolean('sync-enabled') && !item.sensitive
-        ? this._sync.button(item) : null,
+      actionOrder: visibleEntryActions(
+        this._settings.get_strv('entry-actions'),
+        this._settings.get_strv('entry-hidden-actions'),
+        {
+          isText: item.isText,
+          syncEnabled: this._settings.get_boolean('sync-enabled'),
+          sensitive: item.sensitive,
+        },
+      ),
+      createSyncButton: () => this._sync.button(item),
       createIconButton: (...args) => this._createIconButton(...args),
       actions: {
         activate: () => this._activate(item),
@@ -330,6 +341,7 @@ export class HistoryPanel {
     this._accentColor = color;
     this._updateSearchStyle();
     this._updatePrivateButton();
+    this._sync.setAccent(color);
   }
 
   setSyncStatus(status, capabilities = null) {

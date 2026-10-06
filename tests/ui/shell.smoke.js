@@ -448,6 +448,24 @@ export async function run() {
   deviceRow.destroy();
   history._multipleDevices = false;
   capturedRow.destroy();
+  const originalEntryActions = indicator._settings.get_strv('entry-actions');
+  const originalHiddenEntryActions = indicator._settings.get_strv('entry-hidden-actions');
+  indicator._settings.set_strv('entry-actions', ['delete', 'pin', 'sync', 'tokenize', 'edit']);
+  indicator._settings.set_strv('entry-hidden-actions', ['pin', 'sync']);
+  const reorderedRow = history.entry(capturedText);
+  assert(reorderedRow.focusActors.slice(1).map(actor => actor._clipboardXEntryAction).join()
+      === 'delete,tokenize',
+    'Entry action visibility and order were not reflected in keyboard focus order');
+  assert(reorderedRow._clipboardXFocusRow.length === 3,
+    'Hidden entry icons must not occupy focus matrix cells');
+  reorderedRow.destroy();
+  indicator._settings.set_strv('entry-hidden-actions', originalEntryActions);
+  const contentOnlyRow = history.entry(capturedText);
+  assert(contentOnlyRow.focusActors.length === 1,
+    'Hiding all entry icons must retain only the copyable content');
+  contentOnlyRow.destroy();
+  indicator._settings.set_strv('entry-actions', originalEntryActions);
+  indicator._settings.set_strv('entry-hidden-actions', originalHiddenEntryActions);
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
     'Case-insensitive clipboard history search did not find the expected entry');
   const originalTypeItem = indicator._actions.typeItem;
@@ -481,10 +499,12 @@ export async function run() {
   indicator._settings.set_strv('history-paste-shortcut', ['v']);
   indicator._actions.typeItem = originalTypeItem;
   indicator._actions.pasteItem = originalPasteItem;
+  indicator._settings.set_strv('entry-hidden-actions', ['pin']);
   history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(capturedText.favorite, 'Clipboard entry p shortcut did not pin the entry');
   history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(!capturedText.favorite, 'Clipboard entry p shortcut did not unpin the entry');
+  indicator._settings.set_strv('entry-hidden-actions', originalHiddenEntryActions);
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = history.entry(capturedText);
@@ -732,7 +752,19 @@ export async function run() {
     'Previously downloaded remote content was not restored from local cache while offline');
   imageItem.remote = false;
 
+  indicator._settings.set_boolean('sync-enabled', false);
+  indicator.menu.open();
+  history.syncButton.emit('clicked');
+  assert(indicator._settings.get_boolean('sync-enabled') && history.syncButton.selected
+      && indicator.menu.isOpen,
+    'The panel sync button must enable synchronization without closing the menu');
+  history.syncButton.emit('clicked');
+  assert(!indicator._settings.get_boolean('sync-enabled') && !history.syncButton.selected
+      && history.syncButton.get_child().icon_name === 'network-offline-symbolic',
+    'The panel sync button must disable synchronization and update its selected state');
   indicator._settings.set_boolean('sync-enabled', true);
+  assert(history.syncButton.selected, 'External sync settings changes must update the button');
+  indicator.menu.close();
   indicator._settings.set_string('sync-send-mode', 'manual');
   const originalPreviewWidth = imageItem.preview.width;
   const originalPreviewHeight = imageItem.preview.height;

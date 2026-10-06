@@ -91,6 +91,9 @@ stable synchronization identity. The editable device tag and icon are only its h
 Click a history entry—or focus it and press Enter—to copy it. Each row also exposes tokenization or image
 editing, pinning, synchronization, and deletion actions when applicable. Search with `Ctrl+F`.
 
+Use **Preferences → General → Icon layout → History** to hide or reorder entry action icons.
+Hiding an icon does not disable its keyboard shortcut.
+
 Default contextual shortcuts are:
 
 | In clipboard history | Action |
@@ -174,6 +177,7 @@ Pipes, redirection, and shell expansion are intentionally unsupported.
 ## Synchronize devices
 
 Synchronization is off by default. Deploy your own `clipboard-x-server`, then configure and enable it.
+Once configured, the panel's synchronization icon switches synchronization on or off.
 
 To connect a device:
 
