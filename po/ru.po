@@ -1252,3 +1252,6 @@ msgstr "Установите sha256sum (обычно входит в coreutils),
 
 msgid "File verification with sha256sum failed"
 msgstr "Не удалось проверить файл с помощью sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Исходное изображение ещё не загружено. Сначала включите синхронизацию."

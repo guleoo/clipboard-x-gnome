@@ -10,6 +10,8 @@ export function message(error, _) {
   switch (error?.code) {
   case 'disabled':
     return _('Synchronization is disabled');
+  case 'original_image_requires_sync':
+    return _('The original image has not been downloaded. Enable synchronization first.');
   case 'sensitive_content':
     return _('Sensitive content');
   case 'server_unavailable':

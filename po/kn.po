@@ -1237,3 +1237,6 @@ msgstr "ಬಾಹ್ಯ ಕಡತ ಪರಿಶೀಲನೆಯನ್ನು ಸಕ
 
 msgid "File verification with sha256sum failed"
 msgstr "sha256sum ಬಳಸಿ ಕಡತ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "ಮೂಲ ಚಿತ್ರವನ್ನು ಇನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗಿಲ್ಲ. ಮೊದಲು ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸಕ್ರಿಯಗೊಳಿಸಿ."

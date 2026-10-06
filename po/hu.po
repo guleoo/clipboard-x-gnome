@@ -1256,3 +1256,6 @@ msgstr "Telepítse a sha256sum programot (általában a coreutils része) a kül
 
 msgid "File verification with sha256sum failed"
 msgstr "A fájl ellenőrzése a sha256sum programmal sikertelen"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Az eredeti kép még nincs letöltve. Először kapcsolja be a szinkronizálást."

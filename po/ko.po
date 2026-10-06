@@ -1232,3 +1232,6 @@ msgstr "외부 파일 검증을 활성화하려면 sha256sum(일반적으로 cor
 
 msgid "File verification with sha256sum failed"
 msgstr "sha256sum을 사용한 파일 검증 실패"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "원본 이미지가 아직 다운로드되지 않았습니다. 먼저 동기화를 활성화하세요."

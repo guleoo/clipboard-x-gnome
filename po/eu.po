@@ -1253,3 +1253,6 @@ msgstr "Instalatu sha256sum (normalean coreutils-ek ematen du) fitxategien kanpo
 
 msgid "File verification with sha256sum failed"
 msgstr "Fitxategia sha256sum bidez egiaztatzeak huts egin du"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Jatorrizko irudia ez da oraindik deskargatu. Gaitu lehenik sinkronizazioa."

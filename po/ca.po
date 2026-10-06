@@ -1263,3 +1263,6 @@ msgstr "Instal·leu sha256sum (normalment inclòs a coreutils) per habilitar la 
 
 msgid "File verification with sha256sum failed"
 msgstr "Ha fallat la verificació del fitxer amb sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "La imatge original encara no s’ha baixat. Activeu primer la sincronització."

@@ -1248,3 +1248,6 @@ msgstr "Nainštalujte sha256sum (zvyčajne súčasť coreutils), aby ste povolil
 
 msgid "File verification with sha256sum failed"
 msgstr "Overenie súboru pomocou sha256sum zlyhalo"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Pôvodný obrázok ešte nebol stiahnutý. Najprv zapnite synchronizáciu."

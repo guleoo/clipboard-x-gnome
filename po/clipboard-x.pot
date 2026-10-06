@@ -1172,3 +1172,6 @@ msgstr ""
 #: src/sync/errors.js
 msgid "File verification with sha256sum failed"
 msgstr ""
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr ""

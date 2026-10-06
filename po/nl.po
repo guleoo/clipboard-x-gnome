@@ -1259,3 +1259,6 @@ msgstr "Installeer sha256sum (doorgaans onderdeel van coreutils) om externe best
 
 msgid "File verification with sha256sum failed"
 msgstr "Bestandsverificatie met sha256sum is mislukt"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "De originele afbeelding is nog niet gedownload. Schakel eerst synchronisatie in."

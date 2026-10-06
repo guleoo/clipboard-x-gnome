@@ -1228,3 +1228,6 @@ msgstr "ثبّت sha256sum (يتوفر عادةً ضمن coreutils) لتفعيل
 
 msgid "File verification with sha256sum failed"
 msgstr "فشل التحقق من الملف باستخدام sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "لم يتم تنزيل الصورة الأصلية بعد. فعّل المزامنة أولاً."

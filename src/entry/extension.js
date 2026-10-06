@@ -222,6 +222,11 @@ export default class ClipboardXExtension extends Extension {
     const command = this._editorCommand();
     if (!command)
       return;
+    if (!this._settings.get_boolean('sync-enabled') && item.remote
+        && item.representations.some(value => !value.bytes && !value.path)) {
+      throw new SyncError('original_image_requires_sync',
+        'The original image has not been downloaded and synchronization is disabled');
+    }
     await this._ensureMaterialized(item);
     await this._controller.persist();
     const path = item.primary?.path;

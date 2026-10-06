@@ -1245,3 +1245,6 @@ msgstr "Harici dosya doğrulamasını etkinleştirmek için sha256sum kurun (gen
 
 msgid "File verification with sha256sum failed"
 msgstr "sha256sum ile dosya doğrulaması başarısız oldu"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Özgün görüntü henüz indirilmedi. Önce eşitlemeyi etkinleştirin."

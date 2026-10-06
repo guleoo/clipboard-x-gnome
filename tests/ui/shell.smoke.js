@@ -745,6 +745,29 @@ export async function run() {
   indicator._settings.set_string('editor-command', '/usr/bin/true %f');
   await extensionObject._editItem(imageItem);
   assert(imageItem.primary.path, 'Immediate image editing did not persist a stable original path');
+  const originalSyncEnabled = indicator._settings.get_boolean('sync-enabled');
+  indicator._settings.set_boolean('sync-enabled', false);
+  const originalPath = imageItem.primary.path;
+  const originalBytes = imageItem.primary.bytes;
+  imageItem.remote = true;
+  imageItem.primary.path = null;
+  imageItem.primary.bytes = null;
+  let materializationAttempted = false;
+  extensionObject._ensureMaterialized = () => materializationAttempted = true;
+  let editingError;
+  try {
+    await extensionObject._editItem(imageItem);
+  } catch (error) {
+    editingError = error;
+  } finally {
+    extensionObject._ensureMaterialized = ensureMaterialized;
+    imageItem.primary.path = originalPath;
+    imageItem.primary.bytes = originalBytes;
+  }
+  assert(editingError?.code === 'original_image_requires_sync' && !materializationAttempted,
+    'Editing a remote preview with sync disabled must stop before requesting or launching the original');
+  await extensionObject._editItem(imageItem);
+  indicator._settings.set_boolean('sync-enabled', originalSyncEnabled);
   imageItem.remote = true;
   imageItem.primary.bytes = null;
   await extensionObject._ensureMaterialized(imageItem);
