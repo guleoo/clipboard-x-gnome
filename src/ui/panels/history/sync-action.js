@@ -32,7 +32,7 @@ export class SyncAction {
 
   button(item) {
     const button = this._createIconButton(
-      'folder-remote-symbolic',
+      'network-transmit-receive-symbolic',
       _('Synchronize'),
       () => this._activate(item),
       {showTooltip: false},
@@ -132,7 +132,7 @@ export class SyncAction {
       return;
     }
     if (transfer?.state === 'completed') {
-      this._setIcon(button, 'emblem-ok-symbolic');
+      this._setIcon(button, 'object-select-symbolic');
       this._setHint(button, transfer.direction === 'upload'
         ? _('Upload completed')
         : _('Original downloaded'));
@@ -149,7 +149,7 @@ export class SyncAction {
       this._setHint(button, failed ? _('Retry original download') : _('Download original'));
       return;
     }
-    this._setIcon(button, 'folder-remote-symbolic');
+    this._setIcon(button, 'network-transmit-receive-symbolic');
     this._setHint(button, item.remote
       ? _('Original is available locally')
       : _('Send to synchronization server'));

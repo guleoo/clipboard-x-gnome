@@ -774,6 +774,8 @@ export async function run() {
   const imageButtons = imageRow.get_children().filter(child => child instanceof St.Button);
   assert(imageButtons.length === 5,
     'Image history row must expose content, edit, pin, synchronization and delete actions');
+  assert(imageButtons[3].get_child().icon_name === 'network-transmit-receive-symbolic',
+    'The entry synchronization action must use the bidirectional arrows icon');
   const imageBody = imageButtons[0].get_child();
   const imageContent = imageBody.get_children().find(child =>
     child.has_style_class_name?.('cbx-image-content'));
@@ -827,6 +829,11 @@ export async function run() {
   indicator.setTransfer(transfer);
   assert(progressButton.get_child() instanceof St.DrawingArea && progressButton._hintText.includes('50%'),
     'Exact per-item transfer progress was not rendered as a ring');
+  for (const direction of ['upload', 'download']) {
+    indicator.setTransfer({...transfer, direction, state: 'completed', completedBytes: 100});
+    assert(progressButton.get_child().icon_name === 'object-select-symbolic',
+      'Completed uploads and downloads must use the check mark icon');
+  }
   indicator.setTransfer({...transfer, state: 'expired', errorMessage: 'expired', updatedAt: Date.now() + 1});
   assert(progressButton._hintText.includes('expired'), 'Expired transfer did not expose a retryable error');
   progressButton.destroy();

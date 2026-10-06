@@ -147,7 +147,7 @@ function describeEntry(action) {
     tokenize: {title: _('Segment text'), icon: 'format-text-plaintext-symbolic'},
     edit: {title: _('Edit image'), icon: 'document-edit-symbolic'},
     pin: {title: _('Pin'), icon: 'view-pin-symbolic'},
-    sync: {title: _('Synchronization'), icon: 'folder-remote-symbolic'},
+    sync: {title: _('Synchronization'), icon: 'network-transmit-receive-symbolic'},
     delete: {title: _('Delete from local history'), icon: 'user-trash-symbolic'},
   }[action];
 }
