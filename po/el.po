@@ -1269,3 +1269,12 @@ msgstr "Η επαλήθευση του αρχείου με το sha256sum απέ
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Η αρχική εικόνα δεν έχει ληφθεί ακόμη. Ενεργοποιήστε πρώτα τον συγχρονισμό."
+
+msgid "Text full-transfer threshold"
+msgstr "Όριο πλήρους μεταφοράς κειμένου"
+
+msgid "Image full-transfer threshold"
+msgstr "Όριο πλήρους μεταφοράς εικόνων"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Ισχύει για αποστολή και λήψη. Το μεγαλύτερο περιεχόμενο λαμβάνεται μόνο όταν χρειάζεται."

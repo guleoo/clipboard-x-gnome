@@ -1266,3 +1266,12 @@ msgstr "Ha fallat la verificació del fitxer amb sha256sum"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "La imatge original encara no s’ha baixat. Activeu primer la sincronització."
+
+msgid "Text full-transfer threshold"
+msgstr "Llindar de transferència completa de text"
+
+msgid "Image full-transfer threshold"
+msgstr "Llindar de transferència completa d’imatges"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "S’aplica a l’enviament i a la recepció. El contingut més gran només es baixa quan cal."

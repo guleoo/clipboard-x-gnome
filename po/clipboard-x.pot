@@ -973,7 +973,7 @@ msgid "Only applies to automatic sending"
 msgstr ""
 
 #: src/ui/settings/window.js:333
-msgid "Small text sent in full"
+msgid "Text full-transfer threshold"
 msgstr ""
 
 #: src/ui/settings/window.js:333 src/ui/settings/window.js:334
@@ -986,7 +986,7 @@ msgid "Large text preview"
 msgstr ""
 
 #: src/ui/settings/window.js:335
-msgid "Small images sent in full"
+msgid "Image full-transfer threshold"
 msgstr ""
 
 #: src/ui/settings/window.js:336
@@ -1174,4 +1174,7 @@ msgid "File verification with sha256sum failed"
 msgstr ""
 
 msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr ""
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr ""

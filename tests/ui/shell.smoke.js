@@ -819,8 +819,19 @@ export async function run() {
   imageRow.destroy();
   imageItem.preview.width = originalPreviewWidth;
   imageItem.preview.height = originalPreviewHeight;
+  const availableImage = new imageItem.constructor({
+    ...imageItem, id: GLib.uuid_string_random(), remote: true,
+  });
+  const completeButton = history._sync.button(availableImage);
+  assert(completeButton.get_child().icon_name === 'object-select-symbolic',
+    'Received originals must show the completion icon without a temporary transfer record');
+  completeButton.destroy();
+  const availableImagePath = imageItem.primary.path;
+  const availableImageBytes = imageItem.primary.bytes;
   imageItem.remote = true;
   imageItem.availability = 'preview';
+  imageItem.primary.path = null;
+  imageItem.primary.bytes = null;
   const remoteButton = history._sync.button(imageItem);
   assert(remoteButton.get_child().icon_name === 'folder-download-symbolic',
     'Remote image preview did not expose its lazy download action');
@@ -829,8 +840,40 @@ export async function run() {
   assert(remoteButton.get_child().icon_name === 'view-refresh-symbolic',
     'Retryable remote image failure did not expose a retry action');
   remoteButton.destroy();
+  imageItem.primary.path = availableImagePath;
+  imageItem.primary.bytes = availableImageBytes;
   imageItem.remote = false;
   imageItem.availability = 'ready';
+
+  const incomingText = capturedText.constructor.fromText('incoming threshold smoke', {
+    originDeviceId: GLib.uuid_string_random(), remote: true,
+  });
+  const incomingBytes = incomingText.primary.bytes;
+  incomingText.primary.bytes = null;
+  incomingText.availability = 'preview';
+  const originalGetItem = extensionObject._sync.getItem;
+  const originalMaterialize = extensionObject._sync.materialize;
+  const originalReceiveMode = indicator._settings.get_string('sync-receive-mode');
+  indicator._settings.set_string('sync-receive-mode', 'history');
+  extensionObject._sync.getItem = async () => incomingText;
+  extensionObject._sync.materialize = async (item, options) => {
+    assert(indicator._controller.items.includes(item) && options.withinThreshold,
+      'Incoming previews must enter history before threshold-controlled automatic receiving');
+    item.primary.bytes = incomingBytes;
+    item.availability = 'ready';
+  };
+  try {
+    await extensionObject._receiveRemoteItem(incomingText.id);
+    // Flush the normal debounced history save for a deterministic storage assertion.
+    await indicator._controller.persist();
+    assert(incomingText.primary.path && incomingText.availability === 'ready',
+      'Automatic receiving must persist the completed original');
+  } finally {
+    extensionObject._sync.getItem = originalGetItem;
+    extensionObject._sync.materialize = originalMaterialize;
+    indicator._settings.set_string('sync-receive-mode', originalReceiveMode);
+    indicator._controller.remove(incomingText.id);
+  }
 
   const transferId = GLib.uuid_string_random();
   const transfer = {

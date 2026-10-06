@@ -1244,3 +1244,12 @@ msgstr "بررسی صحت پرونده با sha256sum شکست خورد"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "تصویر اصلی هنوز بارگیری نشده است. ابتدا همگام‌سازی را فعال کنید."
+
+msgid "Text full-transfer threshold"
+msgstr "آستانهٔ انتقال کامل متن"
+
+msgid "Image full-transfer threshold"
+msgstr "آستانهٔ انتقال کامل تصویر"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "برای ارسال و دریافت اعمال می‌شود. محتوای بزرگ‌تر فقط در صورت نیاز بارگیری می‌شود."

@@ -20,6 +20,11 @@ becomes available.
 
 ## Test layers
 
+- `sync-receive` exercises production `SyncClient` with a transport double and real temporary files.
+  It covers local text/image thresholds, different sender policies, partial multi-format entries,
+  waiting for a source, shared automatic/manual requests, verification failure and retry, and
+  completion after history reload. Its 2,000-item receiving burst checks serialized downloads and
+  released operation state. It is not a real-server or GNOME Shell UI performance measurement.
 - `sync-stress` uses an in-memory transport double and distinct, persisted text items. It checks
   2,000 incoming event identities, paginated cursors, 2,000 publications and 200 source tasks competing
   for the same serialized queue. The double reads source bytes but does not perform HTTP requests or

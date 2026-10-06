@@ -52,6 +52,11 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - History action icons have their own order and visibility settings. Hidden icons are not created or
   added to the focus matrix; their keyboard shortcuts remain available. Sync remains unavailable for
   private items and while synchronization is off. The panel sync icon toggles the synchronization setting.
+- Received-entry completion comes from local original availability, not retained transfer events.
+  A completed server request or one downloaded representation must not mark a partial entry as complete.
+  Incoming previews are added before automatic downloads selected by the local text/image thresholds;
+  `materialize(item, {withinThreshold: true})` downloads only eligible representations, while explicit
+  use calls `materialize(item)` for every missing original. Both paths share in-flight requests.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, token buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.

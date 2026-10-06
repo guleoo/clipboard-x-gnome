@@ -1243,3 +1243,12 @@ msgstr "sha256sum によるファイルの検証に失敗しました"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "元の画像はまだダウンロードされていません。先に同期を有効にしてください。"
+
+msgid "Text full-transfer threshold"
+msgstr "テキストの全量転送しきい値"
+
+msgid "Image full-transfer threshold"
+msgstr "画像の全量転送しきい値"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "送信と受信の両方に適用されます。しきい値を超える内容は、必要なときにのみダウンロードされます。"

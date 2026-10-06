@@ -179,6 +179,12 @@ Pipes, redirection, and shell expansion are intentionally unsupported.
 Synchronization is off by default. Deploy your own `clipboard-x-server`, then configure and enable it.
 Once configured, the panel's synchronization icon switches synchronization on or off.
 
+The text and image full-transfer thresholds apply to both sending and receiving. Each device uses
+its own thresholds: content at or below them is received in full automatically; larger content keeps
+only a preview until needed, even if the server already has the original. If the server does not have
+an original selected for automatic receiving, it requests an upload from the source device first.
+Received entries show a check mark only once all their original representations are available locally.
+
 To connect a device:
 
 1. Deploy `clipboard-x-server`, register the device's generated DeviceId, issue its own API key, and add it to a Channel.

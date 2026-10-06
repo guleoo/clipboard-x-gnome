@@ -111,6 +111,9 @@ test('sync-http-failures', test_runner,
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
+test('sync-receive', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],
+  env: {'GIO_USE_VFS': 'local'})
 test(
   'sync-stress',
   test_runner,
@@ -135,6 +138,7 @@ test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'te
 test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/focus-grid.test.js'])
 test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-actions.test.js'])
 test('entry-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/entry-actions.test.js'])
+test('sync-entry-state', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-state.test.js'])
 test('settings-defaults', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/ui/settings-defaults.test.js'],
   env: {'GSETTINGS_BACKEND': 'memory', 'CBX_TEST_BUILD_DIR': meson.project_build_root()})

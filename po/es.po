@@ -1269,3 +1269,12 @@ msgstr "Falló la verificación del archivo con sha256sum"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "La imagen original aún no se ha descargado. Activa primero la sincronización."
+
+msgid "Text full-transfer threshold"
+msgstr "Umbral de transferencia completa de texto"
+
+msgid "Image full-transfer threshold"
+msgstr "Umbral de transferencia completa de imágenes"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Se aplica al envío y a la recepción. El contenido más grande solo se descarga cuando se necesita."

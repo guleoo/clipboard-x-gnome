@@ -308,7 +308,7 @@
     </key>
     <key name="text-full-threshold" type="u">
       <default>65536</default>
-      <summary>Text eager synchronization threshold in bytes</summary>
+      <summary>Text full-upload and automatic-download threshold in bytes</summary>
     </key>
     <key name="text-preview-limit" type="u">
       <default>4096</default>
@@ -316,7 +316,7 @@
     </key>
     <key name="image-full-threshold" type="u">
       <default>1048576</default>
-      <summary>Image eager synchronization threshold in bytes</summary>
+      <summary>Image full-upload and automatic-download threshold in bytes</summary>
     </key>
     <key name="thumbnail-size" type="u">
       <default>320</default>

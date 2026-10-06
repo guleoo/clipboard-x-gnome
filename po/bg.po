@@ -1263,3 +1263,12 @@ msgstr "Проверката на файла с sha256sum е неуспешна"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Оригиналното изображение още не е изтеглено. Първо включете синхронизацията."
+
+msgid "Text full-transfer threshold"
+msgstr "Праг за пълно прехвърляне на текст"
+
+msgid "Image full-transfer threshold"
+msgstr "Праг за пълно прехвърляне на изображения"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Прилага се при изпращане и получаване. По-голямото съдържание се изтегля само при нужда."

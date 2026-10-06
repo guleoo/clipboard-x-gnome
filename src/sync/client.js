@@ -33,6 +33,7 @@ import {
   workPage as validateWorkPage,
 } from './protocol.js';
 import {TransferTracker} from './transfers.js';
+import {delivery} from './policy.js';
 
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
@@ -66,6 +67,7 @@ export class SyncClient extends EventEmitter {
     this._generation = 0;
     this._destroyed = false;
     this._transferWaiters = new Map();
+    this._materializations = new Map();
     this._operations = new Map();
     this._remoteTransferIds = new Set();
     this._activeCancellables = new Set();
@@ -128,8 +130,8 @@ export class SyncClient extends EventEmitter {
     return this._logger.run('publish', () => this._enqueueTransfer(() => this._publish(item)), {quiet: true});
   }
 
-  materialize(item) {
-    return this._logger.run('materialize', () => this._materialize(item), {quiet: true});
+  materialize(item, options = {}) {
+    return this._logger.run('materialize', () => this._materialize(item, options), {quiet: true});
   }
 
   async getChanges(cursor, options = {}) {
@@ -452,38 +454,66 @@ export class SyncClient extends EventEmitter {
     }
   }
 
-  async _materialize(item) {
-    if (!item.remote || item.representations.every(value => value.bytes || value.path))
+  async _materialize(item, {withinThreshold = false} = {}) {
+    if (!item.remote)
+      return item;
+    if (item.representations.every(value => value.bytes || value.path)) {
+      item.availability = 'ready';
+      return item;
+    }
+    const needed = item.representations.filter(value => !value.bytes && !value.path
+      && (!withinThreshold || delivery(this._settings, value.mimeType, value.size) === 'eager'));
+    if (needed.length === 0)
       return item;
     this._requireConnection();
     const channelId = this._requireChannel();
-    const {deviceId} = ensureDeviceIdentity(this._settings);
     item.availability = 'waiting-for-peer';
     try {
-      for (const representation of item.representations.filter(value => !value.bytes && !value.path)) {
-        const request = validateContentRequest(
-          await this._transport.requestContent(channelId, item.id, representation.id),
-          deviceId,
-        );
-        if (request.transfer.kind !== 'content' || request.transfer.direction !== 'download'
-            || request.transfer.itemId !== item.id)
-          throw new Error('Synchronization server returned an invalid content request transfer');
-        this._observeRemoteTransfer(request.transfer);
-        this._recordTransfer(request.transfer, true);
-        if (!TERMINAL_TRANSFER_STATES.has(request.transfer.state))
-          await this._waitForTransfer(request.transfer.transferId);
-        else if (request.transfer.state !== 'completed')
-          throw new Error(request.transfer.errorMessage || `Transfer ${request.transfer.state}`);
-        await this._enqueueTransfer(
-          () => this._downloadRepresentation(channelId, item, representation),
-        );
-      }
-      item.availability = 'ready';
+      for (const representation of needed)
+        await this._materializeRepresentation(channelId, item, representation);
+      item.availability = item.representations.every(value => value.bytes || value.path)
+        ? 'ready' : 'preview';
       return item;
     } catch (error) {
       item.availability = 'failed';
       throw error;
     }
+  }
+
+  async _materializeRepresentation(channelId, item, representation) {
+    if (representation.bytes || representation.path)
+      return;
+    const key = `${channelId}:${item.id}:${representation.id}`;
+    let operation = this._materializations.get(key);
+    if (!operation) {
+      operation = this._requestRepresentation(channelId, item, representation)
+        .then(() => representation.path);
+      this._materializations.set(key, operation);
+    }
+    try {
+      representation.path = await operation;
+    } finally {
+      if (this._materializations.get(key) === operation)
+        this._materializations.delete(key);
+    }
+  }
+
+  async _requestRepresentation(channelId, item, representation) {
+    const {deviceId} = ensureDeviceIdentity(this._settings);
+    const request = validateContentRequest(
+      await this._transport.requestContent(channelId, item.id, representation.id),
+      deviceId,
+    );
+    if (request.transfer.kind !== 'content' || request.transfer.direction !== 'download'
+        || request.transfer.itemId !== item.id)
+      throw new Error('Synchronization server returned an invalid content request transfer');
+    this._observeRemoteTransfer(request.transfer);
+    this._recordTransfer(request.transfer, true);
+    if (!TERMINAL_TRANSFER_STATES.has(request.transfer.state))
+      await this._waitForTransfer(request.transfer.transferId);
+    else if (request.transfer.state !== 'completed')
+      throw new Error(request.transfer.errorMessage || `Transfer ${request.transfer.state}`);
+    await this._enqueueTransfer(() => this._downloadRepresentation(channelId, item, representation));
   }
 
   async _downloadRepresentation(channelId, item, representation) {
@@ -928,6 +958,7 @@ export class SyncClient extends EventEmitter {
   }
 
   _resetRuntime(error) {
+    this._materializations.clear();
     if (this._pollSource)
       GLib.Source.remove(this._pollSource);
     this._pollSource = 0;

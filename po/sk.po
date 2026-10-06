@@ -1251,3 +1251,12 @@ msgstr "Overenie súboru pomocou sha256sum zlyhalo"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Pôvodný obrázok ešte nebol stiahnutý. Najprv zapnite synchronizáciu."
+
+msgid "Text full-transfer threshold"
+msgstr "Prah pre úplný prenos textu"
+
+msgid "Image full-transfer threshold"
+msgstr "Prah pre úplný prenos obrázkov"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Platí pre odosielanie aj prijímanie. Väčší obsah sa sťahuje iba v prípade potreby."

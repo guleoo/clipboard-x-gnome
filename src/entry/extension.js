@@ -257,14 +257,16 @@ export default class ClipboardXExtension extends Extension {
     await this._terminalInput.paste();
   }
 
-  async _ensureMaterialized(item) {
+  async _ensureMaterialized(item, options = {}) {
     const requiresRemoteContent = item.remote
       && item.representations.some(representation => !representation.bytes && !representation.path);
     if (requiresRemoteContent) {
       try {
-        await this._sync.materialize(item);
+        await this._sync.materialize(item, options);
         this._controller.update(item);
-        await this._controller.persist();
+        // Incoming batches use the controller's debounced save; explicit use flushes immediately.
+        if (!options.withinThreshold)
+          await this._controller.persist();
       } catch (error) {
         this._controller.update(item);
         throw error;
@@ -282,6 +284,7 @@ export default class ClipboardXExtension extends Extension {
     if (item.originDeviceId === ensureDeviceIdentity(this._settings).deviceId)
       return;
     this._controller.add(item, 'remote');
+    await this._ensureMaterialized(item, {withinThreshold: true});
     if (this._settings.get_string('sync-receive-mode') === 'activate')
       await this._activateItem(item);
   }

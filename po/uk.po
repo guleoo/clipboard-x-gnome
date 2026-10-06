@@ -1255,3 +1255,12 @@ msgstr "Не вдалося перевірити файл за допомого�
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Оригінальне зображення ще не завантажено. Спочатку увімкніть синхронізацію."
+
+msgid "Text full-transfer threshold"
+msgstr "Поріг повного передавання тексту"
+
+msgid "Image full-transfer threshold"
+msgstr "Поріг повного передавання зображень"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Застосовується до надсилання й отримання. Більший вміст завантажується лише за потреби."

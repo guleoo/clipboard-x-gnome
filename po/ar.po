@@ -1231,3 +1231,12 @@ msgstr "فشل التحقق من الملف باستخدام sha256sum"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "لم يتم تنزيل الصورة الأصلية بعد. فعّل المزامنة أولاً."
+
+msgid "Text full-transfer threshold"
+msgstr "حد النقل الكامل للنص"
+
+msgid "Image full-transfer threshold"
+msgstr "حد النقل الكامل للصور"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "ينطبق على الإرسال والاستقبال. لا يتم تنزيل المحتوى الأكبر إلا عند الحاجة."

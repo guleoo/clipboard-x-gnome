@@ -1268,3 +1268,12 @@ msgstr "Dateiüberprüfung mit sha256sum fehlgeschlagen"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Das Originalbild wurde noch nicht heruntergeladen. Aktivieren Sie zuerst die Synchronisierung."
+
+msgid "Text full-transfer threshold"
+msgstr "Schwellenwert für vollständige Textübertragung"
+
+msgid "Image full-transfer threshold"
+msgstr "Schwellenwert für vollständige Bildübertragung"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Gilt für Senden und Empfangen. Größere Inhalte werden nur bei Bedarf heruntergeladen."

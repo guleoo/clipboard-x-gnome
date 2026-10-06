@@ -1240,3 +1240,12 @@ msgstr "sha256sum ಬಳಸಿ ಕಡತ ಪರಿಶೀಲನೆ ವಿಫಲ�
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "ಮೂಲ ಚಿತ್ರವನ್ನು ಇನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗಿಲ್ಲ. ಮೊದಲು ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸಕ್ರಿಯಗೊಳಿಸಿ."
+
+msgid "Text full-transfer threshold"
+msgstr "ಪಠ್ಯದ ಪೂರ್ಣ ವರ್ಗಾವಣೆಯ ಮಿತಿ"
+
+msgid "Image full-transfer threshold"
+msgstr "ಚಿತ್ರಗಳ ಪೂರ್ಣ ವರ್ಗಾವಣೆಯ ಮಿತಿ"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "ಕಳುಹಿಸುವಿಕೆ ಮತ್ತು ಸ್ವೀಕರಿಸುವಿಕೆ ಎರಡಕ್ಕೂ ಅನ್ವಯಿಸುತ್ತದೆ. ದೊಡ್ಡ ವಿಷಯವನ್ನು ಅಗತ್ಯವಿದ್ದಾಗ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."

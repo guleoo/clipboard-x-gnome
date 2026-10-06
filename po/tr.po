@@ -1248,3 +1248,12 @@ msgstr "sha256sum ile dosya doğrulaması başarısız oldu"
 
 msgid "The original image has not been downloaded. Enable synchronization first."
 msgstr "Özgün görüntü henüz indirilmedi. Önce eşitlemeyi etkinleştirin."
+
+msgid "Text full-transfer threshold"
+msgstr "Metnin tam aktarım eşiği"
+
+msgid "Image full-transfer threshold"
+msgstr "Görüntülerin tam aktarım eşiği"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Gönderme ve alma için geçerlidir. Daha büyük içerik yalnızca gerektiğinde indirilir."

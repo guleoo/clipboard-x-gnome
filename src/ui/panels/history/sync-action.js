@@ -4,6 +4,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {message as syncErrorMessage} from '../../../sync/errors.js';
 import {ProgressRing} from './progress-ring.js';
+import {isComplete} from './sync-state.js';
 
 const ICON_SIZE = 16;
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
@@ -110,6 +111,13 @@ export class SyncAction {
 
   _update(item, button) {
     const transfer = this._transfers.get(item.id);
+    if (isComplete(item, transfer)) {
+      this._setIcon(button, 'object-select-symbolic');
+      this._setHint(button, item.remote
+        ? _('Original is available locally')
+        : transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
+      return;
+    }
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       if (transfer.totalBytes > 0) {
         button.set_child(new ProgressRing(transfer.completedBytes / transfer.totalBytes));
@@ -131,19 +139,12 @@ export class SyncAction {
       );
       return;
     }
-    if (transfer?.state === 'completed') {
-      this._setIcon(button, 'object-select-symbolic');
-      this._setHint(button, transfer.direction === 'upload'
-        ? _('Upload completed')
-        : _('Original downloaded'));
-      return;
-    }
     if (!this._settings.get_boolean('sync-enabled')) {
       this._setIcon(button, 'network-offline-symbolic');
       this._setHint(button, _('Synchronization is disabled'));
       return;
     }
-    if (item.remote && item.availability !== 'ready') {
+    if (item.remote) {
       const failed = item.availability === 'failed';
       this._setIcon(button, failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
       this._setHint(button, failed ? _('Retry original download') : _('Download original'));
@@ -165,7 +166,7 @@ export class SyncAction {
       this._runAndClose(() => this._actions.openPreferences());
       return;
     }
-    if (item.remote && item.availability !== 'ready')
+    if (item.remote && !isComplete(item))
       await this._actions.materializeItem(item);
     else if (!item.remote)
       await this._actions.publish(item);
