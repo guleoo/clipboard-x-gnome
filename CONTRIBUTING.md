@@ -51,7 +51,7 @@ image-editor command placeholders. English is the source language and has no PO 
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the
 `.zh-CN.md` counterpart for repository-root files, or a `{name}_CN.md` counterpart directly in `docs/`.
-Each version has one bilingual release note in `docs/release/`, with English followed by Simplified Chinese.
+Each version has separate `v<version>-en.md` and `v<version>-cn.md` release notes in `docs/release/`.
 
 ## Code conventions
 
@@ -92,8 +92,20 @@ and working Git credentials; it never force-pushes or overwrites an existing rem
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
 `clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
-Before tagging, add `docs/release/v<version>.md` with English release notes followed by Simplified
-Chinese. The workflow uses this file as the GitHub Release description and requires it to exist.
+Before tagging, prepare and commit both `docs/release/v<version>-en.md` and
+`docs/release/v<version>-cn.md`. The workflow requires both files and uses the English file as the
+GitHub Release description; notes are written ahead of time, not generated from commits.
+Include a Simplified Chinese link at the top of the English file and an English link in the Chinese
+file. Use absolute URLs pointing to these files at the matching version tag so the links work both
+in the repository and in the GitHub Release, and remain tied to that version.
+
+Version 1.0.0 describes features only. For later versions, summarize changes and fixes and end both
+language files with a **Full Changelog** comparison of the previous release tag and the new one.
+For example, for a future 1.1.0 release following 1.0.0:
+
+```md
+**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+```
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
 set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets

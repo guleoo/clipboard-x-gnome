@@ -47,7 +47,7 @@ meson compile -C build clipboard-x-update-po
 检查会拒绝缺失或 fuzzy 的译文，以及图片编辑命令说明中丢失的占位符。
 源码语言为英语，无需单独的英文 PO 文件。机器翻译草稿仍需母语者审校措辞。
 仓库根目录的中文文档使用 `.zh-CN.md`；`docs/` 中的指南平铺存放，中文使用 `{name}_CN.md`。
-各版本发布说明统一放在 `docs/release/`，每个版本一个文件，先英文、后中文。
+各版本发布说明统一放在 `docs/release/`，分别使用 `v<version>-en.md` 和 `v<version>-cn.md`。
 
 ## 代码约定
 
@@ -84,8 +84,17 @@ JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本�
 标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
 停止。标签构建通过后，会创建附带 `clipboard-x-gnome_<version>.zip` 的 GitHub Release。不要自行设置由
 GNOME 扩展网站管理的数字型 `metadata.version`。
-打标签前添加 `docs/release/v<version>.md`，先写英文发布说明，再写中文。
-工作流使用此文件作为 GitHub Release 正文；缺少文件时不会创建 Release。
+打标签前提前编写并提交 `docs/release/v<version>-en.md` 和 `docs/release/v<version>-cn.md`。
+工作流要求两份文件都存在，并使用英文文件作为 GitHub Release 正文，不从 commit 自动生成内容。
+英文文件顶部提供中文入口，中文文件提供英文入口。使用指向对应版本标签下文档的完整 URL，
+确保链接在仓库文档和 GitHub Release 中都能使用，并始终对应该版本。
+
+1.0.0 只介绍功能。之后的版本概述改动和修复，并在两种语言文档末尾添加 **Full Changelog**，
+链接到上一发布标签与当前标签之间的对比页面。例如，未来从 1.0.0 发布到 1.1.0 时：
+
+```md
+**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+```
 
 向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，
 把仓库 Actions 变量 `EGO_UPLOAD_ENABLED` 设为 `true`，并设置有权上传该扩展的账号所对应的
