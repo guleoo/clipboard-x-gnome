@@ -43,6 +43,17 @@ try {
   client = new HttpClient({serverAddress: address, apiKey: 'stress-key', deviceId: 'stress-device'});
   await upload('/content');
   const options = {maximumBytes: size, expectedBytes: size, expectedSha256: digest};
+  const observedStages = [];
+  const observerResult = await client.download('/content', targetPath, {
+    ...options, useSha256sum: true,
+    diagnostics: {stage(name) {
+      observedStages.push(name);
+      throw new Error('deliberately broken optional observer');
+    }},
+  });
+  assert(observerResult.sha256 === digest && observedStages.includes('cleanup')
+      && observedStages.includes('close-verifier'),
+    'observer errors must not change a verified download or bypass cleanup');
   for (const useSha256sum of [false, true]) {
     for (const [path, expectedCode] of [['/drop', null], ['/corrupt', 'hash_mismatch'], ['/content', 'cancelled']]) {
       target.replace_contents('previous target', null, false, Gio.FileCreateFlags.PRIVATE, null);
@@ -50,6 +61,7 @@ try {
       let error;
       try {
         await client.download(path, targetPath, {...options, useSha256sum, cancellable,
+          diagnostics: {stage() { throw new Error('broken failure observer'); }},
           onProgress: count => {
             if (expectedCode === 'cancelled' && count >= 256 * 1024)
               cancellable.cancel();

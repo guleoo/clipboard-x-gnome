@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {SyncError} from '../errors.js';
+import {stage} from './diagnostics.js';
 
 const EMPTY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 const OUTPUT_LIMIT_BYTES = 128;
@@ -22,11 +23,11 @@ export async function check(cancellable = null) {
     throw new SyncError('file_verification_failed', 'sha256sum failed the empty-input check');
 }
 
-export function file(path, {program = dependency(), cancellable = null} = {}) {
-  return run(program, path, cancellable);
+export function file(path, {program = dependency(), cancellable = null, diagnostics = null} = {}) {
+  return run(program, path, cancellable, diagnostics);
 }
 
-async function run(program, path, cancellable) {
+async function run(program, path, cancellable, diagnostics = null) {
   cancellable?.set_error_if_cancelled();
   const launcher = new Gio.SubprocessLauncher({
     flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE,
@@ -38,6 +39,7 @@ async function run(program, path, cancellable) {
     launcher.set_stdin_file_path(path);
   let process;
   try {
+    stage(diagnostics, 'start-verifier');
     process = launcher.spawnv([program]);
   } catch (error) {
     throw new SyncError('file_verifier_unavailable', 'Could not start sha256sum', {cause: error});
@@ -48,6 +50,7 @@ async function run(program, path, cancellable) {
   const stdout = process.get_stdout_pipe();
   let succeeded = false;
   try {
+    stage(diagnostics, 'read-verifier');
     cancellable?.set_error_if_cancelled();
     let text = '';
     let size = 0;
@@ -60,6 +63,7 @@ async function run(program, path, cancellable) {
         throw new SyncError('file_verification_failed', 'sha256sum output exceeded its limit');
       text += new TextDecoder().decode(bytes.get_data());
     }
+    stage(diagnostics, 'wait-verifier');
     await process.wait_async(cancellable);
     cancellable?.set_error_if_cancelled();
     const match = /^([a-f0-9]{64})[ \t]+\*?-\r?\n?$/.exec(text);
@@ -72,6 +76,7 @@ async function run(program, path, cancellable) {
       throw error;
     throw new SyncError('file_verification_failed', 'Could not read the sha256sum result', {cause: error});
   } finally {
+    stage(diagnostics, 'close-verifier');
     if (signal)
       cancellable.disconnect(signal);
     if (!succeeded)

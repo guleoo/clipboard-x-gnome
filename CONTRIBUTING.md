@@ -2,10 +2,13 @@
 
 > English · [简体中文](CONTRIBUTING.zh-CN.md)
 
-Clipboard X targets GNOME Shell 50 and GJS 1.88 or later. Shell UI code must use St, Clutter, and
+Clipboard X targets GNOME Shell 50 and 51, and GJS 1.88 or later. Shell UI code must use St, Clutter, and
 Shell APIs; GTK 4 and Libadwaita are restricted to the separate preferences process.
 
 ## Development workflow
+
+Use APIs shared by both supported Shell versions. See the [compatibility guide](docs/shell-compatibility.md)
+for the isolated lifecycle check and its verification boundaries.
 
 ```sh
 meson setup build -Dtarget=package
@@ -69,9 +72,10 @@ they must not include tests, protocol source, dictionaries, or the central serve
 ## Releases
 
 The [release workflow](.github/workflows/release.yml) runs on every push and pull request in a
-Fedora 44 / GNOME 50 environment. It checks JavaScript syntax, runs the full Meson suite, builds the
+Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the full Meson suite, builds the
 extension ZIP, and verifies that the archive contains exactly the runtime files and compiled catalogs.
-Pull requests cannot publish a release.
+Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
+after validation; release publication waits for both jobs. Pull requests cannot publish a release.
 
 To build a local release ZIP without installing it into the desktop or changing Git state, run:
 

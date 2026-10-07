@@ -8,7 +8,7 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
+[![GNOME Shell 50/51](https://img.shields.io/badge/GNOME%20Shell-50%20%2F%2051-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
 [![GJS](https://img.shields.io/badge/GJS-ES%20Modules-F7DF1E?logo=javascript&logoColor=111)](https://gjs.guide/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-663399)](LICENSE.md)
 
@@ -22,10 +22,6 @@ open images in a configured editor. To share clipboard snapshots across devices,
 By default, history and quick phrases stay on this device. Clipboard synchronization requires a
 configured server and must be enabled explicitly; network dictionaries are downloaded only when added
 or refreshed by the user.
-
-> [!IMPORTANT]
-> Clipboard X currently declares support for **GNOME Shell 50**. Other Shell versions are not listed
-> in the packaged extension metadata.
 
 ## Features
 
@@ -44,14 +40,14 @@ or refreshed by the user.
 ## Installation
 
 The recommended route is the [GNOME Shell Extensions website](https://extensions.gnome.org/). Search for
-**Clipboard X**, check that the listing supports **GNOME Shell 50**, and install it. You can then enable
+**Clipboard X**, check that the listing supports your **GNOME Shell 50 or 51** version, and install it. You can then enable
 the extension and open its preferences in the Extensions app or Extension Manager.
 
 ### Install from source
 
 #### Requirements
 
-- GNOME Shell 50 and GJS 1.88 or later;
+- GNOME Shell 50 or 51 and GJS 1.88 or later;
 - Meson, Ninja, GLib, GTK 4, Libadwaita, GdkPixbuf, Gettext, and 7-Zip;
 - a Wayland session for the complete screenshot, color picker, and simulated-input experience.
 

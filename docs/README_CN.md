@@ -22,6 +22,8 @@ GitHub Release 默认展示英文，并提供中文入口。
 
 ## 扩展开发
 
+- [GNOME Shell 兼容性](shell-compatibility_CN.md)：50/51 共用接口、CI 矩阵和隔离生命周期检查。
+
 - [日志与问题排查](diagnostics_CN.md)：系统 journal、Devkit 输出、初始化阶段与隐私边界。
 - [界面开发指南](ui-architecture_CN.md)：面板、控件、焦点矩阵、生命周期和 CSS 约定。
 - [参与开发](../CONTRIBUTING.zh-CN.md)：构建、测试、目录结构、协议改动和代码约定。

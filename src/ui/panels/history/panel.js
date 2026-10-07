@@ -53,7 +53,7 @@ export class HistoryPanel {
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-history-panel',
       x_expand: true,
     });

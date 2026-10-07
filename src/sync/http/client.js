@@ -5,6 +5,7 @@ import Soup from 'gi://Soup?version=3.0';
 import {bytesFromString, stringFromBytes} from '../../common/bytes.js';
 import {dependency as fileVerifier} from './file-verifier.js';
 import {download as downloadFile} from './file-transfer.js';
+import {stage} from './diagnostics.js';
 
 const JSON_LIMIT_BYTES = 4 * 1024 * 1024;
 const ERROR_LIMIT_BYTES = 64 * 1024;
@@ -130,7 +131,9 @@ export class HttpClient {
     onVerifying = null,
     useSha256sum = false,
     cancellable = null,
+    diagnostics = null,
   }) {
+    stage(diagnostics, 'request');
     const activeCancellable = cancellable ?? this._cancellable ?? (useSha256sum ? new Gio.Cancellable() : null);
     const program = useSha256sum ? fileVerifier() : null;
     const message = this._message('GET', path, query);
@@ -142,6 +145,7 @@ export class HttpClient {
       message.set_force_http1(true);
     }
     const input = await this._send(message, activeCancellable);
+    stage(diagnostics, 'response');
     if (!this._successful(message)) {
       try {
         const bytes = await readAll(input, ERROR_LIMIT_BYTES, activeCancellable);
@@ -178,7 +182,7 @@ export class HttpClient {
       try {
         return await downloadFile(input, targetPath, {
           size: declaredBytes, expectedSha256, program,
-          cancellable: activeCancellable, onProgress, onVerifying,
+          cancellable: activeCancellable, onProgress, onVerifying, diagnostics,
         });
       } finally {
         this._fileDownloads.delete(activeCancellable);

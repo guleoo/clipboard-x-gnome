@@ -30,7 +30,7 @@ export async function run() {
   const history = indicator._historyPanel;
   const entry = history.searchEntry;
   const text = entry.clutter_text;
-  const keyboard = Clutter.get_default_backend().get_default_seat()
+  const keyboard = global.stage.context.get_backend().get_default_seat()
     .create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
   const press = async (key, modifier = null) => {
     if (modifier)

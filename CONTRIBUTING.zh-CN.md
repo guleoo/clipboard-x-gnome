@@ -2,10 +2,12 @@
 
 > 简体中文 · [English](CONTRIBUTING.md)
 
-Clipboard X 目标环境是 GNOME Shell 50 和 GJS 1.88 或更高版本。修改 Shell UI 时只
+Clipboard X 目标环境是 GNOME Shell 50、51 和 GJS 1.88 或更高版本。修改 Shell UI 时只
 使用 St、Clutter 和 Shell API；GTK 4/Libadwaita 只允许出现在独立设置进程中。
 
 ## 开发流程
+
+使用两个 Shell 版本共有的接口。[兼容性指南](docs/shell-compatibility_CN.md)说明隔离的生命周期测试及其验证边界。
 
 ```sh
 meson setup build -Dtarget=package
@@ -62,9 +64,9 @@ meson compile -C build clipboard-x-update-po
 
 ## 发布版本
 
-[发布工作流](.github/workflows/release.yml)会在每次推送和 Pull Request 时，使用 Fedora 44 / GNOME 50
+[发布工作流](.github/workflows/release.yml)会在每次推送和 Pull Request 时，使用 Fedora 44 / GNOME 50 和 Fedora 45 / GNOME 51
 环境检查 JavaScript 语法、运行完整 Meson 测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
-翻译。Pull Request 不会触发发布。
+翻译。两个环境还分别运行隔离的无窗口扩展生命周期测试，只上传一份安装包；正式发布需等待两项任务均通过。Pull Request 不会触发发布。
 
 仅需在本地构建发布包、不安装到桌面且不改动 Git 状态时，运行：
 

@@ -107,7 +107,7 @@ class ColorPicker extends St.Widget {
     }));
 
     this._preview = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-color-preview',
     });
     this._lens = new ColorLens();

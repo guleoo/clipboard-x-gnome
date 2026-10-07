@@ -78,6 +78,8 @@ test('translations', find_program('bash'), args: [meson.current_source_dir() / '
 test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
 test('release-package', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_package.test.py'])
 test('release-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_script.test.py'])
+test('shell-compatibility-script', find_program('python3'),
+  args: [meson.current_source_dir() / 'tests/common/shell_compatibility_script.test.py'])
 test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('logger', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/logger.test.js'])
@@ -110,6 +112,7 @@ test('sync-http-failures', test_runner,
   timeout: 30)
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
+test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
 test('sync-receive', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],

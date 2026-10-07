@@ -59,6 +59,20 @@ becomes available.
 The stream test prints one JSON record per direction: duration, MiB/s, main-loop tick count,
 maximum extra delay, sampled peak RSS growth, and RSS sample count.
 
+Diagnostics also record the GJS/GLib/kernel versions, temporary filesystem, and Meson's
+`MALLOC_PERTURB_` value. Downloads include a monotonic stage timeline: request/response, file
+preparation, native splice, stream closing, verifier startup/read/wait/closing, target replacement,
+and cleanup. Timer gaps of at least 50 ms include both time boundaries and the stage observed when
+the callback finally ran. A blocking call can finish and change stages before the overdue timer
+runs; compare the gap with the entire timeline, not just `observedStage`.
+
+Linux scheduler counters and cgroup-v2 CPU statistics are supplemental diagnostics. Missing counters
+are reported as `null`; zero scheduler wait does not prove there was no scheduling pause. Cgroup
+counters cover the whole container and are not GJS-only measurements. A long wall-clock gap can mean
+blocking code, native work, or CPU scheduling starvation; it does not establish the cause on its own.
+The 250 ms gate is unchanged, and a failing benchmark is not retried or silently skipped by CI.
+Failed jobs retain Meson logs as `test-logs-gnome-50` or `test-logs-gnome-51` artifacts.
+
 - A separate fixture thread samples the GJS process's `/proc/<pid>/status` every 5 ms, including
   periods when GJS is blocked. Both upload and download have a **64 MiB peak RSS growth budget**.
   This is a sampled, per-operation budget, not proof of constant memory usage or absence of leaks.

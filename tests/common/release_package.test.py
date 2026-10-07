@@ -38,7 +38,7 @@ class ReleasePackageTest(unittest.TestCase):
                     "uuid": "clipboard-x@guleoo.github.io",
                     "settings-schema": "org.gnome.shell.extensions.clipboard-x",
                     "version-name": "0.1.0",
-                    "shell-version": ["50"],
+                    "shell-version": ["50", "51"],
                 }
             ).encode(),
             "stylesheet.css": b".panel { color: white; }",
@@ -107,6 +107,16 @@ class ReleasePackageTest(unittest.TestCase):
         self.write_archive()
         with self.assertRaisesRegex(check_release.ReleaseError, "EGO-managed"):
             check_release.validate(self.root, self.archive)
+
+    def test_requires_both_supported_shell_versions(self):
+        for versions in (["50"], ["51"], ["49", "50", "51"]):
+            with self.subTest(versions=versions):
+                metadata = json.loads(self.files["metadata.json"])
+                metadata["shell-version"] = versions
+                self.files["metadata.json"] = json.dumps(metadata).encode()
+                self.write_archive()
+                with self.assertRaisesRegex(check_release.ReleaseError, "50 and 51"):
+                    check_release.validate(self.root, self.archive)
 
 
 if __name__ == "__main__":

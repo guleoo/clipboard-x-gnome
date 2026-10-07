@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import System from 'system';
 
 import {HttpClient} from '../../src/sync/http/client.js';
 import {HttpTransport} from '../../src/sync/http/transport.js';
@@ -22,6 +23,35 @@ const fixture = new HttpFixture();
 const measurements = [];
 let client;
 
+function readOptional(path) {
+  try {
+    const [, bytes] = GLib.file_get_contents(path);
+    return new TextDecoder().decode(bytes).trim();
+  } catch (_error) {
+    return null;
+  }
+}
+
+function scheduler() {
+  const fields = readOptional('/proc/self/schedstat')?.split(/\s+/u).map(Number);
+  return fields?.length === 3 ? {cpuNanoseconds: fields[0], waitNanoseconds: fields[1]} : null;
+}
+
+function throttling() {
+  // The common cgroup-v2 container view. It covers the whole cgroup, not just GJS.
+  const text = readOptional('/sys/fs/cgroup/cpu.stat');
+  return text === null ? null : Object.fromEntries(text.split('\n').map(line => {
+    const [name, value] = line.split(/\s+/u);
+    return [name, Number(value)];
+  }));
+}
+
+function difference(after, before) {
+  if (!after || !before)
+    return null;
+  return Object.fromEntries(Object.keys(after).map(key => [key, after[key] - before[key]]));
+}
+
 function createSource() {
   const data = Uint8Array.from({length: 64 * 1024}, (_, index) => (index * 31 + (index >>> 8)) % 256);
   const bytes = new GLib.Bytes(data);
@@ -42,16 +72,25 @@ async function runMeasured(name, operation) {
   await client.request('POST', '/metrics/start', {json: {pid}});
   let metrics;
   let memory;
+  let schedulerAfter;
+  let throttleAfter;
+  const schedulerBefore = scheduler();
+  const throttleBefore = throttling();
   try {
     metrics = await measure(operation);
   } finally {
+    schedulerAfter = scheduler();
+    throttleAfter = throttling();
     memory = await client.request('POST', '/metrics/stop', {json: {}});
   }
   const peakGrowth = memory.peak - memory.baseline;
   print(JSON.stringify({phase: name, seconds: metrics.seconds,
     mebibytesPerSecond: SIZE / 1024 / 1024 / metrics.seconds,
     ticks: metrics.ticks, maximumDelayMilliseconds: metrics.maximumDelay,
-    peakRssGrowthBytes: peakGrowth, rssSamples: memory.samples}));
+    peakRssGrowthBytes: peakGrowth, rssSamples: memory.samples,
+    scheduler: difference(schedulerAfter, schedulerBefore),
+    cgroup: difference(throttleAfter, throttleBefore),
+    stages: metrics.stages, stalls: metrics.stalls}));
   assert(memory.samples >= 2, `${name}: independent RSS sampler must actually run`);
   assert(memory.baseline > 0 && memory.peak >= memory.baseline,
     `${name}: RSS measurements must be present and valid`);
@@ -60,6 +99,13 @@ async function runMeasured(name, operation) {
 }
 
 try {
+  const filesystem = Gio.File.new_for_path(directory)
+    .query_filesystem_info('filesystem::type', null).get_attribute_string('filesystem::type');
+  print(JSON.stringify({phase: 'environment', gjs: System.version,
+    glib: `${GLib.MAJOR_VERSION}.${GLib.MINOR_VERSION}.${GLib.MICRO_VERSION}`,
+    kernel: readOptional('/proc/sys/kernel/osrelease'), filesystem,
+    mallocPerturb: GLib.getenv('MALLOC_PERTURB_'),
+    cgroup: readOptional('/proc/self/cgroup')}));
   const address = await fixture.start();
   const digest = createSource();
   client = new HttpClient({serverAddress: address, apiKey: 'stress-key', deviceId: 'stress-device'});
@@ -76,8 +122,9 @@ try {
   const downloadProgress = [];
   let checkedAtomicity = false;
   const options = {maximumBytes: SIZE, expectedBytes: SIZE, expectedSha256: digest, useSha256sum: true};
-  const result = await runMeasured('download', () => client.download('/content', targetPath, {
+  const result = await runMeasured('download', diagnostics => client.download('/content', targetPath, {
     ...options,
+    diagnostics,
     onProgress: (bytes, total) => {
       downloadProgress.push({bytes, total});
       if (!checkedAtomicity && bytes > 0 && bytes < SIZE) {
@@ -91,6 +138,11 @@ try {
   assert(checkedAtomicity && result.size === SIZE && result.sha256 === digest,
     'download must verify the complete streamed object before replacing the target');
   assertProgress(downloadProgress, SIZE);
+  for (const name of ['request', 'response', 'prepare-file', 'splice', 'close-streams',
+    'start-verifier', 'read-verifier', 'wait-verifier', 'replace-target', 'cleanup', 'completed']) {
+    assert(measurements.at(-1).stages.some(stage => stage.name === name),
+      `native download diagnostics must include ${name}`);
+  }
   // Independently hash the persisted file, not just the response stream.
   const verifier = Gio.Subprocess.new(['sha256sum', targetPath], Gio.SubprocessFlags.STDOUT_PIPE);
   const hashOutput = new Gio.DataInputStream({base_stream: verifier.get_stdout_pipe()});

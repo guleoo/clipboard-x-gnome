@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import {SyncError} from '../errors.js';
 import {file as verifyFile} from './file-verifier.js';
+import {stage} from './diagnostics.js';
 
 Gio._promisify(Gio.OutputStream.prototype, 'splice_async', 'splice_finish');
 Gio._promisify(Gio.OutputStream.prototype, 'close_async', 'close_finish');
@@ -11,7 +12,7 @@ Gio._promisify(Gio.File.prototype, 'query_info_async', 'query_info_finish');
 
 // The caller must provide a bounded, uncompressed Content-Length response stream.
 export async function download(input, targetPath, {
-  size, expectedSha256, program, cancellable, onProgress, onVerifying,
+  size, expectedSha256, program, cancellable, onProgress, onVerifying, diagnostics = null,
 }) {
   let temporary = null;
   let output = null;
@@ -20,6 +21,7 @@ export async function download(input, targetPath, {
   let progressError = null;
   let reportedBytes = 0;
   try {
+    stage(diagnostics, 'prepare-file');
     GLib.mkdir_with_parents(GLib.path_get_dirname(targetPath), 0o700);
     temporary = Gio.File.new_for_path(`${targetPath}.${GLib.uuid_string_random()}.part`);
     output = temporary.create(Gio.FileCreateFlags.PRIVATE, cancellable);
@@ -40,9 +42,11 @@ export async function download(input, targetPath, {
     }
     let completedBytes;
     try {
+      stage(diagnostics, 'splice');
       completedBytes = await output.splice_async(input, Gio.OutputStreamSpliceFlags.NONE,
         GLib.PRIORITY_DEFAULT, cancellable);
     } finally {
+      stage(diagnostics, 'finish-progress');
       if (timer) {
         GLib.Source.remove(timer);
         timer = 0;
@@ -51,19 +55,22 @@ export async function download(input, targetPath, {
     }
     if (progressError)
       throw progressError;
+    stage(diagnostics, 'close-streams');
     await output.close_async(GLib.PRIORITY_DEFAULT, cancellable);
     await input.close_async(GLib.PRIORITY_DEFAULT, cancellable);
     if (completedBytes !== size)
       throw new SyncError('size_mismatch', 'Native download did not match Content-Length');
     onProgress?.(completedBytes, size);
     onVerifying?.();
-    const actualSha256 = await verifyFile(temporary.get_path(), {program, cancellable});
+    const actualSha256 = await verifyFile(temporary.get_path(), {program, cancellable, diagnostics});
     if (expectedSha256 && actualSha256 !== expectedSha256)
       throw new SyncError('hash_mismatch', 'Downloaded file did not match its manifest digest');
     cancellable?.set_error_if_cancelled();
+    stage(diagnostics, 'replace-target');
     temporary.move(Gio.File.new_for_path(targetPath), Gio.FileCopyFlags.OVERWRITE, cancellable, null);
     return {path: targetPath, size: completedBytes, sha256: actualSha256};
   } finally {
+    stage(diagnostics, 'cleanup');
     if (timer)
       GLib.Source.remove(timer);
     await pendingQuery;

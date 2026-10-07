@@ -34,6 +34,8 @@ assert(metadataTemplate.url === packageDocument.homepage,
   'extension metadata must link to the public repository');
 assert(metadataTemplate.uuid === '@uuid@' && metadataTemplate['gettext-domain'] === 'clipboard-x',
   'extension metadata must use the configured UUID and gettext domain');
+assert(JSON.stringify(metadataTemplate['shell-version']) === JSON.stringify(['50', '51']),
+  'one extension archive must declare both supported Shell versions');
 assert(/project\(\s*'clipboard-x-gnome'/u.test(meson),
   'Meson must use the public project name');
 assert(meson.includes("extension_uuid = 'clipboard-x@guleoo.github.io'")
