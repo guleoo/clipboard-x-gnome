@@ -51,10 +51,16 @@ try {
   await rejects(() => file(input.get_path(), {program: program.get_path()}), 'file_verifier_unavailable');
 
   // A cancellable read/wait must also terminate and reap the child before rejecting.
-  fakeProgram(`printf '%s' "$$" > '${pidFile.get_path()}'\nwhile :; do :; done`);
+  fakeProgram(`printf '%s\\n' "$$" > '${pidFile.get_path()}'\nwhile :; do :; done`);
   const cancellable = new Gio.Cancellable();
+  let verifierPid = null;
   const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5, () => {
     if (!pidFile.query_exists(null)) return GLib.SOURCE_CONTINUE;
+    const [, bytes] = pidFile.load_contents(null);
+    const publishedPid = new TextDecoder().decode(bytes);
+    // File creation precedes writing; the newline marks a complete PID.
+    if (!/^[1-9][0-9]*\n$/.test(publishedPid)) return GLib.SOURCE_CONTINUE;
+    verifierPid = publishedPid.slice(0, -1);
     cancellable.cancel();
     return GLib.SOURCE_REMOVE;
   });
@@ -64,8 +70,8 @@ try {
     if (!cancellable.is_cancelled()) GLib.Source.remove(timer);
     throw error;
   }
-  const [, pid] = pidFile.load_contents(null);
-  assert(!Gio.File.new_for_path(`/proc/${new TextDecoder().decode(pid)}`).query_exists(null),
+  assert(verifierPid !== null, 'verification must only be cancelled after a complete PID is published');
+  assert(!Gio.File.new_for_path(`/proc/${verifierPid}`).query_exists(null),
     'cancelled verifier must not leave a live child or zombie process');
 
   const alreadyCancelled = new Gio.Cancellable();
