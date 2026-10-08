@@ -33,6 +33,10 @@ export class ClipboardController extends EventEmitter {
     this._selectionSignal = 0;
     this._settingsSignals = [];
     this._saveTimeout = 0;
+    this._savePending = false;
+    this._saveRevision = 0;
+    this._initialization = null;
+    this._shutdown = null;
     this._captureInProgress = false;
     this._captureQueued = false;
     this._destroyed = false;
@@ -55,9 +59,28 @@ export class ClipboardController extends EventEmitter {
     return this._error;
   }
 
-  async start() {
+  start({afterShutdown = null} = {}) {
+    this._initialization ??= this._start(afterShutdown);
+    return this._initialization;
+  }
+
+  async _start(afterShutdown) {
     try {
-      this._items = orderHistory(await this._store.load(this._cancellable));
+      await afterShutdown;
+      if (this._destroyed)
+        return;
+      const loaded = await this._store.load(this._cancellable);
+      if (this._destroyed)
+        return;
+      // Keep items added while loading (for example, an early screenshot).
+      const pending = new Map(this._items.map(item => [item.primary?.sha256, item]));
+      for (const item of loaded) {
+        const current = pending.get(item.primary?.sha256);
+        if (current)
+          current.favorite ||= item.favorite;
+        else
+          this._items.push(item);
+      }
       this._trim();
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
@@ -66,11 +89,15 @@ export class ClipboardController extends EventEmitter {
       }
     } finally {
       this._loading = false;
-      this.emit('changed');
+      if (!this._destroyed)
+        this.emit('changed');
     }
 
     if (this._destroyed)
       return;
+
+    if (this._savePending)
+      this._scheduleSave();
 
     this._selection = Shell.Global.get().display.get_selection();
     this._selectionSignal = this._selection.connect(
@@ -280,7 +307,13 @@ export class ClipboardController extends EventEmitter {
   }
 
   async persist() {
+    await this._initialization;
+    if (this._destroyed)
+      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard history was stopped'});
+    const revision = this._saveRevision;
     await this._store.save(this._items, this._cancellable);
+    if (revision === this._saveRevision)
+      this._savePending = false;
   }
 
   async _prepareItem(item) {
@@ -412,19 +445,28 @@ export class ClipboardController extends EventEmitter {
   _scheduleSave() {
     if (this._destroyed)
       return;
+    this._savePending = true;
+    this._saveRevision++;
+    if (this._loading)
+      return;
     if (this._saveTimeout)
       clearTimeout(this._saveTimeout);
     this._saveTimeout = setTimeout(() => {
       this._saveTimeout = 0;
-      this._store.save(this._items, this._cancellable)
+      this.persist()
         .catch(error => logger.error('save-history', error));
     }, 150);
   }
 
   destroy() {
+    if (this._destroyed)
+      return this._shutdown;
+    // Never save an incomplete startup snapshot over the existing history.
+    const snapshot = !this._loading && this._savePending ? [...this._items] : null;
     this._destroyed = true;
     if (this._saveTimeout)
       clearTimeout(this._saveTimeout);
+    this._saveTimeout = 0;
     if (this._selectionSignal)
       this._selection.disconnect(this._selectionSignal);
     this._selectionSignal = 0;
@@ -436,6 +478,10 @@ export class ClipboardController extends EventEmitter {
     this.disconnectAll();
     this._items = [];
     this._searchCache = new WeakMap();
+    this._shutdown = Promise.resolve(this._initialization)
+      .catch(() => {})
+      .then(() => snapshot ? this._store.save(snapshot) : undefined);
+    return this._shutdown;
   }
 }
 

@@ -127,7 +127,11 @@ export class SyncClient extends EventEmitter {
   publish(item) {
     if (item.sensitive)
       return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
-    return this._logger.run('publish', () => this._enqueueTransfer(() => this._publish(item)), {quiet: true});
+    const generation = this._generation;
+    return this._logger.run('publish', () => {
+      this._requireCurrent(generation);
+      return this._enqueueTransfer(() => this._publish(item));
+    }, {quiet: true});
   }
 
   materialize(item, options = {}) {
@@ -381,10 +385,20 @@ export class SyncClient extends EventEmitter {
     return !this._destroyed && generation === this._generation;
   }
 
+  _requireCurrent(generation) {
+    if (!this._isCurrent(generation))
+      throw new Gio.IOErrorEnum({
+        code: Gio.IOErrorEnum.CANCELLED,
+        message: 'Synchronization operation is no longer current',
+      });
+  }
+
   async _publish(item) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
     this._requireConnection();
+    const generation = this._generation;
+    const transport = this._transport;
     if (!isUuid(item.id))
       throw new Error('Item ID must be a UUID v4');
     const channelId = this._requireChannel();
@@ -432,10 +446,9 @@ export class SyncClient extends EventEmitter {
     let completedBytes = 0;
     const cancellable = this._newOperationCancellable();
     try {
-      const publication = validatePublication(
-        await this._transport.createItem(channelId, manifest),
-        item.id,
-      );
+      const rawPublication = await transport.createItem(channelId, manifest);
+      this._requireCurrent(generation);
+      const publication = validatePublication(rawPublication, item.id);
       transfer = publication.transfer;
       if (transfer.kind !== 'publish' || transfer.direction !== 'upload')
         throw new Error('Synchronization server returned an invalid publication transfer');
@@ -454,6 +467,7 @@ export class SyncClient extends EventEmitter {
       if (!TERMINAL_TRANSFER_STATES.has(transfer.state) && transfer.totalBytes !== totalBytes)
         throw new Error('Synchronization server returned an inconsistent upload size');
       this._recordTransfer(transfer, true);
+      this._requireCurrent(generation);
       if (transfer.state === 'completed')
         return {itemId: publication.itemId, transferId: transfer.transferId};
       if (TERMINAL_TRANSFER_STATES.has(transfer.state))
@@ -461,27 +475,33 @@ export class SyncClient extends EventEmitter {
       for (const [key, id, preview] of requested) {
         const source = sources.get(key);
         const base = completedBytes;
-        const progress = bytes => this._recordTransfer({
-          ...transfer,
-          state: 'transferring',
-          completedBytes: Math.min(totalBytes, base + bytes),
-          totalBytes,
-          updatedAt: Date.now(),
-        });
+        const progress = bytes => {
+          if (this._isCurrent(generation)) {
+            this._recordTransfer({
+              ...transfer,
+              state: 'transferring',
+              completedBytes: Math.min(totalBytes, base + bytes),
+              totalBytes,
+              updatedAt: Date.now(),
+            });
+          }
+        };
         if (preview)
-          await this._transport.uploadPreview(publication.uploadId, id, source, progress, cancellable);
+          await transport.uploadPreview(publication.uploadId, id, source, progress, cancellable);
         else
-          await this._transport.uploadContent(publication.uploadId, id, source, progress, cancellable);
+          await transport.uploadContent(publication.uploadId, id, source, progress, cancellable);
+        this._requireCurrent(generation);
         completedBytes += source.size;
       }
-      const completed = validateTransfer(
-        (await this._transport.completeUpload(publication.uploadId)).transfer,
-        deviceId,
-      );
+      const rawCompleted = await transport.completeUpload(publication.uploadId);
+      this._requireCurrent(generation);
+      const completed = validateTransfer(rawCompleted.transfer, deviceId);
       this._observeRemoteTransfer(completed);
       this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
+      this._requireCurrent(generation);
       return {itemId: publication.itemId, transferId: completed.transferId};
     } catch (error) {
+      this._requireCurrent(generation);
       if (transfer) {
         this._recordTransfer({
           ...transfer,
@@ -494,7 +514,7 @@ export class SyncClient extends EventEmitter {
       }
       throw error;
     } finally {
-      if (transfer)
+      if (transfer && this._operations.get(transfer.transferId) === cancellable)
         this._operations.delete(transfer.transferId);
       this._activeCancellables.delete(cancellable);
     }
@@ -1033,8 +1053,7 @@ export class SyncClient extends EventEmitter {
   _enqueueTransfer(operation) {
     const generation = this._generation;
     const guardedOperation = () => {
-      if (this._destroyed || generation !== this._generation)
-        throw new Error('Synchronization operation is no longer current');
+      this._requireCurrent(generation);
       return operation();
     };
     const result = this._transferChain.then(guardedOperation, guardedOperation);

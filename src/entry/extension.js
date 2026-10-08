@@ -37,10 +37,13 @@ export default class ClipboardXExtension extends Extension {
     logger.info('enable');
     this._settings = this.getSettings();
     this._controller = new ClipboardController(this._settings);
+    const controller = this._controller;
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => this._controller.items.find(item => item.id === itemId) ?? null,
     });
+    const sync = this._sync;
+    let syncStarted = false;
     this._terminalInput = new TerminalInput({
       speed: () => this._settings.get_string('simulated-input-speed'),
       onCancelled: () => Main.notify(
@@ -90,7 +93,10 @@ export default class ClipboardXExtension extends Extension {
     this._settingsSignals.push(
       this._settings.connect('changed::show-indicator', () => this._updateIndicatorVisibility()),
       ...SHORTCUT_KEYS.map(key => this._settings.connect(`changed::${key}`, () => this._bindShortcuts())),
-      this._settings.connect('changed::sync-enabled', () => this._sync.restart().catch(error => this._reportError(error))),
+      this._settings.connect('changed::sync-enabled', () => {
+        if (syncStarted)
+          sync.restart().catch(error => this._reportError(error));
+      }),
     );
     this._updateIndicatorVisibility();
     this._bindShortcuts();
@@ -120,10 +126,18 @@ export default class ClipboardXExtension extends Extension {
       },
     );
 
-    logger.run('initialize-clipboard', () => this._controller.start())
-      .catch(error => this._reportError(error));
     this._indicator.setSyncStatus('offline');
-    this._sync.start().catch(error => this._reportError(error));
+    this._startup = logger.run('initialize-clipboard', () => controller.start({afterShutdown: this._shutdown}))
+      .then(() => {
+        if (this._controller !== controller)
+          return;
+        syncStarted = true;
+        return sync.start();
+      })
+      .catch(error => {
+        if (this._controller === controller)
+          this._reportError(error);
+      });
   }
 
   disable() {
@@ -161,7 +175,7 @@ export default class ClipboardXExtension extends Extension {
     this._indicator?.destroy();
     this._terminalInput?.destroy();
     this._sync?.destroy();
-    this._controller?.destroy();
+    this._shutdown = this._controller?.destroy().catch(error => logger.error('save-on-disable', error));
     this._indicator = null;
     this._sync = null;
     this._controller = null;
@@ -175,10 +189,17 @@ export default class ClipboardXExtension extends Extension {
   async _publish(item) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
+    const controller = this._controller;
+    const sync = this._sync;
+    await this._startup;
+    if (this._controller !== controller)
+      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard X was disabled'});
     if (!this._settings.get_boolean('sync-enabled'))
       throw new SyncError('disabled', 'Synchronization is disabled');
-    await this._controller.persist();
-    return this._sync.publish(item);
+    await controller.persist();
+    if (this._controller !== controller)
+      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard X was disabled'});
+    return sync.publish(item);
   }
 
   _publishAutomatically(item) {

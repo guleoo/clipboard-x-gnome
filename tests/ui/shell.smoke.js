@@ -86,6 +86,7 @@ export async function run() {
   }
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
   assert(indicator, `Clipboard X indicator was not added to the panel (${extension.error ?? 'no extension error'})`);
+  await indicator._actions.extensionObject._startup;
   const history = indicator._historyPanel;
   for (const item of indicator._controller.items)
     indicator._controller.remove(item.id);
