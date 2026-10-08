@@ -139,12 +139,18 @@ try {
     assert(error?.code === code, 'verifier failure must reject the entire download');
     assertPreservedTarget();
   }
-  fakeVerifier.replace_contents(`#!/bin/sh\nprintf '%s' "$$" > '${childPid.get_path()}'\nwhile :; do :; done\n`,
+  fakeVerifier.replace_contents(`#!/bin/sh\nprintf '%s\\n' "$$" > '${childPid.get_path()}'\nwhile :; do :; done\n`,
     null, false, Gio.FileCreateFlags.PRIVATE, null);
   fakeVerifier.set_attribute_uint32('unix::mode', 0o700, Gio.FileQueryInfoFlags.NONE, null);
   const hashCancellation = new Gio.Cancellable();
+  let verifierPid = null;
   const hashTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5, () => {
     if (!childPid.query_exists(null)) return GLib.SOURCE_CONTINUE;
+    const [, bytes] = childPid.load_contents(null);
+    const publishedPid = new TextDecoder().decode(bytes);
+    // File creation precedes writing; the newline marks a complete PID.
+    if (!/^[1-9][0-9]*\n$/.test(publishedPid)) return GLib.SOURCE_CONTINUE;
+    verifierPid = publishedPid.slice(0, -1);
     hashCancellation.cancel();
     return GLib.SOURCE_REMOVE;
   });
@@ -158,8 +164,8 @@ try {
     if (!hashCancellation.is_cancelled()) GLib.Source.remove(hashTimer);
   }
   assert(hashError?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED), 'hashing in progress must be cancellable');
-  const [, pidBytes] = childPid.load_contents(null);
-  assert(!Gio.File.new_for_path(`/proc/${new TextDecoder().decode(pidBytes)}`).query_exists(null),
+  assert(verifierPid !== null, 'hashing must only be cancelled after a complete PID is published');
+  assert(!Gio.File.new_for_path(`/proc/${verifierPid}`).query_exists(null),
     'download cancellation must reap the verifier before cleaning its temporary file');
   assertPreservedTarget();
   let rejected;
