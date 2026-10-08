@@ -5,6 +5,11 @@ import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {move, normalize, normalizeHidden} from '../layouts/panel-actions.js';
+import {
+  move as moveEntry,
+  normalize as normalizeEntries,
+  normalizeHidden as normalizeHiddenEntries,
+} from '../layouts/entry-actions.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
 
 export function create(settings) {
@@ -21,6 +26,7 @@ export function create(settings) {
   for (const [region, title] of [
     ['toolbar', _('Top toolbar')],
     ['footer', _('Footer')],
+    ['entries', _('Clipboard entries')],
   ]) {
     const section = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL, spacing: 6});
     section.append(new Gtk.Label({label: title, xalign: 0, css_classes: ['heading']}));
@@ -35,38 +41,49 @@ export function create(settings) {
   row.set_child(content);
 
   let updating = false;
-  const current = () => normalize(
-    settings.get_strv('panel-toolbar-actions'),
-    settings.get_strv('panel-footer-actions'),
-  );
-  const hidden = () => new Set(normalizeHidden(settings.get_strv('panel-hidden-actions')));
+  const current = () => ({
+    ...normalize(
+      settings.get_strv('panel-toolbar-actions'),
+      settings.get_strv('panel-footer-actions'),
+    ),
+    entries: normalizeEntries(settings.get_strv('entry-actions')),
+  });
+  const hidden = region => new Set(region === 'entries'
+    ? normalizeHiddenEntries(settings.get_strv('entry-hidden-actions'))
+    : normalizeHidden(settings.get_strv('panel-hidden-actions')));
   const save = layout => {
     updating = true;
     settings.set_strv('panel-toolbar-actions', layout.toolbar);
     settings.set_strv('panel-footer-actions', layout.footer);
+    settings.set_strv('entry-actions', layout.entries);
     updating = false;
     render();
   };
-  const place = (action, region, index) => save(move(current(), action, region, index));
-  const setVisible = (action, visible) => {
-    const values = hidden();
+  const place = (action, region, index) => {
+    const layout = current();
+    save(region === 'entries'
+      ? {...layout, entries: moveEntry(layout.entries, action, index)}
+      : {...layout, ...move(layout, action, region, index)});
+  };
+  const setVisible = (action, region, visible) => {
+    const values = hidden(region);
     if (visible)
       values.delete(action);
     else
       values.add(action);
     updating = true;
-    settings.set_strv('panel-hidden-actions', [...values]);
+    settings.set_strv(region === 'entries' ? 'entry-hidden-actions' : 'panel-hidden-actions', [...values]);
     updating = false;
     render();
   };
   const render = () => {
     const layout = current();
-    const hiddenActions = hidden();
     for (const [region, list] of sections) {
+      const hiddenActions = hidden(region);
       while (list.get_first_child())
         list.remove(list.get_first_child());
       layout[region].forEach((action, index) => {
-        const descriptor = describe(action);
+        const descriptor = region === 'entries' ? describeEntry(action) : describe(action);
         const item = new Gtk.ListBoxRow({activatable: false});
         const box = new Gtk.Box({spacing: 8, margin_start: 8, margin_end: 4});
         box.append(new Gtk.Image({icon_name: descriptor.icon, pixel_size: 16}));
@@ -76,7 +93,7 @@ export function create(settings) {
           valign: Gtk.Align.CENTER,
           tooltip_text: _('Show icon'),
         });
-        visibility.connect('notify::active', () => setVisible(action, visibility.active));
+        visibility.connect('notify::active', () => setVisible(action, region, visibility.active));
         box.append(visibility);
         const up = new Gtk.Button({
           icon_name: 'go-up-symbolic',
@@ -94,39 +111,45 @@ export function create(settings) {
         });
         down.connect('clicked', () => place(action, region, index + 2));
         box.append(down);
-        const otherRegion = region === 'toolbar' ? 'footer' : 'toolbar';
-        const transfer = new Gtk.Button({
-          icon_name: region === 'toolbar' ? 'go-down-symbolic' : 'go-up-symbolic',
-          css_classes: ['flat'],
-          tooltip_text: region === 'toolbar' ? _('Move to footer') : _('Move to top toolbar'),
-        });
-        transfer.connect('clicked', () =>
-          place(action, otherRegion, layout[otherRegion].length));
-        box.append(transfer);
+        if (region !== 'entries') {
+          const otherRegion = region === 'toolbar' ? 'footer' : 'toolbar';
+          const transfer = new Gtk.Button({
+            icon_name: region === 'toolbar' ? 'go-down-symbolic' : 'go-up-symbolic',
+            css_classes: ['flat'],
+            tooltip_text: region === 'toolbar' ? _('Move to footer') : _('Move to top toolbar'),
+          });
+          transfer.connect('clicked', () =>
+            place(action, otherRegion, layout[otherRegion].length));
+          box.append(transfer);
+        }
         item.set_child(box);
         list.append(item);
       });
     }
   };
-  const toolbarSignal = settings.connect('changed::panel-toolbar-actions', () => {
+  const signals = [
+    'panel-toolbar-actions', 'panel-footer-actions', 'panel-hidden-actions',
+    'entry-actions', 'entry-hidden-actions',
+  ].map(key => settings.connect(`changed::${key}`, () => {
     if (!updating)
       render();
-  });
-  const footerSignal = settings.connect('changed::panel-footer-actions', () => {
-    if (!updating)
-      render();
-  });
-  const hiddenSignal = settings.connect('changed::panel-hidden-actions', () => {
-    if (!updating)
-      render();
-  });
+  }));
   disconnectWhenUnrooted(row, () => {
-    settings.disconnect(toolbarSignal);
-    settings.disconnect(footerSignal);
-    settings.disconnect(hiddenSignal);
+    for (const signal of signals)
+      settings.disconnect(signal);
   });
   render();
   return row;
+}
+
+function describeEntry(action) {
+  return {
+    tokenize: {title: _('Segment text'), icon: 'format-text-plaintext-symbolic'},
+    edit: {title: _('Edit image'), icon: 'document-edit-symbolic'},
+    pin: {title: _('Pin'), icon: 'view-pin-symbolic'},
+    sync: {title: _('Synchronization'), icon: 'network-transmit-receive-symbolic'},
+    delete: {title: _('Delete from local history'), icon: 'user-trash-symbolic'},
+  }[action];
 }
 
 function describe(action) {

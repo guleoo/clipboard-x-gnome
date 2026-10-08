@@ -19,7 +19,7 @@ const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
 
 export class TerminalInput {
   constructor({onCancelled = null, speed = () => 'standard'} = {}) {
-    const seat = Clutter.get_default_backend().get_default_seat();
+    const seat = global.stage.context.get_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
     this._queue = Promise.resolve();

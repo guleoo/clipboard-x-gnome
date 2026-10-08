@@ -2,7 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {bytesFromString, sha256, stringFromBytes} from '../../common/bytes.js';
-import {diagnosticCode} from '../../common/errors.js';
+import {createLogger} from '../../common/logger.js';
 import {loadFile, writeFile} from '../../common/files.js';
 import {isUuid} from '../../common/uuid.js';
 import {ClipboardItem} from '../item.js';
@@ -23,6 +23,7 @@ const MAX_PREVIEW_TEXT_LENGTH = 1024 * 1024;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/u;
 const INDEX_VERSION = 1;
 const MIGRATION_MARKER = '.cache-migrated-v1';
+const logger = createLogger('history');
 
 function ensurePrivateDirectory(path) {
   GLib.mkdir_with_parents(path, 0o700);
@@ -66,7 +67,7 @@ export class HistoryStore {
       } catch (error) {
         if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
           throw error;
-        console.warn(`Clipboard X: ignored invalid legacy history (${diagnosticCode(error)})`);
+        logger.warn('load-legacy', error);
       }
       const knownIds = new Set(items.map(item => item.id));
       for (const item of legacyItems) {
@@ -103,7 +104,7 @@ export class HistoryStore {
           } catch (error) {
             if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
               throw error;
-            console.warn(`Clipboard X: ignored invalid device history (${diagnosticCode(error)})`);
+            logger.warn('load-device', error);
           }
         }
       }
@@ -157,7 +158,7 @@ export class HistoryStore {
         await validatePreviewFile(value.preview, cancellable);
         items.push(ClipboardItem.fromJSON(value));
       } catch (error) {
-        console.warn(`Clipboard X: ignored invalid history entry (${diagnosticCode(error)})`);
+        logger.warn('load-entry', error);
       }
     }
     return items;
@@ -356,7 +357,7 @@ export class HistoryStore {
               await deleteFile(child, cancellable);
             } catch (error) {
               if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
-                console.warn(`Clipboard X: unable to remove stale history object (${diagnosticCode(error)})`);
+                logger.warn('remove-stale-object', error);
             }
           }
         }
@@ -364,7 +365,7 @@ export class HistoryStore {
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND)
           && !error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-        console.warn(`Clipboard X: unable to prune history storage (${diagnosticCode(error)})`);
+        logger.warn('prune', error);
     } finally {
       try {
         enumerator?.close(cancellable);

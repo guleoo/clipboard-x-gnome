@@ -8,7 +8,7 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
+[![GNOME Shell 50+](https://img.shields.io/badge/GNOME%20Shell-50%2B-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
 [![GJS](https://img.shields.io/badge/GJS-ES%20Modules-F7DF1E?logo=javascript&logoColor=111)](https://gjs.guide/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-663399)](LICENSE.md)
 
@@ -23,9 +23,22 @@ By default, history and quick phrases stay on this device. Clipboard synchroniza
 configured server and must be enabled explicitly; network dictionaries are downloaded only when added
 or refreshed by the user.
 
-> [!IMPORTANT]
-> Clipboard X currently declares support for **GNOME Shell 50**. Other Shell versions are not listed
-> in the packaged extension metadata.
+<details>
+<summary>View screenshots</summary>
+
+**Clipboard panel**
+
+![Clipboard panel](docs/preivew/main-panel.png)
+
+**Token selection panel**
+
+![Token selection panel](docs/preivew/split-panel.png)
+
+**Preferences**
+
+![Preferences](docs/preivew/settings-1.png)
+
+</details>
 
 ## Features
 
@@ -43,17 +56,14 @@ or refreshed by the user.
 
 ## Installation
 
-The recommended route is the [GNOME Shell Extensions website](https://extensions.gnome.org/). Search for
-**Clipboard X**, check that the listing supports **GNOME Shell 50**, and install it. You can then enable
-the extension and open its preferences in the Extensions app or Extension Manager.
+Install from the [GNOME Shell Extensions website](https://extensions.gnome.org/): search for **Clipboard X**.
 
 ### Install from source
 
 #### Requirements
 
-- GNOME Shell 50 and GJS 1.88 or later;
+- GNOME Shell 50+ and GJS 1.88 or later;
 - Meson, Ninja, GLib, GTK 4, Libadwaita, GdkPixbuf, Gettext, and 7-Zip;
-- a Wayland session for the complete screenshot, color picker, and simulated-input experience.
 
 Build a release archive:
 
@@ -63,10 +73,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x-gnome.zip`:
+Install the generated `build/clipboard-x-gnome_1.0.0.zip`:
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.0.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -90,6 +100,9 @@ stable synchronization identity. The editable device tag and icon are only its h
 
 Click a history entry—or focus it and press Enter—to copy it. Each row also exposes tokenization or image
 editing, pinning, synchronization, and deletion actions when applicable. Search with `Ctrl+F`.
+
+Use **Preferences → General → Icon layout → History** to hide or reorder entry action icons.
+Hiding an icon does not disable its keyboard shortcut.
 
 Default contextual shortcuts are:
 
@@ -147,12 +160,14 @@ them when installed, started, or opened.
 ### 5. Keep quick phrases
 
 Open **Quick phrases** from the panel, press `+`, enter a phrase, and confirm with Enter. Quick phrases
-stay local.
+stay local. Focus a phrase and press `v` to paste, `'` to simulate typing, or `Delete` to remove it.
+These actions share the clipboard-entry shortcut settings; the add-phrase input keeps normal text editing.
 
 ### 6. Capture, pick, and edit
 
 - **Screenshot** calls the XDG Screenshot Portal. Available targets depend on the local portal backend.
 - **Color picker** samples the screen and writes the configured HEX, RGB, HSL, or OKLCH representation.
+  Use the arrow keys to move the sampling point one pixel at a time.
 - **Image editing** launches the command configured under **Preferences → Screenshot → Image editing**.
 
 For example, enter `gradia %i` to use Gradia.
@@ -172,6 +187,13 @@ Pipes, redirection, and shell expansion are intentionally unsupported.
 ## Synchronize devices
 
 Synchronization is off by default. Deploy your own `clipboard-x-server`, then configure and enable it.
+Once configured, the panel's synchronization icon switches synchronization on or off.
+
+The text and image full-transfer thresholds apply to both sending and receiving. Each device uses
+its own thresholds: content at or below them is received in full automatically; larger content keeps
+only a preview until needed, even if the server already has the original. If the server does not have
+an original selected for automatic receiving, it requests an upload from the source device first.
+Received entries show a check mark only once all their original representations are available locally.
 
 To connect a device:
 
@@ -181,10 +203,23 @@ To connect a device:
 4. Enable synchronization and test the connection.
 5. Keep the default **Manual** send mode and use an entry's sync button, or explicitly choose **Automatic**.
 
+**Test connection** checks the current inputs without saving them or restarting synchronization.
+Click **Apply** to save connection changes and upload the current device name and icon, even when
+synchronization is off. Apply waits for the server confirmation and Channel loading; its button stays
+disabled until the operation finishes. If the server request fails, the connection settings remain saved
+locally and the failure is displayed.
+
 **Preferences → Synchronization → Polling interval** controls how often this device checks for updates;
 longer intervals reduce server requests but delay incoming items. To stop recording from an application,
 choose it from **Preferences → Clipboard → Privacy → Running application** or enter its window class under
 **Excluded applications**.
+
+**Preferences → Synchronization → Use sha256sum for file verification** is off by default.
+Enable it to use native streaming and `sha256sum` for lower-memory large-file downloads.
+The switch checks the dependency before enabling; install the package providing `sha256sum`
+(usually `coreutils`) if prompted. Verification reads the downloaded file again; missing or failed
+verification never bypasses the integrity check. With the switch off, the existing GLib verification
+requires no additional command but can have higher peak memory use for large files.
 
 Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends both credentials and content
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
@@ -234,14 +269,15 @@ tools/run-dev-shell.sh
 
 It builds and packages the extension, then starts it in an isolated Mutter Devkit session with separate
 XDG data and settings. The host desktop does not need to log out.
+Logs use the system journal; see [Logs and troubleshooting](docs/diagnostics.md) for the commands.
 
 Before submitting code:
 
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
 ```
 
 Clipboard X does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,
@@ -251,6 +287,7 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
+- [1.0.0 release notes](docs/release/v1.0.0-en.md)
 - [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)
@@ -260,4 +297,3 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## License
 
 Clipboard X is free software released under the [GNU GPL v3 or later](LICENSE.md).
-Created by [guleoo](https://github.com/guleoo), with contributions from the community.

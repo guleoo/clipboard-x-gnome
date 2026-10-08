@@ -194,6 +194,65 @@ export async function run() {
       && indicator._quickPhrases.rows[0].focusActors.every(actor =>
         foreground(actor).join(',') === phraseForeground.join(',')),
     'Quick-phrase content and actions did not use the shared content-item foreground');
+  const quickPhrases = indicator._quickPhrases;
+  const phraseCommands = [];
+  const originalTypeText = indicator._actions.typeText;
+  const originalPasteText = indicator._actions.pasteText;
+  const phraseShortcutKeys = ['history-type-shortcut', 'history-paste-shortcut', 'history-delete-shortcut'];
+  const originalPhraseShortcuts = phraseShortcutKeys.map(key => indicator._settings.get_strv(key));
+  const focusPhrase = (actionIndex = 0) => {
+    indicator.menu.open();
+    indicator._openPhrases();
+    quickPhrases.focusAnchor.cancel();
+    quickPhrases.rows[0].focusActors[actionIndex].grab_key_focus();
+  };
+  indicator._actions.typeText = async text => phraseCommands.push(`type:${text}`);
+  indicator._actions.pasteText = async text => phraseCommands.push(`paste:${text}`);
+  try {
+    indicator._settings.set_strv('history-type-shortcut', ['apostrophe']);
+    indicator._settings.set_strv('history-paste-shortcut', ['v']);
+    indicator._settings.set_strv('history-delete-shortcut', ['Delete']);
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_STOP
+        && !indicator.menu.isOpen,
+    'Quick-phrase typing shortcut must be consumed and close the menu');
+    focusPhrase(1);
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_v)) === Clutter.EVENT_STOP
+        && !indicator.menu.isOpen,
+    'Quick-phrase paste shortcut must also work while its action icon is focused');
+    assert(phraseCommands.join(',') === 'type:Local smoke-test phrase,paste:Local smoke-test phrase',
+      'Quick-phrase shortcuts did not send the focused text to the correct actions');
+    indicator._settings.set_strv('history-type-shortcut', ['<Control>t']);
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_PROPAGATE,
+      'Quick phrases kept the old simulated-input shortcut after reconfiguration');
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_t, Clutter.ModifierType.CONTROL_MASK))
+        === Clutter.EVENT_STOP,
+    'Quick phrases did not honor a configured shortcut with modifiers');
+    indicator._settings.set_strv('history-type-shortcut', []);
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_apostrophe)) === Clutter.EVENT_PROPAGATE,
+      'A disabled quick-phrase typing shortcut must not run');
+    indicator._settings.set_strv('history-type-shortcut', ['apostrophe']);
+    quickPhrases.showForm();
+    const beforeInput = phraseCommands.length;
+    for (const key of [Clutter.KEY_v, Clutter.KEY_apostrophe, Clutter.KEY_Delete]) {
+      assert(indicator._handleMenuKey(capturedKeyEvent(key)) === Clutter.EVENT_PROPAGATE,
+        'Entry shortcuts must not intercept text editing in the quick-phrase form');
+    }
+    assert(phraseCommands.length === beforeInput && quickPhrases.phrases.length === 1,
+      'Editing a quick phrase triggered a clipboard action or deletion');
+    quickPhrases.hideForm();
+    focusPhrase();
+    assert(indicator._handleMenuKey(capturedKeyEvent(Clutter.KEY_Delete)) === Clutter.EVENT_STOP,
+      'Quick-phrase deletion shortcut was not consumed');
+    assert(await waitUntil(() => !quickPhrases.phrases.includes('Local smoke-test phrase')),
+      'Quick-phrase deletion shortcut did not delete the focused phrase');
+    await quickPhrases.replace(['Local smoke-test phrase']);
+  } finally {
+    indicator._actions.typeText = originalTypeText;
+    indicator._actions.pasteText = originalPasteText;
+    phraseShortcutKeys.forEach((key, index) => indicator._settings.set_strv(key, originalPhraseShortcuts[index]));
+  }
   indicator._quickPhrases.showForm();
   assert(indicator._quickPhrases.form.get_children().length === 1,
     'Quick-phrase form must contain only the text entry');
@@ -389,6 +448,24 @@ export async function run() {
   deviceRow.destroy();
   history._multipleDevices = false;
   capturedRow.destroy();
+  const originalEntryActions = indicator._settings.get_strv('entry-actions');
+  const originalHiddenEntryActions = indicator._settings.get_strv('entry-hidden-actions');
+  indicator._settings.set_strv('entry-actions', ['delete', 'pin', 'sync', 'tokenize', 'edit']);
+  indicator._settings.set_strv('entry-hidden-actions', ['pin', 'sync']);
+  const reorderedRow = history.entry(capturedText);
+  assert(reorderedRow.focusActors.slice(1).map(actor => actor._clipboardXEntryAction).join()
+      === 'delete,tokenize',
+    'Entry action visibility and order were not reflected in keyboard focus order');
+  assert(reorderedRow._clipboardXFocusRow.length === 3,
+    'Hidden entry icons must not occupy focus matrix cells');
+  reorderedRow.destroy();
+  indicator._settings.set_strv('entry-hidden-actions', originalEntryActions);
+  const contentOnlyRow = history.entry(capturedText);
+  assert(contentOnlyRow.focusActors.length === 1,
+    'Hiding all entry icons must retain only the copyable content');
+  contentOnlyRow.destroy();
+  indicator._settings.set_strv('entry-actions', originalEntryActions);
+  indicator._settings.set_strv('entry-hidden-actions', originalHiddenEntryActions);
   assert(indicator._controller.search('SMOKE TEST').includes(capturedText),
     'Case-insensitive clipboard history search did not find the expected entry');
   const originalTypeItem = indicator._actions.typeItem;
@@ -422,10 +499,12 @@ export async function run() {
   indicator._settings.set_strv('history-paste-shortcut', ['v']);
   indicator._actions.typeItem = originalTypeItem;
   indicator._actions.pasteItem = originalPasteItem;
+  indicator._settings.set_strv('entry-hidden-actions', ['pin']);
   history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(capturedText.favorite, 'Clipboard entry p shortcut did not pin the entry');
   history.handleEntryKey(capturedText, entryEvent(Clutter.KEY_p));
   assert(!capturedText.favorite, 'Clipboard entry p shortcut did not unpin the entry');
+  indicator._settings.set_strv('entry-hidden-actions', originalHiddenEntryActions);
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
   const pinnedRow = history.entry(capturedText);
@@ -666,6 +745,29 @@ export async function run() {
   indicator._settings.set_string('editor-command', '/usr/bin/true %f');
   await extensionObject._editItem(imageItem);
   assert(imageItem.primary.path, 'Immediate image editing did not persist a stable original path');
+  const originalSyncEnabled = indicator._settings.get_boolean('sync-enabled');
+  indicator._settings.set_boolean('sync-enabled', false);
+  const originalPath = imageItem.primary.path;
+  const originalBytes = imageItem.primary.bytes;
+  imageItem.remote = true;
+  imageItem.primary.path = null;
+  imageItem.primary.bytes = null;
+  let materializationAttempted = false;
+  extensionObject._ensureMaterialized = () => materializationAttempted = true;
+  let editingError;
+  try {
+    await extensionObject._editItem(imageItem);
+  } catch (error) {
+    editingError = error;
+  } finally {
+    extensionObject._ensureMaterialized = ensureMaterialized;
+    imageItem.primary.path = originalPath;
+    imageItem.primary.bytes = originalBytes;
+  }
+  assert(editingError?.code === 'original_image_requires_sync' && !materializationAttempted,
+    'Editing a remote preview with sync disabled must stop before requesting or launching the original');
+  await extensionObject._editItem(imageItem);
+  indicator._settings.set_boolean('sync-enabled', originalSyncEnabled);
   imageItem.remote = true;
   imageItem.primary.bytes = null;
   await extensionObject._ensureMaterialized(imageItem);
@@ -673,7 +775,19 @@ export async function run() {
     'Previously downloaded remote content was not restored from local cache while offline');
   imageItem.remote = false;
 
+  indicator._settings.set_boolean('sync-enabled', false);
+  indicator.menu.open();
+  history.syncButton.emit('clicked');
+  assert(indicator._settings.get_boolean('sync-enabled') && history.syncButton.selected
+      && indicator.menu.isOpen,
+    'The panel sync button must enable synchronization without closing the menu');
+  history.syncButton.emit('clicked');
+  assert(!indicator._settings.get_boolean('sync-enabled') && !history.syncButton.selected
+      && history.syncButton.get_child().icon_name === 'network-offline-symbolic',
+    'The panel sync button must disable synchronization and update its selected state');
   indicator._settings.set_boolean('sync-enabled', true);
+  assert(history.syncButton.selected, 'External sync settings changes must update the button');
+  indicator.menu.close();
   indicator._settings.set_string('sync-send-mode', 'manual');
   const originalPreviewWidth = imageItem.preview.width;
   const originalPreviewHeight = imageItem.preview.height;
@@ -683,6 +797,8 @@ export async function run() {
   const imageButtons = imageRow.get_children().filter(child => child instanceof St.Button);
   assert(imageButtons.length === 5,
     'Image history row must expose content, edit, pin, synchronization and delete actions');
+  assert(imageButtons[3].get_child().icon_name === 'network-transmit-receive-symbolic',
+    'The entry synchronization action must use the bidirectional arrows icon');
   const imageBody = imageButtons[0].get_child();
   const imageContent = imageBody.get_children().find(child =>
     child.has_style_class_name?.('cbx-image-content'));
@@ -703,8 +819,19 @@ export async function run() {
   imageRow.destroy();
   imageItem.preview.width = originalPreviewWidth;
   imageItem.preview.height = originalPreviewHeight;
+  const availableImage = new imageItem.constructor({
+    ...imageItem, id: GLib.uuid_string_random(), remote: true,
+  });
+  const completeButton = history._sync.button(availableImage);
+  assert(completeButton.get_child().icon_name === 'object-select-symbolic',
+    'Received originals must show the completion icon without a temporary transfer record');
+  completeButton.destroy();
+  const availableImagePath = imageItem.primary.path;
+  const availableImageBytes = imageItem.primary.bytes;
   imageItem.remote = true;
   imageItem.availability = 'preview';
+  imageItem.primary.path = null;
+  imageItem.primary.bytes = null;
   const remoteButton = history._sync.button(imageItem);
   assert(remoteButton.get_child().icon_name === 'folder-download-symbolic',
     'Remote image preview did not expose its lazy download action');
@@ -713,8 +840,40 @@ export async function run() {
   assert(remoteButton.get_child().icon_name === 'view-refresh-symbolic',
     'Retryable remote image failure did not expose a retry action');
   remoteButton.destroy();
+  imageItem.primary.path = availableImagePath;
+  imageItem.primary.bytes = availableImageBytes;
   imageItem.remote = false;
   imageItem.availability = 'ready';
+
+  const incomingText = capturedText.constructor.fromText('incoming threshold smoke', {
+    originDeviceId: GLib.uuid_string_random(), remote: true,
+  });
+  const incomingBytes = incomingText.primary.bytes;
+  incomingText.primary.bytes = null;
+  incomingText.availability = 'preview';
+  const originalGetItem = extensionObject._sync.getItem;
+  const originalMaterialize = extensionObject._sync.materialize;
+  const originalReceiveMode = indicator._settings.get_string('sync-receive-mode');
+  indicator._settings.set_string('sync-receive-mode', 'history');
+  extensionObject._sync.getItem = async () => incomingText;
+  extensionObject._sync.materialize = async (item, options) => {
+    assert(indicator._controller.items.includes(item) && options.withinThreshold,
+      'Incoming previews must enter history before threshold-controlled automatic receiving');
+    item.primary.bytes = incomingBytes;
+    item.availability = 'ready';
+  };
+  try {
+    await extensionObject._receiveRemoteItem(incomingText.id);
+    // Flush the normal debounced history save for a deterministic storage assertion.
+    await indicator._controller.persist();
+    assert(incomingText.primary.path && incomingText.availability === 'ready',
+      'Automatic receiving must persist the completed original');
+  } finally {
+    extensionObject._sync.getItem = originalGetItem;
+    extensionObject._sync.materialize = originalMaterialize;
+    indicator._settings.set_string('sync-receive-mode', originalReceiveMode);
+    indicator._controller.remove(incomingText.id);
+  }
 
   const transferId = GLib.uuid_string_random();
   const transfer = {
@@ -736,6 +895,11 @@ export async function run() {
   indicator.setTransfer(transfer);
   assert(progressButton.get_child() instanceof St.DrawingArea && progressButton._hintText.includes('50%'),
     'Exact per-item transfer progress was not rendered as a ring');
+  for (const direction of ['upload', 'download']) {
+    indicator.setTransfer({...transfer, direction, state: 'completed', completedBytes: 100});
+    assert(progressButton.get_child().icon_name === 'object-select-symbolic',
+      'Completed uploads and downloads must use the check mark icon');
+  }
   indicator.setTransfer({...transfer, state: 'expired', errorMessage: 'expired', updatedAt: Date.now() + 1});
   assert(progressButton._hintText.includes('expired'), 'Expired transfer did not expose a retryable error');
   progressButton.destroy();
@@ -828,14 +992,17 @@ export async function run() {
   assert(extensionObject._colorPicker._rgb?.length === 3, 'Color picker did not sample the stage texture');
   const pickedColor = extensionObject._colorPicker;
   const [pickerX, pickerY] = pickedColor._coords;
-  const movementKey = pickerX < global.stage.width - 1 ? Clutter.KEY_Right : Clutter.KEY_Left;
+  const pixelX = Math.round(pickerX * pickedColor._scale);
+  const movementKey = pixelX < pickedColor._texture.get_width() - 1
+    ? Clutter.KEY_Right : Clutter.KEY_Left;
   pickedColor.vfunc_key_press_event({
     get_key_symbol: () => movementKey,
     get_state: () => 0,
   });
   await Scripting.sleep(100);
-  assert(Math.abs(pickedColor._coords[0] - pickerX) === 1 && pickedColor._coords[1] === pickerY,
-    'Color picker keyboard movement did not advance by one logical pixel');
+  assert(Math.abs(Math.round(pickedColor._coords[0] * pickedColor._scale) - pixelX) === 1
+      && pickedColor._coords[1] === pickerY,
+    'Color picker keyboard movement did not advance by one screenshot pixel cell');
   pickedColor._onPicked(pickedColor._rgb);
   pickedColor.close();
   await Scripting.sleep(300);

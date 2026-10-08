@@ -76,9 +76,3 @@ Manual sending is the default. Sending clipboard content to a user-configured se
 with a third party. A GNOME Extensions review build should hide or remove automatic sending options that
 are not triggered by an explicit per-entry action, and its metadata and listing must disclose clipboard
 access, server data flows, and external image-editor launching.
-
-## Reporting vulnerabilities
-
-Use the repository host's private security-reporting feature. Do not attach real clipboard content,
-DeviceId, API keys, server addresses, or local paths to public issues. Provide a minimized reproduction,
-GNOME/GJS versions, and redacted diagnostic codes instead.

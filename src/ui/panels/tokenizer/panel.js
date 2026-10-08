@@ -37,7 +37,7 @@ export class TokenizerPanel {
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-token-panel',
       x_expand: true,
     });
@@ -138,7 +138,7 @@ export class TokenizerPanel {
 
     const tokenItem = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.tokenBox = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-token-box',
       style: `width: ${this._contentWidth}px; max-width: ${this._contentWidth}px;`,
       x_expand: true,

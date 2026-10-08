@@ -3,6 +3,9 @@ import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 
 import {bytesFromString, stringFromBytes} from '../../common/bytes.js';
+import {dependency as fileVerifier} from './file-verifier.js';
+import {download as downloadFile} from './file-transfer.js';
+import {stage} from './diagnostics.js';
 
 const JSON_LIMIT_BYTES = 4 * 1024 * 1024;
 const ERROR_LIMIT_BYTES = 64 * 1024;
@@ -30,6 +33,7 @@ export class HttpClient {
     this._deviceId = String(deviceId ?? '');
     this._session = session ?? new Soup.Session({timeout: 30});
     this._cancellable = cancellable;
+    this._fileDownloads = new Set();
   }
 
   async request(method, path, {query = null, json = undefined, maximumBytes = JSON_LIMIT_BYTES, cancellable = null} = {}) {
@@ -124,12 +128,24 @@ export class HttpClient {
     mimeType = 'application/octet-stream',
     query = null,
     onProgress = null,
+    onVerifying = null,
+    useSha256sum = false,
     cancellable = null,
+    diagnostics = null,
   }) {
-    const activeCancellable = cancellable ?? this._cancellable;
+    stage(diagnostics, 'request');
+    const activeCancellable = cancellable ?? this._cancellable ?? (useSha256sum ? new Gio.Cancellable() : null);
+    const program = useSha256sum ? fileVerifier() : null;
     const message = this._message('GET', path, query);
     message.request_headers.append('Accept', mimeType);
+    if (useSha256sum) {
+      // Content-Length must bound the bytes given to native splice, not compressed bytes.
+      message.disable_feature(Soup.ContentDecoder);
+      message.request_headers.replace('Accept-Encoding', 'identity');
+      message.set_force_http1(true);
+    }
     const input = await this._send(message, activeCancellable);
+    stage(diagnostics, 'response');
     if (!this._successful(message)) {
       try {
         const bytes = await readAll(input, ERROR_LIMIT_BYTES, activeCancellable);
@@ -140,12 +156,37 @@ export class HttpClient {
     }
 
     const declaredBytes = message.response_headers.get_content_length();
+    if (useSha256sum) {
+      const headers = message.response_headers;
+      const length = headers.get_one('Content-Length')?.trim();
+      const encoding = headers.get_one('Content-Encoding')?.trim().toLowerCase();
+      const version = message.get_http_version();
+      if (message.status_code !== 200 || !length || !/^\d+$/.test(length) || !Number.isSafeInteger(declaredBytes)
+          || !Number.isSafeInteger(maximumBytes) || maximumBytes < 0
+          || declaredBytes < 0 || headers.get_encoding() !== Soup.Encoding.CONTENT_LENGTH
+          || ![Soup.HTTPVersion.HTTP_1_0, Soup.HTTPVersion.HTTP_1_1].includes(version)
+          || (encoding && encoding !== 'identity')) {
+        input.close(null);
+        throw new HttpError('Native download requires a bounded, uncompressed response', {code: 'invalid_response'});
+      }
+    }
     if (declaredBytes > maximumBytes || (expectedBytes >= 0 && declaredBytes >= 0 && declaredBytes !== expectedBytes)) {
       input.close(null);
       throw new HttpError('Synchronization content size exceeds its declared limit', {
         status: message.status_code,
         code: 'invalid_content_size',
       });
+    }
+    if (useSha256sum) {
+      this._fileDownloads.add(activeCancellable);
+      try {
+        return await downloadFile(input, targetPath, {
+          size: declaredBytes, expectedSha256, program,
+          cancellable: activeCancellable, onProgress, onVerifying, diagnostics,
+        });
+      } finally {
+        this._fileDownloads.delete(activeCancellable);
+      }
     }
 
     const directory = GLib.path_get_dirname(targetPath);
@@ -203,6 +244,8 @@ export class HttpClient {
   }
 
   abort() {
+    for (const cancellable of this._fileDownloads)
+      cancellable.cancel();
     this._session.abort();
   }
 

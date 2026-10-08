@@ -4,6 +4,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 import {message as syncErrorMessage} from '../../../sync/errors.js';
 import {ProgressRing} from './progress-ring.js';
+import {isComplete} from './sync-state.js';
 
 const ICON_SIZE = 16;
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
@@ -17,16 +18,22 @@ export class SyncAction {
     this._closeMenu = closeMenu;
     this._transfers = new Map();
     this._buttons = new Map();
+    this._status = 'offline';
+    this._capabilities = null;
+    this._accentColor = null;
     this.statusButton = createIconButton(
       'network-offline-symbolic',
-      _('Synchronization settings'),
-      () => this._runAndClose(() => actions.openPreferences()),
+      _('Synchronization'),
+      () => settings.set_boolean('sync-enabled', !settings.get_boolean('sync-enabled')),
+      {stateful: true},
     );
+    this._enabledSignal = settings.connect('changed::sync-enabled', () => this._updateStatus());
+    this._updateStatus();
   }
 
   button(item) {
     const button = this._createIconButton(
-      'folder-remote-symbolic',
+      'network-transmit-receive-symbolic',
       _('Synchronize'),
       () => this._activate(item),
       {showTooltip: false},
@@ -42,6 +49,26 @@ export class SyncAction {
   }
 
   setStatus(status, capabilities = null) {
+    this._status = status;
+    this._capabilities = capabilities;
+    this._updateStatus();
+  }
+
+  setAccent(color) {
+    this._accentColor = color;
+    this._updateSelected();
+  }
+
+  _updateSelected() {
+    const enabled = this._settings.get_boolean('sync-enabled');
+    this.statusButton.selected = enabled;
+    this.statusButton.set_style(enabled && this._accentColor
+      ? `color: ${this._accentColor};` : '');
+  }
+
+  _updateStatus() {
+    const status = this._status;
+    const capabilities = this._capabilities;
     let iconName;
     let text;
     if (!this._settings.get_boolean('sync-enabled')) {
@@ -66,6 +93,7 @@ export class SyncAction {
     }
     this._setIcon(this.statusButton, iconName);
     this._setHint(this.statusButton, text);
+    this._updateSelected();
   }
 
   setTransfer(transfer) {
@@ -76,12 +104,20 @@ export class SyncAction {
   }
 
   destroy() {
+    this._settings.disconnect(this._enabledSignal);
     this._buttons.clear();
     this._transfers.clear();
   }
 
   _update(item, button) {
     const transfer = this._transfers.get(item.id);
+    if (isComplete(item, transfer)) {
+      this._setIcon(button, 'object-select-symbolic');
+      this._setHint(button, item.remote
+        ? _('Original is available locally')
+        : transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
+      return;
+    }
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       if (transfer.totalBytes > 0) {
         button.set_child(new ProgressRing(transfer.completedBytes / transfer.totalBytes));
@@ -103,25 +139,18 @@ export class SyncAction {
       );
       return;
     }
-    if (transfer?.state === 'completed') {
-      this._setIcon(button, 'emblem-ok-symbolic');
-      this._setHint(button, transfer.direction === 'upload'
-        ? _('Upload completed')
-        : _('Original downloaded'));
-      return;
-    }
     if (!this._settings.get_boolean('sync-enabled')) {
       this._setIcon(button, 'network-offline-symbolic');
       this._setHint(button, _('Synchronization is disabled'));
       return;
     }
-    if (item.remote && item.availability !== 'ready') {
+    if (item.remote) {
       const failed = item.availability === 'failed';
       this._setIcon(button, failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
       this._setHint(button, failed ? _('Retry original download') : _('Download original'));
       return;
     }
-    this._setIcon(button, 'folder-remote-symbolic');
+    this._setIcon(button, 'network-transmit-receive-symbolic');
     this._setHint(button, item.remote
       ? _('Original is available locally')
       : _('Send to synchronization server'));
@@ -137,7 +166,7 @@ export class SyncAction {
       this._runAndClose(() => this._actions.openPreferences());
       return;
     }
-    if (item.remote && item.availability !== 'ready')
+    if (item.remote && !isComplete(item))
       await this._actions.materializeItem(item);
     else if (!item.remote)
       await this._actions.publish(item);

@@ -782,6 +782,10 @@ msgstr ""
 msgid "Clipboard"
 msgstr "Zwischenablage"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Zwischenablageeinträge"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historie"
@@ -1253,3 +1257,27 @@ msgstr "Bildschirmfoto aufnehmen"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Kommagetrennte Wörter; benutzerdefinierte Wörter haben Vorrang"
+
+msgid "Use sha256sum for file verification"
+msgstr "sha256sum zur Dateiüberprüfung verwenden"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Verringert den Speicherverbrauch beim Herunterladen großer Dateien; benötigt sha256sum und liest jede heruntergeladene Datei erneut."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Installieren Sie sha256sum (normalerweise in coreutils enthalten), um die externe Dateiüberprüfung zu aktivieren."
+
+msgid "File verification with sha256sum failed"
+msgstr "Dateiüberprüfung mit sha256sum fehlgeschlagen"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Das Originalbild wurde noch nicht heruntergeladen. Aktivieren Sie zuerst die Synchronisierung."
+
+msgid "Text full-transfer threshold"
+msgstr "Schwellenwert für vollständige Textübertragung"
+
+msgid "Image full-transfer threshold"
+msgstr "Schwellenwert für vollständige Bildübertragung"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Gilt für Senden und Empfangen. Größere Inhalte werden nur bei Bedarf heruntergeladen."

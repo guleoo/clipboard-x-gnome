@@ -1,4 +1,4 @@
-import {formatColor, parse, sampleRegion} from '../../src/color-picker/color.js';
+import {formatColor, moveSample, parse, sampleRegion} from '../../src/color-picker/color.js';
 
 function assertEqual(actual, expected, message) {
   if (JSON.stringify(actual) !== JSON.stringify(expected))
@@ -49,3 +49,36 @@ assertEqual(sampleRegion(0, 0, 2, 200, 100, 5),
 assertEqual(sampleRegion(49.5, 24.5, 2, 100, 50, 5),
   {x: 94, y: 44, width: 6, height: 6, centerX: 5, centerY: 5},
   'magnifier coordinates must scale and clamp at the bottom-right edge');
+
+for (const scale of [1, 1.25, 1.5, 2, 3]) {
+  const width = 200;
+  const height = 100;
+  const origin = [20.3, 15.7];
+  const pixel = coords => {
+    const region = sampleRegion(...coords, scale, width, height);
+    return [region.x + region.centerX, region.y + region.centerY];
+  };
+  const start = pixel(origin);
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const next = moveSample(...origin, dx, dy, scale, width, height);
+    assertEqual(pixel(next), [start[0] + dx, start[1] + dy],
+      `one pixel cell per arrow at scale ${scale}`);
+    assertEqual(pixel(moveSample(...next, -dx, -dy, scale, width, height)), start,
+      `reversing movement restores the sampled pixel at scale ${scale}`);
+    assertEqual(pixel(moveSample(...origin, dx * 8, dy * 8, scale, width, height)),
+      [start[0] + dx * 8, start[1] + dy * 8],
+      `Ctrl movement advances eight pixel cells at scale ${scale}`);
+  }
+  let coords = moveSample(...origin, 0, 0, scale, width, height);
+  for (let i = 0; i < 20; i++)
+    coords = moveSample(...coords, 1, 0, scale, width, height);
+  assertEqual(pixel(coords), [start[0] + 20, start[1]],
+    `repeated movement must not accumulate rounding errors at scale ${scale}`);
+  assertEqual(pixel(moveSample(0, 0, -1, -1, scale, width, height)), [0, 0],
+    `top and left texture edges clamp at scale ${scale}`);
+  const edge = moveSample(1000, 1000, 0, 0, scale, width, height);
+  assertEqual(edge, [(width - 1) / scale, (height - 1) / scale],
+    `last physical pixel remains reachable at scale ${scale}`);
+  assertEqual(pixel(moveSample(...edge, 1, 1, scale, width, height)), [width - 1, height - 1],
+    `bottom and right texture edges clamp at scale ${scale}`);
+}

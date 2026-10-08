@@ -11,7 +11,7 @@ import {ClipboardController} from '../clipboard/controller.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
-import {diagnosticCode} from '../common/errors.js';
+import {createLogger} from '../common/logger.js';
 import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
@@ -30,8 +30,11 @@ const SHORTCUT_KEYS = Object.freeze([
   'clear-history-shortcut',
 ]);
 
+const logger = createLogger('extension');
+
 export default class ClipboardXExtension extends Extension {
   enable() {
+    logger.info('enable');
     this._settings = this.getSettings();
     this._controller = new ClipboardController(this._settings);
     this._portal = new ScreenshotPortal();
@@ -80,7 +83,7 @@ export default class ClipboardXExtension extends Extension {
     try {
       this._runningAppsBridge.start();
     } catch (error) {
-      console.warn(`Clipboard X: running applications are unavailable (${diagnosticCode(error)})`);
+      logger.warn('running-applications', error);
       this._runningAppsBridge.stop();
     }
 
@@ -117,12 +120,14 @@ export default class ClipboardXExtension extends Extension {
       },
     );
 
-    this._controller.start().catch(error => this._reportError(error));
+    logger.run('initialize-clipboard', () => this._controller.start())
+      .catch(error => this._reportError(error));
     this._indicator.setSyncStatus('offline');
     this._sync.start().catch(error => this._reportError(error));
   }
 
   disable() {
+    logger.info('disable');
     this._runningAppsBridge?.stop();
     this._runningAppsBridge = null;
     this._unbindShortcuts();
@@ -187,6 +192,8 @@ export default class ClipboardXExtension extends Extension {
 
   async _takeScreenshot() {
     const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
+    if (uri === null)
+      return;
     const addToHistory = this._settings.get_boolean('screenshot-add-history');
     const item = addToHistory
       ? await this._controller.addFromUri(uri, 'screenshot')
@@ -215,6 +222,11 @@ export default class ClipboardXExtension extends Extension {
     const command = this._editorCommand();
     if (!command)
       return;
+    if (!this._settings.get_boolean('sync-enabled') && item.remote
+        && item.representations.some(value => !value.bytes && !value.path)) {
+      throw new SyncError('original_image_requires_sync',
+        'The original image has not been downloaded and synchronization is disabled');
+    }
     await this._ensureMaterialized(item);
     await this._controller.persist();
     const path = item.primary?.path;
@@ -245,14 +257,16 @@ export default class ClipboardXExtension extends Extension {
     await this._terminalInput.paste();
   }
 
-  async _ensureMaterialized(item) {
+  async _ensureMaterialized(item, options = {}) {
     const requiresRemoteContent = item.remote
       && item.representations.some(representation => !representation.bytes && !representation.path);
     if (requiresRemoteContent) {
       try {
-        await this._sync.materialize(item);
+        await this._sync.materialize(item, options);
         this._controller.update(item);
-        await this._controller.persist();
+        // Incoming batches use the controller's debounced save; explicit use flushes immediately.
+        if (!options.withinThreshold)
+          await this._controller.persist();
       } catch (error) {
         this._controller.update(item);
         throw error;
@@ -270,6 +284,7 @@ export default class ClipboardXExtension extends Extension {
     if (item.originDeviceId === ensureDeviceIdentity(this._settings).deviceId)
       return;
     this._controller.add(item, 'remote');
+    await this._ensureMaterialized(item, {withinThreshold: true});
     if (this._settings.get_string('sync-receive-mode') === 'activate')
       await this._activateItem(item);
   }
@@ -325,8 +340,8 @@ export default class ClipboardXExtension extends Extension {
           actions[key],
         );
         this._boundShortcuts.push(key);
-      } catch (_error) {
-        console.error(`Clipboard X: invalid ${key} was ignored`);
+      } catch (error) {
+        logger.warn('bind-shortcut', error);
       }
     }
     this._shortcutBound = this._boundShortcuts.length > 0;
@@ -342,9 +357,7 @@ export default class ClipboardXExtension extends Extension {
   _reportError(error) {
     if (error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
       return;
-    console.error(
-      `Clipboard X: operation failed (${diagnosticCode(error)}): ${error?.message ?? String(error)}`,
-    );
+    logger.error('operation', error);
     Main.notifyError(
       'Clipboard X',
       syncErrorMessage(error, _) || _('Operation failed'),

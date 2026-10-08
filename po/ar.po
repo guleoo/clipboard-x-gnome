@@ -762,6 +762,10 @@ msgstr "استخدم الأزرار لتغيير موضع الإجراءات و�
 msgid "Clipboard"
 msgstr "الحافظة"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "عناصر الحافظة"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "السجل"
@@ -1216,3 +1220,27 @@ msgstr "التقاط صورة للشاشة"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "كلمات مفصولة بفواصل؛ للكلمات المخصصة الأولوية"
+
+msgid "Use sha256sum for file verification"
+msgstr "استخدام sha256sum للتحقق من الملفات"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "يقلل استخدام الذاكرة عند تنزيل ملفات كبيرة؛ يتطلب sha256sum ويقرأ كل ملف تم تنزيله مرة أخرى."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "ثبّت sha256sum (يتوفر عادةً ضمن coreutils) لتفعيل التحقق الخارجي من الملفات."
+
+msgid "File verification with sha256sum failed"
+msgstr "فشل التحقق من الملف باستخدام sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "لم يتم تنزيل الصورة الأصلية بعد. فعّل المزامنة أولاً."
+
+msgid "Text full-transfer threshold"
+msgstr "حد النقل الكامل للنص"
+
+msgid "Image full-transfer threshold"
+msgstr "حد النقل الكامل للصور"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "ينطبق على الإرسال والاستقبال. لا يتم تنزيل المحتوى الأكبر إلا عند الحاجة."

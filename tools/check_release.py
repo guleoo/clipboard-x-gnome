@@ -103,15 +103,15 @@ def validate(project_root, archive, tag=None):
         raise ReleaseError("metadata.json version-name differs from the project version")
     if "version" in metadata:
         raise ReleaseError("metadata.json must not set the EGO-managed numeric version")
-    if metadata.get("shell-version") != ["50"]:
-        raise ReleaseError("Release metadata must declare the tested GNOME Shell 50")
+    if metadata.get("shell-version") != ["50", "51"]:
+        raise ReleaseError("Release metadata must declare GNOME Shell 50 and 51")
     return version
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
-    parser.add_argument("--tag", help="Release tag, for example v0.1.0")
+    parser.add_argument("--tag", help="Release tag, for example v1.0.0")
     arguments = parser.parse_args()
     try:
         version = validate(Path(__file__).resolve().parent.parent, arguments.archive, arguments.tag)

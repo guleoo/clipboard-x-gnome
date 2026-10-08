@@ -6,11 +6,12 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {formatColor, sampleRegion} from './color.js';
-import {diagnosticCode} from '../common/errors.js';
+import {formatColor, moveSample, sampleRegion} from './color.js';
+import {createLogger} from '../common/logger.js';
 
 const LENS_RADIUS = 5;
 const LENS_CELL_SIZE = 10;
+const logger = createLogger('color-picker');
 
 const ColorLens = GObject.registerClass(
 class ColorLens extends St.DrawingArea {
@@ -106,7 +107,7 @@ class ColorPicker extends St.Widget {
     }));
 
     this._preview = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-color-preview',
     });
     this._lens = new ColorLens();
@@ -124,7 +125,7 @@ class ColorPicker extends St.Widget {
     }
     this.grab_key_focus();
     this._initialize().catch(error => {
-      console.error(`Clipboard X color picker failed (${diagnosticCode(error)})`);
+      logger.error('pick', error);
       this.close();
     });
   }
@@ -143,10 +144,10 @@ class ColorPicker extends St.Widget {
   async _sample(x, y) {
     if (!this._texture || this._closed)
       return;
-    this._pendingCoords = [
-      Math.min(Math.max(Math.round(x), 0), Math.max(0, global.stage.width - 1)),
-      Math.min(Math.max(Math.round(y), 0), Math.max(0, global.stage.height - 1)),
-    ];
+    this._pendingCoords = moveSample(
+      x, y, 0, 0, this._scale,
+      this._texture.get_width(), this._texture.get_height(),
+    );
     if (this._sampling)
       return;
 
@@ -223,7 +224,7 @@ class ColorPicker extends St.Widget {
 
   vfunc_motion_event(event) {
     const [x, y] = event.get_coords();
-    this._sample(x, y).catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
+    this._sample(x, y).catch(error => logger.error('sample', error));
     return Clutter.EVENT_STOP;
   }
 
@@ -259,11 +260,17 @@ class ColorPicker extends St.Widget {
       [Clutter.KEY_j, [0, 1]],
     ]);
     if (directions.has(key)) {
+      if (!this._texture)
+        return Clutter.EVENT_STOP;
       const [dx, dy] = directions.get(key);
       const multiplier = event.get_state() & Clutter.ModifierType.CONTROL_MASK ? 8 : 1;
-      const [x, y] = this._coords;
-      this._sample(x + dx * multiplier, y + dy * multiplier)
-        .catch(error => console.error(`Clipboard X color sample failed (${diagnosticCode(error)})`));
+      const [x, y] = this._pendingCoords ?? this._coords;
+      const coords = moveSample(
+        x, y, dx * multiplier, dy * multiplier, this._scale,
+        this._texture.get_width(), this._texture.get_height(),
+      );
+      this._sample(...coords)
+        .catch(error => logger.error('sample', error));
       return Clutter.EVENT_STOP;
     }
 

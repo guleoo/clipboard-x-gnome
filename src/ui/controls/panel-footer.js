@@ -12,7 +12,7 @@ class PanelFooter extends St.BoxLayout {
     super._init({
       style_class: styleClasses,
       x_expand: true,
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
     });
     this._clipboardXControlType = 'panel-footer';
     this.divider = new St.Widget({

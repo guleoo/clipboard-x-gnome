@@ -214,10 +214,6 @@ msgstr ""
 msgid "Unknown device"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:22
-msgid "Synchronization settings"
-msgstr ""
-
 #: src/ui/panels/history/sync-action.js:30
 msgid "Synchronize"
 msgstr ""
@@ -766,6 +762,10 @@ msgstr ""
 msgid "Clipboard"
 msgstr ""
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr ""
+
 #: src/ui/settings/window.js:209
 msgid "History"
 msgstr ""
@@ -977,7 +977,7 @@ msgid "Only applies to automatic sending"
 msgstr ""
 
 #: src/ui/settings/window.js:333
-msgid "Small text sent in full"
+msgid "Text full-transfer threshold"
 msgstr ""
 
 #: src/ui/settings/window.js:333 src/ui/settings/window.js:334
@@ -990,7 +990,7 @@ msgid "Large text preview"
 msgstr ""
 
 #: src/ui/settings/window.js:335
-msgid "Small images sent in full"
+msgid "Image full-transfer threshold"
 msgstr ""
 
 #: src/ui/settings/window.js:336
@@ -1159,4 +1159,26 @@ msgstr ""
 
 #: src/ui/settings/window.js:453
 msgid "Take screenshot"
+msgstr ""
+
+#: src/ui/settings/file-verification.js
+msgid "Use sha256sum for file verification"
+msgstr ""
+
+#: src/ui/settings/file-verification.js
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr ""
+
+#: src/sync/errors.js
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr ""
+
+#: src/sync/errors.js
+msgid "File verification with sha256sum failed"
+msgstr ""
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr ""
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr ""

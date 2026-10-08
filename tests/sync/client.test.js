@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {SyncClient} from '../../src/sync/client.js';
+import {createLogger} from '../../src/common/logger.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -298,6 +299,29 @@ try {
     'preview and eager content must be streamed exactly once');
   assert(client.getTransferForItem(item.id).state === 'completed',
     'completed server progress must replace local streaming progress');
+  assert(client._remoteTransferIds.size === 0,
+    'confirmed upload completion must release remote cancellation markers');
+  const verificationModes = [];
+  transport.downloadContent = async (_channelId, _itemId, _contentId, _targetPath, options) => {
+    verificationModes.push(options.useSha256sum);
+    options.onProgress(item.primary.size);
+    if (options.useSha256sum) {
+      options.onVerifying();
+      assert(client.getTransferForItem(_itemId).state === 'verifying',
+        'external hashing must expose the verifying transfer state');
+    }
+    return {path, size: item.primary.size, sha256: item.primary.sha256};
+  };
+  const firstDownload = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
+  const secondDownload = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
+  await client._downloadRepresentation(channelId, firstDownload, firstDownload.primary);
+  settings._values.set('sync-use-sha256sum', true);
+  await client._downloadRepresentation(channelId, secondDownload, secondDownload.primary);
+  settings._values.set('sync-use-sha256sum', false);
+  assert(verificationModes.join() === 'false,true',
+    'each download must use the current verification option without restarting the connection');
+  assert(client.getTransferForItem(secondDownload.id).state === 'completed',
+    'verified downloads must finish only after the hashing operation completes');
   const sensitive = ClipboardItem.fromText('local sensitive content', {
     originDeviceId: deviceId,
     sensitive: true,
@@ -344,4 +368,120 @@ try {
     'publishing without an active channel must expose the stable localization code');
 } finally {
   channelRequiredClient.destroy();
+}
+
+const retentionTransport = new TestTransport();
+retentionTransport.itemId = GLib.uuid_string_random();
+retentionTransport.totalBytes = 10;
+let cancellations = 0;
+retentionTransport.cancel = async () => { cancellations++; };
+let remoteState = 'queued';
+retentionTransport.transfer = async () => retentionTransport._transfer(remoteState, 0);
+const retentionClient = new SyncClient(new TestSettings(), {
+  configurationStore: new TestStore(), transportFactory: () => retentionTransport,
+});
+try {
+  await retentionClient.start();
+  const active = await retentionClient.getTransfer(transferId);
+  assert(retentionClient._transfers.get(transferId) === null,
+    'a standalone transfer lookup need not be present in the UI tracker');
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
+    'a looked-up remote task must remain cancellable and release its marker after DELETE');
+
+  await retentionClient.getTransfer(transferId);
+  retentionClient._recordTransfer(active, true);
+  for (let index = 0; index < 1100; index++)
+    retentionClient._recordTransfer({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
+  assert(!retentionClient._transfers.get(transferId), 'fixture must evict the active UI record');
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 2, 'UI eviction must not silently disable remote cancellation');
+
+  await retentionClient.getTransfer(transferId);
+  retentionClient._recordTransfer({...active, state: 'failed'}, true);
+  assert(retentionClient._remoteTransferIds.has(transferId),
+    'a local failure is not proof that the server has finished the task');
+  remoteState = 'failed';
+  await retentionClient.getTransfer(transferId);
+  assert(retentionClient._remoteTransferIds.size === 0,
+    'confirmed server failure must release remote cancellation state');
+
+  remoteState = 'queued';
+  retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
+  await retentionClient.getTransfer(transferId);
+  try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
+  assert(retentionClient._remoteTransferIds.has(transferId),
+    'a failed remote cancellation must retain the ability to retry');
+
+  const localId = GLib.uuid_string_random();
+  const localOperation = new Gio.Cancellable();
+  retentionClient._operations.set(localId, localOperation);
+  await retentionClient.cancelTransfer(localId);
+  assert(localOperation.is_cancelled() && cancellations === 2,
+    'local-only download cancellation must not call the server DELETE endpoint');
+} finally {
+  retentionClient.destroy();
+}
+assert(retentionClient._remoteTransferIds.size === 0,
+  'destroy must clear markers for still-active or unconfirmed remote tasks');
+
+// Exercise the actual initialization pipeline, not a synthetic list of stage names.
+for (const phase of ['configuration', 'transport', 'status', 'device', 'profile',
+  'channels', 'channel-selection', 'transfers', 'changes', 'work', 'transfer-refresh']) {
+  const records = [];
+  const localStore = new TestStore();
+  const localTransport = new TestTransport();
+  const failure = new Error('private clipboard and server response must not appear');
+  const fail = () => { throw failure; };
+  const methods = {status: 'status', device: 'device', profile: 'updateProfile',
+    channels: 'channels', transfers: 'transfers', changes: 'changes', work: 'work'};
+  if (phase === 'configuration')
+    localStore.load = fail;
+  else if (phase === 'channel-selection') {
+    localStore.value.activeChannelId = '';
+    localStore.saveConnection = fail;
+  } else if (methods[phase])
+    localTransport[methods[phase]] = fail;
+  const diagnosticClient = new SyncClient(new TestSettings(), {
+    configurationStore: localStore,
+    transportFactory: phase === 'transport' ? fail : () => localTransport,
+    logger: createLogger('sync', {sink: record => records.push(record)}),
+  });
+  if (phase === 'transfer-refresh')
+    diagnosticClient._refreshActiveTransfers = fail;
+  try {
+    let caught = null;
+    try { await diagnosticClient.start(); } catch (error) { caught = error; }
+    assert(caught === failure, `initialization must preserve the original ${phase} failure`);
+    const failed = records.filter(record => record.outcome === 'failed');
+    assert(failed.length === 1 && failed[0].phase === phase,
+      `initialization failure must identify the exact ${phase} stage once`);
+    assert(!JSON.stringify(records).includes(failure.message), 'initialization logs must omit raw error text');
+  } finally {
+    diagnosticClient.destroy();
+  }
+}
+
+const pollRecords = [];
+const pollClient = new SyncClient(new TestSettings(), {
+  configurationStore: new TestStore(), transportFactory: () => new TestTransport(),
+  logger: createLogger('sync', {sink: record => pollRecords.push(record)}),
+});
+try {
+  await pollClient.start();
+  pollRecords.length = 0;
+  await pollClient._poll();
+  assert(pollRecords.length === 0, 'healthy polling must remain silent');
+  for (const [phase, method] of [['changes', '_syncChanges'], ['work', '_syncWork'],
+    ['transfer-refresh', '_refreshActiveTransfers']]) {
+    const originalMethod = pollClient[method];
+    pollClient[method] = () => { throw new Error('poll failure'); };
+    try { await pollClient._poll(); } catch (_) {}
+    pollClient[method] = originalMethod;
+    assert(pollRecords.at(-1).operation === 'poll' && pollRecords.at(-1).phase === phase,
+      `background failures must retain their ${phase} stage`);
+    assert(!pollClient._polling, 'diagnostics must not leave polling locked after a failure');
+  }
+} finally {
+  pollClient.destroy();
 }

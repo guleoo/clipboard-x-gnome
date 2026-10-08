@@ -779,6 +779,10 @@ msgstr "Use los botones para cambiar la ubicación y el orden de las acciones."
 msgid "Clipboard"
 msgstr "Portapapeles"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elementos del portapapeles"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historial"
@@ -1254,3 +1258,27 @@ msgstr "Hacer una captura de pantalla"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Palabras separadas por comas; las personalizadas tienen prioridad"
+
+msgid "Use sha256sum for file verification"
+msgstr "Usar sha256sum para verificar archivos"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Reduce el uso de memoria al descargar archivos grandes; requiere sha256sum y vuelve a leer cada archivo descargado."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Instale sha256sum (normalmente incluido en coreutils) para activar la verificación externa de archivos."
+
+msgid "File verification with sha256sum failed"
+msgstr "Falló la verificación del archivo con sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "La imagen original aún no se ha descargado. Activa primero la sincronización."
+
+msgid "Text full-transfer threshold"
+msgstr "Umbral de transferencia completa de texto"
+
+msgid "Image full-transfer threshold"
+msgstr "Umbral de transferencia completa de imágenes"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Se aplica al envío y a la recepción. El contenido más grande solo se descarga cuando se necesita."

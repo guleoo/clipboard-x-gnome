@@ -1,10 +1,15 @@
 # clipboard-x-gnome documentation
 
-> English · [简体中文](zh-CN/README.md)
+> English · [简体中文](README_CN.md)
 
-This directory contains public documentation for extension users and contributors. Files without a
-language suffix are the English primary versions. Simplified Chinese
-counterparts are kept under `docs/zh-CN/` with the same names.
+This directory contains public documentation for extension users and contributors. Guides live directly
+in `docs/`; versioned release notes live in `docs/release/`. English primary versions use `{name}.md`,
+and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Release notes use
+`v{version}-en.md` and `v{version}-cn.md`; GitHub Releases show English with a link to Simplified Chinese.
+
+## Releases
+
+- [1.0.0 release notes](release/v1.0.0-en.md): features included in the initial stable release.
 
 ## Protocol and synchronization
 
@@ -15,6 +20,9 @@ counterparts are kept under `docs/zh-CN/` with the same names.
 
 ## Extension development
 
+- [GNOME Shell compatibility](shell-compatibility.md): shared interfaces for 50+, CI matrix, and isolated lifecycle checks.
+
+- [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.
 - [UI development guide](ui-architecture.md): panels, controls, focus grids, lifecycle, and CSS conventions.
 - [Contributing](../CONTRIBUTING.md): build, test, layout, protocol changes, and code conventions.
 
@@ -26,6 +34,7 @@ counterparts are kept under `docs/zh-CN/` with the same names.
 ## Language policy
 
 English is the primary language for project documentation. Every public guide has a Simplified Chinese
-counterpart in `docs/zh-CN/`; links at the top of each page provide the language switch. Legal texts,
+counterpart named `{name}_CN.md` in the same directory; links at the top of each page provide the language switch. Legal texts,
 including `LICENSE.md`, retain their original English wording and are not mirrored as translated legal
-documents.
+documents. Release notes use separate `v{version}-en.md` and `v{version}-cn.md` files with language-switch
+links pointing to the matching version tag.

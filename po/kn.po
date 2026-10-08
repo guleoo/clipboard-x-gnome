@@ -763,6 +763,10 @@ msgstr "ಕ್ರಿಯೆಗಳ ಸ್ಥಾನ ಮತ್ತು ಕ್ರಮವ
 msgid "Clipboard"
 msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಅಂಶಗಳು"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "ಇತಿಹಾಸ"
@@ -1225,3 +1229,27 @@ msgstr "ತೆರೆಚಿತ್ರ ತೆಗೆದುಕೊಳ್ಳಿ"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಪದಗಳು; ಕಸ್ಟಮ್ ಪದಗಳಿಗೆ ಆದ್ಯತೆ"
+
+msgid "Use sha256sum for file verification"
+msgstr "ಕಡತಗಳ ಪರಿಶೀಲನೆಗೆ sha256sum ಬಳಸಿ"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "ದೊಡ್ಡ ಕಡತಗಳನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡುವಾಗ ಮೆಮೊರಿ ಬಳಕೆಯನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತದೆ; sha256sum ಅಗತ್ಯವಿದೆ ಮತ್ತು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಪ್ರತಿ ಕಡತವನ್ನು ಮತ್ತೆ ಓದುತ್ತದೆ."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "ಬಾಹ್ಯ ಕಡತ ಪರಿಶೀಲನೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು sha256sum ಅನ್ನು ಸ್ಥಾಪಿಸಿ (ಸಾಮಾನ್ಯವಾಗಿ coreutils ಜೊತೆ ಲಭ್ಯವಿರುತ್ತದೆ)."
+
+msgid "File verification with sha256sum failed"
+msgstr "sha256sum ಬಳಸಿ ಕಡತ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "ಮೂಲ ಚಿತ್ರವನ್ನು ಇನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗಿಲ್ಲ. ಮೊದಲು ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸಕ್ರಿಯಗೊಳಿಸಿ."
+
+msgid "Text full-transfer threshold"
+msgstr "ಪಠ್ಯದ ಪೂರ್ಣ ವರ್ಗಾವಣೆಯ ಮಿತಿ"
+
+msgid "Image full-transfer threshold"
+msgstr "ಚಿತ್ರಗಳ ಪೂರ್ಣ ವರ್ಗಾವಣೆಯ ಮಿತಿ"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "ಕಳುಹಿಸುವಿಕೆ ಮತ್ತು ಸ್ವೀಕರಿಸುವಿಕೆ ಎರಡಕ್ಕೂ ಅನ್ವಯಿಸುತ್ತದೆ. ದೊಡ್ಡ ವಿಷಯವನ್ನು ಅಗತ್ಯವಿದ್ದಾಗ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."

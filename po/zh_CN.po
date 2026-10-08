@@ -761,6 +761,10 @@ msgstr "使用按钮调整操作的位置和顺序。"
 msgid "Clipboard"
 msgstr "剪切板"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "剪切板条目"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "历史"
@@ -1371,3 +1375,27 @@ msgstr "截图"
 
 #~ msgid "Waiting for source"
 #~ msgstr "等待源设备"
+
+msgid "Use sha256sum for file verification"
+msgstr "使用 sha256sum 校验文件"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "降低大文件下载的内存占用；需要 sha256sum，并会再次读取下载的文件。"
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "请安装 sha256sum（通常由 coreutils 提供），然后再启用外部文件校验。"
+
+msgid "File verification with sha256sum failed"
+msgstr "使用 sha256sum 校验文件失败"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "原图尚未下载，请先开启同步。"
+
+msgid "Text full-transfer threshold"
+msgstr "文本完整传输阈值"
+
+msgid "Image full-transfer threshold"
+msgstr "图片完整传输阈值"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "同时用于发送和接收。更大的内容仅在需要时下载。"

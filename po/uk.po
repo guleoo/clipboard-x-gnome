@@ -774,6 +774,10 @@ msgstr "Скористайтеся кнопками, щоб змінити ро�
 msgid "Clipboard"
 msgstr "Буфер обміну"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Елементи буфера обміну"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Журнал"
@@ -1240,3 +1244,27 @@ msgstr "Зробити знімок екрана"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Слова через кому; власні слова мають пріоритет"
+
+msgid "Use sha256sum for file verification"
+msgstr "Використовувати sha256sum для перевірки файлів"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Зменшує використання пам’яті під час завантаження великих файлів; потребує sha256sum і повторно читає кожен завантажений файл."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Установіть sha256sum (зазвичай входить до coreutils), щоб увімкнути зовнішню перевірку файлів."
+
+msgid "File verification with sha256sum failed"
+msgstr "Не вдалося перевірити файл за допомогою sha256sum"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Оригінальне зображення ще не завантажено. Спочатку увімкніть синхронізацію."
+
+msgid "Text full-transfer threshold"
+msgstr "Поріг повного передавання тексту"
+
+msgid "Image full-transfer threshold"
+msgstr "Поріг повного передавання зображень"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Застосовується до надсилання й отримання. Більший вміст завантажується лише за потреби."

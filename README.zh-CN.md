@@ -8,7 +8,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[![GNOME Shell 50](https://img.shields.io/badge/GNOME%20Shell-50-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
+[![GNOME Shell 50+](https://img.shields.io/badge/GNOME%20Shell-50%2B-4A86CF?logo=gnome&logoColor=white)](https://www.gnome.org/)
 [![GJS](https://img.shields.io/badge/GJS-ES%20Modules-F7DF1E?logo=javascript&logoColor=111)](https://gjs.guide/)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-663399)](LICENSE.md)
 
@@ -21,8 +21,22 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 插件默认只在本机保存历史记录和快捷语句。剪切板同步需要配置服务器并主动启用；网络词库
 也只会在用户添加或刷新时下载。
 
-> [!IMPORTANT]
-> Clipboard X 目前仅在扩展包元数据中声明支持 **GNOME Shell 50**；其他版本尚未列入。
+<details>
+<summary>查看界面预览</summary>
+
+**剪切板主面板**
+
+![剪切板主面板](docs/preivew/main-panel.png)
+
+**分词面板**
+
+![分词面板](docs/preivew/split-panel.png)
+
+**设置界面**
+
+![设置界面](docs/preivew/settings-1.png)
+
+</details>
 
 ## 功能
 
@@ -40,17 +54,14 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 
 ## 安装
 
-建议通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X**，
-确认详情页支持 **GNOME Shell 50**，然后点击安装。安装完成后，可以在“扩展”应用或“扩展管理器”中
-启用插件、打开设置。
+通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X**。
 
 ### 从源码安装
 
 #### 环境要求
 
-- GNOME Shell 50、GJS 1.88 或更高版本；
+- GNOME Shell 50+、GJS 1.88 或更高版本；
 - Meson、Ninja、GLib、GTK 4、Libadwaita、GdkPixbuf、Gettext 和 7-Zip；
-- 完整的截图、取色和模拟输入体验需要 Wayland 会话。
 
 构建发布包：
 
@@ -60,10 +71,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome.zip`：
+安装生成的 `build/clipboard-x-gnome_1.0.0.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.0.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -85,6 +96,9 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 
 点击条目，或聚焦后按 Enter，即可复制内容。根据条目类型，每行还会提供分词或图片编辑、
 固定、同步和删除操作。按 `Ctrl+F` 可以聚焦搜索框。
+
+在**设置 → 常规 → 图标布局 → 历史**中，可隐藏或调整条目操作图标的顺序。
+隐藏图标不会禁用对应的键盘快捷键。
 
 默认的上下文快捷键如下：
 
@@ -138,11 +152,14 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 ### 5. 保存快捷语句
 
 从面板打开**快捷语句**，点击 `+`，输入内容并按 Enter 确认。快捷语句仅保存在本机。
+聚焦语句后，按 `v` 粘贴、`'` 模拟输入、`Delete` 删除。这些操作复用剪切板条目的快捷键配置，
+添加语句的输入框仍保持正常文字编辑。
 
 ### 6. 截图、取色与图片编辑
 
 - **截图**调用 XDG Screenshot Portal，可用的截图目标取决于本机 Portal 后端。
 - **取色器**从屏幕取色，并写入配置的 HEX、RGB、HSL 或 OKLCH 表示。
+  取色时可使用方向键移动采样点，每次移动一个像素。
 - **图片编辑**调用**设置 → 截图 → 图片编辑**中配置的命令。
 
 例如，填入 `gradia %i` 即可使用 Gradia。
@@ -162,6 +179,12 @@ flatpak run be.alexandervanhee.gradia %u
 ## 同步设备
 
 同步功能默认关闭，可自行搭建 `clipboard-x-server` 后配置开启同步。
+配置完成后，点击主面板的同步图标即可开启或关闭同步。
+
+文本和图片的完整传输阈值同时用于发送和接收。各设备使用自己的阈值：阈值以内（含等于）
+自动获取完整内容，超过阈值则仅保留预览，使用时才获取原文，即使服务器已缓存原文也是如此。
+自动获取的原文若尚未存于服务器，会先请求来源设备上传。接收条目只有在所有原文格式都已
+完整保存在本地后，才显示完成的勾。
 
 连接一台设备：
 
@@ -170,6 +193,15 @@ flatpak run be.alexandervanhee.gradia %u
 3. 输入服务器地址和 API Key，应用设置，刷新 Channel 并选择一个活动 Channel。
 4. 启动同步并测试连接。
 5. 保持默认的**手动**发送模式，通过条目同步按钮发送；或明确改为**自动**发送。
+
+**测试连接**只检查当前输入，不保存配置，也不重启同步连接；修改连接配置后，点击**应用**保存。
+**应用**会立即上传当前设备名称和图标，不依赖同步是否开启；等待服务器确认并加载 Channel 后
+才结束，期间按钮不可重复点击。服务器请求失败时，本地配置仍会保留，并显示失败信息。
+
+**设置 → 同步 → 使用 sha256sum 校验文件**默认关闭。开启后使用原生流式下载和
+`sha256sum`，降低大文件下载的内存峰值。开启前会检查依赖；缺失时按提示安装提供
+`sha256sum` 的软件包（通常是 `coreutils`）。校验会再次读取下载的文件；依赖失效或校验失败
+不会跳过完整性检查。关闭时仍使用现有 GLib 校验，无需额外命令，但大文件内存峰值可能较高。
 
 服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`；
 各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
@@ -198,7 +230,7 @@ flatpak run be.alexandervanhee.gradia %u
 欢迎参与 Clipboard X：报告 Bug、提交聚焦的修复、改进 UI、补充协议测试、完善文档，或
 提供经过认真校对的翻译，都很有价值。
 
-1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/zh-CN/README.md)。
+1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/README_CN.md)。
 2. 较大的行为或协议变更应先创建 Issue，讨论并明确范围。
 3. 保持改动聚焦；每次行为变更都要新增或更新测试。
 4. 提交 Pull Request 前运行完整测试，并主动 Review 自己的 Diff。
@@ -212,14 +244,15 @@ tools/run-dev-shell.sh
 
 脚本会完成构建和打包，然后在独立的 Mutter Devkit 会话中启动扩展，使用隔离的 XDG 数据
 和设置，不需要注销宿主桌面。
+日志沿用系统 journal，查看命令见[日志与问题排查](docs/diagnostics_CN.md)。
 
 提交代码前运行：
 
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -228,14 +261,14 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/u
 
 ## 文档
 
-- [中文文档索引](docs/zh-CN/README.md)
+- [中文文档索引](docs/README_CN.md)
+- [1.0.0 发布说明](docs/release/v1.0.0-cn.md)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
-- [UI 开发指南](docs/zh-CN/ui-architecture.md)
-- [同步性能与压力测试](docs/zh-CN/sync-performance-testing.md)
+- [UI 开发指南](docs/ui-architecture_CN.md)
+- [同步性能与压力测试](docs/sync-performance-testing_CN.md)
 - [安全与隐私](SECURITY.zh-CN.md)
 - [参与开发](CONTRIBUTING.zh-CN.md)
 
 ## 许可证
 
 Clipboard X 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。
-项目作者是 [guleoo](https://github.com/guleoo)，也欢迎社区参与贡献。

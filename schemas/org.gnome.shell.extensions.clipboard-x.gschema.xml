@@ -191,6 +191,14 @@
       <default>[]</default>
       <summary>Actions hidden from the panel interface</summary>
     </key>
+    <key name="entry-actions" type="as">
+      <default>['tokenize', 'edit', 'pin', 'sync', 'delete']</default>
+      <summary>Clipboard entry actions, in display order</summary>
+    </key>
+    <key name="entry-hidden-actions" type="as">
+      <default>[]</default>
+      <summary>Clipboard entry action icons hidden without disabling shortcuts</summary>
+    </key>
     <key name="preserve-panel-state" type="b">
       <default>false</default>
       <summary>Reopen the clipboard panel in its previous view</summary>
@@ -251,6 +259,10 @@
       <default>false</default>
       <summary>Enable synchronization</summary>
     </key>
+    <key name="sync-use-sha256sum" type="b">
+      <default>false</default>
+      <summary>Use sha256sum and native file streaming to verify downloaded content</summary>
+    </key>
     <key name="sync-poll-interval-seconds" type="u">
       <default>5</default>
       <range min="2" max="60"/>
@@ -296,7 +308,7 @@
     </key>
     <key name="text-full-threshold" type="u">
       <default>65536</default>
-      <summary>Text eager synchronization threshold in bytes</summary>
+      <summary>Text full-upload and automatic-download threshold in bytes</summary>
     </key>
     <key name="text-preview-limit" type="u">
       <default>4096</default>
@@ -304,7 +316,7 @@
     </key>
     <key name="image-full-threshold" type="u">
       <default>1048576</default>
-      <summary>Image eager synchronization threshold in bytes</summary>
+      <summary>Image full-upload and automatic-download threshold in bytes</summary>
     </key>
     <key name="thumbnail-size" type="u">
       <default>320</default>

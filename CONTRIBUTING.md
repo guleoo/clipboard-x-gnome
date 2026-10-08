@@ -2,10 +2,13 @@
 
 > English · [简体中文](CONTRIBUTING.zh-CN.md)
 
-Clipboard X targets GNOME Shell 50 and GJS 1.88 or later. Shell UI code must use St, Clutter, and
+Clipboard X targets GNOME Shell 50+ and GJS 1.88 or later. Shell UI code must use St, Clutter, and
 Shell APIs; GTK 4 and Libadwaita are restricted to the separate preferences process.
 
 ## Development workflow
+
+Use APIs shared by both supported Shell versions. See the [compatibility guide](docs/shell-compatibility.md)
+for the isolated lifecycle check and its verification boundaries.
 
 ```sh
 meson setup build -Dtarget=package
@@ -19,9 +22,22 @@ the complete Meson test suite. Changes involving extension lifecycle, panels, cl
 or preferences must also run:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
 ```
+
+### Nested desktop and interface language
+
+`./tools/run-dev-shell.sh` builds and packages the extension, then starts a nested GNOME desktop
+with isolated development settings. To start it in English, run:
+
+```sh
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en ./tools/run-dev-shell.sh
+```
+
+Close any existing nested desktop before restarting with a different language. These environment
+variables affect only this development session, not the host desktop language. Use `locale -a` to
+check installed locales; the script has no `--lang` option.
 
 ## Repository layout
 
@@ -50,7 +66,8 @@ Then update every catalog listed in `po/LINGUAS` and run
 image-editor command placeholders. English is the source language and has no PO catalog.
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the
-`.zh-CN.md` or `docs/zh-CN/` counterpart.
+`.zh-CN.md` counterpart for repository-root files, or a `{name}_CN.md` counterpart directly in `docs/`.
+Each version has separate `v<version>-en.md` and `v<version>-cn.md` release notes in `docs/release/`.
 
 ## Code conventions
 
@@ -67,10 +84,16 @@ they must not include tests, protocol source, dictionaries, or the central serve
 
 ## Releases
 
-The [release workflow](.github/workflows/release.yml) runs on every push and pull request in a
-Fedora 44 / GNOME 50 environment. It checks JavaScript syntax, runs the full Meson suite, builds the
-extension ZIP, and verifies that the archive contains exactly the runtime files and compiled catalogs.
-Pull requests cannot publish a release.
+The [CI workflow](.github/workflows/ci.yml) runs on every push (branches and tags) and pull request in a
+Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
+regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
+contains exactly the runtime files and compiled catalogs.
+Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
+after validation. CI only validates and retains artifacts; it never publishes a release.
+The separate [Release workflow](.github/workflows/release.yml) runs only when a `v*` tag is pushed.
+It repeats the same checks at the tagged commit and publishes only after both jobs succeed.
+Ordinary branch pushes and pull requests cannot publish a release.
+Stress tests remain available locally and are not run by GitHub CI.
 
 To build a local release ZIP without installing it into the desktop or changing Git state, run:
 
@@ -78,7 +101,8 @@ To build a local release ZIP without installing it into the desktop or changing 
 ./tools/release.sh
 ```
 
-The result is `build/release/clipboard-x-gnome.zip`. The script configures a dedicated package build,
+The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
+`clipboard-x-gnome_1.0.0.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
@@ -89,7 +113,21 @@ and working Git credentials; it never force-pushes or overwrites an existing rem
 
 The tag must match both project versions and the generated `metadata.json` `version-name`, or the
 workflow stops before publication. A passing tag build creates a GitHub Release with
-`clipboard-x-gnome.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
+`clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
+Before tagging, prepare and commit both `docs/release/v<version>-en.md` and
+`docs/release/v<version>-cn.md`. The workflow requires both files and uses the English file as the
+GitHub Release description; notes are written ahead of time, not generated from commits.
+Include a Simplified Chinese link at the top of the English file and an English link in the Chinese
+file. Use absolute URLs pointing to these files at the matching version tag so the links work both
+in the repository and in the GitHub Release, and remain tied to that version.
+
+For each version, summarize changes and fixes and end both
+language files with a **Full Changelog** comparison of the previous release tag and the new one.
+For example, for a future 1.1.0 release following 1.0.0:
+
+```md
+**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+```
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
 set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets

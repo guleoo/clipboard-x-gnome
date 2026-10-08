@@ -777,6 +777,10 @@ msgstr "Utilizatz los botons per cambiar la posicion e l’òrdre de las accions
 msgid "Clipboard"
 msgstr "Quichapapièrs"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elements del quichapapièrs"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Istoric"
@@ -1251,3 +1255,27 @@ msgstr "Far una captura d’ecran"
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr ""
 #~ "Mots separats per de virgulas ; los mots personalizats son prioritaris"
+
+msgid "Use sha256sum for file verification"
+msgstr "Utilizar sha256sum per verificar los fichièrs"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Redutz l’utilizacion de la memòria pendent lo telecargament de fichièrs voluminoses ; necessita sha256sum e torna legir cada fichièr telecargat."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Installatz sha256sum (generalament provesit per coreutils) per activar la verificacion extèrna dels fichièrs."
+
+msgid "File verification with sha256sum failed"
+msgstr "La verificacion del fichièr amb sha256sum a fracassat"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "L’imatge original es pas encara telecargat. Activatz d’en primièr la sincronizacion."
+
+msgid "Text full-transfer threshold"
+msgstr "Sulhet de transferiment complet del tèxte"
+
+msgid "Image full-transfer threshold"
+msgstr "Sulhet de transferiment complet dels imatges"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "S’aplica al mandadís e a la recepcion. Lo contengut mai grand es telecargat sonque quand es necessari."

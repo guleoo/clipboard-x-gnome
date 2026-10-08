@@ -230,6 +230,8 @@ class Indicator extends PanelMenu.Button {
       handleKey: event => this._handleMenuKey(event),
       onBack: () => this._closePhrases(),
       onCopy: phrase => this._copyPhrase(phrase),
+      onPaste: phrase => this._runAndClose(() => this._actions.pasteText(phrase)),
+      onType: phrase => this._runAndClose(() => this._actions.typeText(phrase)),
       refresh: () => this._panelManager?.refresh(),
       reportError: error => this._actions.reportError(error),
     });
@@ -458,6 +460,9 @@ class Indicator extends PanelMenu.Button {
   _handleMenuKey(event) {
     if (!this.menu.isOpen)
       return Clutter.EVENT_PROPAGATE;
+    if (this._panelManager.is('phrases')
+        && this._quickPhrases.handleKey(event) === Clutter.EVENT_STOP)
+      return Clutter.EVENT_STOP;
     if (this._panelManager.is('history')
         && matchesShortcut(this._settings, 'history-search-shortcut', event)) {
       this._historyPanel.focusSearch({immediate: true});

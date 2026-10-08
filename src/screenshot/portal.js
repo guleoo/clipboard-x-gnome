@@ -22,6 +22,7 @@ export class ScreenshotPortal {
     this._capabilities = null;
   }
 
+  // Returns the screenshot URI, or null when the user cancels the request.
   async capture(target = 'interactive') {
     if (this._request)
       throw new Error('A screenshot request is already active');
@@ -32,6 +33,8 @@ export class ScreenshotPortal {
     this._request = request;
     try {
       const capabilities = await this._getCapabilities(request.cancellable);
+      if (request.cancelled)
+        return null;
       const options = this._buildOptions(request.token, target, capabilities);
       const responsePromise = this._waitForResponse(request);
       const callPromise = this._call(
@@ -45,6 +48,10 @@ export class ScreenshotPortal {
       );
       const [, uri] = await Promise.all([callPromise, responsePromise]);
       return uri;
+    } catch (error) {
+      if (request.cancelled)
+        return null;
+      throw error;
     } finally {
       this._cleanup(request);
     }
@@ -55,6 +62,7 @@ export class ScreenshotPortal {
     if (!request)
       return;
 
+    request.cancelled = true;
     request.cancellable.cancel();
     this._closeRequest(request.path);
     request.rejectResponse?.(new Error('Screenshot request was cancelled'));
@@ -68,6 +76,7 @@ export class ScreenshotPortal {
       token,
       path: `/org/freedesktop/portal/desktop/request/${sender}/${token}`,
       cancellable: new Gio.Cancellable(),
+      cancelled: false,
       subscriptionId: 0,
       timeoutId: 0,
       rejectResponse: null,
@@ -141,10 +150,13 @@ export class ScreenshotPortal {
         Gio.DBusSignalFlags.NONE,
         (_connection, _sender, _path, _interface, _signal, parameters) => {
           const [response, rawResults] = parameters.deepUnpack();
+          if (response === 1) {
+            request.cancelled = true;
+            finish(resolve, null);
+            return;
+          }
           if (response !== 0) {
-            finish(reject, new Error(
-              response === 1 ? 'Screenshot request was cancelled' : 'Screenshot request was denied',
-            ));
+            finish(reject, new Error('Screenshot request was denied'));
             return;
           }
 

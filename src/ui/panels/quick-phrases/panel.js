@@ -11,15 +11,19 @@ import {ContentItem} from '../../controls/content-item.js';
 import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelHeader} from '../../controls/panel-header.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
+import {matches as matchesShortcut} from '../../shortcut.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;
 
 export class QuickPhrasesPanel {
-  constructor({settings, createIconButton, handleKey, onBack, onCopy, refresh, reportError}) {
+  constructor({settings, createIconButton, handleKey, onBack, onCopy, onPaste, onType, refresh, reportError}) {
+    this._settings = settings;
     this._store = new PhraseStore(settings);
     this._createIconButton = createIconButton;
     this._handleKey = handleKey;
     this._onCopy = onCopy;
+    this._onPaste = onPaste;
+    this._onType = onType;
     this._refresh = refresh;
     this._reportError = reportError;
     this._formVisible = false;
@@ -29,7 +33,7 @@ export class QuickPhrasesPanel {
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
     this.actor = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-phrase-panel',
       x_expand: true,
     });
@@ -132,6 +136,7 @@ export class QuickPhrasesPanel {
     const focusRows = [];
     for (const phrase of this._store.all) {
       const row = new ContentItem();
+      row._clipboardXPhrase = phrase;
       const content = new St.Button({
         can_focus: true,
         track_hover: true,
@@ -182,6 +187,28 @@ export class QuickPhrasesPanel {
   focus() {
     const target = this._formVisible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
+  }
+
+  handleKey(event) {
+    const row = global.stage.get_key_focus()?._clipboardXPhraseRow;
+    if (!row || !this._rows.includes(row))
+      return Clutter.EVENT_PROPAGATE;
+    const phrase = row._clipboardXPhrase;
+    let action;
+    if (matchesShortcut(this._settings, 'history-paste-shortcut', event))
+      action = () => this._onPaste(phrase);
+    else if (matchesShortcut(this._settings, 'history-delete-shortcut', event))
+      action = () => this.remove(phrase);
+    else if (matchesShortcut(this._settings, 'history-type-shortcut', event))
+      action = () => this._onType(phrase);
+    else
+      return Clutter.EVENT_PROPAGATE;
+    try {
+      Promise.resolve(action()).catch(error => this._reportError(error));
+    } catch (error) {
+      this._reportError(error);
+    }
+    return Clutter.EVENT_STOP;
   }
 
   focusStart() {

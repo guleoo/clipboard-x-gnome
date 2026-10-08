@@ -12,6 +12,7 @@ import {create as createRunningAppsRow} from './running-apps.js';
 import {restore as restoreDefaults} from './defaults.js';
 import {deviceIcon} from '../icons/device.js';
 import {create as createSyncGroup} from './sync.js';
+import {create as createFileVerificationRow} from './file-verification.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
@@ -32,7 +33,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings, window)],
       ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings, window)],
       ['quick-phrases', 'starred-symbolic', this._phrasesPage(settings)],
-      ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
+      ['sync', 'network-transmit-receive-symbolic', this._syncPage(settings, deviceId)],
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
       ['shortcuts', 'input-keyboard-symbolic', this._shortcutsPage(settings)],
@@ -279,7 +280,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   }
 
   _syncPage(settings, deviceId) {
-    const page = new Adw.PreferencesPage({title: _('Synchronization'), icon_name: 'folder-remote-symbolic'});
+    const page = new Adw.PreferencesPage({title: _('Synchronization'), icon_name: 'network-transmit-receive-symbolic'});
     const identity = new Adw.PreferencesGroup({title: _('Device')});
     page.add(identity);
     const idRow = new Adw.ActionRow({title: _('Device ID'), subtitle: deviceId});
@@ -330,15 +331,20 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       _('Pinned entries only'),
       _('Only applies to automatic sending'),
     ));
-    policy.add(this._rows.sizeSpin('text-full-threshold', _('Small text sent in full'), 1, 16384, 1, 1024, _('KB')));
+    const textThreshold = this._rows.sizeSpin('text-full-threshold', _('Text full-transfer threshold'), 1, 16384, 1, 1024, _('KB'));
+    textThreshold.subtitle = _('Applies to sending and receiving. Larger content is downloaded only when needed.');
+    policy.add(textThreshold);
     policy.add(this._rows.sizeSpin('text-preview-limit', _('Large text preview'), 0.25, 64, 0.25, 1024, _('KB'), 2));
-    policy.add(this._rows.sizeSpin('image-full-threshold', _('Small images sent in full'), 0.25, 128, 0.25, 1024 * 1024, _('MB'), 2));
+    const imageThreshold = this._rows.sizeSpin('image-full-threshold', _('Image full-transfer threshold'), 0.25, 128, 0.25, 1024 * 1024, _('MB'), 2);
+    imageThreshold.subtitle = _('Applies to sending and receiving. Larger content is downloaded only when needed.');
+    policy.add(imageThreshold);
     policy.add(this._rows.spin('thumbnail-size', _('Thumbnail dimension'), 64, 1024, 16, _('px')));
     policy.add(this._rows.sizeSpin('thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KB')));
     policy.add(this._rows.spin('sync-transfer-timeout-seconds', _('On-demand timeout'), 5, 3600, 5, _('seconds')));
     const pollInterval = this._rows.spin('sync-poll-interval-seconds', _('Polling interval'), 2, 60, 1, _('seconds'));
     pollInterval.subtitle = _('Seconds between checks; longer intervals reduce requests but delay updates.');
     policy.add(pollInterval);
+    policy.add(createFileVerificationRow(settings, _));
     return page;
   }
 

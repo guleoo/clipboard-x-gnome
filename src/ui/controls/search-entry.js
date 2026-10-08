@@ -40,4 +40,12 @@ class SearchEntry extends St.Entry {
     if (onKeyPress)
       this.clutter_text.connect('key-press-event', (_actor, event) => onKeyPress(event));
   }
+
+  get atEnd() {
+    const text = this.clutter_text;
+    // Clutter uses character offsets (not UTF-16 units), with -1 meaning the end.
+    return !text.get_selection()
+      && (text.get_cursor_position() === -1
+        || text.get_cursor_position() === [...this.get_text()].length);
+  }
 });

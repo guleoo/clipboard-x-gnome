@@ -1,47 +1,94 @@
-name: Build and release extension
+name: Release
 
 on:
   push:
-    branches: ['**']
     tags: ['v*']
-  pull_request:
 
 permissions:
   contents: read
 
 jobs:
   distcheck:
-    name: Build, test, and check ZIP
+    name: GNOME ${{ matrix.shell }} — build, test, and check ZIP
     runs-on: ubuntu-latest
-    container: fedora:44
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shell: '50'
+            container: fedora:44
+          - shell: '51'
+            container: fedora:45
+    container: ${{ matrix.container }}
+    outputs:
+      archive-name: ${{ steps.package.outputs.archive-name }}
+      artifact-name: ${{ steps.package.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install GNOME 50 build dependencies
+      - name: Install GNOME ${{ matrix.shell }} build dependencies
         run: >-
           dnf install -y
           7zip dbus-daemon gettext git gjs glib2 gnome-shell
           gtk4 libadwaita libsoup3 meson ninja-build nodejs python3
+          mesa-dri-drivers mesa-libEGL dejavu-sans-fonts
+      - name: Verify GNOME version and record environment
+        env:
+          EXPECTED_SHELL: ${{ matrix.shell }}
+        run: |
+          actual=$(gnome-shell --version | sed -nE 's/^GNOME Shell ([0-9]+).*/\1/p')
+          printf 'Expected GNOME Shell %s; installed %s\n' "$EXPECTED_SHELL" "$actual"
+          test "$actual" = "$EXPECTED_SHELL"
+          gnome-shell --version
+          gjs --version
+          rpm -q glib2 libsoup3 mutter mesa-dri-drivers
+          uname -r
       - name: Configure and build
         run: |
           meson setup build -Dtarget=package
           meson compile -C build
       - name: Check JavaScript syntax
         run: find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check
-      - name: Run test suite
-        run: dbus-run-session -- meson test -C build --print-errorlogs
+      - name: Run regression test suite
+        run: dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs
       - name: Create and validate release ZIP
+        id: package
         shell: bash
         run: |
           meson install -C build
+          version=$(meson introspect --projectinfo build |
+            python3 -c 'import json, sys; print(json.load(sys.stdin)["version"])')
+          archive_name="clipboard-x-gnome_${version}.zip"
+          printf 'archive-name=%s\n' "$archive_name" >> "$GITHUB_OUTPUT"
+          printf 'artifact-name=%s\n' "${archive_name%.zip}" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            python3 tools/check_release.py build/clipboard-x-gnome.zip --tag "$GITHUB_REF_NAME"
+            python3 tools/check_release.py "build/$archive_name" --tag "$GITHUB_REF_NAME"
           else
-            python3 tools/check_release.py build/clipboard-x-gnome.zip
+            python3 tools/check_release.py "build/$archive_name"
           fi
+      - name: Test isolated Shell lifecycle
+        shell: bash
+        run: |
+          mkdir -p /run/dbus
+          dbus-daemon --system --fork --nopidfile
+          # Package installation creates this marker although no logind runs in a container.
+          # Let Shell use its built-in no-logind test environment; never alter a host session.
+          if [[ -d /run/systemd/seats ]]; then
+            rmdir /run/systemd/seats
+          fi
+          bash tools/test-shell-compatibility.sh "build/${{ steps.package.outputs.archive-name }}" "${{ matrix.shell }}" \
+            2>&1 | tee build/meson-logs/shell-compatibility.log
       - uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          name: clipboard-x-gnome-zip
-          path: build/clipboard-x-gnome.zip
+          name: test-logs-gnome-${{ matrix.shell }}
+          path: build/meson-logs/
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: matrix.shell == '50'
+        with:
+          name: ${{ steps.package.outputs.artifact-name }}
+          path: build/${{ steps.package.outputs.archive-name }}
           if-no-files-found: error
           retention-days: 14
 
@@ -53,25 +100,35 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: clipboard-x-gnome-zip
+          name: ${{ needs.distcheck.outputs.artifact-name }}
       - name: Create release with extension ZIP
         env:
           GH_TOKEN: ${{ github.token }}
+          ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
+          notes_file="docs/release/${GITHUB_REF_NAME}-en.md"
+          chinese_notes_file="docs/release/${GITHUB_REF_NAME}-cn.md"
+          for file in "$notes_file" "$chinese_notes_file"; do
+            if [[ ! -f "$file" ]]; then
+              echo "Release notes are missing: $file" >&2
+              exit 1
+            fi
+          done
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                --json assets --jq '.assets[].name' | grep -Fxq clipboard-x-gnome.zip; then
+                --json assets --jq '.assets[].name' | grep -Fxq "$ARCHIVE_NAME"; then
               echo 'Release ZIP already exists; leaving the published asset untouched.'
             else
-              gh release upload "$GITHUB_REF_NAME" clipboard-x-gnome.zip \
+              gh release upload "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
                 --repo "$GITHUB_REPOSITORY"
             fi
           else
-            gh release create "$GITHUB_REF_NAME" clipboard-x-gnome.zip \
+            gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
               --repo "$GITHUB_REPOSITORY" --verify-tag \
-              --title "Clipboard X ${GITHUB_REF_NAME#v}" --generate-notes
+              --title "Clipboard X ${GITHUB_REF_NAME#v}" --notes-file "$notes_file"
           fi
 
   ego-upload:
@@ -85,13 +142,14 @@ jobs:
         run: dnf install -y gnome-shell
       - uses: actions/download-artifact@v4
         with:
-          name: clipboard-x-gnome-zip
+          name: ${{ needs.distcheck.outputs.artifact-name }}
       - name: Upload ZIP for GNOME review
         shell: bash
         env:
           EGO_USER: ${{ secrets.EGO_USER }}
           EGO_PASSWORD: ${{ secrets.EGO_PASSWORD }}
           XDG_CACHE_HOME: /tmp/clipboard-x-ego-cache
+          ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
           if [[ -z "$EGO_USER" || -z "$EGO_PASSWORD" ]]; then
             echo 'EGO_USER and EGO_PASSWORD repository secrets are required.' >&2
@@ -100,4 +158,4 @@ jobs:
           install -d -m 700 "$XDG_CACHE_HOME"
           printf '%s\n' "$EGO_PASSWORD" | gnome-extensions upload \
             --user "$EGO_USER" --password-file=- --accept-tos \
-            clipboard-x-gnome.zip
+            "$ARCHIVE_NAME"

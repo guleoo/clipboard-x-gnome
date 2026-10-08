@@ -768,6 +768,10 @@ msgstr "ボタンを使って操作の配置と順序を変更します。"
 msgid "Clipboard"
 msgstr "クリップボード"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "クリップボードの項目"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "履歴"
@@ -1228,3 +1232,27 @@ msgstr "スクリーンショットを撮る"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "カンマ区切りの単語。カスタム単語を優先します"
+
+msgid "Use sha256sum for file verification"
+msgstr "ファイルの検証に sha256sum を使用する"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "大きなファイルのダウンロード時のメモリ使用量を削減します。sha256sum が必要で、ダウンロードした各ファイルを再度読み込みます。"
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "外部ツールによるファイル検証を有効にするには、sha256sum（通常は coreutils に含まれます）をインストールしてください。"
+
+msgid "File verification with sha256sum failed"
+msgstr "sha256sum によるファイルの検証に失敗しました"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "元の画像はまだダウンロードされていません。先に同期を有効にしてください。"
+
+msgid "Text full-transfer threshold"
+msgstr "テキストの全量転送しきい値"
+
+msgid "Image full-transfer threshold"
+msgstr "画像の全量転送しきい値"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "送信と受信の両方に適用されます。しきい値を超える内容は、必要なときにのみダウンロードされます。"

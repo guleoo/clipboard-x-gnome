@@ -764,6 +764,10 @@ msgstr "برای تغییر مکان و ترتیب کنش‌ها از دکمه�
 msgid "Clipboard"
 msgstr "تخته‌گیره"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "موارد کلیپ‌بورد"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "تاریخچه"
@@ -1229,3 +1233,27 @@ msgstr "گرفتن نماگرفت"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "واژه‌ها با ویرگول جدا شوند؛ واژه‌های سفارشی اولویت دارند"
+
+msgid "Use sha256sum for file verification"
+msgstr "استفاده از sha256sum برای بررسی صحت پرونده‌ها"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "مصرف حافظه را هنگام بارگیری پرونده‌های بزرگ کاهش می‌دهد؛ به sha256sum نیاز دارد و هر پروندهٔ بارگیری‌شده را دوباره می‌خواند."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "برای فعال کردن بررسی خارجی صحت پرونده‌ها، sha256sum را نصب کنید (معمولاً در coreutils ارائه می‌شود)."
+
+msgid "File verification with sha256sum failed"
+msgstr "بررسی صحت پرونده با sha256sum شکست خورد"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "تصویر اصلی هنوز بارگیری نشده است. ابتدا همگام‌سازی را فعال کنید."
+
+msgid "Text full-transfer threshold"
+msgstr "آستانهٔ انتقال کامل متن"
+
+msgid "Image full-transfer threshold"
+msgstr "آستانهٔ انتقال کامل تصویر"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "برای ارسال و دریافت اعمال می‌شود. محتوای بزرگ‌تر فقط در صورت نیاز بارگیری می‌شود."

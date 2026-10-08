@@ -768,6 +768,10 @@ msgstr "Eylemlerin yerini ve sırasını değiştirmek için düğmeleri kullan�
 msgid "Clipboard"
 msgstr "Pano"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Pano öğeleri"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Geçmiş"
@@ -1233,3 +1237,27 @@ msgstr "Ekran görüntüsü al"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Virgülle ayrılmış sözcükler; özel sözcükler önceliklidir"
+
+msgid "Use sha256sum for file verification"
+msgstr "Dosya doğrulaması için sha256sum kullan"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Büyük dosyaları indirirken bellek kullanımını azaltır; sha256sum gerektirir ve indirilen her dosyayı yeniden okur."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Harici dosya doğrulamasını etkinleştirmek için sha256sum kurun (genellikle coreutils ile sağlanır)."
+
+msgid "File verification with sha256sum failed"
+msgstr "sha256sum ile dosya doğrulaması başarısız oldu"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Özgün görüntü henüz indirilmedi. Önce eşitlemeyi etkinleştirin."
+
+msgid "Text full-transfer threshold"
+msgstr "Metnin tam aktarım eşiği"
+
+msgid "Image full-transfer threshold"
+msgstr "Görüntülerin tam aktarım eşiği"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Gönderme ve alma için geçerlidir. Daha büyük içerik yalnızca gerektiğinde indirilir."

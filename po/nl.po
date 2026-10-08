@@ -773,6 +773,10 @@ msgstr "Gebruik de knoppen om de positie en volgorde van acties te wijzigen."
 msgid "Clipboard"
 msgstr "Klembord"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Klemborditems"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Geschiedenis"
@@ -1247,3 +1251,27 @@ msgstr "Schermafdruk maken"
 
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr "Komma-gescheiden woorden; aangepaste woorden krijgen voorrang"
+
+msgid "Use sha256sum for file verification"
+msgstr "sha256sum gebruiken voor bestandsverificatie"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Vermindert het geheugengebruik bij het downloaden van grote bestanden; vereist sha256sum en leest elk gedownload bestand opnieuw."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Installeer sha256sum (doorgaans onderdeel van coreutils) om externe bestandsverificatie in te schakelen."
+
+msgid "File verification with sha256sum failed"
+msgstr "Bestandsverificatie met sha256sum is mislukt"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "De originele afbeelding is nog niet gedownload. Schakel eerst synchronisatie in."
+
+msgid "Text full-transfer threshold"
+msgstr "Drempel voor volledige tekstoverdracht"
+
+msgid "Image full-transfer threshold"
+msgstr "Drempel voor volledige afbeeldingsoverdracht"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Geldt voor verzenden en ontvangen. Grotere inhoud wordt alleen gedownload wanneer nodig."

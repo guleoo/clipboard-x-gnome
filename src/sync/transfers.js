@@ -36,8 +36,12 @@ export class TransferTracker {
         return;
       transfer = {...transfer, updatedAt: previous.updatedAt};
     }
-    if (!previous && this._states.size >= MAX_TRANSFER_STATES)
-      this._states.delete(this._states.keys().next().value);
+    if (!previous && this._states.size >= MAX_TRANSFER_STATES) {
+      const oldestId = this._states.keys().next().value;
+      this._cancelPending(oldestId);
+      this._lastEmittedAt.delete(oldestId);
+      this._states.delete(oldestId);
+    }
     this._states.set(transfer.transferId, {...transfer});
     const now = GLib.get_monotonic_time() / 1000;
     const last = this._lastEmittedAt.get(transfer.transferId) ?? 0;

@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {loadFile, writeFile} from '../../../common/files.js';
+import {createLogger} from '../../../common/logger.js';
 import {parseDictionary, serializeDictionary} from './format.js';
 import {inferLocale, localeCandidates, SYSTEM_DICTIONARY_ID} from './locale.js';
 import {Lexicon} from './lexicon.js';
@@ -10,6 +11,7 @@ const FILE_PATTERN = /^([a-z]{2,3}(?:_[a-z0-9]{2,8})*)--[a-z0-9-]+\.dict$/u;
 const MAXIMUM_IMPORT_BYTES = 8 * 1024 * 1024;
 const MAXIMUM_IMPORT_ENTRIES = 150_000;
 const MAXIMUM_ACTIVE_ENTRIES = 200_000;
+const logger = createLogger('dictionary');
 
 function decode(contents) {
   return new TextDecoder().decode(contents).replace(/^\uFEFF/u, '');
@@ -78,7 +80,7 @@ export class DictionaryStore {
         if (Array.isArray(parsed.imported))
           state = {imported: parsed.imported.filter(value => typeof value === 'string')};
       } catch (error) {
-        console.error(`Clipboard X could not read dictionary seed state: ${error.message}`);
+        logger.error('load-seed-state', error);
       }
     }
     let changed = !stateFile.query_exists(null);
@@ -126,7 +128,7 @@ export class DictionaryStore {
           entryCount: parsed.entries.length,
         });
       } catch (error) {
-        console.error(`Clipboard X ignored dictionary ${file.get_uri()}: ${error.message}`);
+        logger.error('load-dictionary', error);
       }
     }
     return dictionaries.sort((left, right) => left.locale.localeCompare(right.locale)
@@ -157,7 +159,7 @@ export class DictionaryStore {
           name: file.get_basename(),
         }).entries);
       } catch (error) {
-        console.error(`Clipboard X ignored dictionary ${file.get_uri()}: ${error.message}`);
+        logger.error('load-dictionary', error);
       }
     }
     return {lexicon, systemEnabled};

@@ -6,11 +6,19 @@ import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions
 
 import {SyncConfigurationStore} from '../../sync/configuration-store.js';
 import {message as syncErrorMessage} from '../../sync/errors.js';
+import {ensureDeviceIdentity} from '../../sync/device.js';
 import {HttpTransport} from '../../sync/http/transport.js';
-import {channels as validateChannels, status as validateStatus} from '../../sync/protocol.js';
+import {createConnectionActions, createRunner} from './sync-connection.js';
 
 export function create(settings, deviceId, rows) {
   const store = new SyncConfigurationStore();
+  const connection = createConnectionActions({
+    store,
+    notifyChanged: () => notifyConfigurationChanged(settings),
+    createTransport: configuration => new HttpTransport(configuration, {deviceId}),
+    now: () => GLib.get_monotonic_time() / 1000,
+    identity: () => ensureDeviceIdentity(settings),
+  });
   const group = new Adw.PreferencesGroup({title: _('Server connection')});
   group.add(rows.switch('sync-enabled', _('Enable synchronization')));
 
@@ -40,10 +48,7 @@ export function create(settings, deviceId, rows) {
   group.add(status);
 
   let channelIds = [];
-  let busy = false;
-
   const setBusy = value => {
-    busy = value;
     apply.sensitive = !value;
     test.sensitive = !value;
     refresh.sensitive = !value;
@@ -68,69 +73,47 @@ export function create(settings, deviceId, rows) {
     address.text = configuration.serverAddress;
     apiKey.text = configuration.apiKey;
   };
-  const persistInputs = async () => {
+  const readInputs = () => {
     const selectedChannelId = channel.sensitive
       ? (channelIds[channel.selected] ?? store.current.activeChannelId)
       : store.current.activeChannelId;
-    const configuration = await store.save({
-      ...store.current,
+    return {
       serverAddress: address.text,
       apiKey: apiKey.text,
       activeChannelId: selectedChannelId,
-    });
-    notifyConfigurationChanged(settings);
-    return configuration;
+    };
   };
-  const loadChannels = async configuration => withTransport(configuration, deviceId, async transport => {
-    const result = validateChannels(await transport.channels(), configuration.activeChannelId);
-    let current = configuration;
-    if (result.length > 0 && !result.some(item => item.id === configuration.activeChannelId)) {
-      current = await store.save({...configuration, activeChannelId: result[0].id});
-      notifyConfigurationChanged(settings);
-    }
-    const channels = result.map(item => ({...item, active: item.id === current.activeChannelId}));
-    renderChannels(channels, current.activeChannelId);
-    return {configuration: current, channels};
-  });
-  const run = async operation => {
-    if (busy)
-      return;
-    setBusy(true);
-    try {
-      await operation();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
+  const persistInputs = () => connection.save(readInputs());
+  const loadChannels = async configuration => {
+    const result = await connection.channels(configuration);
+    renderChannels(result.channels, result.configuration.activeChannelId);
+    return result;
   };
+  const run = createRunner({setBusy, onError: showError});
 
   apply.connect('clicked', () => run(async () => {
-    const configuration = await persistInputs();
-    try {
-      const result = await loadChannels(configuration);
-      status.subtitle = result.configuration.apiKey
-        ? _('Connection settings saved · API key configured')
-        : _('Connection settings saved · API key not configured');
-    } catch (error) {
+    status.subtitle = _('Connecting…');
+    const result = await connection.apply(readInputs());
+    if (result.error) {
       status.subtitle = [
         _('Connection settings saved locally'),
-        syncErrorMessage(error, _) || _('Synchronization request failed'),
+        syncErrorMessage(result.error, _) || _('Synchronization request failed'),
       ].join(' · ');
+      return;
     }
+    renderChannels(result.channels, result.configuration.activeChannelId);
+    status.subtitle = result.configuration.apiKey
+      ? _('Connection settings saved · API key configured')
+      : _('Connection settings saved · API key not configured');
   }));
   test.connect('clicked', () => run(async () => {
-    const configuration = await persistInputs();
     status.subtitle = _('Connecting…');
-    const started = GLib.get_monotonic_time();
-    const server = await withTransport(configuration, deviceId, transport => transport.status());
-    const result = validateStatus(server);
-    const latency = Math.max(0, Math.round((GLib.get_monotonic_time() - started) / 1000));
-    await loadChannels(configuration);
-    const serverState = result.status === 'degraded'
+    const result = await connection.test(readInputs());
+    renderChannels(result.channels, result.configuration.activeChannelId);
+    const serverState = result.status.status === 'degraded'
       ? _('Degraded')
       : _('Online');
-    status.subtitle = [serverState, result.implementationVersion, `${latency} ms`]
+    status.subtitle = [serverState, result.status.implementationVersion, `${result.latency} ms`]
       .filter(Boolean).join(' · ');
   }));
   refresh.connect('clicked', () => run(async () => {
@@ -167,15 +150,6 @@ export function create(settings, deviceId, rows) {
     return GLib.SOURCE_REMOVE;
   });
   return group;
-}
-
-async function withTransport(configuration, deviceId, operation) {
-  const transport = new HttpTransport(configuration, {deviceId});
-  try {
-    return await operation(transport);
-  } finally {
-    transport.abort();
-  }
 }
 
 function notifyConfigurationChanged(settings) {

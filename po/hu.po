@@ -771,6 +771,10 @@ msgstr "A gombokkal módosíthatja a műveletek helyét és sorrendjét."
 msgid "Clipboard"
 msgstr "Vágólap"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Vágólapelemek"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Előzmények"
@@ -1244,3 +1248,27 @@ msgstr "Képernyőkép készítése"
 #~ msgid "Comma-separated words; custom words take priority"
 #~ msgstr ""
 #~ "Vesszővel elválasztott szavak; az egyéni szavak elsőbbséget élveznek"
+
+msgid "Use sha256sum for file verification"
+msgstr "A sha256sum használata a fájlok ellenőrzéséhez"
+
+msgid "Reduces memory use for large downloads; requires sha256sum and reads each downloaded file again."
+msgstr "Csökkenti a memóriahasználatot nagy fájlok letöltésekor; a sha256sum szükséges hozzá, és újra beolvassa az összes letöltött fájlt."
+
+msgid "Install sha256sum (usually provided by coreutils) to enable external file verification."
+msgstr "Telepítse a sha256sum programot (általában a coreutils része) a külső fájlellenőrzés engedélyezéséhez."
+
+msgid "File verification with sha256sum failed"
+msgstr "A fájl ellenőrzése a sha256sum programmal sikertelen"
+
+msgid "The original image has not been downloaded. Enable synchronization first."
+msgstr "Az eredeti kép még nincs letöltve. Először kapcsolja be a szinkronizálást."
+
+msgid "Text full-transfer threshold"
+msgstr "Teljes szövegátvitel méretkorlátja"
+
+msgid "Image full-transfer threshold"
+msgstr "Teljes képátvitel méretkorlátja"
+
+msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
+msgstr "Küldésre és fogadásra is érvényes. A nagyobb tartalom csak szükség esetén töltődik le."
