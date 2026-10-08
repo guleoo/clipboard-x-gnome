@@ -53,7 +53,7 @@ exit "${CBX_TEST_EXIT:-0}"
                 self.assertNotEqual(lines[0], self.env.get("XDG_RUNTIME_DIR"))
                 self.assertFalse(Path(lines[0]).exists(), "private runtime must be cleaned up")
                 self.assertEqual(lines[1:5], ["unset"] * 4)
-                self.assertEqual(lines[8:11], ["--headless", "--extension", str(self.archive)])
+                self.assertEqual(lines[8:12], ["--headless", "--disable-animations", "--extension", str(self.archive)])
 
     def test_rejects_wrong_or_unsupported_runtime(self):
         for runtime, expected in (("50", "51"), ("51", "50"), ("52", "52")):

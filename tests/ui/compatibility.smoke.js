@@ -1,11 +1,81 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 
 const UUID = 'clipboard-x@guleoo.github.io';
 export const METRICS = {};
+const WAIT_TIMEOUT_MILLISECONDS = 15_000;
+const STARTUP_TIMEOUT_MILLISECONDS = 30_000;
+let phase = 'module-loaded';
+let startupWatchdog = 0;
+let preparedSignal = 0;
+let startedSignal = 0;
+
+function stage(name) {
+  phase = name;
+  print(`Clipboard X [compatibility] ${name}`);
+}
+
+function startupState() {
+  const layout = Main.layoutManager;
+  const extension = Main.extensionManager?.lookup(UUID);
+  const backgrounds = (layout?._bgManagers ?? []).map(manager =>
+    manager.backgroundActor?.content?.background?.isLoaded ?? 'unknown');
+  return `shellStartingUp=${layout?._startingUp ?? 'unknown'}; monitors=${layout?.monitors.length ?? 0}; backgroundLoaded=${backgrounds.join(',') || 'none'}; extensionState=${extension?.state ?? 'unknown'}; indicatorPresent=${Boolean(Main.panel?.statusArea['clipboard-x'])}`;
+}
+
+// GNOME calls init() before startup-complete and run() only after its automation helper is ready.
+export function init() {
+  stage('automation-init');
+  stage(Main.layoutManager._startingUp ? 'waiting-for-shell-startup' : 'waiting-for-automation-run');
+  preparedSignal = Main.layoutManager.connect('startup-prepared', () => stage('shell-startup-prepared'));
+  startedSignal = Main.layoutManager.connect('startup-complete', () => {
+    stage('shell-startup-complete');
+    stage('waiting-for-automation-run');
+  });
+  startupWatchdog = GLib.timeout_add(GLib.PRIORITY_DEFAULT, STARTUP_TIMEOUT_MILLISECONDS, () => {
+    startupWatchdog = 0;
+    printerr(`Clipboard X [compatibility] Timeout after ${STARTUP_TIMEOUT_MILLISECONDS} ms: ${phase}; ${startupState()}`);
+    Meta.exit(Meta.ExitCode.ERROR);
+    return GLib.SOURCE_REMOVE;
+  });
+}
+
+function clearStartupWatchdog() {
+  if (startupWatchdog)
+    GLib.Source.remove(startupWatchdog);
+  startupWatchdog = 0;
+  if (preparedSignal)
+    Main.layoutManager.disconnect(preparedSignal);
+  if (startedSignal)
+    Main.layoutManager.disconnect(startedSignal);
+  preparedSignal = 0;
+  startedSignal = 0;
+}
+
+async function wait(name, promise) {
+  stage(name);
+  let source = 0;
+  try {
+    const timeout = new Promise((_resolve, reject) => {
+      source = GLib.timeout_add(GLib.PRIORITY_DEFAULT, WAIT_TIMEOUT_MILLISECONDS, () => {
+        source = 0;
+        reject(new Error(`Timeout after ${WAIT_TIMEOUT_MILLISECONDS} ms: ${name}; ${startupState()}`));
+        return GLib.SOURCE_REMOVE;
+      });
+    });
+    const result = await Promise.race([promise, timeout]);
+    print(`Clipboard X [compatibility] ${name} completed`);
+    return result;
+  } finally {
+    if (source)
+      GLib.Source.remove(source);
+  }
+}
 
 function assert(condition, message) {
   if (!condition)
@@ -13,11 +83,14 @@ function assert(condition, message) {
 }
 
 async function indicator() {
+  stage('waiting-for-indicator');
   for (let attempt = 0; attempt < 60; attempt++) {
     const extension = Main.extensionManager.lookup(UUID);
     const actor = Main.panel.statusArea['clipboard-x'];
-    if (extension?.enabled && actor)
+    if (extension?.enabled && actor) {
+      print('Clipboard X [compatibility] indicator ready');
       return actor;
+    }
     await Scripting.sleep(50);
   }
   const extension = Main.extensionManager.lookup(UUID);
@@ -32,11 +105,11 @@ function deferred() {
 
 async function verifyHistoryLifecycle(actor) {
   const extensionObject = actor._actions.extensionObject;
-  await extensionObject._startup;
+  await wait('clipboard-startup', extensionObject._startup);
   const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
   const historical = ClipboardItem.fromText('History before delayed initialization');
   actor._controller.add(historical);
-  await actor._controller.persist();
+  await wait('initial-history-save', actor._controller.persist());
   const historicalPath = historical.primary.path;
   const storePrototype = Object.getPrototypeOf(actor._controller._store);
   const syncPrototype = Object.getPrototypeOf(extensionObject._sync);
@@ -50,6 +123,7 @@ async function verifyHistoryLifecycle(actor) {
   let syncRestarts = 0;
   let publications = 0;
   try {
+    stage('delayed-history-initialization');
     Main.extensionManager.disableExtension(UUID);
     storePrototype.load = async function (cancellable) {
       const snapshot = await load.call(this, cancellable);
@@ -65,7 +139,7 @@ async function verifyHistoryLifecycle(actor) {
     };
     Main.extensionManager.enableExtension(UUID);
     actor = await indicator();
-    await loading.promise;
+    await wait('history-load-hook', loading.promise);
     const settings = actor._settings;
     settings.set_boolean('sync-enabled', true);
     settings.set_boolean('sync-enabled', false);
@@ -77,19 +151,19 @@ async function verifyHistoryLifecycle(actor) {
     const incoming = ClipboardItem.fromText('Item added during delayed initialization');
     actor._controller.add(incoming, 'remote');
     await Scripting.sleep(200); // Let the normal 150 ms save deadline expire while loading is held.
-    assert((await load.call(actor._controller._store)).some(item => item.id === historical.id)
+    assert((await wait('existing-history-read', load.call(actor._controller._store))).some(item => item.id === historical.id)
         && Gio.File.new_for_path(historicalPath).query_exists(null),
       'An early item overwrote the existing history index or deleted its content');
     assert(publications === 0, 'Publication did not wait for startup to complete');
     releaseLoad.resolve();
-    await extensionObject._startup;
+    await wait('resumed-clipboard-startup', extensionObject._startup);
     assert(syncStarts === 1 && actor._controller.items.some(item => item.id === historical.id)
         && actor._controller.items.some(item => item.id === incoming.id),
       'Startup lost an existing or early-arriving history item');
-    assert((await publishing).success && publications === 1,
+    assert((await wait('startup-publication', publishing)).success && publications === 1,
       'Publication did not resume after history and synchronization startup completed');
     settings.set_boolean('sync-enabled', false);
-    await actor._controller.persist();
+    await wait('merged-history-save', actor._controller.persist());
   } finally {
     releaseLoad.resolve();
     storePrototype.load = load;
@@ -106,6 +180,7 @@ async function verifyHistoryLifecycle(actor) {
   const releaseSave = deferred();
   let loads = 0;
   try {
+    stage('rapid-disable-reenable');
     store.save = async (...args) => {
       saving.resolve();
       await releaseSave.promise;
@@ -117,7 +192,7 @@ async function verifyHistoryLifecycle(actor) {
     };
     syncPrototype.start = async () => { syncStarts++; };
     Main.extensionManager.disableExtension(UUID);
-    await saving.promise;
+    await wait('shutdown-save-hook', saving.promise);
     Main.extensionManager.enableExtension(UUID);
     actor = await indicator();
     const oldStartup = extensionObject._startup;
@@ -132,11 +207,11 @@ async function verifyHistoryLifecycle(actor) {
     assert(loads === 0 && syncStarts === expectedStarts,
       'The replacement started loading or synchronizing before the previous save completed');
     releaseSave.resolve();
-    await oldStartup;
-    assert((await oldPublication).error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
+    await wait('superseded-startup', oldStartup);
+    assert((await wait('superseded-publication', oldPublication)).error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
       'A publication waiting on a superseded startup must be cancelled');
     actor = await indicator();
-    await actor._actions.extensionObject._startup;
+    await wait('replacement-startup', actor._actions.extensionObject._startup);
     assert(syncStarts === expectedStarts + 1,
       'A disabled startup continued and started synchronization on the old instance');
     const reloaded = actor._controller.items.find(item => item.id === latest.id);
@@ -152,8 +227,10 @@ async function verifyHistoryLifecycle(actor) {
 }
 
 export async function run() {
+  clearStartupWatchdog();
+  stage('automation-run');
   if (Main.extensionManager._initializationPromise)
-    await Main.extensionManager._initializationPromise;
+    await wait('extension-manager-initialization', Main.extensionManager._initializationPromise);
   Main.overview.hide();
   let actor = await indicator();
   assert(actor._actions.extensionObject._terminalInput._device,
@@ -161,6 +238,7 @@ export async function run() {
   assert(global.stage.context.get_backend().get_default_seat(),
     'Shared backend/seat API is unavailable');
 
+  stage('main-panel');
   actor.menu.open();
   await Scripting.sleep(150);
   assert(actor.menu.isOpen, 'Main panel did not open');
@@ -169,17 +247,20 @@ export async function run() {
   assert(actor._historyPanel.scroll.get_vadjustment(),
     'Shared scroll adjustment API is unavailable');
 
+  stage('tokenizer-panel');
   actor._panelManager.show('tokenizer', actor._tokenizer.createState(null, 'Hello, world!'));
   await Scripting.sleep(100);
   assert(actor._tokenizer._buttons.length > 0, 'Tokenizer panel did not render tokens');
   assert(actor._tokenizer.header.orientation === Clutter.Orientation.VERTICAL,
     'Shared panel header must use orientation');
+  stage('quick-phrases-panel');
   actor._openPhrases();
   await Scripting.sleep(100);
   assert(actor._quickPhrases.actor.orientation === Clutter.Orientation.VERTICAL,
     'Quick phrases panel must use orientation');
   actor.menu.close();
 
+  stage('disable-reenable');
   Main.extensionManager.disableExtension(UUID);
   await Scripting.sleep(150);
   assert(!Main.panel.statusArea['clipboard-x'], 'Disabling did not destroy the indicator');
@@ -190,6 +271,8 @@ export async function run() {
   assert(actor.menu.isOpen, 'Panel did not open after re-enabling');
   actor.menu.close();
   actor = await verifyHistoryLifecycle(actor);
+  stage('final-disable');
   Main.extensionManager.disableExtension(UUID);
+  stage('completed');
   print('Clipboard X: shared Shell APIs and enable/disable/re-enable passed.');
 }

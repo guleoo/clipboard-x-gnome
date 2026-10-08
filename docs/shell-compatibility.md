@@ -33,6 +33,13 @@ containers need their own bus and a suitable login-manager test environment. CI 
 system bus and removes the empty `/run/systemd/seats` package-created marker so Shell uses its built-in
 no-logind mode. No host runtime directory is touched, and no mock plugin API is substituted.
 
+The test uses a self-contained static background and disables Shell animations, avoiding dependencies
+on distribution wallpaper packages. English `[compatibility]` messages distinguish automation
+initialization, Shell startup completion, test entry and each lifecycle stage. A 30-second watchdog
+covers startup after the automation module initializes; important test waits have a 15-second deadline.
+Timeouts include the current stage and Shell/extension readiness. The outer 120-second limit remains
+in place for hangs before the module can initialize or while the main loop is blocked.
+
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
 tokenizer rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
 physical-keyboard, server-interoperability or visual-layout acceptance test. Those still require
