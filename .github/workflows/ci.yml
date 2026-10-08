@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   distcheck:
-    name: GNOME ${{ matrix.shell }} — build, test, and check ZIP
+    name: GNOME${{ matrix.shell }} - Verify
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

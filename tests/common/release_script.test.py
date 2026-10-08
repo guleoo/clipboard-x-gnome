@@ -53,6 +53,7 @@ class ReleaseScriptTest(unittest.TestCase):
         for name in ("ci", "release"):
             with self.subTest(workflow=name):
                 workflow = self.workflow(name)
+                self.assertIn("    name: GNOME${{ matrix.shell }} - Verify\n", workflow)
                 matrix = workflow.split("        include:\n", 1)[1].split("\n    container:", 1)[0]
                 self.assertEqual(matrix, "          - shell: '50'\n"
                                  "            container: fedora:44\n"
