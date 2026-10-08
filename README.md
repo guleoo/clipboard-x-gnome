@@ -186,6 +186,9 @@ To connect a device:
 4. Enable synchronization and test the connection.
 5. Keep the default **Manual** send mode and use an entry's sync button, or explicitly choose **Automatic**.
 
+**Test connection** checks the current inputs without saving them or restarting synchronization.
+Click **Apply** to save connection changes.
+
 **Preferences → Synchronization → Polling interval** controls how often this device checks for updates;
 longer intervals reduce server requests but delay incoming items. To stop recording from an application,
 choose it from **Preferences → Clipboard → Privacy → Running application** or enter its window class under

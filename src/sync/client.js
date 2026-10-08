@@ -137,7 +137,8 @@ export class SyncClient extends EventEmitter {
   async getChanges(cursor, options = {}) {
     if (!this._connected || !this._storedConfiguration?.activeChannelId)
       return {nextCursor: cursor, changes: [], hasMore: false};
-    return validateChanges(await this._transport.changes(
+    const transport = this._transport;
+    return validateChanges(await transport.changes(
       this._storedConfiguration.activeChannelId,
       cursor,
       options.limit ?? 200,
@@ -237,18 +238,25 @@ export class SyncClient extends EventEmitter {
 
   async getTransfer(transferId) {
     this._requireConnection();
+    const generation = this._generation;
+    const transport = this._transport;
     if (!isUuid(transferId))
       throw new Error('Synchronization transfer ID is invalid');
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const transfer = validateTransfer(await this._transport.transfer(transferId), deviceId);
-    this._observeRemoteTransfer(transfer);
+    const transfer = validateTransfer(await transport.transfer(transferId), deviceId);
+    if (this._isCurrent(generation))
+      this._observeRemoteTransfer(transfer);
     return transfer;
   }
 
   async listTransfers() {
     this._requireConnection();
+    const generation = this._generation;
+    const transport = this._transport;
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const values = validateTransfers(await this._transport.transfers(), deviceId);
+    const values = validateTransfers(await transport.transfers(), deviceId);
+    if (!this._isCurrent(generation))
+      return [];
     for (const transfer of values) {
       this._observeRemoteTransfer(transfer);
       this._recordTransfer(transfer, true);
@@ -258,10 +266,13 @@ export class SyncClient extends EventEmitter {
 
   async listChannels() {
     this._requireConnection();
-    this._channels = validateChannels(
-      await this._transport.channels(),
-      this._storedConfiguration.activeChannelId,
-    );
+    const generation = this._generation;
+    const transport = this._transport;
+    const channelId = this._storedConfiguration.activeChannelId;
+    const channels = validateChannels(await transport.channels(), channelId);
+    if (!this._isCurrent(generation))
+      return [];
+    this._channels = channels;
     this.emit('channels-changed', this.channels);
     return this.channels;
   }
@@ -286,53 +297,88 @@ export class SyncClient extends EventEmitter {
 
   async _initialize(scope) {
     const generation = ++this._generation;
-    this._storedConfiguration = await scope.step('configuration', () => this._configurationStore.load());
-    this._applyPublicConfiguration();
-    if (!this._storedConfiguration.serverAddress || !this._storedConfiguration.apiKey) {
-      this._setStatus('offline', null, 'not-configured');
-      this._logger.info('not-configured');
-      return;
-    }
-
-    const identity = scope.step('transport', () => {
-      this._cancellable = new Gio.Cancellable();
-      const value = ensureDeviceIdentity(this._settings);
-      this._transport = this._transportFactory(this._storedConfiguration, {
-        deviceId: value.deviceId,
-        cancellable: this._cancellable,
-      });
-      return value;
-    });
+    let transport = null;
+    let cancellable = null;
     try {
-      this._capabilities = await scope.step('status', async () => validateStatus(await this._transport.status()));
-      if (this._destroyed || generation !== this._generation)
+      const configuration = await scope.step('configuration', () => this._configurationStore.load());
+      if (!this._isCurrent(generation))
         return;
+      this._storedConfiguration = configuration;
+      this._applyPublicConfiguration();
+      if (!this._isCurrent(generation))
+        return;
+      if (!configuration.serverAddress || !configuration.apiKey) {
+        this._setStatus('offline', null, 'not-configured');
+        this._logger.info('not-configured');
+        return;
+      }
+
+      const identity = scope.step('transport', () => {
+        this._closeConnection();
+        cancellable = new Gio.Cancellable();
+        const value = ensureDeviceIdentity(this._settings);
+        transport = this._transportFactory(configuration, {deviceId: value.deviceId, cancellable});
+        this._cancellable = cancellable;
+        this._transport = transport;
+        return value;
+      });
+      const capabilities = await scope.step('status', async () => validateStatus(await transport.status()));
+      if (!this._isCurrent(generation))
+        return;
+      this._capabilities = capabilities;
       this._connected = true;
-      const currentDevice = await scope.step('device', async () => validateDevice(await this._transport.device(), identity.deviceId));
+      const currentDevice = await scope.step('device', async () => validateDevice(await transport.device(), identity.deviceId));
+      if (!this._isCurrent(generation))
+        return;
       this._devices.set(currentDevice.deviceId, currentDevice);
       await scope.step('profile', () => this._queueProfileUpdate(true));
+      if (!this._isCurrent(generation))
+        return;
       await scope.step('channels', () => this.listChannels());
+      if (!this._isCurrent(generation))
+        return;
       if (this._channels.length > 0
           && !this._channels.some(channel => channel.id === this._storedConfiguration.activeChannelId)) {
         this._storedConfiguration.activeChannelId = this._channels[0].id;
         await scope.step('channel-selection', () => this._saveConnection());
+        if (!this._isCurrent(generation))
+          return;
         await scope.step('channels', () => this.listChannels());
+        if (!this._isCurrent(generation))
+          return;
       }
       this._applyPublicConfiguration();
+      if (!this._isCurrent(generation))
+        return;
       await scope.step('transfers', () => this.listTransfers());
+      if (!this._isCurrent(generation))
+        return;
       await this._poll(scope);
-      this._setStatus(this._capabilities.status, this._capabilities, 'online');
+      if (!this._isCurrent(generation))
+        return;
+      this._setStatus(capabilities.status, capabilities, 'online');
       this._schedulePoll();
     } catch (error) {
-      if (generation === this._generation) {
-        this._closeConnection();
-        this._setStatus('error', {
-          error: error.message,
-          errorCode: String(error.code ?? 'request_failed'),
-        }, 'request-failed');
-      }
+      if (!this._isCurrent(generation))
+        return;
+      this._closeConnection();
+      this._setStatus('error', {
+        error: error.message,
+        errorCode: String(error.code ?? 'request_failed'),
+      }, 'request-failed');
       throw error;
+    } finally {
+      // Restart/destroy normally close the old session immediately. Never close
+      // a newer session when an older asynchronous initialization finishes.
+      if (transport && transport !== this._transport && !cancellable.is_cancelled()) {
+        cancellable.cancel();
+        transport.abort();
+      }
     }
+  }
+
+  _isCurrent(generation) {
+    return !this._destroyed && generation === this._generation;
   }
 
   async _publish(item) {
@@ -627,24 +673,34 @@ export class SyncClient extends EventEmitter {
     if (this._polling || !this._connected || this._destroyed)
       return;
     this._polling = true;
+    const generation = this._generation;
     try {
       const poll = async context => {
         await context.step('changes', () => this._syncChanges());
+        if (!this._isCurrent(generation))
+          return;
         await context.step('work', () => this._syncWork());
+        if (!this._isCurrent(generation))
+          return;
         await context.step('transfer-refresh', () => this._refreshActiveTransfers());
       };
       if (scope)
         await poll(scope);
       else
         await this._logger.run('poll', poll, {quiet: true});
-      if (this._status?.state === 'error')
+      if (this._isCurrent(generation) && this._status?.state === 'error')
         this._setStatus(this._capabilities.status, this._capabilities, 'online');
+    } catch (error) {
+      if (this._isCurrent(generation))
+        throw error;
     } finally {
-      this._polling = false;
+      if (this._isCurrent(generation))
+        this._polling = false;
     }
   }
 
   async _syncChanges() {
+    const generation = this._generation;
     const channelId = this._storedConfiguration.activeChannelId;
     if (!channelId)
       return;
@@ -652,50 +708,71 @@ export class SyncClient extends EventEmitter {
     let hasMore;
     do {
       const page = await this.getChanges(cursor, {limit: 200});
+      if (!this._isCurrent(generation))
+        return;
       for (const change of page.changes) {
+        if (!this._isCurrent(generation))
+          return;
         if (change.kind === 'upsert')
           this.emit('item-available', change.itemId);
         else
           this.emit('item-removed', change.itemId, change.reason);
       }
+      if (!this._isCurrent(generation))
+        return;
       if (page.nextCursor === cursor && page.hasMore)
         throw new Error('Synchronization server returned a non-advancing changes cursor');
       cursor = page.nextCursor;
       this._storedConfiguration.cursors[channelId] = cursor;
       await this._saveProgress();
+      if (!this._isCurrent(generation))
+        return;
       hasMore = page.hasMore;
     } while (hasMore);
   }
 
   async _syncWork() {
+    const generation = this._generation;
+    const transport = this._transport;
     let cursor = this._storedConfiguration.workCursor;
     let hasMore;
     do {
-      const page = validateWorkPage(await this._transport.work(cursor));
-      for (const work of page.work)
+      const page = validateWorkPage(await transport.work(cursor));
+      if (!this._isCurrent(generation))
+        return;
+      for (const work of page.work) {
         await this._enqueueTransfer(() => this._performWork(work));
+        if (!this._isCurrent(generation))
+          return;
+      }
       if (page.cursor === cursor && page.hasMore)
         throw new Error('Synchronization server returned a non-advancing work cursor');
       cursor = page.cursor;
       this._storedConfiguration.workCursor = cursor;
       await this._saveProgress();
+      if (!this._isCurrent(generation))
+        return;
       hasMore = page.hasMore;
     } while (hasMore);
   }
 
   async _performWork(work) {
+    const generation = this._generation;
+    const transport = this._transport;
     const item = this._sourceItem(work.itemId);
     const representation = item?.representations.find(value => value.id === work.contentId);
     if (!item || !representation || (!representation.path && !representation.bytes)) {
-      await this._transport.rejectWork(work.id, 'source_content_missing');
+      await transport.rejectWork(work.id, 'source_content_missing');
       return;
     }
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const accepted = validateAcceptedWork(
-      await this._transport.acceptWork(work.id),
+      await transport.acceptWork(work.id),
       work.itemId,
       deviceId,
     );
+    if (!this._isCurrent(generation))
+      return;
     if (accepted.transfer.kind !== 'content' || accepted.transfer.direction !== 'upload'
         || accepted.transfer.totalBytes !== representation.size)
       throw new Error('Synchronization server returned an inconsistent source upload size');
@@ -716,25 +793,35 @@ export class SyncClient extends EventEmitter {
         size: representation.size,
         mimeType: representation.mimeType,
       };
-      await this._transport.uploadContent(
+      await transport.uploadContent(
         accepted.uploadId,
         representation.id,
         source,
-        completedBytes => this._recordTransfer({
-          ...accepted.transfer,
-          state: 'transferring',
-          completedBytes,
-          updatedAt: Date.now(),
-        }),
+        completedBytes => {
+          if (this._isCurrent(generation)) {
+            this._recordTransfer({
+              ...accepted.transfer,
+              state: 'transferring',
+              completedBytes,
+              updatedAt: Date.now(),
+            });
+          }
+        },
         cancellable,
       );
+      if (!this._isCurrent(generation))
+        return;
       const completed = validateTransfer(
-        (await this._transport.completeUpload(accepted.uploadId)).transfer,
+        (await transport.completeUpload(accepted.uploadId)).transfer,
         deviceId,
       );
+      if (!this._isCurrent(generation))
+        return;
       this._observeRemoteTransfer(completed);
       this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
     } catch (error) {
+      if (!this._isCurrent(generation))
+        return;
       this._recordTransfer({
         ...accepted.transfer,
         state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
@@ -744,16 +831,24 @@ export class SyncClient extends EventEmitter {
       }, true);
       throw error;
     } finally {
-      this._operations.delete(accepted.transfer.transferId);
+      if (this._operations.get(accepted.transfer.transferId) === cancellable)
+        this._operations.delete(accepted.transfer.transferId);
       this._activeCancellables.delete(cancellable);
     }
   }
 
   async _refreshActiveTransfers() {
+    const generation = this._generation;
     const active = this._transfers.values()
       .filter(value => !TERMINAL_TRANSFER_STATES.has(value.state) && !this._operations.has(value.transferId));
-    for (const current of active)
-      this._recordTransfer(await this.getTransfer(current.transferId), true);
+    for (const current of active) {
+      const transfer = await this.getTransfer(current.transferId);
+      if (!this._isCurrent(generation))
+        return;
+      this._recordTransfer(transfer, true);
+      if (!this._isCurrent(generation))
+        return;
+    }
   }
 
   _waitForTransfer(transferId) {
@@ -801,7 +896,11 @@ export class SyncClient extends EventEmitter {
   }
 
   _queueProfileUpdate(force = false) {
-    const update = this._profileUpdateChain.catch(() => {}).then(() => this._updateProfile(force));
+    const generation = this._generation;
+    const update = this._profileUpdateChain.catch(() => {}).then(() => {
+      if (this._isCurrent(generation))
+        return this._updateProfile(force);
+    });
     this._profileUpdateChain = update;
     return update;
   }
@@ -879,27 +978,39 @@ export class SyncClient extends EventEmitter {
   }
 
   async _saveConnection() {
-    this._storedConfiguration = await this._configurationStore.saveConnection(
+    // Guard the client commit; an already-started store write is not cancellable.
+    const generation = this._generation;
+    const configuration = await this._configurationStore.saveConnection(
       this._storedConfiguration,
     );
+    if (!this._isCurrent(generation))
+      return;
+    this._storedConfiguration = configuration;
     this._applyPublicConfiguration();
   }
 
   async _saveProgress() {
-    this._storedConfiguration = await this._configurationStore.saveProgress(
+    const generation = this._generation;
+    const configuration = await this._configurationStore.saveProgress(
       this._storedConfiguration,
     );
+    if (!this._isCurrent(generation))
+      return;
+    this._storedConfiguration = configuration;
     this._applyPublicConfiguration();
   }
 
   _schedulePoll() {
     if (this._pollSource || !this._connected || this._destroyed)
       return;
+    const generation = this._generation;
     this._pollSource = GLib.timeout_add(
       GLib.PRIORITY_DEFAULT,
       this._settings.get_uint('sync-poll-interval-seconds') * 1000,
       () => {
         this._poll().catch(error => {
+          if (!this._isCurrent(generation))
+            return;
           if (this._connected)
             this._setStatus('error', {
               error: error.message,
@@ -968,6 +1079,7 @@ export class SyncClient extends EventEmitter {
     this._operations.clear();
     this._remoteTransferIds.clear();
     this._transferChain = Promise.resolve();
+    this._profileUpdateChain = Promise.resolve();
     this._closeConnection();
     this._polling = false;
     for (const waiter of this._transferWaiters.values()) {

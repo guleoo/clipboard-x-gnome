@@ -91,6 +91,8 @@ test('sync-icon-color', test_runner, args: ['-m', meson.current_source_dir() / '
 test('sync-errors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/errors.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
+test('sync-connection-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection.test.js'])
+test('sync-connection-http', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection-http.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
 test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])
@@ -114,6 +116,7 @@ test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 't
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
+test('sync-lifecycle', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/lifecycle.test.js'])
 test('sync-receive', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],
   env: {'GIO_USE_VFS': 'local'})
