@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import signal
 import select
+import re
 import time
 import uuid
 from pathlib import Path
@@ -35,7 +36,7 @@ class DevShellScriptTest(unittest.TestCase):
         shutil.copyfile(SCRIPT.parent / "dev-output.awk", self.tools / "dev-output.awk")
         self.executable(self.bin / "systemd-cat", """
 printf 'journal:%s\\n' "$*" >> "$TEST_TRACE"
-printf '%s' $$ > "$TEST_JOURNAL_PID"
+printf '%s\\n' $$ > "$TEST_JOURNAL_PID"
 if [ "${TEST_JOURNAL_FAIL:-0}" = 1 ]; then exit 41; fi
 exec cat > "$TEST_JOURNAL"
 """)
@@ -52,7 +53,7 @@ printf 'shell:%s\\n' "$*" >> "$TEST_TRACE"
 printf 'session stdout\\n'
 printf 'session stderr\\n' >&2
 printf 'GNOME Shell-Message: 00:00:00.000: Clipboard X [INFO] extension enable\\n'
-printf '%s' $$ > "$TEST_SHELL_PID"
+printf '%s\\n' $$ > "$TEST_SHELL_PID"
 if [ "${TEST_WAIT:-0}" = 1 ]; then exec sleep 30; fi
 if [ "${TEST_INTERRUPT:-0}" = 1 ]; then kill -INT $$; fi
 exit "${TEST_SESSION_EXIT:-0}"
@@ -204,14 +205,24 @@ console.error("Clipboard X [ERROR] {marker}-error");'
         try:
             deadline = time.monotonic() + 5
             shell_pid = self.root / "shell.pid"
-            while not shell_pid.exists() and time.monotonic() < deadline:
+            journal_pid = self.root / "journal.pid"
+            while True:
+                try:
+                    published_pids = [path.read_text() for path in (shell_pid, journal_pid)]
+                except FileNotFoundError:
+                    published_pids = []
+                # A complete PID line is the readiness marker, not file creation.
+                if len(published_pids) == 2 and all(
+                        re.fullmatch(r"[1-9][0-9]*\n", pid) for pid in published_pids):
+                    break
+                if time.monotonic() >= deadline:
+                    self.fail("mock Shell and journal writer must publish complete PIDs before interruption")
                 time.sleep(0.01)
-            self.assertTrue(shell_pid.exists(), "mock Shell must start before interruption")
             os.killpg(process.pid, signal.SIGINT)
             process.communicate(timeout=5)
             self.assertEqual(process.returncode, 130)
             self.assert_process_gone(shell_pid)
-            self.assert_process_gone(self.root / "journal.pid")
+            self.assert_process_gone(journal_pid)
         finally:
             if process.poll() is None:
                 os.killpg(process.pid, signal.SIGKILL)
