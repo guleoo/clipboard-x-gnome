@@ -763,6 +763,10 @@ msgstr "ಕ್ರಿಯೆಗಳ ಸ್ಥಾನ ಮತ್ತು ಕ್ರಮವ
 msgid "Clipboard"
 msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ಅಂಶಗಳು"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "ಇತಿಹಾಸ"

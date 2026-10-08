@@ -762,6 +762,10 @@ msgstr "استخدم الأزرار لتغيير موضع الإجراءات و�
 msgid "Clipboard"
 msgstr "الحافظة"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "عناصر الحافظة"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "السجل"

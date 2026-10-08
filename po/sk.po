@@ -772,6 +772,10 @@ msgstr "Pomocou tlačidiel môžete meniť umiestnenie a poradie akcií."
 msgid "Clipboard"
 msgstr "Schránka"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Položky schránky"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "História"

@@ -777,6 +777,10 @@ msgstr "Feu servir els botons per canviar la posició i l'ordre de les accions."
 msgid "Clipboard"
 msgstr "Porta-retalls"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elements del porta-retalls"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historial"

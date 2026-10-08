@@ -768,6 +768,10 @@ msgstr "ボタンを使って操作の配置と順序を変更します。"
 msgid "Clipboard"
 msgstr "クリップボード"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "クリップボードの項目"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "履歴"

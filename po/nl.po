@@ -773,6 +773,10 @@ msgstr "Gebruik de knoppen om de positie en volgorde van acties te wijzigen."
 msgid "Clipboard"
 msgstr "Klembord"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Klemborditems"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Geschiedenis"

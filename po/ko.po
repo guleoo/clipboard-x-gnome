@@ -765,6 +765,10 @@ msgstr "버튼을 사용하여 작업의 위치와 순서를 변경하세요."
 msgid "Clipboard"
 msgstr "클립보드"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "클립보드 항목"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "기록"

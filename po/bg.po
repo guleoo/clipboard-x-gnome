@@ -776,6 +776,10 @@ msgstr "Използвайте бутоните, за да промените м
 msgid "Clipboard"
 msgstr "Буфер за обмен"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Елементи на буфера за обмен"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "История"

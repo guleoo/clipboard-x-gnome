@@ -762,6 +762,10 @@ msgstr ""
 msgid "Clipboard"
 msgstr ""
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr ""
+
 #: src/ui/settings/window.js:209
 msgid "History"
 msgstr ""

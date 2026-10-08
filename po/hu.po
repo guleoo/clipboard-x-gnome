@@ -771,6 +771,10 @@ msgstr "A gombokkal módosíthatja a műveletek helyét és sorrendjét."
 msgid "Clipboard"
 msgstr "Vágólap"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Vágólapelemek"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Előzmények"

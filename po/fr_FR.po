@@ -780,6 +780,10 @@ msgstr "Utilisez les boutons pour modifier la position et l’ordre des actions.
 msgid "Clipboard"
 msgstr "Presse-papiers"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Éléments du presse-papiers"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historique"

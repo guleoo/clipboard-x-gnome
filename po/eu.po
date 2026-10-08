@@ -770,6 +770,10 @@ msgstr "Erabili botoiak ekintzen kokapena eta ordena aldatzeko."
 msgid "Clipboard"
 msgstr "Arbela"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Arbeleko elementuak"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historia"

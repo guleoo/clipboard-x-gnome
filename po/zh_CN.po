@@ -761,6 +761,10 @@ msgstr "使用按钮调整操作的位置和顺序。"
 msgid "Clipboard"
 msgstr "剪切板"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "剪切板条目"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "历史"

@@ -764,6 +764,10 @@ msgstr "برای تغییر مکان و ترتیب کنش‌ها از دکمه�
 msgid "Clipboard"
 msgstr "تخته‌گیره"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "موارد کلیپ‌بورد"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "تاریخچه"

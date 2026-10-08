@@ -33,7 +33,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings, window)],
       ['clipboard', 'edit-paste-symbolic', this._clipboardPage(settings, window)],
       ['quick-phrases', 'starred-symbolic', this._phrasesPage(settings)],
-      ['sync', 'folder-remote-symbolic', this._syncPage(settings, deviceId)],
+      ['sync', 'network-transmit-receive-symbolic', this._syncPage(settings, deviceId)],
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
       ['shortcuts', 'input-keyboard-symbolic', this._shortcutsPage(settings)],
@@ -280,7 +280,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
   }
 
   _syncPage(settings, deviceId) {
-    const page = new Adw.PreferencesPage({title: _('Synchronization'), icon_name: 'folder-remote-symbolic'});
+    const page = new Adw.PreferencesPage({title: _('Synchronization'), icon_name: 'network-transmit-receive-symbolic'});
     const identity = new Adw.PreferencesGroup({title: _('Device')});
     page.add(identity);
     const idRow = new Adw.ActionRow({title: _('Device ID'), subtitle: deviceId});

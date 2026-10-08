@@ -782,6 +782,10 @@ msgstr ""
 msgid "Clipboard"
 msgstr "Zwischenablage"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Zwischenablageeinträge"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historie"

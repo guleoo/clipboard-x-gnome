@@ -26,7 +26,7 @@ export function create(settings) {
   for (const [region, title] of [
     ['toolbar', _('Top toolbar')],
     ['footer', _('Footer')],
-    ['entries', _('History')],
+    ['entries', _('Clipboard entries')],
   ]) {
     const section = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL, spacing: 6});
     section.append(new Gtk.Label({label: title, xalign: 0, css_classes: ['heading']}));

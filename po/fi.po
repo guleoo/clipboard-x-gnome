@@ -773,6 +773,10 @@ msgstr "Muuta toimintojen sijaintia ja järjestystä painikkeilla."
 msgid "Clipboard"
 msgstr "Leikepöytä"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Leikepöydän kohteet"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historia"

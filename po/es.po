@@ -779,6 +779,10 @@ msgstr "Use los botones para cambiar la ubicación y el orden de las acciones."
 msgid "Clipboard"
 msgstr "Portapapeles"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elementos del portapapeles"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historial"

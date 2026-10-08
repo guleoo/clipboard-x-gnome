@@ -773,6 +773,10 @@ msgstr "Przyciskami zmień położenie i kolejność działań."
 msgid "Clipboard"
 msgstr "Schowek"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elementy schowka"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Historia"

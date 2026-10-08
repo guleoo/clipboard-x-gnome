@@ -777,6 +777,10 @@ msgstr "Usa i pulsanti per modificare la posizione e l’ordine delle azioni."
 msgid "Clipboard"
 msgstr "Appunti"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elementi degli appunti"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Storico"

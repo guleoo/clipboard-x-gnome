@@ -776,6 +776,10 @@ msgstr "Use os botões para alterar a posição e a ordem das ações."
 msgid "Clipboard"
 msgstr "Área de transferência"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Itens da área de transferência"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Histórico"

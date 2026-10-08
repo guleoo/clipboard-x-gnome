@@ -777,6 +777,10 @@ msgstr "Utilizatz los botons per cambiar la posicion e l’òrdre de las accions
 msgid "Clipboard"
 msgstr "Quichapapièrs"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Elements del quichapapièrs"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Istoric"

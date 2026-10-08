@@ -774,6 +774,10 @@ msgstr "Скористайтеся кнопками, щоб змінити ро�
 msgid "Clipboard"
 msgstr "Буфер обміну"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Елементи буфера обміну"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Журнал"

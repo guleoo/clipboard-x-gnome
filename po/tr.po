@@ -768,6 +768,10 @@ msgstr "Eylemlerin yerini ve sırasını değiştirmek için düğmeleri kullan�
 msgid "Clipboard"
 msgstr "Pano"
 
+#: src/ui/settings/panel-actions.js:29
+msgid "Clipboard entries"
+msgstr "Pano öğeleri"
+
 #: src/ui/settings/window.js:172
 msgid "History"
 msgstr "Geçmiş"
