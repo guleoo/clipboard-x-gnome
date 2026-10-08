@@ -23,6 +23,23 @@ By default, history and quick phrases stay on this device. Clipboard synchroniza
 configured server and must be enabled explicitly; network dictionaries are downloaded only when added
 or refreshed by the user.
 
+<details>
+<summary>View screenshots</summary>
+
+**Clipboard panel**
+
+![Clipboard panel](docs/preivew/main-panel.png)
+
+**Token selection panel**
+
+![Token selection panel](docs/preivew/split-panel.png)
+
+**Preferences**
+
+![Preferences](docs/preivew/settings-1.png)
+
+</details>
+
 ## Features
 
 - **Clipboard history** — Search local snapshots of text and images, with source-device icons for remote entries in multi-device history.

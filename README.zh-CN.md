@@ -21,6 +21,23 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 插件默认只在本机保存历史记录和快捷语句。剪切板同步需要配置服务器并主动启用；网络词库
 也只会在用户添加或刷新时下载。
 
+<details>
+<summary>查看界面预览</summary>
+
+**剪切板主面板**
+
+![剪切板主面板](docs/preivew/main-panel.png)
+
+**分词面板**
+
+![分词面板](docs/preivew/split-panel.png)
+
+**设置界面**
+
+![设置界面](docs/preivew/settings-1.png)
+
+</details>
+
 ## 功能
 
 - **剪切板历史** — 搜索本地保存的文本和图片快照；多个设备的历史同时显示时，用设备图标区分远端条目。
