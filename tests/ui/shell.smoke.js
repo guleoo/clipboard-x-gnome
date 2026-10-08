@@ -821,6 +821,21 @@ export async function run() {
     assert(progressButton.get_child().icon_name === 'object-select-symbolic',
       'Completed uploads and downloads must use the check mark icon');
   }
+  const originalDelivery = imageItem.primary.delivery;
+  try {
+    imageItem.primary.delivery = 'on-demand';
+    indicator.setTransfer({...transfer, kind: 'publish', direction: 'upload', state: 'completed', completedBytes: 100});
+    const previewIcon = progressButton.get_child().gicon;
+    assert(previewIcon instanceof Gio.FileIcon
+        && previewIcon.file.get_basename() === 'preview-synced-symbolic.svg'
+        && previewIcon.file.query_exists(null),
+      'A lazy publication must use the packaged synchronized-preview icon');
+    indicator.setTransfer({...transfer, direction: 'upload', state: 'completed', completedBytes: 100});
+    assert(progressButton.get_child().icon_name === 'object-select-symbolic',
+      'A later original upload must replace the preview icon with the check mark');
+  } finally {
+    imageItem.primary.delivery = originalDelivery;
+  }
   indicator.setTransfer({
     ...transfer, state: 'expired', errorCode: 'transfer_expired', updatedAt: Date.now() + 1,
   });
