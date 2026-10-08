@@ -2,7 +2,8 @@
 
 > 简体中文 · [English](shell-compatibility.md)
 
-同一个发布 ZIP 支持 GNOME Shell 50 和 51，两个版本共用实现，不维护不同的扩展分支。St 纵向布局使用
+同一个发布 ZIP 面向 GNOME Shell 50+，各版本共用实现，不维护不同的扩展分支。
+目前已验证的版本为 50 和 51；后续版本需要先验证并更新支持版本元数据，才能安装。St 纵向布局使用
 `orientation: Clutter.Orientation.VERTICAL`，虚拟键盘通过
 `global.stage.context.get_backend().get_default_seat()` 获取设备。这些接口两个版本都有。
 旧 Actor 事件信号在 51 中仍然可用，但已弃用；迁移事件控制器属于独立改动，不是加载 51 的必要条件。

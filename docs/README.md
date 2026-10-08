@@ -20,7 +20,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Extension development
 
-- [GNOME Shell compatibility](shell-compatibility.md): shared 50/51 interfaces, CI matrix, and isolated lifecycle checks.
+- [GNOME Shell compatibility](shell-compatibility.md): shared interfaces for 50+, CI matrix, and isolated lifecycle checks.
 
 - [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.
 - [UI development guide](ui-architecture.md): panels, controls, focus grids, lifecycle, and CSS conventions.

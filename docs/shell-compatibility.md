@@ -2,8 +2,10 @@
 
 > English · [简体中文](shell-compatibility_CN.md)
 
-One release ZIP targets GNOME Shell 50 and 51. Both versions use the same implementation, not separate
-extension branches. Use `orientation: Clutter.Orientation.VERTICAL` for vertical St layouts and
+One release ZIP targets GNOME Shell 50+, using a shared implementation rather than separate
+extension branches. Currently verified versions are 50 and 51; later versions require validation
+and an update to the supported-version metadata before installation. Use
+`orientation: Clutter.Orientation.VERTICAL` for vertical St layouts and
 `global.stage.context.get_backend().get_default_seat()` for the virtual keyboard. These interfaces
 exist in both versions. Old actor event signals are still supported in 51, although deprecated;
 moving to controllers is a separate change, not required just to load on 51.

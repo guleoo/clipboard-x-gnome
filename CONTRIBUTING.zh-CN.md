@@ -2,7 +2,7 @@
 
 > 简体中文 · [English](CONTRIBUTING.md)
 
-Clipboard X 目标环境是 GNOME Shell 50、51 和 GJS 1.88 或更高版本。修改 Shell UI 时只
+Clipboard X 目标环境是 GNOME Shell 50+ 和 GJS 1.88 或更高版本。修改 Shell UI 时只
 使用 St、Clutter 和 Shell API；GTK 4/Libadwaita 只允许出现在独立设置进程中。
 
 ## 开发流程
