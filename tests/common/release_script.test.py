@@ -15,13 +15,51 @@ PROJECT = SCRIPT.parent.parent
 
 
 class ReleaseScriptTest(unittest.TestCase):
+    @staticmethod
+    def workflow(name):
+        return (PROJECT / f".github/workflows/{name}.yml").read_text(encoding="utf-8")
+
+    def test_ci_runs_on_every_push_and_pull_request_without_publishing(self):
+        workflow = self.workflow("ci")
+        self.assertTrue(workflow.startswith("name: CI\n"))
+        triggers = workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0].strip()
+        self.assertEqual(triggers, "push:\n  pull_request:")
+        self.assertIn("contents: read", workflow)
+        self.assertNotIn("contents: write", workflow)
+        self.assertNotIn("gh release", workflow)
+        self.assertNotIn("gnome-extensions upload", workflow)
+        self.assertNotIn("secrets.", workflow)
+        self.assertNotIn("--tag", workflow)
+
+    def test_release_runs_only_on_version_tag_pushes(self):
+        workflow = self.workflow("release")
+        self.assertTrue(workflow.startswith("name: Release\n"))
+        triggers = workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0].strip()
+        self.assertEqual(triggers, "push:\n    tags: ['v*']")
+        self.assertIn('--tag "$GITHUB_REF_NAME"', workflow)
+        self.assertEqual(workflow.count("needs: distcheck"), 2)
+
     def test_ci_excludes_stress_suite(self):
-        workflow = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-        commands = [line.strip().removeprefix("run: ") for line in workflow.splitlines()
-                    if line.strip().startswith("run: ") and "meson test" in line]
-        self.assertEqual(commands, [
-            "dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs",
-        ])
+        for name in ("ci", "release"):
+            with self.subTest(workflow=name):
+                workflow = self.workflow(name)
+                commands = [line.strip().removeprefix("run: ") for line in workflow.splitlines()
+                            if line.strip().startswith("run: ") and "meson test" in line]
+                self.assertEqual(commands, [
+                    "dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs",
+                ])
+
+    def test_both_workflows_keep_the_shell_matrix_and_lifecycle_checks(self):
+        for name in ("ci", "release"):
+            with self.subTest(workflow=name):
+                workflow = self.workflow(name)
+                matrix = workflow.split("        include:\n", 1)[1].split("\n    container:", 1)[0]
+                self.assertEqual(matrix, "          - shell: '50'\n"
+                                 "            container: fedora:44\n"
+                                 "          - shell: '51'\n"
+                                 "            container: fedora:45")
+                self.assertIn('bash tools/test-shell-compatibility.sh "build/${{ steps.package.outputs.archive-name }}" "${{ matrix.shell }}"', workflow)
+                self.assertIn("if: matrix.shell == '50'", workflow)
 
     @staticmethod
     def release_commands():

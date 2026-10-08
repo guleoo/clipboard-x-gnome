@@ -12,7 +12,8 @@ moving to controllers is a separate change, not required just to load on 51.
 
 ## Automated verification
 
-The release workflow uses Fedora 44 / Shell 50 and Fedora 45 / Shell 51. Each job checks the actual
+The CI and Release workflows use Fedora 44 / Shell 50 and Fedora 45 / Shell 51. CI runs on every push
+and pull request; Release runs only on `v*` tag pushes. Each job checks the actual
 Shell version before building, runs the Meson regression suite excluding `stress`, validates the ZIP, and runs an isolated
 headless Shell lifecycle test. A version mismatch fails rather than silently testing another version.
 Fedora 45 may be a prerelease container; the installed Shell version is the compatibility target.

@@ -84,12 +84,15 @@ they must not include tests, protocol source, dictionaries, or the central serve
 
 ## Releases
 
-The [release workflow](.github/workflows/release.yml) runs on every push and pull request in a
+The [CI workflow](.github/workflows/ci.yml) runs on every push (branches and tags) and pull request in a
 Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
 regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
 contains exactly the runtime files and compiled catalogs.
 Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
-after validation; release publication waits for both jobs. Pull requests cannot publish a release.
+after validation. CI only validates and retains artifacts; it never publishes a release.
+The separate [Release workflow](.github/workflows/release.yml) runs only when a `v*` tag is pushed.
+It repeats the same checks at the tagged commit and publishes only after both jobs succeed.
+Ordinary branch pushes and pull requests cannot publish a release.
 Stress tests remain available locally and are not run by GitHub CI.
 
 To build a local release ZIP without installing it into the desktop or changing Git state, run:
