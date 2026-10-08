@@ -6,8 +6,9 @@ import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions
 
 import {SyncConfigurationStore} from '../../sync/configuration-store.js';
 import {message as syncErrorMessage} from '../../sync/errors.js';
+import {ensureDeviceIdentity} from '../../sync/device.js';
 import {HttpTransport} from '../../sync/http/transport.js';
-import {createConnectionActions} from './sync-connection.js';
+import {createConnectionActions, createRunner} from './sync-connection.js';
 
 export function create(settings, deviceId, rows) {
   const store = new SyncConfigurationStore();
@@ -16,6 +17,7 @@ export function create(settings, deviceId, rows) {
     notifyChanged: () => notifyConfigurationChanged(settings),
     createTransport: configuration => new HttpTransport(configuration, {deviceId}),
     now: () => GLib.get_monotonic_time() / 1000,
+    identity: () => ensureDeviceIdentity(settings),
   });
   const group = new Adw.PreferencesGroup({title: _('Server connection')});
   group.add(rows.switch('sync-enabled', _('Enable synchronization')));
@@ -46,10 +48,7 @@ export function create(settings, deviceId, rows) {
   group.add(status);
 
   let channelIds = [];
-  let busy = false;
-
   const setBusy = value => {
-    busy = value;
     apply.sensitive = !value;
     test.sensitive = !value;
     refresh.sensitive = !value;
@@ -90,32 +89,22 @@ export function create(settings, deviceId, rows) {
     renderChannels(result.channels, result.configuration.activeChannelId);
     return result;
   };
-  const run = async operation => {
-    if (busy)
-      return;
-    setBusy(true);
-    try {
-      await operation();
-    } catch (error) {
-      showError(error);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const run = createRunner({setBusy, onError: showError});
 
   apply.connect('clicked', () => run(async () => {
-    const configuration = await persistInputs();
-    try {
-      const result = await loadChannels(configuration);
-      status.subtitle = result.configuration.apiKey
-        ? _('Connection settings saved · API key configured')
-        : _('Connection settings saved · API key not configured');
-    } catch (error) {
+    status.subtitle = _('Connecting…');
+    const result = await connection.apply(readInputs());
+    if (result.error) {
       status.subtitle = [
         _('Connection settings saved locally'),
-        syncErrorMessage(error, _) || _('Synchronization request failed'),
+        syncErrorMessage(result.error, _) || _('Synchronization request failed'),
       ].join(' · ');
+      return;
     }
+    renderChannels(result.channels, result.configuration.activeChannelId);
+    status.subtitle = result.configuration.apiKey
+      ? _('Connection settings saved · API key configured')
+      : _('Connection settings saved · API key not configured');
   }));
   test.connect('clicked', () => run(async () => {
     status.subtitle = _('Connecting…');

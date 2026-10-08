@@ -187,7 +187,10 @@ To connect a device:
 5. Keep the default **Manual** send mode and use an entry's sync button, or explicitly choose **Automatic**.
 
 **Test connection** checks the current inputs without saving them or restarting synchronization.
-Click **Apply** to save connection changes.
+Click **Apply** to save connection changes and upload the current device name and icon, even when
+synchronization is off. Apply waits for the server confirmation and Channel loading; its button stays
+disabled until the operation finishes. If the server request fails, the connection settings remain saved
+locally and the failure is displayed.
 
 **Preferences → Synchronization → Polling interval** controls how often this device checks for updates;
 longer intervals reduce server requests but delay incoming items. To stop recording from an application,
