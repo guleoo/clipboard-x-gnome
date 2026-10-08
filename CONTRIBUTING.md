@@ -26,6 +26,19 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.z
 gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
 ```
 
+### Nested desktop and interface language
+
+`./tools/run-dev-shell.sh` builds and packages the extension, then starts a nested GNOME desktop
+with isolated development settings. To start it in English, run:
+
+```sh
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en ./tools/run-dev-shell.sh
+```
+
+Close any existing nested desktop before restarting with a different language. These environment
+variables affect only this development session, not the host desktop language. Use `locale -a` to
+check installed locales; the script has no `--lang` option.
+
 ## Repository layout
 
 - `src/extension.js` and `src/prefs.js` are only the GNOME entry points.

@@ -24,6 +24,18 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.z
 gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
 ```
 
+### 嵌套桌面与界面语言
+
+`./tools/run-dev-shell.sh` 会构建、打包扩展，并使用隔离的开发配置启动嵌套 GNOME 桌面。
+以英文启动时运行：
+
+```sh
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en ./tools/run-dev-shell.sh
+```
+
+切换语言前先关闭已有的嵌套桌面。这些环境变量只影响本次开发会话，不改变宿主桌面的语言。
+可以用 `locale -a` 检查已安装的 locale；脚本没有 `--lang` 参数。
+
 ## 目录结构
 
 - `src/extension.js`、`src/prefs.js` 只作为 GNOME 规定的加载入口。
