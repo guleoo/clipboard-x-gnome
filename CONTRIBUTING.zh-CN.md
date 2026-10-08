@@ -133,7 +133,7 @@ meson compile -C build clipboard-x-update-po
 ```
 
 生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
-`clipboard-x-gnome_1.0.0.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
+`clipboard-x-gnome_1.0.1.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
 
 需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，
@@ -150,10 +150,10 @@ GNOME 扩展网站管理的数字型 `metadata.version`。
 确保链接在仓库文档和 GitHub Release 中都能使用，并始终对应该版本。
 
 每个版本概述改动和修复，并在两种语言文档末尾添加 **Full Changelog**，
-链接到上一发布标签与当前标签之间的对比页面。例如，未来从 1.0.0 发布到 1.1.0 时：
+链接到上一发布标签与当前标签之间的对比页面。例如，1.0.1 相比 1.0.0：
 
 ```md
-**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+**Full Changelog**: [v1.0.0...v1.0.1](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.0.1)
 ```
 
 向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，

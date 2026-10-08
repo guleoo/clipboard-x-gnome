@@ -22,7 +22,7 @@ Both jobs must succeed before publication. Only one runtime ZIP is uploaded.
 Run the narrow lifecycle check locally after building the package:
 
 ```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.0.zip
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.1.zip
 ```
 
 Optionally append `50` or `51` to require that exact installed Shell version. The script does not

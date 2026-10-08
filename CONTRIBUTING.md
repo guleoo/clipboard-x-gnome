@@ -146,7 +146,7 @@ To build a local release ZIP without installing it into the desktop or changing 
 ```
 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
-`clipboard-x-gnome_1.0.0.zip`. The version comes from Meson. The script configures a dedicated package build,
+`clipboard-x-gnome_1.0.1.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
@@ -167,10 +167,10 @@ in the repository and in the GitHub Release, and remain tied to that version.
 
 For each version, summarize changes and fixes and end both
 language files with a **Full Changelog** comparison of the previous release tag and the new one.
-For example, for a future 1.1.0 release following 1.0.0:
+For example, for v1.0.1 following v1.0.0:
 
 ```md
-**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+**Full Changelog**: [v1.0.0...v1.0.1](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.0.1)
 ```
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
