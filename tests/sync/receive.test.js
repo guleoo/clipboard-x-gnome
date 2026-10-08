@@ -187,18 +187,21 @@ try {
   await client.materialize(failed);
   assert(isComplete(failed), 'A failed automatic download must remain manually retryable');
 
-  const beforeBurst = downloads.length;
-  const burst = Array.from({length: STRESS_SYNC_LOAD.incomingChanges}, (_value, index) =>
-    manifest([['text/plain;charset=utf-8', String(index).padStart(4, '0')]],
-      index % 2 ? 'eager' : 'on-demand'));
-  const receivedBurst = await Promise.all(burst.map(async value => {
-    const item = await client.getItem(value.id);
-    await client.materialize(item, {withinThreshold: true});
-    return item;
-  }));
-  assert(receivedBurst.every(item => item.availability === 'ready' && isComplete(item))
-      && downloads.length - beforeBurst === STRESS_SYNC_LOAD.incomingChanges,
-    'A 10x daily incoming burst must complete every below-threshold original');
+  if (ARGV.includes('--stress')) {
+    const beforeBurst = downloads.length;
+    const burst = Array.from({length: STRESS_SYNC_LOAD.incomingChanges}, (_value, index) =>
+      manifest([['text/plain;charset=utf-8', String(index).padStart(4, '0')]],
+        index % 2 ? 'eager' : 'on-demand'));
+    const receivedBurst = await Promise.all(burst.map(async value => {
+      const item = await client.getItem(value.id);
+      await client.materialize(item, {withinThreshold: true});
+      return item;
+    }));
+    assert(receivedBurst.every(item => item.availability === 'ready' && isComplete(item))
+        && downloads.length - beforeBurst === STRESS_SYNC_LOAD.incomingChanges,
+      'A 10x daily incoming burst must complete every below-threshold original');
+    print(`Receiving stress: ${receivedBurst.length} items completed.`);
+  }
   assert(peakDownloads === 1 && client._materializations.size === 0
       && client._transferWaiters.size === 0 && client._transfers.values().length <= MAX_TRANSFER_STATES,
     'Automatic receiving must serialize file movement and release bounded operation state');

@@ -65,8 +65,9 @@ meson compile -C build clipboard-x-update-po
 ## 发布版本
 
 [发布工作流](.github/workflows/release.yml)会在每次推送和 Pull Request 时，使用 Fedora 44 / GNOME 50 和 Fedora 45 / GNOME 51
-环境检查 JavaScript 语法、运行完整 Meson 测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
+环境检查 JavaScript 语法、使用 `--no-suite stress` 运行 Meson 普通回归测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
 翻译。两个环境还分别运行隔离的无窗口扩展生命周期测试，只上传一份安装包；正式发布需等待两项任务均通过。Pull Request 不会触发发布。
+压力测试保留本地运行入口，不再由 GitHub CI 执行。
 
 仅需在本地构建发布包、不安装到桌面且不改动 Git 状态时，运行：
 

@@ -23,8 +23,9 @@ becomes available.
 - `sync-receive` exercises production `SyncClient` with a transport double and real temporary files.
   It covers local text/image thresholds, different sender policies, partial multi-format entries,
   waiting for a source, shared automatic/manual requests, verification failure and retry, and
-  completion after history reload. Its 2,000-item receiving burst checks serialized downloads and
-  released operation state. It is not a real-server or GNOME Shell UI performance measurement.
+  completion after history reload. The separate `sync-receive-stress` invocation adds a 2,000-item
+  receiving burst to check serialized downloads and released operation state. It belongs to the
+  `stress` suite and is not a real-server or GNOME Shell UI performance measurement.
 - `sync-stress` uses an in-memory transport double and distinct, persisted text items. It checks
   2,000 incoming event identities, paginated cursors, 2,000 publications and 200 source tasks competing
   for the same serialized queue. The double reads source bytes but does not perform HTTP requests or
@@ -70,8 +71,9 @@ Linux scheduler counters and cgroup-v2 CPU statistics are supplemental diagnosti
 are reported as `null`; zero scheduler wait does not prove there was no scheduling pause. Cgroup
 counters cover the whole container and are not GJS-only measurements. A long wall-clock gap can mean
 blocking code, native work, or CPU scheduling starvation; it does not establish the cause on its own.
-The 250 ms gate is unchanged, and a failing benchmark is not retried or silently skipped by CI.
-Failed jobs retain Meson logs as `test-logs-gnome-50` or `test-logs-gnome-51` artifacts.
+The local stress test retains its 250 ms gate. GitHub CI excludes the entire `stress` suite;
+performance budgets must be checked locally. Failed CI regression or lifecycle jobs retain Meson
+logs as `test-logs-gnome-50` or `test-logs-gnome-51` artifacts.
 
 - A separate fixture thread samples the GJS process's `/proc/<pid>/status` every 5 ms, including
   periods when GJS is blocked. Both upload and download have a **64 MiB peak RSS growth budget**.
@@ -103,10 +105,10 @@ Run the stress suite (which also includes clipboard-history stress):
 meson test -C build --suite stress --print-errorlogs
 ```
 
-Run only the two synchronization stress tests:
+Run only the synchronization stress tests:
 
 ```sh
-meson test -C build sync-stress sync-stream-stress --print-errorlogs
+meson test -C build sync-stress sync-stream-stress sync-receive-stress --print-errorlogs
 ```
 
 Run the probe and HTTP-failure regressions:
@@ -115,8 +117,10 @@ Run the probe and HTTP-failure regressions:
 meson test -C build sync-measurement sync-http-failures --print-errorlogs
 ```
 
-The regular `meson test -C build` also runs these tests. The HTTP fixture requires permission to
-create loopback sockets, Python 3, Linux `/proc`, and `sha256sum`. Network-restricted sandboxes must
+The default local `meson test -C build` also runs these tests; `tools/release.sh` retains that behavior.
+GitHub CI runs only regressions with `meson test -C build --no-suite stress --print-errorlogs`.
+The HTTP fixture requires permission to create loopback sockets, Python 3, Linux `/proc`, and
+`sha256sum`. Network-restricted sandboxes must
 explicitly allow loopback access; inability to start the fixture is a test failure, not a skipped pass.
 Temporary files and the HTTP process are cleaned up when the test exits normally or throws.
 

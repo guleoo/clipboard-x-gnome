@@ -15,6 +15,14 @@ PROJECT = SCRIPT.parent.parent
 
 
 class ReleaseScriptTest(unittest.TestCase):
+    def test_ci_excludes_stress_suite(self):
+        workflow = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        commands = [line.strip().removeprefix("run: ") for line in workflow.splitlines()
+                    if line.strip().startswith("run: ") and "meson test" in line]
+        self.assertEqual(commands, [
+            "dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs",
+        ])
+
     @staticmethod
     def release_commands():
         lines = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8").splitlines()

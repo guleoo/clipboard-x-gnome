@@ -72,10 +72,12 @@ they must not include tests, protocol source, dictionaries, or the central serve
 ## Releases
 
 The [release workflow](.github/workflows/release.yml) runs on every push and pull request in a
-Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the full Meson suite, builds the
-extension ZIP, and verifies that the archive contains exactly the runtime files and compiled catalogs.
+Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
+regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
+contains exactly the runtime files and compiled catalogs.
 Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
 after validation; release publication waits for both jobs. Pull requests cannot publish a release.
+Stress tests remain available locally and are not run by GitHub CI.
 
 To build a local release ZIP without installing it into the desktop or changing Git state, run:
 

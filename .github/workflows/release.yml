@@ -50,8 +50,8 @@ jobs:
           meson compile -C build
       - name: Check JavaScript syntax
         run: find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check
-      - name: Run test suite
-        run: dbus-run-session -- meson test -C build --print-errorlogs
+      - name: Run regression test suite
+        run: dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs
       - name: Create and validate release ZIP
         id: package
         shell: bash

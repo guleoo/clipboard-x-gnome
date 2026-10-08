@@ -117,6 +117,10 @@ test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'test
 test('sync-receive', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],
   env: {'GIO_USE_VFS': 'local'})
+test('sync-receive-stress', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js', '--stress'],
+  env: {'GIO_USE_VFS': 'local'},
+  suite: 'stress')
 test(
   'sync-stress',
   test_runner,

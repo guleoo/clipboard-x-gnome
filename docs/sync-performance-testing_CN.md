@@ -18,7 +18,7 @@
 
 - `sync-stress` 使用内存传输替身和独立、已持久化的文本条目，检查 2,000 个入站事件 ID、分页游标，以及共享同一个串行队列的 2,000 次发布与 200 个来源上传任务。替身读取真实来源字节，但不发送 HTTP 请求，也不将入站条目导入剪切板历史。传输状态、时间戳和待发送定时器都有上限；服务器确认完成的任务必须释放取消标记。
 - 100,000 次进度更新按批次执行，并在批次间让出主循环。断言要求收到中间进度、字节数单调递增、精确的完成通知，以及完成后不再触发待发送回调。完全不发送通知不能通过测试。
-- `sync-receive` 使用生产 `SyncClient`、传输替身和真实临时文件，覆盖本机文本/图片阈值、发送端策略不同、混合格式部分接收、等待来源设备、自动/手动请求复用、校验失败重试，以及历史重载后的完成状态。2,000 条接收突发负载验证串行下载和操作状态释放；它不是实际服务端或 GNOME Shell UI 性能测量。
+- `sync-receive` 使用生产 `SyncClient`、传输替身和真实临时文件，覆盖本机文本/图片阈值、发送端策略不同、混合格式部分接收、等待来源设备、自动/手动请求复用、校验失败重试，以及历史重载后的完成状态。独立的 `sync-receive-stress` 调用额外运行 2,000 条接收突发负载，验证串行下载和操作状态释放，归入 `stress` 套件；它不是实际服务端或 GNOME Shell UI 性能测量。
 - `sync-stream-stress` 启动仅监听 `127.0.0.1` 随机端口的临时 Python 标准库 HTTP 测试服务，使用生产 `HttpTransport`、`HttpClient` 和 libsoup 上传、下载实际写入磁盘的 80 MiB 模式数据。服务端检查认证头、接收字节数和 SHA-256；下载过程中保留旧目标文件，并通过独立的 `sha256sum` 验证最终落盘内容。测试服务每处理 64 KiB 暂停 1 ms，让测量获得多个采样点。
   该压力测试明确开启可选的 `sha256sum` 模式，不改变用户的默认配置。下载使用原生 GIO 流搬运，再由 `sha256sum` 从标准输入读取临时文件，校验成功后才替换目标。
 - `sync-http-failures` 通过真实 HTTP 验证连接中断、哈希校验失败、下载及上传取消、请求体发送后的 HTTP 503、临时文件清理和显式重试。这是普通回归测试，不是 10 倍压力负载或自动重连测试。
@@ -32,7 +32,7 @@
 
 诊断还记录 GJS/GLib/内核版本、临时文件系统及 Meson 的 `MALLOC_PERTURB_` 值。下载包含单调时间线：请求/响应、文件准备、原生搬运、关闭流、校验进程启动/读取/等待/关闭、目标替换和清理。额外延迟达到 50 ms 时，探针保存间隔两端的时间及回调真正执行时的阶段。同步调用可能已经结束并切换到下一阶段，迟到的定时器才执行；需要结合完整时间线判断，不能只看 `observedStage`。
 
-Linux 调度计数与 cgroup-v2 CPU 统计仅用于辅助诊断。不可用的计数显示为 `null`；调度等待为零不代表没有调度停顿。cgroup 计数覆盖整个容器，不是仅测 GJS。较长的墙钟间隔可能来自代码阻塞、原生操作或 CPU 调度不足，不能仅凭这一项确定原因。250 ms 门槛不变，CI 不重试或静默跳过失败的基准。失败任务会把 Meson 日志保存为 `test-logs-gnome-50` 或 `test-logs-gnome-51` artifact。
+Linux 调度计数与 cgroup-v2 CPU 统计仅用于辅助诊断。不可用的计数显示为 `null`；调度等待为零不代表没有调度停顿。cgroup 计数覆盖整个容器，不是仅测 GJS。较长的墙钟间隔可能来自代码阻塞、原生操作或 CPU 调度不足，不能仅凭这一项确定原因。本地压力测试的 250 ms 门槛不变；GitHub CI 排除整个 `stress` 套件，性能预算需在本地验证。CI 普通回归或生命周期检查失败时，会把 Meson 日志保存为 `test-logs-gnome-50` 或 `test-logs-gnome-51` artifact。
 
 - 独立的测试服务线程每 5 ms 读取 GJS 进程的 `/proc/<pid>/status`，主线程阻塞时也能采样。上传、下载分别执行 **峰值 RSS 增量小于 64 MiB** 的预算检查。这是单次操作的采样预算，不是内存恒定或没有泄漏的证明。
 - 10 ms GLib 定时器测量主循环额外延迟，操作结束后再等待一次采样才移除探针，避免漏掉结束阶段的阻塞。门槛为 **250 ms**，并要求至少两次主循环和 RSS 采样；这不是帧率保证。
@@ -50,10 +50,10 @@ Linux 调度计数与 cgroup-v2 CPU 统计仅用于辅助诊断。不可用的�
 meson test -C build --suite stress --print-errorlogs
 ```
 
-只运行两项同步压力测试：
+只运行同步压力测试：
 
 ```sh
-meson test -C build sync-stress sync-stream-stress --print-errorlogs
+meson test -C build sync-stress sync-stream-stress sync-receive-stress --print-errorlogs
 ```
 
 运行探针和 HTTP 故障回归测试：
@@ -62,7 +62,7 @@ meson test -C build sync-stress sync-stream-stress --print-errorlogs
 meson test -C build sync-measurement sync-http-failures --print-errorlogs
 ```
 
-普通的 `meson test -C build` 也会执行这些测试。HTTP 测试服务需要回环 socket 权限、Python 3、Linux `/proc` 和 `sha256sum`。网络受限的沙盒需要明确允许访问回环网络；服务无法启动属于测试失败，不能视为跳过后通过。正常结束或抛出异常时，测试会清理临时文件并关闭 HTTP 进程。
+默认的本地 `meson test -C build` 也会执行这些测试，`tools/release.sh` 保留此行为。GitHub CI 使用 `meson test -C build --no-suite stress --print-errorlogs`，只执行普通回归测试。HTTP 测试服务需要回环 socket 权限、Python 3、Linux `/proc` 和 `sha256sum`。网络受限的沙盒需要明确允许访问回环网络；服务无法启动属于测试失败，不能视为跳过后通过。正常结束或抛出异常时，测试会清理临时文件并关闭 HTTP 进程。
 
 ## 通过测试不代表什么
 
