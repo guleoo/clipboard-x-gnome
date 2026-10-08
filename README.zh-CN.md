@@ -37,9 +37,7 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 
 ## 安装
 
-建议通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X**，
-确认详情页支持你的 **GNOME Shell 50+** 版本，然后点击安装。安装完成后，可以在“扩展”应用或“扩展管理器”中
-启用插件、打开设置。
+通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X**。
 
 ### 从源码安装
 
@@ -47,7 +45,6 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 
 - GNOME Shell 50+、GJS 1.88 或更高版本；
 - Meson、Ninja、GLib、GTK 4、Libadwaita、GdkPixbuf、Gettext 和 7-Zip；
-- 完整的截图、取色和模拟输入体验需要 Wayland 会话。
 
 构建发布包：
 

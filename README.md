@@ -39,9 +39,7 @@ or refreshed by the user.
 
 ## Installation
 
-The recommended route is the [GNOME Shell Extensions website](https://extensions.gnome.org/). Search for
-**Clipboard X**, check that the listing supports your **GNOME Shell 50+** version, and install it. You can then enable
-the extension and open its preferences in the Extensions app or Extension Manager.
+Install from the [GNOME Shell Extensions website](https://extensions.gnome.org/): search for **Clipboard X**.
 
 ### Install from source
 
@@ -49,7 +47,6 @@ the extension and open its preferences in the Extensions app or Extension Manage
 
 - GNOME Shell 50+ and GJS 1.88 or later;
 - Meson, Ninja, GLib, GTK 4, Libadwaita, GdkPixbuf, Gettext, and 7-Zip;
-- a Wayland session for the complete screenshot, color picker, and simulated-input experience.
 
 Build a release archive:
 

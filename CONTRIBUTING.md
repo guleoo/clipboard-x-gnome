@@ -22,8 +22,8 @@ the complete Meson test suite. Changes involving extension lifecycle, panels, cl
 or preferences must also run:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
 ```
 
 ## Repository layout
@@ -105,7 +105,7 @@ Include a Simplified Chinese link at the top of the English file and an English 
 file. Use absolute URLs pointing to these files at the matching version tag so the links work both
 in the repository and in the GitHub Release, and remain tied to that version.
 
-Version 1.0.0 describes features only. For later versions, summarize changes and fixes and end both
+For each version, summarize changes and fixes and end both
 language files with a **Full Changelog** comparison of the previous release tag and the new one.
 For example, for a future 1.1.0 release following 1.0.0:
 

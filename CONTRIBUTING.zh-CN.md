@@ -20,8 +20,8 @@ meson install -C build
 Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
 ```
 
 ## 目录结构
@@ -92,7 +92,7 @@ GNOME 扩展网站管理的数字型 `metadata.version`。
 英文文件顶部提供中文入口，中文文件提供英文入口。使用指向对应版本标签下文档的完整 URL，
 确保链接在仓库文档和 GitHub Release 中都能使用，并始终对应该版本。
 
-1.0.0 只介绍功能。之后的版本概述改动和修复，并在两种语言文档末尾添加 **Full Changelog**，
+每个版本概述改动和修复，并在两种语言文档末尾添加 **Full Changelog**，
 链接到上一发布标签与当前标签之间的对比页面。例如，未来从 1.0.0 发布到 1.1.0 时：
 
 ```md
