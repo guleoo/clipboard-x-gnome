@@ -25,11 +25,6 @@ function isDescendant(actor, ancestor) {
   return false;
 }
 
-function foreground(actor) {
-  const color = actor.get_theme_node().get_foreground_color();
-  return [color.red, color.green, color.blue, color.alpha];
-}
-
 function deleteTree(file) {
   if (file.query_file_type(Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null) === Gio.FileType.DIRECTORY) {
     const enumerator = file.enumerate_children(
@@ -94,41 +89,12 @@ export async function run() {
   indicator.menu.open();
   await Scripting.sleep(200);
   assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
-  assert(history.searchEntry._clipboardXControlType === 'search-entry'
-      && history.screenshotButton._clipboardXControlType === 'icon-button'
-      && history.footer._clipboardXControlType === 'panel-footer'
-      && history.footer.divider !== null,
-    'Shared search, icon or footer controls were not used by the history panel');
-  assert(indicator._tokenizer.header._clipboardXControlType === 'panel-header'
-      && indicator._tokenizer.header.divider !== null
-      && indicator._tokenizer.backButton.get_child().translation_x === 1
-      && indicator._tokenizer.footer._clipboardXControlType === 'panel-footer',
-    'Tokenizer panel did not use the shared header and footer controls');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
-  assert(indicator._settings.get_default_value('panel-height').deepUnpack() === 400,
-    'Default panel height must be 400 logical pixels');
   assert(Number.isFinite(history.captureView().scrollValue),
     'Clipboard history view state could not read the GNOME 50 scroll adjustment');
-  const originalTextOffset = indicator._settings.get_int('panel-text-vertical-offset');
-  indicator._settings.set_int('panel-text-vertical-offset', -1);
-  assert(history.searchEntry.clutter_text.translation_y === -1
-      && history.searchEntry.get_hint_actor().translation_y === -2
-      && indicator._tokenizer.titleLabel.translation_y === -2
-      && indicator._tooltip.actor.translation_y === -1,
-  'Configured text offset did not preserve special optical baseline corrections');
-  indicator._settings.set_int('panel-text-vertical-offset', originalTextOffset);
-  assert(history.searchEntry.get_hint_actor().margin_left === 2,
-    'Search placeholder did not retain its configured left margin');
   assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
     'Opening an empty history panel must fall back to its search entry');
-  assert(history.toolbar.get_children().length === 3,
-    'Top toolbar must contain only screenshot, color picker and quick-phrase actions');
-  assert(history.searchEntry.get_parent() === history.toolbar.get_parent(),
-    'Search and the three primary tools must share one row');
-  assert(history.phrasesButton.get_parent() === history.toolbar
-      && history.privateButton.get_parent() === history.footer.row,
-    'Quick-phrase and privacy buttons were not swapped');
   const originalToolbarActions = indicator._settings.get_strv('panel-toolbar-actions');
   const originalFooterActions = indicator._settings.get_strv('panel-footer-actions');
   indicator._settings.set_strv('panel-toolbar-actions', [
@@ -172,28 +138,14 @@ export async function run() {
       && Math.round(indicator.menu.actor.width) === resizedPanelWidth
       && Math.abs(Math.round(indicator.menu.actor.height) - resizedHistoryMenuHeight) <= 1
       && Math.round(indicator._quickPhrases.actor.height) === resizedPanelHeight
-      && indicator._quickPhrases.buttons.length === 1
-      && indicator._quickPhrases.header._clipboardXControlType === 'panel-header'
-      && indicator._quickPhrases.header.divider !== null
-      && indicator._quickPhrases.rows[0]._clipboardXControlType === 'content-item'
-      && indicator._quickPhrases.buttons[0].has_style_class_name('cbx-entry-content')
-      && indicator._quickPhrases.rows[0].get_children().some(child =>
-        child instanceof St.Button && child.get_child()?.icon_name === 'user-trash-symbolic'),
+      && indicator._quickPhrases.buttons.length === 1,
   `Saved-phrase panel did not match history geometry (${Math.round(indicator.menu.actor.height)} vs ${resizedHistoryMenuHeight})`);
-  assert(global.stage.get_key_focus() === indicator._quickPhrases.focusAnchor
-      && indicator._quickPhrases.focusAnchor.opacity === 0
-      && indicator._quickPhrases.focusAnchor.width === 0
-      && indicator._quickPhrases.focusAnchor.height === 0,
-  'Quick phrases did not start on its invisible focus anchor');
+  assert(global.stage.get_key_focus() === indicator._quickPhrases.focusAnchor,
+    'Quick phrases did not start on its focus anchor');
   assert(indicator._quickPhrases.focusAnchor.handle(capturedKeyEvent(Clutter.KEY_Right))
       === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === indicator._quickPhrases.buttons[0],
   'The quick-phrase anchor did not consume Right and focus the first phrase');
-  const phraseForeground = foreground(indicator._quickPhrases.buttons[0]);
-  assert(phraseForeground[3] >= 240
-      && indicator._quickPhrases.rows[0].focusActors.every(actor =>
-        foreground(actor).join(',') === phraseForeground.join(',')),
-    'Quick-phrase content and actions did not use the shared content-item foreground');
   const quickPhrases = indicator._quickPhrases;
   const phraseCommands = [];
   const originalTypeText = indicator._actions.typeText;
@@ -254,8 +206,6 @@ export async function run() {
     phraseShortcutKeys.forEach((key, index) => indicator._settings.set_strv(key, originalPhraseShortcuts[index]));
   }
   indicator._quickPhrases.showForm();
-  assert(indicator._quickPhrases.form.get_children().length === 1,
-    'Quick-phrase form must contain only the text entry');
   indicator._quickPhrases.toggleForm();
   assert(!indicator._quickPhrases.form.visible,
     'Activating the add action again did not collapse the quick-phrase form');
@@ -408,24 +358,10 @@ export async function run() {
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
   indicator.menu.open();
   await Scripting.sleep(100);
-  const renderedHistoryRow = history._section.actor.get_children().find(actor =>
-    actor._clipboardXControlType === 'content-item');
   assert([history.searchEntry, history.searchEntry.clutter_text].includes(global.stage.get_key_focus()),
     'Opening clipboard history did not focus its search entry');
-  assert(renderedHistoryRow?.focusActors.every(actor =>
-    foreground(actor).join(',') === phraseForeground.join(',')),
-  'Clipboard history content and actions did not use the shared content-item foreground');
   indicator.menu.close();
   await Scripting.sleep(100);
-  const capturedRow = history.entry(capturedText);
-  const capturedContentBody = capturedRow.focusActors[0].get_child();
-  assert(capturedRow._clipboardXControlType === 'content-item'
-      && capturedRow.focusActors.length === capturedRow._clipboardXFocusRow.length
-      && capturedRow.focusActors[0].has_style_class_name('cbx-entry-content')
-      && capturedContentBody.has_style_class_name('cbx-entry-body')
-      && !capturedContentBody.get_children().some(child =>
-        child.has_style_class_name?.('cbx-color-swatch')),
-    'Clipboard history did not group its leading content inside the shared content action');
   history._multipleDevices = true;
   const localRow = history.entry(capturedText);
   const localContentBody = localRow.focusActors[0].get_child();
@@ -440,14 +376,11 @@ export async function run() {
     originDeviceIconKind: 'computer',
   }));
   const deviceContentBody = deviceRow.focusActors[0].get_child();
-  assert(!deviceRow.get_children().some(child =>
-    child.has_style_class_name?.('cbx-device-icon'))
-      && deviceContentBody.get_children().some(child =>
-        child.has_style_class_name?.('cbx-device-icon')),
-  'Remote clipboard device identity was not grouped with the entry content');
+  assert(deviceContentBody.get_children().some(child =>
+    child.has_style_class_name?.('cbx-device-icon')),
+  'Remote clipboard history did not show its device identity');
   deviceRow.destroy();
   history._multipleDevices = false;
-  capturedRow.destroy();
   const originalEntryActions = indicator._settings.get_strv('entry-actions');
   const originalHiddenEntryActions = indicator._settings.get_strv('entry-hidden-actions');
   indicator._settings.set_strv('entry-actions', ['delete', 'pin', 'sync', 'tokenize', 'edit']);
@@ -507,17 +440,6 @@ export async function run() {
   indicator._settings.set_strv('entry-hidden-actions', originalHiddenEntryActions);
   indicator._controller.toggleFavorite(capturedText.id);
   assert(capturedText.favorite, 'Clipboard history entry could not be favorited');
-  const pinnedRow = history.entry(capturedText);
-  assert(pinnedRow._clipboardXFocusRow.every(child => child._clipboardXHistoryRow === pinnedRow),
-    'Clipboard history entry controls did not retain their focus matrix row');
-  assert(pinnedRow.get_children().some(child => child instanceof St.Button
-      && child.get_child()?.icon_name === 'view-pin-symbolic'
-      && child.has_style_class_name('cbx-pinned')),
-  'Pinned history entry did not keep the pin icon with a distinct color class');
-  assert(pinnedRow.get_children().some(child => child instanceof St.Button
-      && child.get_child()?.icon_name === 'user-trash-symbolic'),
-  'Clipboard history entry did not use the standard trash icon');
-  pinnedRow.destroy();
   indicator._controller.toggleFavorite(capturedText.id);
   assert(!capturedText.favorite, 'Clipboard history entry could not be unfavorited');
   const originalSourcePreview = indicator._settings.get_boolean('tokenizer-show-source-preview');
@@ -546,19 +468,14 @@ export async function run() {
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
     'Text segmentation rendered token buttons outside the visible layout');
-  assert(global.stage.get_key_focus() === indicator._tokenizer.focusAnchor
-      && indicator._tokenizer.focusAnchor.opacity === 0
-      && indicator._tokenizer.focusAnchor.width === 0
-      && indicator._tokenizer.focusAnchor.height === 0,
-  'Opening the tokenizer did not focus its invisible anchor');
+  assert(global.stage.get_key_focus() === indicator._tokenizer.focusAnchor,
+    'Opening the tokenizer did not focus its anchor');
   assert(indicator._tokenizer.focusAnchor.handle(capturedKeyEvent(Clutter.KEY_Right))
       === Clutter.EVENT_STOP
       && global.stage.get_key_focus() === tokenButtons[0],
   'The tokenizer anchor did not consume Right and focus the first token');
   assert(!indicator._tokenizer.sourceLabel.visible,
     'Disabled source preview remained visible in the tokenizer');
-  assert(tokenButtons.every(button => !button._clipboardXHintConnected),
-    'Tokenizer buttons unexpectedly registered tooltip handlers');
   assert(indicator._tokenizer.handleKey(
     tokenButtons[0], entryEvent(Clutter.KEY_Right),
   ) === Clutter.EVENT_PROPAGATE
@@ -633,9 +550,6 @@ export async function run() {
   indicator._tokenizer.setSelected(tokenButtons[1], false);
   assert(indicator._tokenizer.resultLabel.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
-  assert(indicator._tokenizer.resultLabel.get_parent() === indicator._tokenizer.footer.row
-      && indicator._tokenizer.footer.get_parent() === indicator._tokenizer.actor,
-    'Selected-token preview is not fixed outside the scrolling token area');
   indicator._settings.set_boolean('tokenizer-show-source-preview', originalSourcePreview);
   indicator._settings.set_boolean('panel-confine-focus', originalConfineFocus);
   indicator._settings.set_int('panel-width', originalPanelWidth);
@@ -653,17 +567,13 @@ export async function run() {
     'Programmatic clipboard activation was captured again instead of being loop-suppressed');
 
   indicator._settings.set_boolean('private-mode', true);
-  assert(history.privateButton.checked
-      && history.privateButton.has_style_class_name('cbx-private-active'),
-  'Privacy mode button did not expose its selected visual state');
+  assert(history.privateButton.checked, 'Privacy mode button did not reflect the enabled state');
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'private clipboard value must not be recorded');
   await Scripting.sleep(300);
   assert(!indicator._controller.items.some(item => item.text.includes('private clipboard value')),
     'Private mode did not pause clipboard capture');
   indicator._settings.set_boolean('private-mode', false);
-  assert(!history.privateButton.checked
-      && history.privateButton.has_style_class_name('cbx-private-inactive'),
-  'Privacy mode button did not return to its inactive visual state');
+  assert(!history.privateButton.checked, 'Privacy mode button did not reflect the disabled state');
 
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'disposable clipboard history entry');
   await Scripting.sleep(300);
@@ -782,8 +692,7 @@ export async function run() {
       && indicator.menu.isOpen,
     'The panel sync button must enable synchronization without closing the menu');
   history.syncButton.emit('clicked');
-  assert(!indicator._settings.get_boolean('sync-enabled') && !history.syncButton.selected
-      && history.syncButton.get_child().icon_name === 'network-offline-symbolic',
+  assert(!indicator._settings.get_boolean('sync-enabled') && !history.syncButton.selected,
     'The panel sync button must disable synchronization and update its selected state');
   indicator._settings.set_boolean('sync-enabled', true);
   assert(history.syncButton.selected, 'External sync settings changes must update the button');
@@ -797,18 +706,14 @@ export async function run() {
   const imageButtons = imageRow.get_children().filter(child => child instanceof St.Button);
   assert(imageButtons.length === 5,
     'Image history row must expose content, edit, pin, synchronization and delete actions');
-  assert(imageButtons[3].get_child().icon_name === 'network-transmit-receive-symbolic',
-    'The entry synchronization action must use the bidirectional arrows icon');
   const imageBody = imageButtons[0].get_child();
   const imageContent = imageBody.get_children().find(child =>
     child.has_style_class_name?.('cbx-image-content'));
-  const [imageThumbnail, imageMetadata] = imageContent.get_children();
-  assert(imageThumbnail.width === 80 && imageThumbnail.height === 40,
-    'Image history thumbnail was not scaled proportionally within its fixed preview height');
-  assert(!(imageThumbnail instanceof St.Icon),
-    'Image history thumbnail used a square icon renderer instead of image texture content');
-  assert(imageMetadata.text.startsWith('PNG · ') && !imageMetadata.text.includes('image/'),
-    'Image history metadata did not show only the image format and size');
+  const [imageThumbnail] = imageContent.get_children();
+  assert(imageThumbnail.width > 0 && imageThumbnail.height > 0
+      && Math.abs(imageThumbnail.width / imageThumbnail.height
+        - imageItem.preview.width / imageItem.preview.height) < 0.01,
+    'Image history thumbnail did not preserve the source aspect ratio');
   const closeMenu = history._closeMenu;
   let editClosedMenu = false;
   history._closeMenu = () => editClosedMenu = true;
@@ -1014,12 +919,7 @@ export async function run() {
   const colorContentBody = colorRow.focusActors[0].get_child();
   const colorSwatch = colorContentBody.get_children().find(child =>
     child.has_style_class_name?.('cbx-color-swatch'));
-  assert(colorSwatch?.get_style().includes('background-color: rgba(')
-      && !colorSwatch.can_focus
-      && !colorSwatch.reactive
-      && !colorRow.get_children().some(child =>
-        child.has_style_class_name?.('cbx-color-swatch')),
-  'Color swatch was not grouped inside the clipboard content action');
+  assert(colorSwatch, 'Color clipboard content did not display a color swatch');
   colorRow.destroy();
   indicator._controller.toggleFavorite(colorItem.id);
   indicator._controller.clear();

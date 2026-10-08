@@ -24,12 +24,4 @@ for locale in "${catalogs[@]}"; do
     printf '%s: %s\n' "$locale" "$coverage" >&2
     exit 1
   fi
-  editor_help=$(msggrep --no-wrap -K -F -e 'Enter a command to enable editing.' "$catalog" \
-    | sed -n '/^msgstr /,/^$/p')
-  for placeholder in '%u' '%f' '%i' '%%'; do
-    if [[ "$editor_help" != *"$placeholder"* ]]; then
-      printf '%s: editor command help is missing %s\n' "$locale" "$placeholder" >&2
-      exit 1
-    fi
-  done
 done

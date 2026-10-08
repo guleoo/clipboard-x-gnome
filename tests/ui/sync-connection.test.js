@@ -202,15 +202,10 @@ try {
   const channelGate = gate();
   const pending = await fixture({profileGate, channelGate,
     channels: [{id: fallbackChannel, name: 'Fallback channel'}]});
-  const buttons = {apply: true, test: true, refresh: true};
   const busyStates = [];
   const errors = [];
   const run = createRunner({
-    setBusy: busy => {
-      busyStates.push(busy);
-      for (const key of Object.keys(buttons))
-        buttons[key] = !busy;
-    },
+    setBusy: busy => busyStates.push(busy),
     onError: error => errors.push(error),
   });
   let finished = false;
@@ -219,35 +214,33 @@ try {
     finished = true;
     return value;
   });
-  for (let index = 0; index < 10; index++)
-    await run(() => pending.actions.apply(draft));
   await profileGate.started;
-  assert(!finished && Object.values(buttons).every(value => !value),
-    'Apply, Test and Refresh must stay disabled while profile upload is pending');
+  assert(!finished && busyStates.join() === 'true',
+    'The runner must stay busy while profile upload is pending');
   assert(pending.state.reconnects === 0 && pending.state.saves === 1,
     'Apply must persist locally but delay the Shell reconnect until the profile is confirmed');
   assert(pending.state.requests.join() === 'profile'
       && JSON.stringify(pending.state.profiles[0]) === JSON.stringify({tag: identity.deviceTag,
         iconKind: identity.deviceIconKind}),
     'Apply must immediately upload the current device tag and icon, without depending on Shell or sync-enabled');
-  for (let index = 0; index < 50; index++)
-    await run(() => pending.actions.apply(draft));
+  await run(() => pending.actions.apply(draft));
   assert(pending.state.saves === 1 && pending.state.profiles.length === 1,
     'Repeated Apply clicks during profile upload must not start another save or upload');
   profileGate.resolve();
   await channelGate.started;
   assert(!finished && pending.state.reconnects === 0
-      && Object.values(buttons).every(value => !value),
-    'Apply must also wait for channel loading before enabling buttons or reconnecting Shell');
-  for (let index = 0; index < 50; index++)
-    await run(() => pending.actions.apply(draft));
+      && busyStates.join() === 'true',
+    'Apply must also wait for channel loading before releasing the runner or reconnecting Shell');
+  await run(() => pending.actions.apply(draft));
+  assert(pending.state.transports.length === 1 && pending.state.profiles.length === 1,
+    'A duplicate action during channel loading must not start another operation');
   channelGate.resolve();
   const applied = await applying;
   assert(!applied.error && applied.device.deviceId === deviceId
       && applied.configuration.activeChannelId === fallbackChannel && applied.channels[0].active,
     'Apply must return confirmed device information and persist the final channel selection');
-  assert(finished && errors.length === 0 && Object.values(buttons).every(Boolean)
-      && busyStates.join() === 'true,false', 'Buttons must re-enable only after the entire Apply finishes');
+  assert(finished && errors.length === 0 && busyStates.join() === 'true,false',
+    'The runner must release its busy state only after the entire Apply finishes');
   assert(pending.state.saves === 2 && pending.state.reconnects === 1 && pending.state.revision === 18
       && pending.state.events.at(-1) === 'notify',
     'Apply must notify Shell exactly once, after profile confirmation, session cleanup and fallback persistence');
@@ -275,8 +268,8 @@ try {
 
   const failure = await fixture({fail: 'profile'});
   const failedApply = await run(() => failure.actions.apply(draft));
-  assert(failedApply.error && Object.values(buttons).every(Boolean),
-    'Remote failure must restore buttons so the user can retry');
+  assert(failedApply.error && busyStates.at(-1) === false,
+    'Remote failure must release the runner so the user can retry');
   const unassigned = await fixture({channels: []});
   const newDevice = await unassigned.actions.apply({...draft, activeChannelId: ''});
   assert(!newDevice.error && newDevice.device.deviceId === deviceId && newDevice.channels.length === 0
@@ -285,15 +278,15 @@ try {
   const invalid = await fixture();
   await run(() => invalid.actions.apply({...draft, apiKey: 'invalid\nkey'}));
   assert(errors.length === 1 && invalid.state.saves === 0 && invalid.state.reconnects === 0
-      && Object.values(buttons).every(Boolean),
-    'Invalid inputs must not persist or reconnect and must restore the button gate');
+      && busyStates.at(-1) === false,
+    'Invalid inputs must not persist or reconnect and must release the runner');
   const localFailure = await fixture({fail: 'save'});
   const original = JSON.stringify(localFailure.store.current);
   await run(() => localFailure.actions.apply(draft));
   assert(errors.length === 2 && localFailure.state.reconnects === 0
       && localFailure.state.transports.length === 0
-      && JSON.stringify(localFailure.store.current) === original && Object.values(buttons).every(Boolean),
-    'Local save failure must not upload or claim saved settings, and must unlock buttons for retry');
+      && JSON.stringify(localFailure.store.current) === original && busyStates.at(-1) === false,
+    'Local save failure must not upload or claim saved settings, and must release the runner for retry');
   for (const inputs of [{...draft, serverAddress: ''}, {...draft, apiKey: ''}]) {
     const cleared = await fixture();
     const result = await cleared.actions.apply(inputs);

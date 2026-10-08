@@ -16,13 +16,56 @@ meson test -C build --print-errorlogs
 meson install -C build
 ```
 
-项目不使用 ESLint。提交前请对所有 JavaScript 文件运行 `node --check`，再执行完整
-Meson 测试。涉及扩展生命周期、面板、剪切板、取色或设置界面的改动，还必须运行：
+项目不使用 ESLint。对修改的 JavaScript 文件运行 `node --check`，并执行与目标行为相关的
+测试；涉及公共接口或核心逻辑时运行完整 Meson 测试。为可重复的行为风险保留长期回归测试，
+不为文档措辞、CSS 细节、固定图标名称或控件的常规属性编写断言。CI/Release 配置应使用
+现有校验、临时脚本或隔离 dry-run 验证，不增加锁定配置格式的测试。
+
+Shell 交互和设置窗口测试不属于 Meson 测试集，需要在隔离测试桌面中单独运行：
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
+run_shell_check() (
+  test_runtime=$(mktemp -d /tmp/clipboard-x-check-XXXXXX)
+  trap 'rm -rf -- "$test_runtime"' EXIT
+  export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
+  unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
+  dbus-run-session -- gnome-shell-test-tool --headless \
+    --extension build/clipboard-x-gnome_<version>.zip "$1"
+)
+run_shell_check tests/ui/shell.smoke.js
+run_shell_check tests/ui/preferences.smoke.js
 ```
+
+隐私边界、搜索光标导航/取色器移动、截图取消可以复用上述函数分别运行专项测试：
+
+```sh
+run_shell_check tests/ui/privacy.smoke.js
+run_shell_check tests/ui/search-picker.smoke.js
+run_shell_check tests/ui/screenshot-cancel.smoke.js
+```
+
+设备图标选择器另有 GTK 集成测试，需要图形显示环境和已经配置的打包构建目录。
+它使用内存设置后端，不修改宿主插件设置：
+
+```sh
+shell_libdir=/usr/lib/gnome-shell
+dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
+  GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/ui/settings-icon.integration.js
+```
+
+`shell_libdir` 需按 GNOME Shell 的实际安装目录调整，Fedora 通常为
+`/usr/lib64/gnome-shell`。设置 API 需要加载该目录中的私有 typelib。
+
+词库吞吐与内存测量使用可选 benchmark，不在普通 CI 回归中卡耗时门槛。
+传入本地词库文件即可，benchmark 不会自动下载词库：
+
+```sh
+gjs -m tools/benchmark-tokenizer.js /path/to/dictionary.txt 1000
+```
+
+交付时说明已执行的检查及结果，以及未执行的检查和原因。CSS 视觉调整可以通过构建和
+人工验收检查，无需新增自动化断言。
 
 ### 嵌套桌面与界面语言
 
@@ -58,7 +101,7 @@ meson compile -C build clipboard-x-update-po
 ```
 
 然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/i18n/coverage.sh`。
-检查会拒绝缺失或 fuzzy 的译文，以及图片编辑命令说明中丢失的占位符。
+检查会验证提取的文本、gettext 格式有效性，并拒绝缺失或 fuzzy 的译文。
 源码语言为英语，无需单独的英文 PO 文件。机器翻译草稿仍需母语者审校措辞。
 仓库根目录的中文文档使用 `.zh-CN.md`；`docs/` 中的指南平铺存放，中文使用 `{name}_CN.md`。
 各版本发布说明统一放在 `docs/release/`，分别使用 `v<version>-en.md` 和 `v<version>-cn.md`。

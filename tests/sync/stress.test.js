@@ -6,7 +6,7 @@ import {TransferTracker} from '../../src/sync/transfers.js';
 import {SyncClient} from '../../src/sync/client.js';
 import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 import {delay} from './integration/measure.js';
-import {DAILY_SYNC_LOAD, STRESS_SYNC_LOAD, SYNC_STRESS_FACTOR} from './load-profile.js';
+import {STRESS_SYNC_LOAD} from './load-profile.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -232,6 +232,4 @@ const terminalCount = emitted.length;
 await delay(60);
 assert(emitted.length === terminalCount && tracker._pendingSources.size === 0,
   'completion must cancel queued progress callbacks');
-assert(STRESS_SYNC_LOAD.progressUpdates === DAILY_SYNC_LOAD.progressUpdates * SYNC_STRESS_FACTOR,
-  'progress flood must be exactly 10x the daily baseline');
 tracker.clear();

@@ -383,8 +383,6 @@ const retentionClient = new SyncClient(new TestSettings(), {
 try {
   await retentionClient.start();
   const active = await retentionClient.getTransfer(transferId);
-  assert(retentionClient._transfers.get(transferId) === null,
-    'a standalone transfer lookup need not be present in the UI tracker');
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
     'a looked-up remote task must remain cancellable and release its marker after DELETE');

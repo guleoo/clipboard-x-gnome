@@ -89,15 +89,14 @@ const testRoot = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-dictionari
 const storeRoot = testRoot.get_child('store');
 const importSource = testRoot.get_child('custom-ja.txt');
 const plainImportSource = testRoot.get_child('plain-words.txt');
-const seedPath = Gio.File.new_for_uri(import.meta.url)
-  .get_parent()
-  .resolve_relative_path('../../../src/clipboard/tokenizer/dictionary/seeds/zh--cppjieba-core.dict')
-  .get_path();
+const seed = testRoot.get_child('zh--test.dict');
+GLib.file_set_contents(seed.get_path(), '# locale: zh\n# name: Test dictionary\n注销 80\n密钥 63\n');
+const seedPath = seed.get_path();
 
 try {
   const store = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
   const initial = store.list();
-  assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount === 45967,
+  assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount > 0,
     'pre-imported dictionary should use the regular user dictionary store');
   assert(store.getFile(initial[0].fileName).query_exists(null),
     'stored dictionaries should expose their editable file');
@@ -183,21 +182,6 @@ try {
   store.remove(seed.fileName);
   const reopened = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
   assert(reopened.list().length === 0, 'a removed pre-imported dictionary should not be restored');
-
-  const performanceStore = new DictionaryStore({
-    rootPath: testRoot.get_child('performance-store').get_path(),
-    seedPaths: [seedPath],
-  });
-  const performanceTokenizer = new Tokenizer({
-    store: performanceStore,
-    languageNames: () => ['zh_CN.UTF-8', 'zh'],
-  });
-  const started = GLib.get_monotonic_time();
-  for (let index = 0; index < 1000; index++)
-    performanceTokenizer.tokenize('剪切板同步需要保持稳定且不阻塞桌面界面。');
-  const elapsedMilliseconds = (GLib.get_monotonic_time() - started) / 1000;
-  assert(elapsedMilliseconds < 1500,
-    `1000 dictionary tokenizations took ${elapsedMilliseconds.toFixed(1)} ms`);
 } finally {
   removeTree(testRoot);
 }

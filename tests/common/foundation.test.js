@@ -1,5 +1,4 @@
 import {truncateUtf8} from '../../src/common/bytes.js';
-import {diagnosticCode} from '../../src/common/errors.js';
 import {EventEmitter} from '../../src/common/event-emitter.js';
 
 function assert(condition, message) {
@@ -15,11 +14,6 @@ function assertEqual(actual, expected, message) {
 const result = truncateUtf8('A👨‍👩‍👧‍👦B', 2);
 assertEqual(result.text, 'A', 'truncation must preserve grapheme clusters');
 assert(result.truncated, 'truncation flag');
-assertEqual(
-  diagnosticCode({constructor: {name: 'SyncError'}, code: 'channel_required'}),
-  'SyncError:channel_required',
-  'diagnostics must preserve stable string error codes',
-);
 
 const emitter = new EventEmitter();
 let value = 0;

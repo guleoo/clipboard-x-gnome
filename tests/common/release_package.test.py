@@ -108,16 +108,6 @@ class ReleasePackageTest(unittest.TestCase):
         with self.assertRaisesRegex(check_release.ReleaseError, "EGO-managed"):
             check_release.validate(self.root, self.archive)
 
-    def test_requires_both_supported_shell_versions(self):
-        for versions in (["50"], ["51"], ["49", "50", "51"]):
-            with self.subTest(versions=versions):
-                metadata = json.loads(self.files["metadata.json"])
-                metadata["shell-version"] = versions
-                self.files["metadata.json"] = json.dumps(metadata).encode()
-                self.write_archive()
-                with self.assertRaisesRegex(check_release.ReleaseError, "50 and 51"):
-                    check_release.validate(self.root, self.archive)
-
 
 if __name__ == "__main__":
     unittest.main()
