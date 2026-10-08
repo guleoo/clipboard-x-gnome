@@ -1,0 +1,46 @@
+name: Auto-retarget main PRs to dev
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited]
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  retarget:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # Only update PR metadata; never check out or execute code from the PR.
+      - name: Retarget PR to dev
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (pr.base.ref !== "main" || pr.head.ref === "dev") {
+              core.info("This PR does not need retargeting.");
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.pulls.update({
+                owner, repo, pull_number: pr.number, base: "dev",
+              });
+            } catch (error) {
+              core.setFailed(`Could not retarget PR #${pr.number}: ${error.message}`);
+              return;
+            }
+
+            try {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr.number,
+                body: "This PR targeted `main`. Its base branch has been automatically changed to `dev`. Please submit development changes to `dev`; `dev` → `main` PRs are reserved for releases.",
+              });
+            } catch (error) {
+              core.warning(`PR #${pr.number} was retargeted, but the comment could not be posted: ${error.message}`);
+            }
