@@ -1,6 +1,7 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import Clutter from 'gi://Clutter';
+import GdkPixbuf from 'gi://GdkPixbuf';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
@@ -53,6 +54,18 @@ async function waitUntil(predicate, timeoutMilliseconds = 2000) {
   while (!predicate() && GLib.get_monotonic_time() < deadline)
     await Scripting.sleep(50);
   return predicate();
+}
+
+function waitForExit(process) {
+  return new Promise((resolve, reject) => {
+    process.wait_async(null, (source, result) => {
+      try {
+        resolve(source.wait_finish(result));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
 }
 
 export async function run() {
@@ -583,6 +596,10 @@ export async function run() {
   assert(!indicator._controller.items.includes(disposable), 'Clipboard history entry could not be deleted');
 
   if (GLib.getenv('CLIPBOARD_X_SKIP_EXTERNAL_SOURCES') !== '1') {
+    // Without data-control, wl-copy needs its temporary window to receive focus.
+    Main.overview.hide();
+    assert(await waitUntil(() => !Main.overview.visible),
+      'Overview did not close before launching the clipboard source');
     const waylandSource = Gio.Subprocess.new(
       ['/usr/bin/wl-copy', '--foreground', '--type', 'text/plain;charset=utf-8'],
       Gio.SubprocessFlags.STDIN_PIPE,
@@ -593,19 +610,13 @@ export async function run() {
       null,
     );
     waylandInput.close(null);
-    let capturedWaylandSource = await waitUntil(
+    const capturedWaylandSource = await waitUntil(
       () => indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
-      500,
     );
-    if (!capturedWaylandSource) {
-      await indicator._controller.capture();
-      capturedWaylandSource = await waitUntil(
-        () => indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
-      );
-    }
     const waylandMimeTypes = indicator._controller._selection
       .get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
     waylandSource.force_exit();
+    await waitForExit(waylandSource);
     assert(capturedWaylandSource,
       `Clipboard X did not capture a native Wayland application source (${waylandMimeTypes.join(', ')})`);
 
@@ -617,10 +628,13 @@ export async function run() {
       GLib.build_filenamev([TEST_DIRECTORY, '..', 'fixtures', 'clipboard-source.js']),
       'Clipboard X XWayland source',
     ]);
-    await Scripting.sleep(800);
-    assert(!xwaylandSource.get_if_exited() || xwaylandSource.get_successful(),
+    const capturedXwaylandSource = await waitUntil(
+      () => indicator._controller.items.some(item => item.text === 'Clipboard X XWayland source'),
+    );
+    await waitForExit(xwaylandSource);
+    assert(xwaylandSource.get_successful(),
       'XWayland clipboard source exited with an error');
-    assert(indicator._controller.items.some(item => item.text === 'Clipboard X XWayland source'),
+    assert(capturedXwaylandSource,
       'Clipboard X did not capture an XWayland application source');
   }
 
@@ -630,9 +644,10 @@ export async function run() {
   assert(indicator._controller.items.some(item => item.text === 'rapid clipboard change 49'),
     'Clipboard X lost the final value during rapid clipboard changes');
 
-  const png = GLib.base64_decode(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-  );
+  const imageFixture = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, true, 8, 200, 100);
+  imageFixture.fill(0x336699ff);
+  const [imageEncoded, png] = imageFixture.save_to_bufferv('png', [], []);
+  assert(imageEncoded, 'Could not encode the rectangular clipboard image fixture');
   St.Clipboard.get_default().set_content(
     St.ClipboardType.CLIPBOARD,
     'image/png',
@@ -687,21 +702,17 @@ export async function run() {
 
   indicator._settings.set_boolean('sync-enabled', false);
   indicator.menu.open();
-  history.syncButton.emit('clicked');
+  history.syncButton.emit('clicked', 1);
   assert(indicator._settings.get_boolean('sync-enabled') && history.syncButton.selected
       && indicator.menu.isOpen,
     'The panel sync button must enable synchronization without closing the menu');
-  history.syncButton.emit('clicked');
+  history.syncButton.emit('clicked', 1);
   assert(!indicator._settings.get_boolean('sync-enabled') && !history.syncButton.selected,
     'The panel sync button must disable synchronization and update its selected state');
   indicator._settings.set_boolean('sync-enabled', true);
   assert(history.syncButton.selected, 'External sync settings changes must update the button');
   indicator.menu.close();
   indicator._settings.set_string('sync-send-mode', 'manual');
-  const originalPreviewWidth = imageItem.preview.width;
-  const originalPreviewHeight = imageItem.preview.height;
-  imageItem.preview.width = 200;
-  imageItem.preview.height = 100;
   const imageRow = history.entry(imageItem);
   const imageButtons = imageRow.get_children().filter(child => child instanceof St.Button);
   assert(imageButtons.length === 5,
@@ -710,20 +721,24 @@ export async function run() {
   const imageContent = imageBody.get_children().find(child =>
     child.has_style_class_name?.('cbx-image-content'));
   const [imageThumbnail] = imageContent.get_children();
-  assert(imageThumbnail.width > 0 && imageThumbnail.height > 0
-      && Math.abs(imageThumbnail.width / imageThumbnail.height
+  // Layout sizes are only meaningful after the row is attached to an open menu.
+  indicator.menu.open();
+  history._section.addMenuItem(imageRow);
+  assert(await waitUntil(() => imageThumbnail.mapped
+      && imageThumbnail.width > 0 && imageThumbnail.height > 0),
+    'Image history thumbnail did not receive a visible allocation');
+  assert(Math.abs(imageThumbnail.width / imageThumbnail.height
         - imageItem.preview.width / imageItem.preview.height) < 0.01,
-    'Image history thumbnail did not preserve the source aspect ratio');
+    `Image history thumbnail did not preserve the source aspect ratio (${imageThumbnail.width}×${imageThumbnail.height}, preview ${imageItem.preview.width}×${imageItem.preview.height})`);
   const closeMenu = history._closeMenu;
   let editClosedMenu = false;
   history._closeMenu = () => editClosedMenu = true;
-  imageButtons[1].emit('clicked');
+  imageButtons[1].emit('clicked', 1);
   await Scripting.sleep(100);
   assert(editClosedMenu, 'Editing an image history item did not close the panel');
   history._closeMenu = closeMenu;
   imageRow.destroy();
-  imageItem.preview.width = originalPreviewWidth;
-  imageItem.preview.height = originalPreviewHeight;
+  indicator.menu.close();
   const availableImage = new imageItem.constructor({
     ...imageItem, id: GLib.uuid_string_random(), remote: true,
   });
@@ -805,8 +820,11 @@ export async function run() {
     assert(progressButton.get_child().icon_name === 'object-select-symbolic',
       'Completed uploads and downloads must use the check mark icon');
   }
-  indicator.setTransfer({...transfer, state: 'expired', errorMessage: 'expired', updatedAt: Date.now() + 1});
-  assert(progressButton._hintText.includes('expired'), 'Expired transfer did not expose a retryable error');
+  indicator.setTransfer({
+    ...transfer, state: 'expired', errorCode: 'transfer_expired', updatedAt: Date.now() + 1,
+  });
+  assert(progressButton.get_child().icon_name === 'view-refresh-symbolic',
+    'Expired transfer did not expose a retry action');
   progressButton.destroy();
 
   const publish = extensionObject._publish;
