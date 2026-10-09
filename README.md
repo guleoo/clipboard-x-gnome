@@ -53,6 +53,7 @@ or refreshed by the user.
 - **Device synchronization** — Send entries manually or automatically through a self-hosted `clipboard-x-server` and its Channels, with remote entries identified by device.
 - **Lazy transfers** — Send previews of large text and images first, fetch originals when needed, and show verified, byte-accurate progress without a separate local service.
 - **Customizable panel** — Adjust size, visible item count, accent color, position, focus behavior, and action icons.
+- **Multilingual interface** — Follows your system language, with English and translations for 25 languages, including Simplified Chinese, Japanese, Korean, German, French, and Spanish.
 
 ## Installation
 
