@@ -8,14 +8,14 @@ import {ProgressRing} from './progress-ring.js';
 import {isComplete, isPreviewPublished} from './sync-state.js';
 
 const ICON_SIZE = 16;
-const PREVIEW_SYNC_ICON = new Gio.FileIcon({
-  file: Gio.File.new_for_uri(import.meta.url).get_parent()
-    .resolve_relative_path('../../icons/sync/preview-synced-symbolic.svg'),
-});
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
 export class SyncAction {
   constructor({settings, actions, tooltip, createIconButton, closeMenu}) {
+    this._previewIcon = new Gio.FileIcon({
+      file: Gio.File.new_for_uri(import.meta.url).get_parent()
+        .resolve_relative_path('../../icons/sync/preview-synced-symbolic.svg'),
+    });
     this._settings = settings;
     this._actions = actions;
     this._tooltip = tooltip;
@@ -112,6 +112,7 @@ export class SyncAction {
     this._settings.disconnect(this._enabledSignal);
     this._buttons.clear();
     this._transfers.clear();
+    this._previewIcon = null;
   }
 
   _update(item, button) {
@@ -119,7 +120,7 @@ export class SyncAction {
     if (isComplete(item, transfer)) {
       if (isPreviewPublished(item, transfer)) {
         button.set_child(new St.Icon({
-          gicon: PREVIEW_SYNC_ICON,
+          gicon: this._previewIcon,
           icon_size: button._clipboardXIconSize ?? ICON_SIZE,
         }));
       } else {

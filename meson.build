@@ -46,6 +46,7 @@ install_subdir(
   strip_directory: true,
   install_dir: extension_dir,
   exclude_directories: ['clipboard/tokenizer/dictionary/seeds'],
+  exclude_files: ['sync/icon-color.js', 'ui/settings/device-icon-color.js'],
 )
 install_data('data/stylesheet.css', install_dir: extension_dir)
 

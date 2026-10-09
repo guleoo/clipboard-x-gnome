@@ -43,7 +43,6 @@ class ReleasePackageTest(unittest.TestCase):
             ).encode(),
             "stylesheet.css": b".panel { color: white; }",
             "schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml": b"<schema/>",
-            "schemas/gschemas.compiled": b"compiled",
             "locale/zh_CN/LC_MESSAGES/clipboard-x.mo": b"translation",
         }
 
@@ -68,7 +67,7 @@ class ReleasePackageTest(unittest.TestCase):
             check_release.validate(self.root, self.archive)
 
     def test_rejects_missing_runtime_file(self):
-        del self.files["schemas/gschemas.compiled"]
+        del self.files["schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml"]
         self.write_archive()
         with self.assertRaisesRegex(check_release.ReleaseError, "missing="):
             check_release.validate(self.root, self.archive)

@@ -32,10 +32,12 @@ def _version(project_root):
 
 def _expected_files(project_root):
     source = project_root / "src"
+    inactive_files = {"sync/icon-color.js", "ui/settings/device-icon-color.js"}
     files = {
         path.relative_to(source).as_posix()
         for path in source.rglob("*")
         if path.is_file()
+        and path.relative_to(source).as_posix() not in inactive_files
         and not path.relative_to(source).as_posix().startswith(
             "clipboard/tokenizer/dictionary/seeds/"
         )
@@ -45,7 +47,6 @@ def _expected_files(project_root):
             "metadata.json",
             "stylesheet.css",
             "schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml",
-            "schemas/gschemas.compiled",
         }
     )
     languages = (

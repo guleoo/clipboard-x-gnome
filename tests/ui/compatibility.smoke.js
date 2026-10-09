@@ -293,8 +293,14 @@ export async function run() {
   actor.menu.close();
 
   stage('disable-reenable');
+  const previousSync = actor._historyPanel._sync;
+  const previousIcon = previousSync._previewIcon;
+  assert(previousIcon instanceof Gio.FileIcon, 'Enabled synchronization UI must create its preview icon');
   await disable();
+  assert(previousSync._previewIcon === null, 'Disabled synchronization UI must release its preview icon');
   actor = await enable(actor);
+  assert(actor._historyPanel._sync._previewIcon !== previousIcon,
+    'Re-enabling must create an icon owned by the new synchronization UI');
   actor.menu.open();
   await Scripting.sleep(100);
   assert(actor.menu.isOpen, 'Panel did not open after re-enabling');
