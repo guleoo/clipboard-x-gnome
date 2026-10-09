@@ -90,6 +90,8 @@ export class TerminalInput {
     if (this._eventFilterId)
       Clutter.Event.remove_filter(this._eventFilterId);
     this._eventFilterId = 0;
+    // Like GNOME's KeyboardController, dispose immediately so Mutter releases
+    // any pressed keys and removes the virtual device without waiting for GC.
     this._device?.run_dispose();
     this._device = null;
   }
