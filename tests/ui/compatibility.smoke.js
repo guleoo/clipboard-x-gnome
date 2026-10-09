@@ -5,6 +5,7 @@ import Meta from 'gi://Meta';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
+import {ExtensionState} from 'resource:///org/gnome/shell/misc/extensionUtils.js';
 
 const UUID = 'clipboard-x@guleoo.github.io';
 export const METRICS = {};
@@ -82,12 +83,13 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
-async function indicator() {
+async function indicator(previous = null) {
   stage('waiting-for-indicator');
   for (let attempt = 0; attempt < 60; attempt++) {
     const extension = Main.extensionManager.lookup(UUID);
     const actor = Main.panel.statusArea['clipboard-x'];
-    if (extension?.enabled && actor) {
+    if (extension?.enabled && extension.state === ExtensionState.ACTIVE
+        && actor && actor !== previous) {
       print('Clipboard X [compatibility] indicator ready');
       return actor;
     }
@@ -95,6 +97,26 @@ async function indicator() {
   }
   const extension = Main.extensionManager.lookup(UUID);
   throw new Error(`Extension did not enable: ${extension?.error ?? 'no indicator'}`);
+}
+
+async function disable() {
+  stage('waiting-for-extension-disable');
+  assert(Main.extensionManager.disableExtension(UUID), 'Extension disable request was rejected');
+  await wait('extension-disabled', (async () => {
+    while (true) {
+      const extension = Main.extensionManager.lookup(UUID);
+      assert(extension && extension.state !== ExtensionState.ERROR,
+        `Extension failed while disabling: ${extension?.error ?? 'not installed'}`);
+      if (extension.state === ExtensionState.INACTIVE && !Main.panel.statusArea['clipboard-x'])
+        return;
+      await Scripting.sleep(20);
+    }
+  })());
+}
+
+async function enable(previous) {
+  assert(Main.extensionManager.enableExtension(UUID), 'Extension enable request was rejected');
+  return indicator(previous);
 }
 
 function deferred() {
@@ -124,7 +146,7 @@ async function verifyHistoryLifecycle(actor) {
   let publications = 0;
   try {
     stage('delayed-history-initialization');
-    Main.extensionManager.disableExtension(UUID);
+    await disable();
     storePrototype.load = async function (cancellable) {
       const snapshot = await load.call(this, cancellable);
       loading.resolve();
@@ -137,8 +159,7 @@ async function verifyHistoryLifecycle(actor) {
       assert(syncStarts === 1, 'Publication ran before synchronization startup');
       publications++;
     };
-    Main.extensionManager.enableExtension(UUID);
-    actor = await indicator();
+    actor = await enable(actor);
     await wait('history-load-hook', loading.promise);
     const settings = actor._settings;
     settings.set_boolean('sync-enabled', true);
@@ -191,17 +212,15 @@ async function verifyHistoryLifecycle(actor) {
       return load.call(this, cancellable);
     };
     syncPrototype.start = async () => { syncStarts++; };
-    Main.extensionManager.disableExtension(UUID);
+    await disable();
     await wait('shutdown-save-hook', saving.promise);
-    Main.extensionManager.enableExtension(UUID);
-    actor = await indicator();
+    actor = await enable(actor);
     const oldStartup = extensionObject._startup;
     const oldPublication = extensionObject._publish(latest)
       .then(() => ({}), error => ({error}));
     // Disable again while the previous instance is still flushing to disk.
-    Main.extensionManager.disableExtension(UUID);
-    Main.extensionManager.enableExtension(UUID);
-    actor = await indicator();
+    await disable();
+    actor = await enable(actor);
     const expectedStarts = syncStarts;
     await Scripting.sleep(50);
     assert(loads === 0 && syncStarts === expectedStarts,
@@ -261,18 +280,15 @@ export async function run() {
   actor.menu.close();
 
   stage('disable-reenable');
-  Main.extensionManager.disableExtension(UUID);
-  await Scripting.sleep(150);
-  assert(!Main.panel.statusArea['clipboard-x'], 'Disabling did not destroy the indicator');
-  Main.extensionManager.enableExtension(UUID);
-  actor = await indicator();
+  await disable();
+  actor = await enable(actor);
   actor.menu.open();
   await Scripting.sleep(100);
   assert(actor.menu.isOpen, 'Panel did not open after re-enabling');
   actor.menu.close();
   actor = await verifyHistoryLifecycle(actor);
   stage('final-disable');
-  Main.extensionManager.disableExtension(UUID);
+  await disable();
   stage('completed');
   print('Clipboard X: shared Shell APIs and enable/disable/re-enable passed.');
 }

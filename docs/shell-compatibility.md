@@ -39,6 +39,9 @@ initialization, Shell startup completion, test entry and each lifecycle stage. A
 covers startup after the automation module initializes; important test waits have a 15-second deadline.
 Timeouts include the current stage and Shell/extension readiness. The outer 120-second limit remains
 in place for hangs before the module can initialize or while the main loop is blocked.
+Enable/disable requests are asynchronous: the test waits for an inactive extension with no indicator
+before enabling again, then requires an active extension and a new indicator. This prevents queued
+settings changes from coalescing into a no-op and mistaking the previous instance for a restart.
 
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
 tokenizer rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
