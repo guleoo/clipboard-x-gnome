@@ -58,6 +58,7 @@ class Indicator extends PanelMenu.Button {
     this._settings = settings;
     this._controller = controller;
     this._actions = actions;
+    this._tokenizerRequest = 0;
     this._stateHoverTransfer = false;
     this._tooltip = new Tooltip();
 
@@ -163,6 +164,7 @@ class Indicator extends PanelMenu.Button {
         else if (this._panelManager.is('phrases'))
           this._quickPhrases.focusStart();
       } else {
+        this._tokenizerRequest++;
         this._tooltip.hide();
         this._panelManager.close({
           preserve: this._settings.get_boolean('preserve-panel-state'),
@@ -239,6 +241,7 @@ class Indicator extends PanelMenu.Button {
   }
 
   _showPanelChrome(panel) {
+    this._tokenizerRequest++;
     const history = panel === 'history';
     this._historyPanel.visible = history;
     this._tokenizer.item.visible = panel === 'tokenizer';
@@ -273,15 +276,23 @@ class Indicator extends PanelMenu.Button {
   }
 
   async _openTokenizer(item) {
+    const request = ++this._tokenizerRequest;
+    const current = () => request === this._tokenizerRequest && this.menu.isOpen;
     try {
       if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
         throw new Error(_('This text is too large for interactive processing'));
       await this._actions.materializeItem(item);
+      if (!current())
+        return;
       const source = item.text;
-      this._panelManager.show('tokenizer', this._tokenizer.createState(item, source));
+      const state = await this._tokenizer.createState(item, source);
+      if (!current())
+        return;
+      this._panelManager.show('tokenizer', state);
       this._tokenizer.focusStart();
     } catch (error) {
-      this._actions.reportError(error);
+      if (current())
+        this._actions.reportError(error);
     }
   }
 
@@ -489,6 +500,7 @@ class Indicator extends PanelMenu.Button {
   }
 
   destroy() {
+    this._tokenizerRequest++;
     this._panelManager?.destroy();
     this._historyPanel.destroy();
     this._tokenizer.destroy();

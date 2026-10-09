@@ -74,7 +74,7 @@ function fileSize(file) {
     .get_size();
 }
 
-function runCase(mode, fullPath, iterations) {
+async function runCase(mode, fullPath, iterations) {
   const temporaryRoot = Gio.File.new_for_path(GLib.dir_make_tmp(
     `clipboard-x-tokenizer-${mode}-XXXXXX`,
   ));
@@ -94,7 +94,7 @@ function runCase(mode, fullPath, iterations) {
     });
     let dictionaryFile;
     if (mode === 'full') {
-      store.ensureSeeds();
+      await store.ensureSeeds();
       dictionaryFile = storeRoot.get_child('zh--full.dict');
       source.copy(dictionaryFile, Gio.FileCopyFlags.NONE, null, null);
     }
@@ -102,20 +102,20 @@ function runCase(mode, fullPath, iterations) {
     const dictionary = mode === 'compact'
       ? Gio.File.new_for_path(seedPath)
       : dictionaryFile;
-    const entries = store.list()[0]?.entryCount ?? 0;
+    const entries = (await store.list())[0]?.entryCount ?? 0;
     const bytes = fileSize(dictionary);
     const tokenizer = new Tokenizer({store, languageNames: () => LANGUAGE_NAMES});
     const firstText = SENTENCES[0];
     const rssBefore = readRssKiB();
     const firstStarted = now();
-    const firstTokens = tokenizer.tokenize(firstText);
+    const firstTokens = await tokenizer.tokenize(firstText);
     const firstLoadMilliseconds = elapsedMilliseconds(firstStarted);
     const rssAfterLoad = readRssKiB();
 
     let tokenCount = firstTokens.length;
     const cachedStarted = now();
     for (let index = 0; index < iterations; index++) {
-      const tokens = tokenizer.tokenize(SENTENCES[index % SENTENCES.length]);
+      const tokens = await tokenizer.tokenize(SENTENCES[index % SENTENCES.length]);
       tokenCount += tokens.length;
     }
     const cachedMilliseconds = elapsedMilliseconds(cachedStarted);
@@ -144,8 +144,8 @@ function decode(bytes) {
   return typeof bytes === 'string' ? bytes : new TextDecoder().decode(bytes);
 }
 
-function runChild(mode, fullPath, iterations) {
-  print(JSON.stringify(runCase(mode, fullPath, iterations)));
+async function runChild(mode, fullPath, iterations) {
+  print(JSON.stringify(await runCase(mode, fullPath, iterations)));
 }
 
 function spawnCase(mode, fullPath, iterations) {
@@ -165,7 +165,7 @@ function spawnCase(mode, fullPath, iterations) {
 }
 
 if (ARGV[0] === '--child') {
-  runChild(ARGV[1], ARGV[2], Number.parseInt(ARGV[3], 10));
+  await runChild(ARGV[1], ARGV[2], Number.parseInt(ARGV[3], 10));
 } else {
   if (!ARGV[0] || ARGV[0] === '--help' || ARGV[0] === '-h') {
     usage();

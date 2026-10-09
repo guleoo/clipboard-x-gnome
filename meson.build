@@ -1,6 +1,6 @@
 project(
   'clipboard-x-gnome',
-  version: '1.0.1',
+  version: '1.0.2',
   license: 'GPL-3.0-or-later',
   meson_version: '>=1.6.0',
 )
@@ -46,6 +46,7 @@ install_subdir(
   strip_directory: true,
   install_dir: extension_dir,
   exclude_directories: ['clipboard/tokenizer/dictionary/seeds'],
+  exclude_files: ['sync/icon-color.js', 'ui/settings/device-icon-color.js'],
 )
 install_data('data/stylesheet.css', install_dir: extension_dir)
 

@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {parseDictionary, serializeDictionary} from '../../../src/clipboard/tokenizer/dictionary/format.js';
+import {parseDictionary, parseDictionaryAsync, serializeDictionary} from '../../../src/clipboard/tokenizer/dictionary/format.js';
 import {
   DICTIONARY_LOCALES,
   DICTIONARY_REQUIRED_LOCALES,
@@ -77,6 +77,17 @@ const parsed = parseDictionary([
   '秘密鍵 90',
 ].join('\n'));
 assertEqual(parseDictionary(serializeDictionary(parsed)), parsed, 'dictionary format round trip');
+let parserYields = 0;
+const largeDictionary = '# locale: zh\n# name: Batch test\n'
+  + Array.from({length: 2048}, (_value, index) => `词条${index} ${index + 1}`).join('\n');
+assertEqual(await parseDictionaryAsync(largeDictionary, {}, {
+  checkpoint: () => new Promise(resolve => GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+    parserYields++;
+    resolve();
+    return GLib.SOURCE_REMOVE;
+  })),
+}), parseDictionary(largeDictionary), 'batched parsing must preserve all dictionary entries and metadata');
+assert(parserYields === 4, 'large dictionaries must yield to the main loop between parsing batches');
 
 const lexicon = new Lexicon(parseEntries('注销 80\n密钥 63'));
 assertEqual(
@@ -95,7 +106,7 @@ const seedPath = seed.get_path();
 
 try {
   const store = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
-  const initial = store.list();
+  const initial = await store.list();
   assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount > 0,
     'pre-imported dictionary should use the regular user dictionary store');
   assert(store.getFile(initial[0].fileName).query_exists(null),
@@ -106,14 +117,14 @@ try {
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
   });
   assertEqual(
-    chineseTokenizer.tokenize('注销 密钥').map(token => token.text),
+    (await chineseTokenizer.tokenize('注销 密钥')).map(token => token.text),
     ['注销', '密钥'],
     'display locale should activate the matching pre-imported dictionary',
   );
-  const defaultLoad = store.load(['zh_CN.UTF-8', 'zh', 'C']);
+  const defaultLoad = await store.load(['zh_CN.UTF-8', 'zh', 'C']);
   assert(defaultLoad.systemEnabled && defaultLoad.lexicon.size > 0,
     'the default dictionary plan should enable the system tokenizer and matching files');
-  const systemOnlyLoad = store.load(['zh_CN.UTF-8', 'zh', 'C'], [SYSTEM_DICTIONARY_ID]);
+  const systemOnlyLoad = await store.load(['zh_CN.UTF-8', 'zh', 'C'], [SYSTEM_DICTIONARY_ID]);
   assert(systemOnlyLoad.systemEnabled && systemOnlyLoad.lexicon.size === 0,
     'the system tokenizer should be selectable without loading user dictionaries');
   GLib.file_set_contents(importSource.get_path(), [
@@ -127,15 +138,15 @@ try {
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
   });
   assertEqual(
-    selectedTokenizer.tokenize('注销密钥', {dictionaryFiles: [secondChinese.fileName]})
+    (await selectedTokenizer.tokenize('注销密钥', {dictionaryFiles: [secondChinese.fileName]}))
       .map(token => token.text),
     ['注销', '密', '钥'],
     'enabling selected dictionaries should load only those files',
   );
   assertEqual(
-    selectedTokenizer.tokenize('注销密钥', {
+    (await selectedTokenizer.tokenize('注销密钥', {
       dictionaryFiles: [initial[0].fileName, secondChinese.fileName],
-    }).map(token => token.text),
+    })).map(token => token.text),
     ['注销', '密钥'],
     'multiple enabled dictionaries should be merged for the active language',
   );
@@ -145,7 +156,7 @@ try {
     languageNames: () => ['en_US.UTF-8', 'en', 'C'],
   });
   assertEqual(
-    systemTokenizer.tokenize('注销 密钥').map(token => token.text),
+    (await systemTokenizer.tokenize('注销 密钥')).map(token => token.text),
     tokenizeText('注销 密钥').map(token => token.text),
     'a missing display-language dictionary should fall back to the system tokenizer',
   );
@@ -157,14 +168,14 @@ try {
     '画像編集 80',
   ].join('\n'));
   const imported = await store.importFile(importSource, 'en');
-  assert(imported.locale === 'ja' && store.list().length === 3,
+  assert(imported.locale === 'ja' && (await store.list()).length === 3,
     'import should preserve the dictionary-declared locale');
   const japaneseTokenizer = new Tokenizer({
     store,
     languageNames: () => ['ja_JP.UTF-8', 'ja', 'C'],
   });
   assertEqual(
-    japaneseTokenizer.tokenize('秘密鍵画像編集').map(token => token.text),
+    (await japaneseTokenizer.tokenize('秘密鍵画像編集')).map(token => token.text),
     ['秘密鍵', '画像編集'],
     'an imported dictionary should be selected by the display locale',
   );
@@ -174,14 +185,89 @@ try {
   assert(plainImported.locale === 'ko',
     'an imported dictionary without metadata should use the selected language code');
 
-  store.remove(secondChinese.fileName);
-  store.remove(imported.fileName);
-  store.remove(plainImported.fileName);
-  assert(store.list().length === 1, 'imported dictionary removal');
-  const seed = store.list()[0];
-  store.remove(seed.fileName);
+  await store.remove(secondChinese.fileName);
+  await store.remove(imported.fileName);
+  await store.remove(plainImported.fileName);
+  assert((await store.list()).length === 1, 'imported dictionary removal');
+  const seed = (await store.list())[0];
+  await store.remove(seed.fileName);
   const reopened = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
-  assert(reopened.list().length === 0, 'a removed pre-imported dictionary should not be restored');
+  assert((await reopened.list()).length === 0, 'a removed pre-imported dictionary should not be restored');
+
+  GLib.file_set_contents(storeRoot.get_child('zh--large.dict').get_path(), largeDictionary);
+  const cancellable = new Gio.Cancellable();
+  const add = Lexicon.prototype.add;
+  let batches = 0;
+  Lexicon.prototype.add = function (entries) {
+    if (entries.length > 0 && ++batches === 1)
+      cancellable.cancel();
+    return add.call(this, entries);
+  };
+  try {
+    const result = await store.load(['zh'], [], cancellable)
+      .then(() => null, error => error);
+    assert(result?.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
+      'cancellation during index construction must propagate instead of returning a partial dictionary');
+    assert(batches === 1, 'cancellation must stop subsequent index batches');
+  } finally {
+    Lexicon.prototype.add = add;
+  }
+  const recovered = await store.load(['zh']);
+  assert(recovered.lexicon.size === 2048, 'cancelled loading must not prevent a later complete load');
 } finally {
   removeTree(testRoot);
+}
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return {promise, resolve, reject};
+}
+
+const combined = {lexicon: new Lexicon(parseEntries('注销密钥 90')), systemEnabled: false};
+const separate = {lexicon: new Lexicon(parseEntries('注销 90\n密钥 90')), systemEnabled: false};
+const requests = [];
+const concurrent = new Tokenizer({
+  languageNames: () => ['zh'],
+  store: {load: () => {
+    const request = deferred();
+    requests.push(request);
+    return request.promise;
+  }},
+});
+try {
+  const first = concurrent.tokenize('注销密钥');
+  const shared = concurrent.tokenize('注销密钥');
+  await Promise.resolve();
+  assert(requests.length === 1, 'concurrent requests with the same dictionary plan must share loading');
+  const newer = concurrent.tokenize('注销密钥', {revision: 1});
+  await Promise.resolve();
+  requests[1].resolve(separate);
+  assertEqual((await newer).map(token => token.text), ['注销', '密钥'], 'new revision must use its own index');
+  requests[0].resolve(combined);
+  assertEqual((await first).map(token => token.text), ['注销密钥'], 'older consumers must retain their own index');
+  await shared;
+  assertEqual((await concurrent.tokenize('注销密钥', {revision: 1})).map(token => token.text),
+    ['注销', '密钥'], 'late old loads must not overwrite the current cache');
+  assert(requests.length === 2, 'cached requests must not reload dictionary files');
+
+  const failed = concurrent.tokenize('注销密钥', {revision: 2}).then(() => null, error => error);
+  await Promise.resolve();
+  requests[2].reject(new Error('Controlled load failure'));
+  assert(await failed, 'failed dictionary plans must reject');
+  const retry = concurrent.tokenize('注销密钥', {revision: 2});
+  await Promise.resolve();
+  assert(requests.length === 4, 'failed loading must permit retry instead of caching rejection');
+  requests[3].resolve(combined);
+  await retry;
+
+  const cancelled = concurrent.tokenize('注销密钥', {revision: 3}).then(() => null, error => error);
+  await Promise.resolve();
+  concurrent.destroy();
+  requests[4].resolve(combined);
+  assert((await cancelled)?.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
+    'destroyed tokenizers must discard pending results');
+} finally {
+  concurrent.destroy();
 }

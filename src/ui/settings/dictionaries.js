@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -132,11 +133,14 @@ export function create({settings, store, window}) {
   let dictionaryRows = [];
   let refreshing = false;
   let changingSelection = false;
-  const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
-  const matchingDictionaries = () => {
-    const locales = new Set(localeCandidates([selectedLocale()]));
-    return store.list().filter(dictionary => locales.has(dictionary.locale));
+  let refreshRequest = 0;
+  let active = true;
+  const cancellable = new Gio.Cancellable();
+  const report = (error, heading) => {
+    if (active && !error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+      showError(window, error, heading);
   };
+  const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
   const enabledDictionaries = dictionaries => {
     const configured = new Set(settings.get_strv('tokenizer-dictionary-files'));
     if (configured.size === 0)
@@ -171,11 +175,22 @@ export function create({settings, store, window}) {
     if (configured.length > 0 && !configured.includes(fileName))
       settings.set_strv('tokenizer-dictionary-files', [...configured, fileName]);
   };
-  const refresh = () => {
+  const refresh = async () => {
+    const request = ++refreshRequest;
+    const locales = new Set(localeCandidates([selectedLocale()]));
+    let dictionaries;
+    try {
+      dictionaries = (await store.list(cancellable)).filter(dictionary => locales.has(dictionary.locale));
+    } catch (error) {
+      if (request === refreshRequest)
+        report(error);
+      return;
+    }
+    if (!active || request !== refreshRequest)
+      return;
     refreshing = true;
     for (const row of dictionaryRows)
       group.remove(row);
-    const dictionaries = matchingDictionaries();
     const enabled = enabledDictionaries(dictionaries);
     const entries = [
       {
@@ -246,10 +261,14 @@ export function create({settings, store, window}) {
               .then(dictionary => {
                 enableDictionaryFile(dictionary.fileName);
                 bumpRevision(settings);
-                refresh();
+                if (active)
+                  refresh();
               })
-              .catch(error => showError(window, error))
-              .finally(() => refreshButton.sensitive = true);
+              .catch(error => report(error))
+              .finally(() => {
+                if (active)
+                  refreshButton.sensitive = true;
+              });
           });
           row.add_suffix(refreshButton);
         }
@@ -259,13 +278,18 @@ export function create({settings, store, window}) {
           valign: Gtk.Align.CENTER,
           css_classes: ['flat'],
         });
-        remove.connect('clicked', () => {
+        remove.connect('clicked', async () => {
+          remove.sensitive = false;
           try {
-            store.remove(dictionary.fileName);
+            await store.remove(dictionary.fileName);
             bumpRevision(settings);
-            refresh();
+            if (active)
+              refresh();
           } catch (error) {
-            showError(window, error);
+            report(error);
+          } finally {
+            if (active)
+              remove.sensitive = true;
           }
         });
         row.add_suffix(remove);
@@ -281,7 +305,12 @@ export function create({settings, store, window}) {
     if (!changingSelection)
       refresh();
   });
-  disconnectWhenUnrooted(group, () => settings.disconnect(selectionSignal));
+  disconnectWhenUnrooted(group, () => {
+    active = false;
+    refreshRequest++;
+    cancellable.cancel();
+    settings.disconnect(selectionSignal);
+  });
 
   addNetworkButton.connect('clicked', async () => {
     const source = await requestNetworkLocation(window);
@@ -292,11 +321,13 @@ export function create({settings, store, window}) {
       const dictionary = await store.refreshSource(source, selectedLocale());
       enableDictionaryFile(dictionary.fileName);
       bumpRevision(settings);
-      refresh();
+      if (active)
+        refresh();
     } catch (error) {
-      showError(window, error);
+      report(error);
     } finally {
-      addNetworkButton.sensitive = true;
+      if (active)
+        addNetworkButton.sensitive = true;
     }
   });
 
@@ -318,10 +349,14 @@ export function create({settings, store, window}) {
       store.importFile(file, locale)
         .then(() => {
           bumpRevision(settings);
-          refresh();
+          if (active)
+            refresh();
         })
-        .catch(error => showError(window, error, _('Dictionary import failed')))
-        .finally(() => importButton.sensitive = true);
+        .catch(error => report(error, _('Dictionary import failed')))
+        .finally(() => {
+          if (active)
+            importButton.sensitive = true;
+        });
     });
   });
 

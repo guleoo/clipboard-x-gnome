@@ -7,22 +7,32 @@ function codePoints(value) {
 }
 
 export function parseEntries(text) {
-  const entries = [];
-  for (const line of text.split('\n')) {
+  return [...dictionaryEntries(text)].filter(Boolean);
+}
+
+export function* dictionaryEntries(text) {
+  let start = 0;
+  while (start <= text.length) {
+    const newline = text.indexOf('\n', start);
+    const line = text.slice(start, newline < 0 ? text.length : newline);
+    start = newline < 0 ? text.length + 1 : newline + 1;
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#'))
+    if (!trimmed || trimmed.startsWith('#')) {
+      yield null;
       continue;
+    }
     const [word, rawFrequency] = trimmed.split(/\s+/u);
     const length = codePoints(word ?? '').length;
-    if (length < 2 || length > MAXIMUM_WORD_LENGTH || !WORD_PATTERN.test(word))
+    if (length < 2 || length > MAXIMUM_WORD_LENGTH || !WORD_PATTERN.test(word)) {
+      yield null;
       continue;
+    }
     const frequency = Number.parseInt(rawFrequency, 10);
-    entries.push({
+    yield {
       word,
       frequency: Number.isFinite(frequency) && frequency > 0 ? frequency : DEFAULT_FREQUENCY,
-    });
+    };
   }
-  return entries;
 }
 
 export class Lexicon {

@@ -415,7 +415,6 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     page.add(clipboard);
     for (const [key, title] of [
       ['panel-shortcut', _('Open clipboard panel')],
-      ['history-search-shortcut', _('Focus clipboard search')],
       ['private-mode-shortcut', _('Pause or resume clipboard recording')],
       ['clear-history-shortcut', _('Clear unpinned history')],
     ])
@@ -427,6 +426,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     });
     page.add(history);
     for (const [key, title] of [
+      ['history-search-shortcut', _('Focus clipboard search')],
       ['history-paste-shortcut', _('Paste entry')],
       ['history-pin-shortcut', _('Pin or unpin entry')],
       ['history-delete-shortcut', _('Delete entry')],
