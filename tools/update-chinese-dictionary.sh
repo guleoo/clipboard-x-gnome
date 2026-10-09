@@ -16,7 +16,7 @@ printf '%s  %s\n' "$source_sha256" "$temporary_directory/dict.txt" | sha256sum -
 rg --pcre2 '^\p{Han}{2,8} ' "$temporary_directory/dict.txt" \
   | awk '$2 >= 50 {print $1, $2}' > "$temporary_directory/chinese-core.txt"
 awk 'BEGIN {
-  print "# clipboard-x-dictionary: 1"
+  print "# clipboard-x-gnome-dictionary: 1"
   print "# locale: zh"
   print "# name: cppjieba 精简中文词库"
   print ""

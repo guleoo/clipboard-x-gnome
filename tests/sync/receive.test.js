@@ -18,7 +18,7 @@ function assert(value, message) {
 
 // Optional GVFS metadata services must not outlive this test's isolated storage.
 assert(GLib.getenv('GIO_USE_VFS') === 'local', 'Receiving tests require the local VFS; run through Meson');
-const directory = GLib.dir_make_tmp('clipboard-x-receive-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-gnome-receive-test-XXXXXX');
 GLib.setenv('XDG_DATA_HOME', directory, true);
 const deviceId = GLib.uuid_string_random();
 const sourceDeviceId = GLib.uuid_string_random();
@@ -113,7 +113,7 @@ try {
   assert(events.some(value => value.state === 'verifying') && events.at(-1).state === 'completed',
     'Automatic receiving must emit verifying and completed progress states');
 
-  const store = new HistoryStore({rootPath: `${directory}/clipboard-x/history`, deviceId});
+  const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId});
   await store.save([received]);
   const restored = (await store.load())[0];
   assert(restored && !restored.primary.bytes && isComplete(restored),

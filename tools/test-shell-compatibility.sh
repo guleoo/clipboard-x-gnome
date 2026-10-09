@@ -16,7 +16,7 @@ fi
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
-test_runtime=$(mktemp -d /tmp/clipboard-x-shell-test-XXXXXX)
+test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-shell-test-XXXXXX)
 cleanup_runtime() {
   local result=$?
   local attempt

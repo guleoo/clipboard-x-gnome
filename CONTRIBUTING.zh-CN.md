@@ -25,7 +25,7 @@ Shell 交互和设置窗口测试不属于 Meson 测试集，需要在隔离测�
 
 ```sh
 run_shell_check() (
-  test_runtime=$(mktemp -d /tmp/clipboard-x-check-XXXXXX)
+  test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
   trap 'rm -rf -- "$test_runtime"' EXIT
   export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
   unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
@@ -96,8 +96,8 @@ LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en ./tools/run-dev-shell.sh
 用户可见文本使用扩展提供的 `gettext`。新增文本后运行：
 
 ```sh
-meson compile -C build clipboard-x-pot
-meson compile -C build clipboard-x-update-po
+meson compile -C build clipboard-x-gnome-pot
+meson compile -C build clipboard-x-gnome-update-po
 ```
 
 然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/i18n/coverage.sh`。

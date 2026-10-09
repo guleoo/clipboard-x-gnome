@@ -33,7 +33,7 @@ class FocusAnchor extends St.Widget {
       x_align: Clutter.ActorAlign.START,
       y_align: Clutter.ActorAlign.START,
     });
-    this._clipboardXControlType = 'focus-anchor';
+    this._clipboardXGnomeControlType = 'focus-anchor';
     this._onNavigate = onNavigate;
     this._onKeyPress = onKeyPress;
     this._focusIdleId = 0;

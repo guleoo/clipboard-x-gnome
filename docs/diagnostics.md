@@ -55,7 +55,7 @@ and disposal stack traces are folded. To see the complete output in the terminal
 ```
 
 `tools/run-dev-shell.sh` uses `systemd-cat`, when available, to route the **unfiltered** build output and
-isolated Devkit session's stdout/stderr into the system journal under `clipboard-x-devkit`. Terminal
+isolated Devkit session's stdout/stderr into the system journal under `clipboard-x-gnome-devkit`. Terminal
 filtering only affects presentation, not what is saved. No extra terminal or journal follower is needed.
 The script combines stdout and stderr, then uses `tee` to forward the stream once before filtering it.
 With stderr connected to a regular pipe, the
@@ -65,7 +65,7 @@ Both streams use journal priority `info`; `[WARN]` and `[ERROR]` still identify 
 To view the saved stream separately:
 
 ```sh
-journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-shell)"
+journalctl --user -b -f -o cat -t clipboard-x-gnome-devkit + _EXE="$(command -v gnome-shell)"
 ```
 
 The `+` combines the Devkit output with native Shell journal messages. Host sessions and processes

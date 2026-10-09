@@ -23,7 +23,7 @@ async function assertRejects(promise, pattern, message) {
   throw new Error(`${message}: promise resolved unexpectedly`);
 }
 
-const rootPath = GLib.dir_make_tmp('clipboard-x-storage-test-XXXXXX');
+const rootPath = GLib.dir_make_tmp('clipboard-x-gnome-storage-test-XXXXXX');
 const localDeviceId = GLib.uuid_string_random();
 const remoteDeviceId = GLib.uuid_string_random();
 const store = new HistoryStore({rootPath, deviceId: localDeviceId});
