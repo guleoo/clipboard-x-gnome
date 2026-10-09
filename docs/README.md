@@ -9,6 +9,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Releases
 
+- [1.0.4 release notes](release/v1.0.4-en.md): fixes for small-text synchronization and streamed download size checks.
 - [1.0.3 release notes](release/v1.0.3-en.md): extension naming and the new About settings page.
 - [1.0.2 release notes](release/v1.0.2-en.md): asynchronous dictionaries, panel lifecycle fixes, and packaging cleanup.
 - [1.0.1 release notes](release/v1.0.1-en.md): startup, synchronization, and history-saving fixes.
