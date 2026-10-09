@@ -1,5 +1,6 @@
 """Loopback-only streaming fixture, not a clipboard-x-server implementation."""
 
+import gzip
 import hashlib
 import json
 import os
@@ -107,6 +108,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def stream_content(self):
         size = os.path.getsize(self.server.content_path)
+        if self.path == "/gzip":
+            with open(self.server.content_path, "rb") as content:
+                body = gzip.compress(content.read())
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
         if self.path == "/chunked":

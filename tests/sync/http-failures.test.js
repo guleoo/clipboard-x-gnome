@@ -41,6 +41,39 @@ async function upload(path, options = {}) {
 try {
   const address = await fixture.start();
   client = new HttpClient({serverAddress: address, apiKey: 'stress-key', deviceId: 'stress-device'});
+  const smallBytes = new GLib.Bytes(new TextEncoder().encode('几个字 test'));
+  const smallSize = smallBytes.get_size();
+  const smallDigest = GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, smallBytes);
+  const smallStream = Gio.MemoryInputStream.new_from_bytes(smallBytes);
+  try {
+    await client.upload('/content', {stream: smallStream, size: smallSize, mimeType: 'text/plain'});
+  } finally { smallStream.close(null); }
+  const smallOptions = {maximumBytes: smallSize, expectedBytes: smallSize, expectedSha256: smallDigest};
+  for (const path of ['/content', '/chunked', '/no-length', '/gzip']) {
+    const progress = [];
+    const result = await client.download(path, targetPath, {
+      ...smallOptions, onProgress: completed => progress.push(completed),
+    });
+    assert(result.size === smallSize && result.sha256 === smallDigest
+        && GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, target.load_bytes(null)[0]) === smallDigest
+        && progress.at(-1) === smallSize,
+      `${path}: small text must download with exact decoded size, hash and progress`);
+  }
+  for (const [path, changed, code] of [
+    ['/chunked', {maximumBytes: smallSize - 1}, 'too_large'],
+    ['/gzip', {maximumBytes: smallSize - 1}, 'too_large'],
+    ['/chunked', {expectedBytes: smallSize - 1}, 'too_large'],
+    ['/no-length', {expectedBytes: smallSize + 1}, 'size_mismatch'],
+    ['/content', {expectedBytes: smallSize + 1}, 'size_mismatch'],
+    ['/gzip', {expectedSha256: '0'.repeat(64)}, 'hash_mismatch'],
+  ]) {
+    target.replace_contents('previous target', null, false, Gio.FileCreateFlags.PRIVATE, null);
+    let error;
+    try { await client.download(path, targetPath, {...smallOptions, ...changed}); }
+    catch (caught) { error = caught; }
+    assert(error?.code === code, `${path}: decoded body must still enforce ${code}`);
+    assertPreservedTarget();
+  }
   await upload('/content');
   const options = {maximumBytes: size, expectedBytes: size, expectedSha256: digest};
   const observedStages = [];

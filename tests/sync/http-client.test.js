@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
 
 import {bytesFromString, sha256, stringFromBytes} from '../../src/common/bytes.js';
 import {HttpClient, HttpError, normalizeServerAddress} from '../../src/sync/http/client.js';
@@ -126,10 +127,12 @@ const session = {
 };
 class DownloadClient extends HttpClient {
   _message() {
+    const headers = new Soup.MessageHeaders(Soup.MessageHeadersType.RESPONSE);
+    headers.set_content_length(payload.get_size());
     return {
       status_code: 200,
       request_headers: {append() {}, replace() {}},
-      response_headers: {get_content_length: () => payload.get_size()},
+      response_headers: headers,
     };
   }
 }
