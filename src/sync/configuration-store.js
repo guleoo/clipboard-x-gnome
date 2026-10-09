@@ -61,6 +61,12 @@ export class SyncConfigurationStore {
 
   async saveProgress(value) {
     const progress = validateProgress(value);
+    const previous = this._configuration;
+    const cursors = Object.entries(progress.cursors);
+    if (progress.workCursor === previous.workCursor
+        && cursors.length === Object.keys(previous.cursors).length
+        && cursors.every(([channelId, cursor]) => previous.cursors[channelId] === cursor))
+      return this.current;
     await writeJson(
       this.progressPath,
       {version: PROGRESS_FILE_VERSION, ...progress},
