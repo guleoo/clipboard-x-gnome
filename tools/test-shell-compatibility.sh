@@ -17,12 +17,31 @@ fi
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
 test_runtime=$(mktemp -d /tmp/clipboard-x-shell-test-XXXXXX)
-trap 'rm -rf -- "$test_runtime"' EXIT
+cleanup_runtime() {
+  local result=$?
+  local attempt
+  trap - EXIT
+  # Bus-activated helpers can still be unmounting the document portal after Shell exits.
+  # Do not traverse their mounts, and retry transient removal failures without hiding the test status.
+  for ((attempt = 0; attempt < 50; attempt++)); do
+    if rm -rf --one-file-system -- "$test_runtime" 2>/dev/null; then
+      exit "$result"
+    fi
+    sleep 0.1
+  done
+  printf 'Warning: could not clean up test runtime: %s\n' "$test_runtime" >&2
+  exit "$result"
+}
+trap cleanup_runtime EXIT
 export XDG_RUNTIME_DIR="$test_runtime"
 export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
+# Do not depend on the performance tool's animated wallpaper or distro background packages.
+base64 --decode "$project_dir/tests/ui/fixtures/background.png.base64" > "$test_runtime/background.png"
+export SHELL_BACKGROUND_IMAGE="$test_runtime/background.png"
+export PYTHONUNBUFFERED=1
 # Never inherit the host display or a development-session schema override.
 unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
 printf 'Testing extension lifecycle on GNOME Shell %s in an isolated headless session.\n' "$shell_major"
 timeout --kill-after=10s 120s dbus-run-session -- \
-  gnome-shell-test-tool --headless --extension "$archive" \
+  gnome-shell-test-tool --headless --disable-animations --extension "$archive" \
   "$project_dir/tests/ui/compatibility.smoke.js"

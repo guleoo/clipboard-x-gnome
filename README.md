@@ -73,10 +73,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x-gnome_1.0.0.zip`:
+Install the generated `build/clipboard-x-gnome_1.0.1.zip`:
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.0.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.1.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -229,6 +229,13 @@ The server address, API key, and active Channel are stored in
 `sync-state.json`. A newly joined device starts from the retained Channel change history and downloads
 metadata and previews first; complete large objects remain lazy.
 
+Pending uploads are saved in a separate queue for each server, bound to the original Channel and
+DeviceId. Interrupting an upload or switching servers preserves its task. Before retrying, Clipboard X
+checks the local entry and asks the server to reuse or acknowledge the same publication, avoiding
+another content upload when it is already complete. Missing local entries and sensitive content are
+not uploaded. Disabling synchronization pauses existing tasks; entries copied while it is disabled
+are not queued or automatically backfilled when it is re-enabled.
+
 > [!NOTE]
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
 > request a Channel-wide deletion. Server-originated removal events do propagate to clients.
@@ -245,6 +252,7 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 | Dictionaries | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | Sync connection | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | Sync cursors | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x/sync-queues/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)
 before enabling synchronization or handling sensitive material.
@@ -276,8 +284,8 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.1.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.1.zip tests/ui/preferences.smoke.js
 ```
 
 Clipboard X does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,
@@ -287,7 +295,7 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [1.0.0 release notes](docs/release/v1.0.0-en.md)
+- [1.0.1 release notes](docs/release/v1.0.1-en.md)
 - [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)

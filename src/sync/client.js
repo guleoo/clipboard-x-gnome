@@ -54,6 +54,7 @@ export class SyncClient extends EventEmitter {
     this._transport = null;
     this._cancellable = null;
     this._connected = false;
+    this._ready = false;
     this._capabilities = null;
     this._configuration = null;
     this._storedConfiguration = null;
@@ -77,6 +78,10 @@ export class SyncClient extends EventEmitter {
 
   get connected() {
     return this._connected;
+  }
+
+  get ready() {
+    return this._ready;
   }
 
   get capabilities() {
@@ -124,10 +129,14 @@ export class SyncClient extends EventEmitter {
       this.emit('status-changed', 'offline', null);
   }
 
-  publish(item) {
+  publish(item, {guard = () => true} = {}) {
     if (item.sensitive)
       return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
-    return this._logger.run('publish', () => this._enqueueTransfer(() => this._publish(item)), {quiet: true});
+    const generation = this._generation;
+    return this._logger.run('publish', () => {
+      this._requireCurrent(generation);
+      return this._enqueueTransfer(() => this._publish(item, {guard}));
+    }, {quiet: true});
   }
 
   materialize(item, options = {}) {
@@ -221,6 +230,9 @@ export class SyncClient extends EventEmitter {
   async cancelTransfer(transferId) {
     if (!isUuid(transferId))
       throw new Error('Synchronization transfer ID is invalid');
+    const publication = this._transfers.get(transferId);
+    if (publication?.kind === 'publish' && !TERMINAL_TRANSFER_STATES.has(publication.state))
+      this.emit('publication-cancelled', publication.itemId);
     this._operations.get(transferId)?.cancel();
     if (this._connected && this._remoteTransferIds.has(transferId)) {
       try {
@@ -356,6 +368,7 @@ export class SyncClient extends EventEmitter {
       await this._poll(scope);
       if (!this._isCurrent(generation))
         return;
+      this._ready = true;
       this._setStatus(capabilities.status, capabilities, 'online');
       this._schedulePoll();
     } catch (error) {
@@ -381,10 +394,21 @@ export class SyncClient extends EventEmitter {
     return !this._destroyed && generation === this._generation;
   }
 
-  async _publish(item) {
+  _requireCurrent(generation) {
+    if (!this._isCurrent(generation))
+      throw new Gio.IOErrorEnum({
+        code: Gio.IOErrorEnum.CANCELLED,
+        message: 'Synchronization operation is no longer current',
+      });
+  }
+
+  async _publish(item, {guard = () => true} = {}) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
     this._requireConnection();
+    const generation = this._generation;
+    this._requirePublication(generation, guard);
+    const transport = this._transport;
     if (!isUuid(item.id))
       throw new Error('Item ID must be a UUID v4');
     const channelId = this._requireChannel();
@@ -432,10 +456,9 @@ export class SyncClient extends EventEmitter {
     let completedBytes = 0;
     const cancellable = this._newOperationCancellable();
     try {
-      const publication = validatePublication(
-        await this._transport.createItem(channelId, manifest),
-        item.id,
-      );
+      const rawPublication = await transport.createItem(channelId, manifest);
+      this._requirePublication(generation, guard);
+      const publication = validatePublication(rawPublication, item.id);
       transfer = publication.transfer;
       if (transfer.kind !== 'publish' || transfer.direction !== 'upload')
         throw new Error('Synchronization server returned an invalid publication transfer');
@@ -454,34 +477,44 @@ export class SyncClient extends EventEmitter {
       if (!TERMINAL_TRANSFER_STATES.has(transfer.state) && transfer.totalBytes !== totalBytes)
         throw new Error('Synchronization server returned an inconsistent upload size');
       this._recordTransfer(transfer, true);
+      this._requirePublication(generation, guard);
       if (transfer.state === 'completed')
         return {itemId: publication.itemId, transferId: transfer.transferId};
       if (TERMINAL_TRANSFER_STATES.has(transfer.state))
         throw new Error(transfer.errorMessage || `Transfer ${transfer.state}`);
       for (const [key, id, preview] of requested) {
+        this._requirePublication(generation, guard);
         const source = sources.get(key);
         const base = completedBytes;
-        const progress = bytes => this._recordTransfer({
-          ...transfer,
-          state: 'transferring',
-          completedBytes: Math.min(totalBytes, base + bytes),
-          totalBytes,
-          updatedAt: Date.now(),
-        });
+        const progress = bytes => {
+          if (this._isCurrent(generation)) {
+            this._recordTransfer({
+              ...transfer,
+              state: 'transferring',
+              completedBytes: Math.min(totalBytes, base + bytes),
+              totalBytes,
+              updatedAt: Date.now(),
+            });
+          }
+        };
         if (preview)
-          await this._transport.uploadPreview(publication.uploadId, id, source, progress, cancellable);
+          await transport.uploadPreview(publication.uploadId, id, source, progress, cancellable);
         else
-          await this._transport.uploadContent(publication.uploadId, id, source, progress, cancellable);
+          await transport.uploadContent(publication.uploadId, id, source, progress, cancellable);
+        this._requirePublication(generation, guard);
         completedBytes += source.size;
       }
-      const completed = validateTransfer(
-        (await this._transport.completeUpload(publication.uploadId)).transfer,
-        deviceId,
-      );
+      const rawCompleted = await transport.completeUpload(publication.uploadId);
+      this._requirePublication(generation, guard);
+      const completed = validateTransfer(rawCompleted.transfer, deviceId);
       this._observeRemoteTransfer(completed);
       this._recordTransfer({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)}, true);
+      this._requireCurrent(generation);
+      if (completed.state !== 'completed')
+        throw new SyncError('upload_failed', 'Publication was not confirmed complete by the server');
       return {itemId: publication.itemId, transferId: completed.transferId};
     } catch (error) {
+      this._requireCurrent(generation);
       if (transfer) {
         this._recordTransfer({
           ...transfer,
@@ -494,7 +527,7 @@ export class SyncClient extends EventEmitter {
       }
       throw error;
     } finally {
-      if (transfer)
+      if (transfer && this._operations.get(transfer.transferId) === cancellable)
         this._operations.delete(transfer.transferId);
       this._activeCancellables.delete(cancellable);
     }
@@ -694,8 +727,11 @@ export class SyncClient extends EventEmitter {
       if (this._isCurrent(generation))
         throw error;
     } finally {
-      if (this._isCurrent(generation))
+      if (this._isCurrent(generation)) {
         this._polling = false;
+        if (this._ready)
+          this.emit('poll-completed');
+      }
     }
   }
 
@@ -1033,8 +1069,7 @@ export class SyncClient extends EventEmitter {
   _enqueueTransfer(operation) {
     const generation = this._generation;
     const guardedOperation = () => {
-      if (this._destroyed || generation !== this._generation)
-        throw new Error('Synchronization operation is no longer current');
+      this._requireCurrent(generation);
       return operation();
     };
     const result = this._transferChain.then(guardedOperation, guardedOperation);
@@ -1051,6 +1086,15 @@ export class SyncClient extends EventEmitter {
   _requireConnection() {
     if (!this._connected || !this._transport)
       throw new SyncError('server_unavailable', 'Synchronization server is unavailable');
+  }
+
+  _requirePublication(generation, guard) {
+    this._requireCurrent(generation);
+    if (!guard())
+      throw new Gio.IOErrorEnum({
+        code: Gio.IOErrorEnum.CANCELLED,
+        message: 'Clipboard publication is no longer eligible',
+      });
   }
 
   _requireChannel() {
@@ -1096,6 +1140,7 @@ export class SyncClient extends EventEmitter {
     this._transport = null;
     this._cancellable = null;
     this._connected = false;
+    this._ready = false;
     this._capabilities = null;
     this._devices.clear();
     this._channels = [];

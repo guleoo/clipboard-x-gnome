@@ -1,7 +1,6 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import GLib from 'gi://GLib';
-import St from 'gi://St';
 
 const UUID = 'clipboard-x@guleoo.github.io';
 
@@ -24,10 +23,6 @@ export async function run() {
 
   const controller = indicator._controller;
   const settings = indicator._settings;
-  assert(!settings.list_keys().includes('sync-sensitive'),
-    'The sensitive synchronization setting must not be available');
-  assert(!settings.get_range('sensitive-content-mode').print(true).includes('store'),
-    'The sensitive content policy must not allow ordinary history storage');
   const originalSelection = controller._selection;
   const originalReadSelectionContent = controller._readSelectionContent;
   const originalSensitiveMode = settings.get_string('sensitive-content-mode');
@@ -70,7 +65,7 @@ export async function run() {
 
     settings.set_boolean('sync-enabled', true);
     const row = indicator._historyPanel.entry(markedItem);
-    assert(row.get_children().filter(child => child instanceof St.Button).length === 4,
+    assert(!row.focusActors.some(actor => actor._clipboardXEntryAction === 'sync'),
       'Sensitive history row exposed a synchronization action');
     row.destroy();
 

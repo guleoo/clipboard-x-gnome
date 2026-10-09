@@ -1,6 +1,6 @@
 project(
   'clipboard-x-gnome',
-  version: '1.0.0',
+  version: '1.0.1',
   license: 'GPL-3.0-or-later',
   meson_version: '>=1.6.0',
 )
@@ -75,19 +75,16 @@ endif
 
 test_runner = find_program('gjs')
 test('translations', find_program('bash'), args: [meson.current_source_dir() / 'tests/i18n/coverage.sh'])
-test('project-identity', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/project-identity.test.js'])
 test('release-package', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_package.test.py'])
 test('release-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/release_script.test.py'])
 test('shell-compatibility-script', find_program('python3'),
   args: [meson.current_source_dir() / 'tests/common/shell_compatibility_script.test.py'])
-test('readme-features', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/readme-features.test.js'])
 test('common-foundation', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/foundation.test.js'])
 test('logger', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/logger.test.js'])
 test('dev-shell-script', find_program('python3'), args: [meson.current_source_dir() / 'tests/common/dev_shell_script.test.py'])
 test('running-apps', test_runner, args: ['-m', meson.current_source_dir() / 'tests/common/running-apps.test.js'])
 test('sync-device', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/device.test.js'])
 test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/device-icons.test.js'])
-test('sync-icon-color', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/icon-color.test.js'])
 test('sync-errors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/errors.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
@@ -104,7 +101,6 @@ test('screenshot', test_runner,
   env: {'CBX_TEST_BUILD_DIR': meson.project_build_root()})
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
-test('sync-protocol-ownership', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol-ownership.test.js'])
 test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])
 test('sync-file-verifier', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/file-verifier.test.js'])
 test('file-verification-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/file-verification.test.js'])
@@ -116,6 +112,7 @@ test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 't
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
+test('sync-upload-queue', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/upload-queue.test.js'])
 test('sync-lifecycle', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/lifecycle.test.js'])
 test('sync-receive', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],

@@ -9,6 +9,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Releases
 
+- [1.0.1 release notes](release/v1.0.1-en.md): startup, synchronization, and history-saving fixes.
 - [1.0.0 release notes](release/v1.0.0-en.md): features included in the initial stable release.
 
 ## Protocol and synchronization

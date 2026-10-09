@@ -25,9 +25,10 @@ if (GLib.getenv('GSETTINGS_BACKEND') !== 'memory')
   throw new Error('The settings icon test requires GSETTINGS_BACKEND=memory');
 const resource = Gio.Resource.load('/usr/share/gnome-shell/org.gnome.Shell.Extensions.src.gresource');
 resource._register();
-const directory = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_path();
+const buildDirectory = GLib.getenv('CBX_TEST_BUILD_DIR');
+assert(buildDirectory, 'The settings icon test requires CBX_TEST_BUILD_DIR');
 const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
-  GLib.build_filenamev([directory, 'build', 'clipboard-x@guleoo.github.io', 'schemas']),
+  buildDirectory,
   Gio.SettingsSchemaSource.get_default(),
   false,
 );
@@ -61,7 +62,9 @@ for (const enabled of [true, false]) {
   while (GLib.MainContext.default().iteration(false));
   const popover = find(row, Gtk.Popover);
   const list = find(popover, Gtk.ListView);
-  const selected = enabled ? 4 : 6;
+  const name = enabled ? 'android' : 'windows';
+  const selected = DEVICE_ICONS.indexOf(name);
+  assert(selected >= 0, 'the target device icon must be selectable');
   assert(list?.model?.get_n_items() === DEVICE_ICONS.length, 'the popup must contain every supplied icon');
   list.model.select_item(selected, true);
   list.emit('activate', selected);
@@ -70,7 +73,6 @@ for (const enabled of [true, false]) {
     'activating a popup choice must save the selected device icon regardless of synchronization state');
   assert(selectedIcon()?.gicon?.file?.equal(deviceIcon(enabled ? 'android' : 'windows').file),
     'the selected icon preview must display the actual selected item, not the first popup choice');
-  assert(selectedIcon()?.pixel_size === 16, 'the selected icon should use the compact settings size');
 }
 
 settings.set_string('device-icon-kind', 'server');

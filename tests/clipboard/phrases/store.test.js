@@ -8,7 +8,7 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
-let limit = 200;
+let limit = 3;
 let newestFirst = true;
 const settings = {
   get_int: key => {
@@ -36,11 +36,11 @@ try {
   assert(await store.add('x'.repeat(MAX_PHRASE_LENGTH + 10))
       && [...store.all[0]].length === MAX_PHRASE_LENGTH,
     'phrases should respect the character limit');
-  for (let index = 0; index < limit + 10; index++)
+  for (let index = 0; index < limit + 1; index++)
     await store.add(`phrase-${index}`);
   assert(store.all.length === limit,
     'the local phrase collection should respect its item limit');
-  assert(await store.remove('phrase-199') && !store.all.includes('phrase-199'),
+  assert(await store.remove('phrase-3') && !store.all.includes('phrase-3'),
     'remove should delete a saved phrase');
   assert(!await store.remove('missing'), 'removing an unknown phrase should not report a change');
 

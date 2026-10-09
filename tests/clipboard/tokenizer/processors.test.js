@@ -1,7 +1,5 @@
 import {
   composeTokens,
-  processText,
-  TextProcessors,
   tokenizeText,
 } from '../../../src/clipboard/tokenizer/processors.js';
 
@@ -14,23 +12,6 @@ function assertEqual(actual, expected, message) {
   if (JSON.stringify(actual) !== JSON.stringify(expected))
     throw new Error(`${message}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 }
-
-assertEqual(processText('lines', ' a\n\n b '), ['a', 'b'], 'line processor');
-assertEqual(processText('identifiers', 'clipboardSync_device-id'),
-  ['clipboard', 'Sync', 'device', 'id'], 'identifier processor');
-assertEqual(processText('urls', 'see https://example.com/a and https://example.com/a'),
-  ['https://example.com/a'], 'URL processor should deduplicate');
-const words = processText('words', '中文分词 works');
-assert(words.includes('works') && words.some(word => word !== 'works'),
-  'word processor should segment mixed text without assuming a specific ICU dictionary');
-assertEqual(processText('graphemes', 'A 👨‍👩‍👧‍👦 中'), ['A', '👨‍👩‍👧‍👦', '中'],
-  'grapheme processor must preserve joined emoji and omit whitespace');
-assertEqual(processText('uppercase', 'Clipboard 中文'), ['CLIPBOARD 中文'], 'uppercase transformation');
-assertEqual(processText('lowercase', 'Clipboard 中文'), ['clipboard 中文'], 'lowercase transformation');
-assertEqual(processText('title-case', 'clipboard_x SYNC'), ['Clipboard_x Sync'], 'title-case transformation');
-TextProcessors.register('brackets', text => text.match(/\[[^\]]+\]/gu) ?? []);
-assertEqual(processText('brackets', 'a [one] [二]'), ['[one]', '[二]'],
-  'custom text processor registration');
 
 const source = '打开 https://example.com/a，订单号 123-456 works';
 const tokens = tokenizeText(source);

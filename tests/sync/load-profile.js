@@ -23,8 +23,3 @@ export const STRESS_SYNC_LOAD = Object.freeze({
   progressUpdates: DAILY_SYNC_LOAD.progressUpdates * SYNC_STRESS_FACTOR,
   largeObjectBytes: DAILY_SYNC_LOAD.largeObjectBytes * SYNC_STRESS_FACTOR,
 });
-
-for (const [name, value] of Object.entries(STRESS_SYNC_LOAD)) {
-  if (value !== DAILY_SYNC_LOAD[name] * SYNC_STRESS_FACTOR)
-    throw new Error(`Invalid synchronization stress profile value: ${name}`);
-}

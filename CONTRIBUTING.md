@@ -17,14 +17,58 @@ meson test -C build --print-errorlogs
 meson install -C build
 ```
 
-The project does not use ESLint. Before committing, run `node --check` for every JavaScript file and
-the complete Meson test suite. Changes involving extension lifecycle, panels, clipboard, color picker,
-or preferences must also run:
+The project does not use ESLint. Run `node --check` for changed JavaScript files and tests relevant to
+the behavior changed. Use the complete Meson suite for changes to shared interfaces or core logic.
+Add lasting regression tests for repeatable behavior, not document wording, CSS details, fixed icon
+names, or routine widget properties. Validate CI/release configuration with existing checks, temporary
+scripts, or isolated dry-runs instead of adding tests that lock its formatting.
+
+Shell interaction and preferences checks run separately from Meson, in an isolated test desktop:
 
 ```sh
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_<version>.zip tests/ui/preferences.smoke.js
+run_shell_check() (
+  test_runtime=$(mktemp -d /tmp/clipboard-x-check-XXXXXX)
+  trap 'rm -rf -- "$test_runtime"' EXIT
+  export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
+  unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
+  dbus-run-session -- gnome-shell-test-tool --headless \
+    --extension build/clipboard-x-gnome_<version>.zip "$1"
+)
+run_shell_check tests/ui/shell.smoke.js
+run_shell_check tests/ui/preferences.smoke.js
 ```
+
+For privacy boundaries, search cursor navigation / color-picker movement, or screenshot cancellation,
+run the corresponding focused check using the same helper:
+
+```sh
+run_shell_check tests/ui/privacy.smoke.js
+run_shell_check tests/ui/search-picker.smoke.js
+run_shell_check tests/ui/screenshot-cancel.smoke.js
+```
+
+The device-icon chooser has a separate GTK integration check. It requires a graphical display and
+a configured package build; it uses an in-memory settings backend, not the host extension's settings:
+
+```sh
+shell_libdir=/usr/lib/gnome-shell
+dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
+  GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/ui/settings-icon.integration.js
+```
+
+Set `shell_libdir` to the installed GNOME Shell library directory (typically
+`/usr/lib64/gnome-shell` on Fedora). Its private typelibs are needed by the preferences API.
+
+Dictionary throughput and memory measurements belong in the optional benchmark, not normal CI
+regressions. Supply a local dictionary file; the benchmark does not download one:
+
+```sh
+gjs -m tools/benchmark-tokenizer.js /path/to/dictionary.txt 1000
+```
+
+Report checks executed and their results, plus any checks skipped and why. Visual CSS changes can
+be checked through a build and manual inspection without new automated assertions.
 
 ### Nested desktop and interface language
 
@@ -62,8 +106,8 @@ meson compile -C build clipboard-x-update-po
 ```
 
 Then update every catalog listed in `po/LINGUAS` and run
-`bash tests/i18n/coverage.sh`. The check rejects missing or fuzzy translations and missing
-image-editor command placeholders. English is the source language and has no PO catalog.
+`bash tests/i18n/coverage.sh`. The check verifies extracted strings, gettext format validity, and
+missing or fuzzy translations. English is the source language and has no PO catalog.
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the
 `.zh-CN.md` counterpart for repository-root files, or a `{name}_CN.md` counterpart directly in `docs/`.
@@ -102,7 +146,7 @@ To build a local release ZIP without installing it into the desktop or changing 
 ```
 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
-`clipboard-x-gnome_1.0.0.zip`. The version comes from Meson. The script configures a dedicated package build,
+`clipboard-x-gnome_1.0.1.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
@@ -123,10 +167,10 @@ in the repository and in the GitHub Release, and remain tied to that version.
 
 For each version, summarize changes and fixes and end both
 language files with a **Full Changelog** comparison of the previous release tag and the new one.
-For example, for a future 1.1.0 release following 1.0.0:
+For example, for v1.0.1 following v1.0.0:
 
 ```md
-**Full Changelog**: [v1.0.0...v1.1.0](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.1.0)
+**Full Changelog**: [v1.0.0...v1.0.1](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.0.1)
 ```
 
 Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,

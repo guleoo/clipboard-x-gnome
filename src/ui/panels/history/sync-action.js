@@ -1,12 +1,17 @@
+import Gio from 'gi://Gio';
 import St from 'gi://St';
 
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {message as syncErrorMessage} from '../../../sync/errors.js';
 import {ProgressRing} from './progress-ring.js';
-import {isComplete} from './sync-state.js';
+import {isComplete, isPreviewPublished} from './sync-state.js';
 
 const ICON_SIZE = 16;
+const PREVIEW_SYNC_ICON = new Gio.FileIcon({
+  file: Gio.File.new_for_uri(import.meta.url).get_parent()
+    .resolve_relative_path('../../icons/sync/preview-synced-symbolic.svg'),
+});
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
 export class SyncAction {
@@ -112,7 +117,14 @@ export class SyncAction {
   _update(item, button) {
     const transfer = this._transfers.get(item.id);
     if (isComplete(item, transfer)) {
-      this._setIcon(button, 'object-select-symbolic');
+      if (isPreviewPublished(item, transfer)) {
+        button.set_child(new St.Icon({
+          gicon: PREVIEW_SYNC_ICON,
+          icon_size: button._clipboardXIconSize ?? ICON_SIZE,
+        }));
+      } else {
+        this._setIcon(button, 'object-select-symbolic');
+      }
       this._setHint(button, item.remote
         ? _('Original is available locally')
         : transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));

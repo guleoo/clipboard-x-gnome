@@ -22,7 +22,7 @@ Both jobs must succeed before publication. Only one runtime ZIP is uploaded.
 Run the narrow lifecycle check locally after building the package:
 
 ```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.0.zip
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.1.zip
 ```
 
 Optionally append `50` or `51` to require that exact installed Shell version. The script does not
@@ -32,6 +32,16 @@ It does not change the desktop's installed extension or its settings. A system b
 containers need their own bus and a suitable login-manager test environment. CI starts a container-only
 system bus and removes the empty `/run/systemd/seats` package-created marker so Shell uses its built-in
 no-logind mode. No host runtime directory is touched, and no mock plugin API is substituted.
+
+The test uses a self-contained static background and disables Shell animations, avoiding dependencies
+on distribution wallpaper packages. English `[compatibility]` messages distinguish automation
+initialization, Shell startup completion, test entry and each lifecycle stage. A 30-second watchdog
+covers startup after the automation module initializes; important test waits have a 15-second deadline.
+Timeouts include the current stage and Shell/extension readiness. The outer 120-second limit remains
+in place for hangs before the module can initialize or while the main loop is blocked.
+Enable/disable requests are asynchronous: the test waits for an inactive extension with no indicator
+before enabling again, then requires an active extension and a new indicator. This prevents queued
+settings changes from coalescing into a no-op and mistaking the previous instance for a restart.
 
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
 tokenizer rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,

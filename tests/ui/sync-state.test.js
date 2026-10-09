@@ -1,4 +1,4 @@
-import {isComplete} from '../../src/ui/panels/history/sync-state.js';
+import {isComplete, isPreviewPublished} from '../../src/ui/panels/history/sync-state.js';
 
 function assert(value, message) {
   if (!value)
@@ -19,3 +19,24 @@ assert(!isComplete({...received, representations: [...received.representations, 
 assert(!isComplete({remote: false}), 'Local content must not imply successful publication');
 assert(isComplete({remote: false}, {state: 'completed'}), 'Confirmed local publication is complete');
 assert(!isComplete({remote: false}, {state: 'transferring'}), 'Local publication progress is not completion');
+
+const publication = {kind: 'publish', direction: 'upload', state: 'completed'};
+const local = {remote: false, representations: [{delivery: 'eager'}]};
+assert(!isPreviewPublished(local, publication), 'Eager publication must keep the full completion icon');
+for (const mimeType of ['text/plain;charset=utf-8', 'image/png']) {
+  const lazy = {...local, representations: [{mimeType, delivery: 'on-demand'}]};
+  assert(isPreviewPublished(lazy, publication), `${mimeType} lazy publication must use the preview icon`);
+  for (const state of ['transferring', 'failed', 'cancelled', 'expired']) {
+    assert(!isPreviewPublished(lazy, {...publication, state}),
+      `${state} publication must not look like a synchronized preview`);
+  }
+  assert(!isPreviewPublished(lazy), 'Unpublished lazy content must not show a completion icon');
+  assert(!isPreviewPublished(lazy, {...publication, kind: 'content'}),
+    'An original upload completion must not be mistaken for preview publication');
+  assert(!isPreviewPublished({...lazy, remote: true}, publication),
+    'Remote previews must keep their download action');
+  assert(!isPreviewPublished({...lazy, remote: true, representations: [{...lazy.representations[0], path: '/managed/original'}]}, publication),
+    'Downloaded originals must keep the full completion icon even with on-demand delivery');
+}
+assert(isPreviewPublished({...local, representations: [{delivery: 'eager'}, {delivery: 'on-demand'}]}, publication),
+  'A publication with any lazy representation must not imply that every original was uploaded');

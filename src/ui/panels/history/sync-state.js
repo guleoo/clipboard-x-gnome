@@ -5,3 +5,9 @@ export function isComplete(item, transfer = null) {
   return item.representations.length > 0
     && item.representations.every(value => value.bytes || value.path);
 }
+
+export function isPreviewPublished(item, transfer = null) {
+  return !item.remote && transfer?.state === 'completed'
+    && transfer.kind === 'publish'
+    && item.representations.some(value => value.delivery === 'on-demand');
+}

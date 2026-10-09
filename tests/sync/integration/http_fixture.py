@@ -83,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
         checksum = hashlib.sha256()
         received = 0
         try:
-            with open(self.server.content_path, "wb") as output:
+            with self.server.content_lock, open(self.server.content_path, "wb") as output:
                 while received < size:
                     chunk = self.rfile.read(min(CHUNK_BYTES, size - received))
                     if not chunk:
@@ -102,6 +102,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.authorized():
             return
+        with self.server.content_lock:
+            self.stream_content()
+
+    def stream_content(self):
         size = os.path.getsize(self.server.content_path)
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
@@ -144,6 +148,8 @@ with tempfile.TemporaryDirectory(prefix="cbx-http-fixture-") as directory:
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.daemon_threads = True
     server.content_path = os.path.join(directory, "content.bin")
+    # All content routes share one object; cancelled writers must finish first.
+    server.content_lock = threading.Lock()
     server.sampler = None
     worker = threading.Thread(target=server.serve_forever, daemon=True)
     worker.start()

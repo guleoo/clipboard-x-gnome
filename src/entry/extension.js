@@ -16,6 +16,8 @@ import {formatColor} from '../color-picker/color.js';
 import {ColorPicker} from '../color-picker/picker.js';
 import {launchEditor} from '../screenshot/editor-launcher.js';
 import {SyncClient} from '../sync/client.js';
+import {SyncConfigurationStore} from '../sync/configuration-store.js';
+import {UploadQueue} from '../sync/upload-queue.js';
 import {RunningAppsBridge} from './running-apps.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
@@ -37,10 +39,30 @@ export default class ClipboardXExtension extends Extension {
     logger.info('enable');
     this._settings = this.getSettings();
     this._controller = new ClipboardController(this._settings);
+    const controller = this._controller;
+    const settings = this._settings;
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
-      sourceItem: itemId => this._controller.items.find(item => item.id === itemId) ?? null,
+      sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
     });
+    const sync = this._sync;
+    const configurationStore = new SyncConfigurationStore();
+    const uploadQueue = new UploadQueue(settings, {
+      afterShutdown: this._shutdown,
+      configuration: () => configurationStore.load(),
+      current: () => sync.configuration,
+      ready: () => sync.ready,
+      source: itemId => controller.items.find(item => item.id === itemId) ?? null,
+      sourceReady: () => !controller.loading && !controller.error,
+      prepare: () => controller.persist(),
+      publish: (item, options) => sync.publish(item, options),
+      onError: error => {
+        if (this._controller === controller)
+          this._reportError(error);
+      },
+    });
+    this._uploadQueue = uploadQueue;
+    let syncStarted = false;
     this._terminalInput = new TerminalInput({
       speed: () => this._settings.get_string('simulated-input-speed'),
       onCancelled: () => Main.notify(
@@ -90,7 +112,13 @@ export default class ClipboardXExtension extends Extension {
     this._settingsSignals.push(
       this._settings.connect('changed::show-indicator', () => this._updateIndicatorVisibility()),
       ...SHORTCUT_KEYS.map(key => this._settings.connect(`changed::${key}`, () => this._bindShortcuts())),
-      this._settings.connect('changed::sync-enabled', () => this._sync.restart().catch(error => this._reportError(error))),
+      this._settings.connect('changed::sync-enabled', () => {
+        if (syncStarted)
+          sync.restart().catch(error => this._reportError(error));
+      }),
+      ...['sync-send-mode', 'sync-favorites-only'].map(key => settings.connect(
+        `changed::${key}`, () => this._drainUploads(uploadQueue),
+      )),
     );
     this._updateIndicatorVisibility();
     this._bindShortcuts();
@@ -103,6 +131,9 @@ export default class ClipboardXExtension extends Extension {
       if (favorite && this._settings.get_boolean('sync-favorites-only'))
         this._publishAutomatically(item);
     });
+    this._queuePruneSignal = controller.connect('changed', () => {
+      uploadQueue.prune().catch(error => logger.error('prune-uploads', error));
+    });
 
     this._syncItemSignal = this._sync.connect('item-available', (_sync, itemId) => {
       this._receiveRemoteItem(itemId).catch(error => this._reportError(error));
@@ -112,6 +143,12 @@ export default class ClipboardXExtension extends Extension {
     });
     this._syncStatusSignal = this._sync.connect('status-changed', (_sync, status, capabilities) => {
       this._indicator?.setSyncStatus(status, capabilities);
+      this._drainUploads(uploadQueue);
+    });
+    this._queuePollSignal = sync.connect('poll-completed', () => this._drainUploads(uploadQueue));
+    this._queueCancelSignal = sync.connect('publication-cancelled', (_sync, itemId) => {
+      uploadQueue.remove(itemId, {currentOnly: true})
+        .catch(error => logger.error('cancel-upload', error));
     });
     this._transferSignal = this._sync.connect(
       'transfer-changed',
@@ -120,10 +157,18 @@ export default class ClipboardXExtension extends Extension {
       },
     );
 
-    logger.run('initialize-clipboard', () => this._controller.start())
-      .catch(error => this._reportError(error));
     this._indicator.setSyncStatus('offline');
-    this._sync.start().catch(error => this._reportError(error));
+    this._startup = logger.run('initialize-clipboard', () => controller.start({afterShutdown: this._shutdown}))
+      .then(() => {
+        if (this._controller !== controller)
+          return;
+        syncStarted = true;
+        return sync.start();
+      })
+      .catch(error => {
+        if (this._controller === controller)
+          this._reportError(error);
+      });
   }
 
   disable() {
@@ -147,12 +192,21 @@ export default class ClipboardXExtension extends Extension {
       this._sync.disconnect(this._syncStatusSignal);
     if (this._transferSignal)
       this._sync.disconnect(this._transferSignal);
+    if (this._queuePruneSignal)
+      this._controller.disconnect(this._queuePruneSignal);
+    if (this._queuePollSignal)
+      this._sync.disconnect(this._queuePollSignal);
+    if (this._queueCancelSignal)
+      this._sync.disconnect(this._queueCancelSignal);
     this._itemAddedSignal = 0;
     this._syncItemSignal = 0;
     this._favoriteSignal = 0;
     this._syncRemovedSignal = 0;
     this._syncStatusSignal = 0;
     this._transferSignal = 0;
+    this._queuePruneSignal = 0;
+    this._queuePollSignal = 0;
+    this._queueCancelSignal = 0;
 
     for (const signal of this._settingsSignals)
       this._settings.disconnect(signal);
@@ -160,10 +214,15 @@ export default class ClipboardXExtension extends Extension {
 
     this._indicator?.destroy();
     this._terminalInput?.destroy();
+    const queueShutdown = this._uploadQueue?.destroy();
     this._sync?.destroy();
-    this._controller?.destroy();
+    this._shutdown = Promise.all([
+      this._controller?.destroy().catch(error => logger.error('save-on-disable', error)),
+      queueShutdown?.catch(error => logger.error('save-uploads-on-disable', error)),
+    ]);
     this._indicator = null;
     this._sync = null;
+    this._uploadQueue = null;
     this._controller = null;
     this._portal = null;
     this._terminalInput = null;
@@ -172,13 +231,19 @@ export default class ClipboardXExtension extends Extension {
     this._settings = null;
   }
 
-  async _publish(item) {
+  async _publish(item, {automatic = false} = {}) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
+    const controller = this._controller;
+    const uploadQueue = this._uploadQueue;
+    // Save the intent before waiting for history or network initialization.
+    await uploadQueue.enqueue(item, {automatic});
+    await this._startup;
+    if (this._controller !== controller)
+      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard X was disabled'});
     if (!this._settings.get_boolean('sync-enabled'))
       throw new SyncError('disabled', 'Synchronization is disabled');
-    await this._controller.persist();
-    return this._sync.publish(item);
+    return uploadQueue.flush();
   }
 
   _publishAutomatically(item) {
@@ -187,7 +252,16 @@ export default class ClipboardXExtension extends Extension {
         || item.sensitive
         || (this._settings.get_boolean('sync-favorites-only') && !item.favorite))
       return;
-    this._publish(item).catch(error => this._reportError(error));
+    this._publish(item, {automatic: true}).catch(error => this._reportError(error));
+  }
+
+  _drainUploads(uploadQueue) {
+    if (this._uploadQueue !== uploadQueue)
+      return;
+    uploadQueue.flush().catch(error => {
+      if (this._uploadQueue === uploadQueue)
+        this._reportError(error);
+    });
   }
 
   async _takeScreenshot() {

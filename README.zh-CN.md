@@ -71,10 +71,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome_1.0.0.zip`：
+安装生成的 `build/clipboard-x-gnome_1.0.1.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.0.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.1.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -207,6 +207,11 @@ flatpak run be.alexandervanhee.gradia %u
 各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
 
+待上传任务按服务器分别持久化，并绑定提交时的 Channel 和 DeviceId。上传中断或切换服务器
+不会丢弃任务；重试前会检查本地条目，并请求服务器复用或确认同一发布，已经完成的内容不再
+重复上传。已删除的本地条目和隐私内容不会上传。关闭同步只暂停已有任务；关闭期间复制的
+条目不加入队列，重新开启后也不会自动补传。
+
 > [!NOTE]
 > 当前在扩展中删除条目，只会删除本设备的本地历史副本，不会请求从整个 Channel 删除。
 > 服务端发出的删除事件则会同步到客户端。
@@ -221,6 +226,7 @@ flatpak run be.alexandervanhee.gradia %u
 | 词库 | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | 同步连接信息 | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | 同步 cursor | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x/sync-queues/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读
 [安全与隐私说明](SECURITY.zh-CN.md)。
@@ -251,8 +257,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.1.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.1.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -262,7 +268,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.0.zip t
 ## 文档
 
 - [中文文档索引](docs/README_CN.md)
-- [1.0.0 发布说明](docs/release/v1.0.0-cn.md)
+- [1.0.1 发布说明](docs/release/v1.0.1-cn.md)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/ui-architecture_CN.md)
 - [同步性能与压力测试](docs/sync-performance-testing_CN.md)

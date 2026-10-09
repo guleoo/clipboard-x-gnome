@@ -1,3 +1,5 @@
+import Gio from 'gi://Gio';
+
 import {SyncClient} from '../../src/sync/client.js';
 
 const deviceId = '11111111-1111-4111-8111-111111111111';
@@ -156,6 +158,48 @@ class Transport {
   abort() { this.aborted = true; }
 }
 
+class PublicationTransport extends Transport {
+  createItem(_channelId, manifest) {
+    const previewIds = manifest.previews.map(value => value.id);
+    const eager = manifest.contents.filter(value => value.delivery === 'eager');
+    const totalBytes = [...manifest.previews, ...eager].reduce((sum, value) => sum + value.size, 0);
+    this.publication = {
+      itemId: manifest.id, uploadId: itemId, previewIds,
+      contentIds: eager.map(value => value.id),
+      transfer: {...transfer('queued'), totalBytes},
+    };
+    return this.reply('createItem', this.publication);
+  }
+
+  uploadPreview(_upload, _preview, _source, onProgress, cancellable) {
+    this.upload = {onProgress, cancellable};
+    return this.reply('uploadPreview', {});
+  }
+
+  completeUpload() {
+    return this.reply('completeUpload', this.completedPublication());
+  }
+
+  completedPublication() {
+    return {transfer: {...this.publication.transfer, state: 'completed',
+      completedBytes: this.publication.transfer.totalBytes}};
+  }
+}
+
+const publicationItem = {
+  id: itemId, createdAt: 1, sensitive: false,
+  representations: [{id: 'content', mimeType: 'text/plain', size: 4,
+    sha256: 'a'.repeat(64), delivery: 'eager', path: '/unused-publication-test-double'}],
+  preview: {mimeType: 'text/plain', text: 'test', derivedFrom: 'content', truncated: false},
+};
+const cancelled = () => new Gio.IOErrorEnum({
+  code: Gio.IOErrorEnum.CANCELLED, message: 'Operation was cancelled',
+});
+const assertCancelled = result => assert(
+  result.error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
+  'A superseded publication must reject with cancellation, not succeed or return an unrelated error',
+);
+
 const logger = {
   run(_operation, callback) { return Promise.resolve().then(() => callback({step: (_phase, action) => action()})); },
   info() {},
@@ -179,7 +223,8 @@ function fixture(transports = [new Transport('current')], options = {}) {
     ...options,
   });
   for (const event of ['status-changed', 'status-details-changed', 'configuration-changed',
-    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed']) {
+    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed',
+    'poll-completed']) {
     client.connect(event, (_client, ...args) => events.push({event, args: copy(args)}));
   }
   return {client, settings, store, created, events};
@@ -187,7 +232,7 @@ function fixture(transports = [new Transport('current')], options = {}) {
 
 function snapshot(f) {
   return JSON.stringify({
-    connected: f.client.connected, capabilities: f.client.capabilities,
+    connected: f.client.connected, ready: f.client.ready, capabilities: f.client.capabilities,
     configuration: f.client.configuration, status: f.client.status,
     devices: f.client.devices, channels: f.client.channels,
     transfer: f.client.getTransferForItem(itemId), events: f.events,
@@ -213,6 +258,74 @@ async function test(name, action) {
     failures.push(`${name}: ${error.message}`);
     print(`FAIL ${name}: ${error.message}`);
   }
+}
+
+await test('upload replay waits for the complete initialization pipeline', async () => {
+  const transport = new Transport('current');
+  const gate = transport.hold('work');
+  const f = fixture([transport]);
+  const pending = observe(f.client.start());
+  try {
+    await bounded(gate.entered.promise);
+    assert(f.client.connected && !f.client.ready,
+      'authentication alone must not expose a ready upload destination');
+    assert(!f.events.some(value => value.event === 'poll-completed'),
+      'an incomplete startup must not wake the durable upload queue');
+    gate.resolve({cursor: 'initial', hasMore: false, work: []});
+    await bounded(pending);
+    assert(f.client.ready, 'uploads may resume only after initial changes and source work finish');
+    await f.client._poll();
+    assert(f.events.filter(value => value.event === 'poll-completed').length === 1,
+      'a subsequent poll must wake the queue for retry');
+    f.client.destroy();
+    assert(!f.client.ready, 'destroy must immediately prevent replay');
+  } finally {
+    f.client.destroy();
+    gate.resolve({cursor: 'initial', hasMore: false, work: []});
+    await pending;
+  }
+});
+
+for (const phase of ['transfer-chain', 'publication-manifest']) {
+  await test(`publication rechecks source eligibility after waiting for ${phase}`, async () => {
+    const transport = new PublicationTransport('current');
+    const f = fixture([transport]);
+    const release = deferred();
+    const entered = deferred();
+    let eligible = true;
+    let blocker;
+    let pending;
+    let manifestGate;
+    try {
+      f.settings.values.set('sync-text', true);
+      await bounded(f.client.start());
+      if (phase === 'transfer-chain') {
+        blocker = observe(f.client._enqueueTransfer(() => {
+          entered.resolve();
+          return release.promise;
+        }));
+        await bounded(entered.promise);
+      } else {
+        manifestGate = transport.hold('createItem');
+      }
+      pending = observe(f.client.publish(publicationItem, {guard: () => eligible}));
+      if (manifestGate)
+        await bounded(manifestGate.entered.promise);
+      eligible = false;
+      release.resolve();
+      manifestGate?.resolve(copy(transport.publication));
+      assertCancelled(await bounded(pending));
+      assert(!transport.calls.some(method => ['uploadPreview', 'uploadContent', 'completeUpload'].includes(method)),
+        'Invalidated source content must never be sent or completed after a wait');
+      if (phase === 'transfer-chain')
+        assert(!transport.calls.includes('createItem'), 'An invalidated queued source must not publish a manifest');
+    } finally {
+      f.client.destroy();
+      release.resolve();
+      manifestGate?.resolve({});
+      await Promise.all([...(pending ? [pending] : []), ...(blocker ? [blocker] : [])]);
+    }
+  });
 }
 
 await test('successive restarts discard delayed configuration loads', async () => {
@@ -484,6 +597,139 @@ await test('scheduled poll failure cannot mark the replacement connection as fai
   } finally {
     f.client.destroy();
     gate?.resolve(copy(replies.changes));
+  }
+});
+
+for (const method of ['createItem', 'uploadPreview', 'uploadContent', 'completeUpload']) {
+  for (const action of ['restart', 'destroy']) {
+    for (const lateFailure of [false, true]) {
+      await test(`public publish ignores late ${method} ${lateFailure ? 'cancellation' : 'reply'} after ${action}`, async () => {
+        const stale = new PublicationTransport('stale');
+        const current = new PublicationTransport('current');
+        const gate = stale.hold(method);
+        const f = fixture([stale, current]);
+        let pending;
+        try {
+          f.settings.values.set('sync-text', true);
+          await bounded(f.client.start());
+          pending = observe(f.client.publish(publicationItem));
+          await bounded(gate.entered.promise);
+          await bounded(f.client[action]());
+          const expected = snapshot(f);
+          const staleCalls = stale.calls.length;
+          const currentCalls = current.calls.length;
+          if (stale.upload) {
+            assert(stale.upload.cancellable.is_cancelled(), 'Reset must cancel the old publication upload');
+            stale.upload.onProgress(4);
+            assert(snapshot(f) === expected, 'Old publication progress must not change current state');
+          }
+          if (lateFailure)
+            gate.reject(cancelled());
+          else
+            gate.resolve(method === 'createItem' ? copy(stale.publication)
+              : method === 'completeUpload' ? stale.completedPublication() : {});
+          assertCancelled(await bounded(pending));
+          stale.upload?.onProgress(4);
+          assert(snapshot(f) === expected, 'Old publication reply, error or cleanup must not restore old transfers or events');
+          assert(stale.calls.length === staleCalls && current.calls.length === currentCalls,
+            'Old publication must not continue on its old or replacement transport');
+          if (action === 'restart')
+            assert(!current.aborted && !f.created[1].cancellable.is_cancelled(),
+              'Old publication cleanup must not close the replacement transport');
+        } finally {
+          f.client.destroy();
+          gate.resolve({});
+          if (pending)
+            await pending;
+        }
+      });
+    }
+  }
+}
+
+for (const lateFailure of [false, true]) {
+  await test(`old public publish ${lateFailure ? 'cancellation' : 'reply'} preserves a replacement operation with the same ID`, async () => {
+    const stale = new PublicationTransport('stale');
+    const current = new PublicationTransport('current');
+    const oldGate = stale.hold('uploadContent');
+    const newGate = current.hold('uploadContent');
+    const f = fixture([stale, current]);
+    let old;
+    let replacement;
+    try {
+      f.settings.values.set('sync-text', true);
+      await bounded(f.client.start());
+      old = observe(f.client.publish(publicationItem));
+      await bounded(oldGate.entered.promise);
+      await bounded(f.client.restart());
+      replacement = observe(f.client.publish(publicationItem));
+      await bounded(newGate.entered.promise);
+      const expected = snapshot(f);
+      if (lateFailure)
+        oldGate.reject(cancelled());
+      else
+        oldGate.resolve({});
+      assertCancelled(await bounded(old));
+      assert(snapshot(f) === expected, 'Old publication cleanup must not overwrite the replacement transfer');
+      assert(!current.upload.cancellable.is_cancelled(), 'Old cleanup must not cancel the replacement upload');
+      await bounded(f.client.cancelTransfer(transferId));
+      assert(current.upload.cancellable.is_cancelled(),
+        'Replacement operation must remain publicly cancellable after old publication cleanup');
+      assert(!current.calls.includes('completeUpload'), 'Old publication must not complete the replacement upload');
+    } finally {
+      f.client.destroy();
+      oldGate.resolve({});
+      newGate.reject(cancelled());
+      await Promise.all([...(old ? [old] : []), ...(replacement ? [replacement] : [])]);
+    }
+  });
+}
+
+await test('queued public publications cannot execute on a replacement connection', async () => {
+  const stale = new PublicationTransport('stale');
+  const current = new PublicationTransport('current');
+  const gate = stale.hold('uploadContent');
+  const f = fixture([stale, current]);
+  let active;
+  let queued;
+  try {
+    f.settings.values.set('sync-text', true);
+    await bounded(f.client.start());
+    active = observe(f.client.publish(publicationItem));
+    await bounded(gate.entered.promise);
+    queued = observe(f.client.publish(publicationItem));
+    // Let the logger enqueue the second publication behind the held upload.
+    await Promise.resolve();
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    gate.reject(cancelled());
+    assertCancelled(await bounded(active));
+    assertCancelled(await bounded(queued));
+    assert(snapshot(f) === expected, 'Old queued publications must not change replacement state');
+    assert(stale.calls.filter(value => value === 'createItem').length === 1
+      && !current.calls.includes('createItem'), 'Only the original active publication may reach a transport');
+  } finally {
+    f.client.destroy();
+    gate.resolve({});
+    await Promise.all([...(active ? [active] : []), ...(queued ? [queued] : [])]);
+  }
+});
+
+await test('public publication superseded before its logger callback is cancelled', async () => {
+  const current = new PublicationTransport('current');
+  const f = fixture([current]);
+  try {
+    f.settings.values.set('sync-text', true);
+    await bounded(f.client.start());
+    const pending = observe(f.client.publish(publicationItem));
+    f.settings.values.set('sync-enabled', false);
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    assertCancelled(await bounded(pending));
+    assert(snapshot(f) === expected && !current.calls.includes('createItem'),
+      'A deferred publish callback must not enter the queue after its generation is replaced');
+  } finally {
+    f.client.destroy();
   }
 });
 
