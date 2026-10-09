@@ -1233,8 +1233,6 @@ msgstr "Schermafdruk maken"
 #~ msgid "Other"
 #~ msgstr "Overige"
 
-#~ msgid "Open"
-#~ msgstr "Openen"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1275,3 +1273,21 @@ msgstr "Drempel voor volledige afbeeldingsoverdracht"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Geldt voor verzenden en ontvangen. Grotere inhoud wordt alleen gedownload wanneer nodig."
+
+msgid "About"
+msgstr "Over"
+
+msgid "Version"
+msgstr "Versie"
+
+msgid "Project website"
+msgstr "Projectwebsite"
+
+msgid "Report an issue"
+msgstr "Probleem melden"
+
+msgid "License"
+msgstr "Licentie"
+
+msgid "Open"
+msgstr "Openen"

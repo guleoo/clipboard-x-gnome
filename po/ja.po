@@ -1214,8 +1214,6 @@ msgstr "スクリーンショットを撮る"
 #~ msgid "Other"
 #~ msgstr "その他"
 
-#~ msgid "Open"
-#~ msgstr "開く"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1256,3 +1254,21 @@ msgstr "画像の全量転送しきい値"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "送信と受信の両方に適用されます。しきい値を超える内容は、必要なときにのみダウンロードされます。"
+
+msgid "About"
+msgstr "概要"
+
+msgid "Version"
+msgstr "バージョン"
+
+msgid "Project website"
+msgstr "プロジェクトのウェブサイト"
+
+msgid "Report an issue"
+msgstr "問題を報告"
+
+msgid "License"
+msgstr "ライセンス"
+
+msgid "Open"
+msgstr "開く"

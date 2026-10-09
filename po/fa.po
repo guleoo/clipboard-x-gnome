@@ -1215,8 +1215,6 @@ msgstr "گرفتن نماگرفت"
 #~ msgid "Other"
 #~ msgstr "سایر"
 
-#~ msgid "Open"
-#~ msgstr "گشودن"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1257,3 +1255,21 @@ msgstr "آستانهٔ انتقال کامل تصویر"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "برای ارسال و دریافت اعمال می‌شود. محتوای بزرگ‌تر فقط در صورت نیاز بارگیری می‌شود."
+
+msgid "About"
+msgstr "درباره"
+
+msgid "Version"
+msgstr "نسخه"
+
+msgid "Project website"
+msgstr "وبگاه پروژه"
+
+msgid "Report an issue"
+msgstr "گزارش مشکل"
+
+msgid "License"
+msgstr "مجوز"
+
+msgid "Open"
+msgstr "باز کردن"

@@ -1238,8 +1238,6 @@ msgstr "Acquisisci schermata"
 #~ msgid "Other"
 #~ msgstr "Altro"
 
-#~ msgid "Open"
-#~ msgstr "Apri"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1280,3 +1278,21 @@ msgstr "Soglia di trasferimento completo delle immagini"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Si applica all’invio e alla ricezione. I contenuti più grandi vengono scaricati solo quando necessario."
+
+msgid "About"
+msgstr "Informazioni"
+
+msgid "Version"
+msgstr "Versione"
+
+msgid "Project website"
+msgstr "Sito web del progetto"
+
+msgid "Report an issue"
+msgstr "Segnala un problema"
+
+msgid "License"
+msgstr "Licenza"
+
+msgid "Open"
+msgstr "Apri"

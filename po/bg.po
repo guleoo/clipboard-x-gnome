@@ -1234,8 +1234,6 @@ msgstr "Заснемане на екрана"
 #~ msgid "Other"
 #~ msgstr "Други"
 
-#~ msgid "Open"
-#~ msgstr "Отваряне"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1276,3 +1274,21 @@ msgstr "Праг за пълно прехвърляне на изображен�
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Прилага се при изпращане и получаване. По-голямото съдържание се изтегля само при нужда."
+
+msgid "About"
+msgstr "Относно"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Project website"
+msgstr "Уебсайт на проекта"
+
+msgid "Report an issue"
+msgstr "Докладване на проблем"
+
+msgid "License"
+msgstr "Лиценз"
+
+msgid "Open"
+msgstr "Отваряне"

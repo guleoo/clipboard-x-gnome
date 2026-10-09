@@ -1222,8 +1222,6 @@ msgstr "Urobiť snímku obrazovky"
 #~ msgid "Other"
 #~ msgstr "Iný"
 
-#~ msgid "Open"
-#~ msgstr "Otvoriť"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1264,3 +1262,21 @@ msgstr "Prah pre úplný prenos obrázkov"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Platí pre odosielanie aj prijímanie. Väčší obsah sa sťahuje iba v prípade potreby."
+
+msgid "About"
+msgstr "O rozšírení"
+
+msgid "Version"
+msgstr "Verzia"
+
+msgid "Project website"
+msgstr "Webová stránka projektu"
+
+msgid "Report an issue"
+msgstr "Nahlásiť problém"
+
+msgid "License"
+msgstr "Licencia"
+
+msgid "Open"
+msgstr "Otvoriť"

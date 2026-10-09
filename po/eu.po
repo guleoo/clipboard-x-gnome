@@ -1227,8 +1227,6 @@ msgstr "Egin pantaila-argazkia"
 #~ msgid "Other"
 #~ msgstr "Bestelakoa"
 
-#~ msgid "Open"
-#~ msgstr "Ireki"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1269,3 +1267,21 @@ msgstr "Irudien transferentzia osoaren atalasea"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Bidalketari eta harrerari aplikatzen zaie. Eduki handiagoa behar denean bakarrik deskargatzen da."
+
+msgid "About"
+msgstr "Honi buruz"
+
+msgid "Version"
+msgstr "Bertsioa"
+
+msgid "Project website"
+msgstr "Proiektuaren webgunea"
+
+msgid "Report an issue"
+msgstr "Eman arazo baten berri"
+
+msgid "License"
+msgstr "Lizentzia"
+
+msgid "Open"
+msgstr "Ireki"

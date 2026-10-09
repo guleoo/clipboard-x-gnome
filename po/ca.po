@@ -1237,8 +1237,6 @@ msgstr "Fes una captura de pantalla"
 #~ msgid "Other"
 #~ msgstr "Altres"
 
-#~ msgid "Open"
-#~ msgstr "Obre"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1279,3 +1277,21 @@ msgstr "Llindar de transferència completa d’imatges"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "S’aplica a l’enviament i a la recepció. El contingut més gran només es baixa quan cal."
+
+msgid "About"
+msgstr "Quant a"
+
+msgid "Version"
+msgstr "Versió"
+
+msgid "Project website"
+msgstr "Lloc web del projecte"
+
+msgid "Report an issue"
+msgstr "Informeu d’un problema"
+
+msgid "License"
+msgstr "Llicència"
+
+msgid "Open"
+msgstr "Obre"

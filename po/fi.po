@@ -1228,8 +1228,6 @@ msgstr "Ota kuvankaappaus"
 #~ msgid "Other"
 #~ msgstr "Muu"
 
-#~ msgid "Open"
-#~ msgstr "Avaa"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1270,3 +1268,21 @@ msgstr "Kuvien täydellisen siirron kokoraja"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Koskee lähettämistä ja vastaanottamista. Suurempi sisältö ladataan vain tarvittaessa."
+
+msgid "About"
+msgstr "Tietoja"
+
+msgid "Version"
+msgstr "Versio"
+
+msgid "Project website"
+msgstr "Projektin verkkosivusto"
+
+msgid "Report an issue"
+msgstr "Ilmoita ongelmasta"
+
+msgid "License"
+msgstr "Lisenssi"
+
+msgid "Open"
+msgstr "Avaa"

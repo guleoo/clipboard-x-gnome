@@ -1211,8 +1211,6 @@ msgstr "ತೆರೆಚಿತ್ರ ತೆಗೆದುಕೊಳ್ಳಿ"
 #~ msgid "Other"
 #~ msgstr "ಇತರೆ"
 
-#~ msgid "Open"
-#~ msgstr "ತೆರೆ"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1253,3 +1251,21 @@ msgstr "ಚಿತ್ರಗಳ ಪೂರ್ಣ ವರ್ಗಾವಣೆಯ ಮಿ
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "ಕಳುಹಿಸುವಿಕೆ ಮತ್ತು ಸ್ವೀಕರಿಸುವಿಕೆ ಎರಡಕ್ಕೂ ಅನ್ವಯಿಸುತ್ತದೆ. ದೊಡ್ಡ ವಿಷಯವನ್ನು ಅಗತ್ಯವಿದ್ದಾಗ ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
+
+msgid "About"
+msgstr "ಕುರಿತು"
+
+msgid "Version"
+msgstr "ಆವೃತ್ತಿ"
+
+msgid "Project website"
+msgstr "ಯೋಜನೆಯ ಜಾಲತಾಣ"
+
+msgid "Report an issue"
+msgstr "ಸಮಸ್ಯೆಯನ್ನು ವರದಿ ಮಾಡಿ"
+
+msgid "License"
+msgstr "ಪರವಾನಗಿ"
+
+msgid "Open"
+msgstr "ತೆರೆಯಿರಿ"

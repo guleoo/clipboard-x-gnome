@@ -16,6 +16,7 @@ import {create as createFileVerificationRow} from './file-verification.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
+import {create as createAboutPage} from './about.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -37,6 +38,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
       ['shortcuts', 'input-keyboard-symbolic', this._shortcutsPage(settings)],
+      ['about', 'help-about-symbolic', createAboutPage(this.metadata)],
     ];
     const stack = new Gtk.Stack({
       hexpand: true,

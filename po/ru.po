@@ -1226,8 +1226,6 @@ msgstr "Сделать снимок экрана"
 #~ msgid "Other"
 #~ msgstr "Прочие вопросы"
 
-#~ msgid "Open"
-#~ msgstr "Открыть"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1268,3 +1266,21 @@ msgstr "Порог полной передачи изображений"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Применяется к отправке и получению. Содержимое большего размера загружается только при необходимости."
+
+msgid "About"
+msgstr "О расширении"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Project website"
+msgstr "Сайт проекта"
+
+msgid "Report an issue"
+msgstr "Сообщить о проблеме"
+
+msgid "License"
+msgstr "Лицензия"
+
+msgid "Open"
+msgstr "Открыть"

@@ -1219,8 +1219,6 @@ msgstr "Pořídit snímek obrazovky"
 #~ msgid "Other"
 #~ msgstr "Ostatní"
 
-#~ msgid "Open"
-#~ msgstr "Otevřít"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1261,3 +1259,21 @@ msgstr "Práh pro úplný přenos obrázků"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Platí pro odesílání i příjem. Větší obsah se stahuje pouze v případě potřeby."
+
+msgid "About"
+msgstr "O aplikaci"
+
+msgid "Version"
+msgstr "Verze"
+
+msgid "Project website"
+msgstr "Web projektu"
+
+msgid "Report an issue"
+msgstr "Nahlásit problém"
+
+msgid "License"
+msgstr "Licence"
+
+msgid "Open"
+msgstr "Otevřít"

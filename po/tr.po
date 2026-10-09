@@ -1219,8 +1219,6 @@ msgstr "Ekran görüntüsü al"
 #~ msgid "Other"
 #~ msgstr "Diğer"
 
-#~ msgid "Open"
-#~ msgstr "Aç"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1261,3 +1259,21 @@ msgstr "Görüntülerin tam aktarım eşiği"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Gönderme ve alma için geçerlidir. Daha büyük içerik yalnızca gerektiğinde indirilir."
+
+msgid "About"
+msgstr "Hakkında"
+
+msgid "Version"
+msgstr "Sürüm"
+
+msgid "Project website"
+msgstr "Proje web sitesi"
+
+msgid "Report an issue"
+msgstr "Sorun bildir"
+
+msgid "License"
+msgstr "Lisans"
+
+msgid "Open"
+msgstr "Aç"

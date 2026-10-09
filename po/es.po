@@ -1240,8 +1240,6 @@ msgstr "Hacer una captura de pantalla"
 #~ msgid "Other"
 #~ msgstr "Otros"
 
-#~ msgid "Open"
-#~ msgstr "Abrir"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1282,3 +1280,21 @@ msgstr "Umbral de transferencia completa de imágenes"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Se aplica al envío y a la recepción. El contenido más grande solo se descarga cuando se necesita."
+
+msgid "About"
+msgstr "Acerca de"
+
+msgid "Version"
+msgstr "Versión"
+
+msgid "Project website"
+msgstr "Sitio web del proyecto"
+
+msgid "Report an issue"
+msgstr "Informar de un problema"
+
+msgid "License"
+msgstr "Licencia"
+
+msgid "Open"
+msgstr "Abrir"

@@ -1236,8 +1236,6 @@ msgstr "Far una captura d’ecran"
 #~ msgid "Other"
 #~ msgstr "Autres"
 
-#~ msgid "Open"
-#~ msgstr "Dobrir"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1279,3 +1277,21 @@ msgstr "Sulhet de transferiment complet dels imatges"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "S’aplica al mandadís e a la recepcion. Lo contengut mai grand es telecargat sonque quand es necessari."
+
+msgid "About"
+msgstr "A prepaus"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Project website"
+msgstr "Site web del projècte"
+
+msgid "Report an issue"
+msgstr "Senhalar un problèma"
+
+msgid "License"
+msgstr "Licéncia"
+
+msgid "Open"
+msgstr "Dobrir"

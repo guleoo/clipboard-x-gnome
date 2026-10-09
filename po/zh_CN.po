@@ -1241,8 +1241,6 @@ msgstr "截图"
 #~ msgid "Provided by the external synchronization Service"
 #~ msgstr "由外部同步服务提供"
 
-#~ msgid "Open"
-#~ msgstr "打开"
 
 #~ msgid "More entries are available; refine the search to see others"
 #~ msgstr "还有更多条目；请缩小搜索范围以查看"
@@ -1399,3 +1397,21 @@ msgstr "图片完整传输阈值"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "同时用于发送和接收。更大的内容仅在需要时下载。"
+
+msgid "About"
+msgstr "关于"
+
+msgid "Version"
+msgstr "版本号"
+
+msgid "Project website"
+msgstr "项目地址"
+
+msgid "Report an issue"
+msgstr "报告问题"
+
+msgid "License"
+msgstr "许可证"
+
+msgid "Open"
+msgstr "打开"

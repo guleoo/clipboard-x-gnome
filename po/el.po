@@ -1239,8 +1239,6 @@ msgstr "Λήψη στιγμιοτύπου οθόνης"
 #~ msgid "Other"
 #~ msgstr "Άλλο"
 
-#~ msgid "Open"
-#~ msgstr "Άνοιγμα"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1282,3 +1280,21 @@ msgstr "Όριο πλήρους μεταφοράς εικόνων"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Ισχύει για αποστολή και λήψη. Το μεγαλύτερο περιεχόμενο λαμβάνεται μόνο όταν χρειάζεται."
+
+msgid "About"
+msgstr "Περί"
+
+msgid "Version"
+msgstr "Έκδοση"
+
+msgid "Project website"
+msgstr "Ιστότοπος έργου"
+
+msgid "Report an issue"
+msgstr "Αναφορά προβλήματος"
+
+msgid "License"
+msgstr "Άδεια χρήσης"
+
+msgid "Open"
+msgstr "Άνοιγμα"

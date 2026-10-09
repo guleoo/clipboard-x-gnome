@@ -1206,8 +1206,6 @@ msgstr "스크린샷 찍기"
 #~ msgid "Other"
 #~ msgstr "기타"
 
-#~ msgid "Open"
-#~ msgstr "열기"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1248,3 +1246,21 @@ msgstr "이미지 전체 전송 임계값"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "전송과 수신에 모두 적용됩니다. 임계값보다 큰 콘텐츠는 필요할 때만 다운로드됩니다."
+
+msgid "About"
+msgstr "정보"
+
+msgid "Version"
+msgstr "버전"
+
+msgid "Project website"
+msgstr "프로젝트 웹사이트"
+
+msgid "Report an issue"
+msgstr "문제 보고"
+
+msgid "License"
+msgstr "라이선스"
+
+msgid "Open"
+msgstr "열기"

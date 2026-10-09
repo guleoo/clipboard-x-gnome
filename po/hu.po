@@ -1229,8 +1229,6 @@ msgstr "Képernyőkép készítése"
 #~ msgid "Other"
 #~ msgstr "Egyéb"
 
-#~ msgid "Open"
-#~ msgstr "Megnyitás"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1272,3 +1270,21 @@ msgstr "Teljes képátvitel méretkorlátja"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Küldésre és fogadásra is érvényes. A nagyobb tartalom csak szükség esetén töltődik le."
+
+msgid "About"
+msgstr "Névjegy"
+
+msgid "Version"
+msgstr "Verzió"
+
+msgid "Project website"
+msgstr "A projekt weboldala"
+
+msgid "Report an issue"
+msgstr "Hiba jelentése"
+
+msgid "License"
+msgstr "Licenc"
+
+msgid "Open"
+msgstr "Megnyitás"

@@ -1239,8 +1239,6 @@ msgstr "Bildschirmfoto aufnehmen"
 #~ msgid "Other"
 #~ msgstr "Andere"
 
-#~ msgid "Open"
-#~ msgstr "Öffnen"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1281,3 +1279,21 @@ msgstr "Schwellenwert für vollständige Bildübertragung"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Gilt für Senden und Empfangen. Größere Inhalte werden nur bei Bedarf heruntergeladen."
+
+msgid "About"
+msgstr "Info"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Project website"
+msgstr "Projektwebsite"
+
+msgid "Report an issue"
+msgstr "Problem melden"
+
+msgid "License"
+msgstr "Lizenz"
+
+msgid "Open"
+msgstr "Öffnen"

@@ -1228,8 +1228,6 @@ msgstr "Zrób zrzut ekranu"
 #~ msgid "Other"
 #~ msgstr "Inny"
 
-#~ msgid "Open"
-#~ msgstr "Otwórz"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1271,3 +1269,21 @@ msgstr "Próg pełnego przesyłania obrazów"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Dotyczy wysyłania i odbierania. Większa zawartość jest pobierana tylko w razie potrzeby."
+
+msgid "About"
+msgstr "O rozszerzeniu"
+
+msgid "Version"
+msgstr "Wersja"
+
+msgid "Project website"
+msgstr "Strona projektu"
+
+msgid "Report an issue"
+msgstr "Zgłoś problem"
+
+msgid "License"
+msgstr "Licencja"
+
+msgid "Open"
+msgstr "Otwórz"
