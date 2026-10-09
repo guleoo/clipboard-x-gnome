@@ -72,7 +72,7 @@ function cancelled(error) {
 }
 
 function defaultSink(record) {
-  let line = `Clipboard X [${record.level.toUpperCase()}] ${record.module} ${record.operation}`;
+  let line = `Clipboard X Gnome [${record.level.toUpperCase()}] ${record.module} ${record.operation}`;
   if (record.outcome)
     line += ` ${record.outcome}`;
   if (record.outcome === 'failed' && record.phase && record.phase !== 'begin')

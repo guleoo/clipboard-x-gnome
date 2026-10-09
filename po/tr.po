@@ -1,8 +1,8 @@
 # Turkish translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-09-23 13:10+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: tr\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -1219,8 +1219,6 @@ msgstr "Ekran görüntüsü al"
 #~ msgid "Other"
 #~ msgstr "Diğer"
 
-#~ msgid "Open"
-#~ msgstr "Aç"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1261,3 +1259,18 @@ msgstr "Görüntülerin tam aktarım eşiği"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Gönderme ve alma için geçerlidir. Daha büyük içerik yalnızca gerektiğinde indirilir."
+
+msgid "About"
+msgstr "Hakkında"
+
+msgid "Version"
+msgstr "Sürüm"
+
+msgid "Project website"
+msgstr "Proje web sitesi"
+
+msgid "Report an issue"
+msgstr "Sorun bildir"
+
+msgid "License"
+msgstr "Lisans"

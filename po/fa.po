@@ -1,8 +1,8 @@
 # Persian translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-09-23 13:10+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: fa\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
@@ -1215,8 +1215,6 @@ msgstr "گرفتن نماگرفت"
 #~ msgid "Other"
 #~ msgstr "سایر"
 
-#~ msgid "Open"
-#~ msgstr "گشودن"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1257,3 +1255,18 @@ msgstr "آستانهٔ انتقال کامل تصویر"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "برای ارسال و دریافت اعمال می‌شود. محتوای بزرگ‌تر فقط در صورت نیاز بارگیری می‌شود."
+
+msgid "About"
+msgstr "درباره"
+
+msgid "Version"
+msgstr "نسخه"
+
+msgid "Project website"
+msgstr "وبگاه پروژه"
+
+msgid "Report an issue"
+msgstr "گزارش مشکل"
+
+msgid "License"
+msgstr "مجوز"

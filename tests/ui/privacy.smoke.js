@@ -17,9 +17,9 @@ export async function run() {
     await Main.extensionManager._initializationPromise;
 
   const extension = Main.extensionManager.lookup(UUID);
-  assert(extension?.stateObj, 'Clipboard X extension is unavailable');
+  assert(extension?.stateObj, 'Clipboard X Gnome extension is unavailable');
   const indicator = Main.panel.statusArea['clipboard-x'];
-  assert(indicator, 'Clipboard X indicator is unavailable');
+  assert(indicator, 'Clipboard X Gnome indicator is unavailable');
 
   const controller = indicator._controller;
   const settings = indicator._settings;

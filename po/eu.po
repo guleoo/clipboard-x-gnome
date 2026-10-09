@@ -1,8 +1,8 @@
 # Basque translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-09-23 13:10+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: eu\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -1227,8 +1227,6 @@ msgstr "Egin pantaila-argazkia"
 #~ msgid "Other"
 #~ msgstr "Bestelakoa"
 
-#~ msgid "Open"
-#~ msgstr "Ireki"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1269,3 +1267,18 @@ msgstr "Irudien transferentzia osoaren atalasea"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Bidalketari eta harrerari aplikatzen zaie. Eduki handiagoa behar denean bakarrik deskargatzen da."
+
+msgid "About"
+msgstr "Honi buruz"
+
+msgid "Version"
+msgstr "Bertsioa"
+
+msgid "Project website"
+msgstr "Proiektuaren webgunea"
+
+msgid "Report an issue"
+msgstr "Eman arazo baten berri"
+
+msgid "License"
+msgstr "Lizentzia"

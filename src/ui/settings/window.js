@@ -1,4 +1,4 @@
-// Clipboard X settings window composition.
+// Clipboard X Gnome settings window composition.
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 
@@ -16,6 +16,7 @@ import {create as createFileVerificationRow} from './file-verification.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
+import {create as createAboutPage} from './about.js';
 
 export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -23,11 +24,11 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     this._rows = new PreferenceRows(settings);
     this._dictionaryStore = new DictionaryStore();
     const {deviceId} = ensureDeviceIdentity(settings);
-    window.set_title('Clipboard X');
+    window.set_title('Clipboard X Gnome');
     window.set_default_size(900, 700);
     // GNOME's preferences host requires at least one registered page even when
     // the extension supplies its own split-view navigation as the window content.
-    window.add(new Adw.PreferencesPage({title: 'Clipboard X'}));
+    window.add(new Adw.PreferencesPage({title: 'Clipboard X Gnome'}));
 
     const pages = [
       ['general', 'preferences-desktop-appearance-symbolic', this._generalPage(settings, window)],
@@ -37,6 +38,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
       ['color-picker', 'color-select-symbolic', this._colorPage(settings)],
       ['screenshot', 'camera-photo-symbolic', this._screenshotPage(settings)],
       ['shortcuts', 'input-keyboard-symbolic', this._shortcutsPage(settings)],
+      ['about', 'help-about-symbolic', createAboutPage(this.metadata)],
     ];
     const stack = new Gtk.Stack({
       hexpand: true,
@@ -73,7 +75,7 @@ export default class ClipboardXPreferences extends ExtensionPreferences {
     const sidebarView = new Adw.ToolbarView({content: sidebar});
     sidebarView.add_top_bar(new Adw.HeaderBar());
     const sidebarPage = new Adw.NavigationPage({
-      title: 'Clipboard X',
+      title: 'Clipboard X Gnome',
       child: sidebarView,
     });
     const contentView = new Adw.ToolbarView({content: stack});

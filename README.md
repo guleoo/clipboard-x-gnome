@@ -1,8 +1,8 @@
 <div align="center">
 
-# clipboard-x-gnome
+# Clipboard X Gnome
 
-**Clipboard X — a GNOME clipboard extension built around your workflow.**
+**Clipboard X Gnome — a GNOME clipboard extension built around your workflow.**
 
 History · Token selection · Quick phrases · Device sync · Screenshot editing · Quick color picking
 
@@ -14,7 +14,7 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 </div>
 
-Clipboard X is a GNOME Shell extension that brings text and image history, token selection, and quick
+Clipboard X Gnome is a GNOME Shell extension that brings text and image history, token selection, and quick
 phrases together in a top-bar panel. It also provides screenshot capture, color picking, and a way to
 open images in a configured editor. To share clipboard snapshots across devices, connect a
 `clipboard-x-server` that you configure yourself.
@@ -57,7 +57,7 @@ or refreshed by the user.
 
 ## Installation
 
-Install from the [GNOME Shell Extensions website](https://extensions.gnome.org/): search for **Clipboard X**.
+Install from the [GNOME Shell Extensions website](https://extensions.gnome.org/): search for **Clipboard X Gnome**.
 
 ### Install from source
 
@@ -74,10 +74,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x-gnome_1.0.2.zip`:
+Install the generated `build/clipboard-x-gnome_1.0.3.zip`:
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.2.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.3.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -86,15 +86,15 @@ GNOME Shell on Wayland cannot reload all extension code in place.
 After the first installation or when replacing an existing build, log out and back in if the new version
 is not loaded.
 
-## Use Clipboard X
+## Use Clipboard X Gnome
 
 ### 1. Open and configure the panel
 
-Open Clipboard X from its top-bar icon. Global shortcuts are intentionally unassigned by default; open
+Open Clipboard X Gnome from its top-bar icon. Global shortcuts are intentionally unassigned by default; open
 the extension preferences and choose **Shortcuts → Global → Open clipboard panel** if you want one.
 Pressing the configured panel shortcut again closes the panel.
 
-The first time Clipboard X opens its panel or preferences, it creates a UUID v4 `DeviceId`. This is the
+The first time Clipboard X Gnome opens its panel or preferences, it creates a UUID v4 `DeviceId`. This is the
 stable synchronization identity. The editable device tag and icon are only its human-friendly profile.
 
 ### 2. Reuse clipboard history
@@ -121,9 +121,9 @@ The keyboard shortcuts in the table can be changed or disabled in Preferences; `
 
 Use simulated typing when the target application does not accept normal paste:
 
-1. Focus the target text field, then open Clipboard X.
+1. Focus the target text field, then open Clipboard X Gnome.
 2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the token panel, select the words you need and press `'`.
-3. The panel closes and Clipboard X types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
+3. The panel closes and Clipboard X Gnome types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
 Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical
 key presses sent to another Wayland client, so letters and numbers may interleave with the simulated
@@ -231,7 +231,7 @@ The server address, API key, and active Channel are stored in
 metadata and previews first; complete large objects remain lazy.
 
 Pending uploads are saved in a separate queue for each server, bound to the original Channel and
-DeviceId. Interrupting an upload or switching servers preserves its task. Before retrying, Clipboard X
+DeviceId. Interrupting an upload or switching servers preserves its task. Before retrying, Clipboard X Gnome
 checks the local entry and asks the server to reuse or acknowledge the same publication, avoiding
 another content upload when it is already complete. Missing local entries and sensitive content are
 not uploaded. Disabling synchronization pauses existing tasks; entries copied while it is disabled
@@ -285,18 +285,18 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/preferences.smoke.js
 ```
 
-Clipboard X does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,
+Clipboard X Gnome does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,
 localization workflow, code conventions, and release boundaries. Please report security problems through
 the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [1.0.2 release notes](docs/release/v1.0.2-en.md)
+- [1.0.3 release notes](docs/release/v1.0.3-en.md)
 - [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)
@@ -305,4 +305,4 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 
 ## License
 
-Clipboard X is free software released under the [GNU GPL v3 or later](LICENSE.md).
+Clipboard X Gnome is free software released under the [GNU GPL v3 or later](LICENSE.md).

@@ -1,6 +1,6 @@
 {
   "uuid": "@uuid@",
-  "name": "Clipboard X",
+  "name": "Clipboard X Gnome",
   "description": "Clipboard history, text tools, device synchronization, color picking and screenshots. This extension accesses clipboard content and only sends it to a user-configured synchronization server according to user settings.",
   "shell-version": ["50", "51"],
   "settings-schema": "@schema@",

@@ -1,4 +1,4 @@
-# Clipboard X 界面开发指南
+# Clipboard X Gnome 界面开发指南
 
 > 简体中文 · [English](ui-architecture.md)
 

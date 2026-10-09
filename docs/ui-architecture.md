@@ -1,4 +1,4 @@
-# Clipboard X UI development guide
+# Clipboard X Gnome UI development guide
 
 > English · [简体中文](ui-architecture_CN.md)
 

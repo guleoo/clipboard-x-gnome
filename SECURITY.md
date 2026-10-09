@@ -2,7 +2,7 @@
 
 > English · [简体中文](SECURITY.zh-CN.md)
 
-Clipboard X handles clipboard text, screenshots, device identifiers, and synchronization credentials.
+Clipboard X Gnome handles clipboard text, screenshots, device identifiers, and synchronization credentials.
 These data can include passwords, tokens, personal information, or work material. This document
 describes the extension's data flows and trust boundaries.
 

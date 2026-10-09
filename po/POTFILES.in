@@ -14,3 +14,4 @@ src/ui/settings/running-apps.js
 src/ui/settings/sync.js
 src/ui/settings/theme-color.js
 src/ui/settings/window.js
+src/ui/settings/about.js

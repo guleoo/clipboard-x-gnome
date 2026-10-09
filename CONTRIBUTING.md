@@ -2,7 +2,7 @@
 
 > English · [简体中文](CONTRIBUTING.zh-CN.md)
 
-Clipboard X targets GNOME Shell 50+ and GJS 1.88 or later. Shell UI code must use St, Clutter, and
+Clipboard X Gnome targets GNOME Shell 50+ and GJS 1.88 or later. Shell UI code must use St, Clutter, and
 Shell APIs; GTK 4 and Libadwaita are restricted to the separate preferences process.
 
 ## Development workflow
@@ -146,7 +146,7 @@ To build a local release ZIP without installing it into the desktop or changing 
 ```
 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
-`clipboard-x-gnome_1.0.2.zip`. The version comes from Meson. The script configures a dedicated package build,
+`clipboard-x-gnome_1.0.3.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
 
 To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,

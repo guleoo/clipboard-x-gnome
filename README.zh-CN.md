@@ -1,8 +1,8 @@
 <div align="center">
 
-# clipboard-x-gnome
+# Clipboard X Gnome
 
-**Clipboard X — 一个更顺手的 GNOME 剪切板扩展**
+**Clipboard X Gnome — 一个更顺手的 GNOME 剪切板扩展**
 
 历史记录 · 分词选择 · 快捷语句 · 设备同步 · 截图编辑 · 快速取色
 
@@ -14,7 +14,7 @@
 
 </div>
 
-Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面板集中管理文本与图片历史、
+Clipboard X Gnome 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面板集中管理文本与图片历史、
 分词选择和快捷语句，并提供截图、取色及调用图片编辑器的入口。需要跨设备使用时，可连接
 自行配置的 `clipboard-x-server`，同步剪切板快照。
 
@@ -55,7 +55,7 @@ Clipboard X 是一款面向 GNOME Shell 的剪切板扩展。它通过顶栏面�
 
 ## 安装
 
-通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X**。
+通过 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/) 安装：搜索 **Clipboard X Gnome**。
 
 ### 从源码安装
 
@@ -72,10 +72,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome_1.0.2.zip`：
+安装生成的 `build/clipboard-x-gnome_1.0.3.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.2.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.3.zip
 gnome-extensions enable clipboard-x@guleoo.github.io
 ```
 
@@ -83,14 +83,14 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 
 首次安装或覆盖已有版本后，如果新版本没有立即生效，请注销并重新登录。
 
-## 使用 Clipboard X
+## 使用 Clipboard X Gnome
 
 ### 1. 打开并配置面板
 
-点击顶栏图标打开 Clipboard X。全局快捷键默认留空；如果需要，请打开扩展设置，在
+点击顶栏图标打开 Clipboard X Gnome。全局快捷键默认留空；如果需要，请打开扩展设置，在
 **快捷键 → 全局 → 打开剪切板面板**中录入。再次按下同一个面板快捷键即可关闭面板。
 
-第一次打开面板或设置时，Clipboard X 会生成 UUID v4 `DeviceId`，作为稳定的同步身份。
+第一次打开面板或设置时，Clipboard X Gnome 会生成 UUID v4 `DeviceId`，作为稳定的同步身份。
 用户可编辑的设备 Tag 与图标只用于友好展示，不会改变设备身份。
 
 ### 2. 复用剪切板历史
@@ -117,9 +117,9 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 
 目标应用无法正常粘贴时，可以尝试模拟输入：
 
-1. 先让目标应用的文本输入框获得焦点，再打开 Clipboard X。
+1. 先让目标应用的文本输入框获得焦点，再打开 Clipboard X Gnome。
 2. 对文本历史条目使用 `Ctrl` + 点击，或聚焦条目后按 `'`。在分词面板中，选好词后按 `'`。
-3. 面板关闭后，Clipboard X 会等待触发操作的修饰键松开，再向此前聚焦的输入框逐字输入。与复制或粘贴不同，这不会替换剪切板内容。
+3. 面板关闭后，Clipboard X Gnome 会等待触发操作的修饰键松开，再向此前聚焦的输入框逐字输入。与复制或粘贴不同，这不会替换剪切板内容。
 
 模拟输入**不能保证与粘贴一样可靠**。GNOME Shell 无法可靠感知发送给其他 Wayland 客户端的
 普通物理按键，因此字母和数字仍可能与模拟内容交错。结束前请勿操作物理键盘；中途取消时，
@@ -234,7 +234,7 @@ flatpak run be.alexandervanhee.gradia %u
 
 ## 开发与参与贡献
 
-欢迎参与 Clipboard X：报告 Bug、提交聚焦的修复、改进 UI、补充协议测试、完善文档，或
+欢迎参与 Clipboard X Gnome：报告 Bug、提交聚焦的修复、改进 UI、补充协议测试、完善文档，或
 提供经过认真校对的翻译，都很有价值。
 
 1. 阅读[参与开发](CONTRIBUTING.zh-CN.md)和[中文文档索引](docs/README_CN.md)。
@@ -258,8 +258,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -269,7 +269,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip t
 ## 文档
 
 - [中文文档索引](docs/README_CN.md)
-- [1.0.2 发布说明](docs/release/v1.0.2-cn.md)
+- [1.0.3 发布说明](docs/release/v1.0.3-cn.md)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/ui-architecture_CN.md)
 - [同步性能与压力测试](docs/sync-performance-testing_CN.md)
@@ -278,4 +278,4 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.2.zip t
 
 ## 许可证
 
-Clipboard X 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。
+Clipboard X Gnome 是以 [GNU GPL v3 或更高版本](LICENSE.md)发布的自由软件。

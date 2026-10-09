@@ -18,7 +18,7 @@ extension_uuid='clipboard-x@guleoo.github.io'
 
 if [[ "${CLIPBOARD_X_DEV_SESSION:-0}" == '1' ]]; then
   if [[ -z "${CLIPBOARD_X_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_DEV_ROOT/config" ]]; then
-    printf '%s\n' 'Clipboard X [ERROR] Refusing to start Devkit without an isolated configuration directory.' >&2
+    printf '%s\n' 'Clipboard X Gnome [ERROR] Refusing to start Devkit without an isolated configuration directory.' >&2
     exit 1
   fi
   gsettings set org.gnome.shell disable-user-extensions false
@@ -56,7 +56,7 @@ report_exit() {
 
 if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
   if command -v systemd-cat >/dev/null 2>&1 && command -v tee >/dev/null 2>&1; then
-    printf '%s\n' 'Clipboard X Devkit logs are displayed in the terminal and saved to the system journal.' \
+    printf '%s\n' 'Clipboard X Gnome Devkit logs are displayed in the terminal and saved to the system journal.' \
       "View: journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
     exec {dev_journal_fd}> >(systemd-cat --identifier=clipboard-x-devkit --priority=info)
     dev_journal_pid=$!
@@ -104,7 +104,7 @@ if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
 fi
 
 if [[ ! -x /usr/lib/mutter-devkit ]]; then
-  printf '%s\n' 'Clipboard X [ERROR] /usr/lib/mutter-devkit not found; install mutter-devkit first.' >&2
+  printf '%s\n' 'Clipboard X Gnome [ERROR] /usr/lib/mutter-devkit not found; install mutter-devkit first.' >&2
   exit 1
 fi
 
@@ -118,12 +118,12 @@ build_extension() {
   meson install -C "$build_dir" || return
 }
 
-printf '%s\n' 'Clipboard X [BUILD] Building and packaging extension'
+printf '%s\n' 'Clipboard X Gnome [BUILD] Building and packaging extension'
 if build_extension; then
-  printf '%s\n' 'Clipboard X [BUILD] Build and packaging completed'
+  printf '%s\n' 'Clipboard X Gnome [BUILD] Build and packaging completed'
 else
   dev_build_status=$?
-  printf 'Clipboard X [ERROR] Build failed · exit %s; see journal or --verbose for full output.\n' "$dev_build_status" >&2
+  printf 'Clipboard X Gnome [ERROR] Build failed · exit %s; see journal or --verbose for full output.\n' "$dev_build_status" >&2
   exit "$dev_build_status"
 fi
 
@@ -135,15 +135,15 @@ mkdir -p \
   "$extension_parent"
 
 if [[ -e "$extension_link" && ! -L "$extension_link" ]]; then
-  printf 'Clipboard X [ERROR] Isolated extension path already exists and is not a symlink: %s\n' "$extension_link" >&2
+  printf 'Clipboard X Gnome [ERROR] Isolated extension path already exists and is not a symlink: %s\n' "$extension_link" >&2
   exit 1
 fi
 
 ln -sfn "$extension_build" "$extension_link"
 
-printf 'Clipboard X Devkit build: %s\n' "$extension_build"
-printf 'Clipboard X Devkit configuration: %s\n' "$dev_root"
-printf '%s\n' 'Clipboard X [INFO] devkit Starting development session'
+printf 'Clipboard X Gnome Devkit build: %s\n' "$extension_build"
+printf 'Clipboard X Gnome Devkit configuration: %s\n' "$dev_root"
+printf '%s\n' 'Clipboard X Gnome [INFO] devkit Starting development session'
 
 exec env \
   CLIPBOARD_X_DEV_SESSION=1 \

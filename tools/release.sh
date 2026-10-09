@@ -111,7 +111,7 @@ fi
 printf 'Publishing %s from %s to %s...\n' "$tag" "$branch" "$remote"
 git push "$remote" "HEAD:refs/heads/$branch"
 if ! git show-ref --verify --quiet "refs/tags/$tag"; then
-  git tag -a "$tag" -m "Clipboard X $version"
+  git tag -a "$tag" -m "Clipboard X Gnome $version"
 fi
 git push "$remote" "refs/tags/$tag:refs/tags/$tag"
 printf 'Tag %s pushed. GitHub Actions will build the GitHub Release.\n' "$tag"

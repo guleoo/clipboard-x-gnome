@@ -1,8 +1,8 @@
 # French translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: fr_FR\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -1239,8 +1239,6 @@ msgstr "Prendre une capture d’écran"
 #~ msgid "Other"
 #~ msgstr "Autre"
 
-#~ msgid "Open"
-#~ msgstr "Ouvrir"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1282,3 +1280,18 @@ msgstr "Seuil de transfert intégral des images"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "S’applique à l’envoi et à la réception. Le contenu plus volumineux n’est téléchargé qu’en cas de besoin."
+
+msgid "About"
+msgstr "À propos"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Project website"
+msgstr "Site web du projet"
+
+msgid "Report an issue"
+msgstr "Signaler un problème"
+
+msgid "License"
+msgstr "Licence"

@@ -2,7 +2,7 @@
 
 > 简体中文 · [English](CONTRIBUTING.md)
 
-Clipboard X 目标环境是 GNOME Shell 50+ 和 GJS 1.88 或更高版本。修改 Shell UI 时只
+Clipboard X Gnome 目标环境是 GNOME Shell 50+ 和 GJS 1.88 或更高版本。修改 Shell UI 时只
 使用 St、Clutter 和 Shell API；GTK 4/Libadwaita 只允许出现在独立设置进程中。
 
 ## 开发流程
@@ -133,7 +133,7 @@ meson compile -C build clipboard-x-update-po
 ```
 
 生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
-`clipboard-x-gnome_1.0.2.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
+`clipboard-x-gnome_1.0.3.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
 
 需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，

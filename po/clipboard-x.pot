@@ -1182,3 +1182,23 @@ msgstr ""
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr ""
+
+#: src/ui/settings/about.js
+msgid "About"
+msgstr ""
+
+#: src/ui/settings/about.js
+msgid "Version"
+msgstr ""
+
+#: src/ui/settings/about.js
+msgid "Project website"
+msgstr ""
+
+#: src/ui/settings/about.js
+msgid "Report an issue"
+msgstr ""
+
+#: src/ui/settings/about.js
+msgid "License"
+msgstr ""

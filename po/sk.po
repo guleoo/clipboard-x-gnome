@@ -1,8 +1,8 @@
 # Slovak translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-08-19 16:20+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: sk\n"
 "Language: sk\n"
 "MIME-Version: 1.0\n"
@@ -1222,8 +1222,6 @@ msgstr "Urobiť snímku obrazovky"
 #~ msgid "Other"
 #~ msgstr "Iný"
 
-#~ msgid "Open"
-#~ msgstr "Otvoriť"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1264,3 +1262,18 @@ msgstr "Prah pre úplný prenos obrázkov"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "Platí pre odosielanie aj prijímanie. Väčší obsah sa sťahuje iba v prípade potreby."
+
+msgid "About"
+msgstr "O rozšírení"
+
+msgid "Version"
+msgstr "Verzia"
+
+msgid "Project website"
+msgstr "Webová stránka projektu"
+
+msgid "Report an issue"
+msgstr "Nahlásiť problém"
+
+msgid "License"
+msgstr "Licencia"

@@ -2,19 +2,19 @@
 
 > English · [简体中文](diagnostics_CN.md)
 
-Clipboard X uses the standard GJS console and system journal, following the
+Clipboard X Gnome uses the standard GJS console and system journal, following the
 [GNOME extension debugging guide](https://gjs.guide/extensions/development/debugging.html).
 There is no extension-owned log file or background logging service. Retention and persistence across
-reboots are controlled by the system's journald configuration, not by Clipboard X.
+reboots are controlled by the system's journald configuration, not by Clipboard X Gnome.
 
 ## Find extension logs
 
 ```sh
 # Recent messages in this boot, from both the host and nested sessions
-journalctl --user -b -o cat --grep='Clipboard X ' -n 100
+journalctl --user -b -o cat --grep='Clipboard X Gnome ' -n 100
 
 # Follow messages while reproducing a problem
-journalctl --user -b -f -o cat --grep='Clipboard X '
+journalctl --user -b -f -o cat --grep='Clipboard X Gnome '
 ```
 
 If the desktop session's messages are not in the user journal, run the same command without `--user`.
@@ -22,11 +22,11 @@ Journal access depends on your distribution's permissions. No `sudo` is needed b
 
 Plugin and development-script diagnostics use English regardless of the interface language;
 GNOME and other tools keep their own output language. Every extension-generated diagnostic message
-starts with `Clipboard X ` and uses plain text:
+starts with `Clipboard X Gnome ` and uses plain text:
 
 ```text
-Clipboard X [INFO] sync initialize completed · 187 ms
-Clipboard X [ERROR] sync initialize failed at channels · HttpError:channel_forbidden · 120 ms · /sync/client.js:123:5
+Clipboard X Gnome [INFO] sync initialize completed · 187 ms
+Clipboard X Gnome [ERROR] sync initialize failed at channels · HttpError:channel_forbidden · 120 ms · /sync/client.js:123:5
 ```
 
 - `[INFO]`, `[WARN]` and `[ERROR]` identify severity. GJS may map console warnings and errors to the
@@ -71,7 +71,7 @@ journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-
 The `+` combines the Devkit output with native Shell journal messages. Host sessions and processes
 launched separately can write GJS messages directly to the journal without the Devkit tag:
 **do not use the tag alone to find all plugin errors**.
-Use the `Clipboard X ` filter above for the extension's own diagnostics. The full Shell query also
+Use the `Clipboard X Gnome ` filter above for the extension's own diagnostics. The full Shell query also
 includes the host Shell; use `journalctl -o short` for timestamps or `-o verbose` for PID metadata to
 distinguish processes.
 
@@ -88,7 +88,7 @@ logging follows the platform's output routing; it does not independently guarant
 Reproduce once, then collect a narrow time window:
 
 ```sh
-journalctl --user -b --since '10 minutes ago' -o cat --grep='Clipboard X '
+journalctl --user -b --since '10 minutes ago' -o cat --grep='Clipboard X Gnome '
 ```
 
 Include the extension version, GNOME version, host versus Devkit session, whether synchronization was

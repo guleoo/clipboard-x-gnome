@@ -16,7 +16,7 @@ export async function run() {
   if (Main.extensionManager._initializationPromise)
     await Main.extensionManager._initializationPromise;
   const extension = Main.extensionManager.lookup(UUID);
-  assert(extension?.stateObj, 'Clipboard X extension object is unavailable');
+  assert(extension?.stateObj, 'Clipboard X Gnome extension object is unavailable');
   extension.stateObj.openPreferences();
   await Scripting.sleep(1500);
 
@@ -26,11 +26,11 @@ export async function run() {
   const preferences = windows.find(window => {
     const title = window.get_title() ?? '';
     const wmClass = window.get_wm_class() ?? '';
-    return /Clipboard X|Extension Manager|Extensions/iu.test(`${title} ${wmClass}`);
+    return /Clipboard X Gnome|Extension Manager|Extensions/iu.test(`${title} ${wmClass}`);
   });
-  assert(preferences, 'Clipboard X preferences window did not open');
-  assert(preferences.get_title() === 'Clipboard X',
-    `Clipboard X preferences opened an error page (${preferences.get_title()})`);
+  assert(preferences, 'Clipboard X Gnome preferences window did not open');
+  assert(preferences.get_title() === 'Clipboard X Gnome',
+    `Clipboard X Gnome preferences opened an error page (${preferences.get_title()})`);
   const applications = await new Promise((resolve, reject) => {
     Gio.DBus.session.call(
       'org.gnome.Shell.Extensions.ClipboardX', '/org/gnome/Shell/Extensions/ClipboardX',

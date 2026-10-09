@@ -1,8 +1,8 @@
 # Arabic translations for clipboard-x package.
-# Copyright (C) 2026 Clipboard X contributors
+# Copyright (C) 2026 Clipboard X Gnome contributors
 # This file is distributed under the same license as the clipboard-x package.
 # Portions incorporate human translations from GNOME and Clipboard Indicator.
-# Clipboard X contributors, 2026.
+# Clipboard X Gnome contributors, 2026.
 #
 msgid ""
 msgstr ""
@@ -10,7 +10,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-23 15:00+0800\n"
 "PO-Revision-Date: 2026-09-23 13:10+0800\n"
-"Last-Translator: Clipboard X contributors\n"
+"Last-Translator: Clipboard X Gnome contributors\n"
 "Language-Team: ar\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
@@ -1202,8 +1202,6 @@ msgstr "التقاط صورة للشاشة"
 #~ msgid "Other"
 #~ msgstr "أخرى"
 
-#~ msgid "Open"
-#~ msgstr "فتح"
 
 #, fuzzy
 #~ msgid "Remove network location"
@@ -1244,3 +1242,18 @@ msgstr "حد النقل الكامل للصور"
 
 msgid "Applies to sending and receiving. Larger content is downloaded only when needed."
 msgstr "ينطبق على الإرسال والاستقبال. لا يتم تنزيل المحتوى الأكبر إلا عند الحاجة."
+
+msgid "About"
+msgstr "حول"
+
+msgid "Version"
+msgstr "الإصدار"
+
+msgid "Project website"
+msgstr "موقع المشروع"
+
+msgid "Report an issue"
+msgstr "الإبلاغ عن مشكلة"
+
+msgid "License"
+msgstr "الترخيص"
