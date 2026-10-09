@@ -19,7 +19,7 @@ function deferred() {
   return {promise, resolve};
 }
 
-const directory = GLib.dir_make_tmp('clipboard-x-upload-queue-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-gnome-upload-queue-test-XXXXXX');
 const payloadPath = GLib.build_filenamev([directory, 'private-payload']);
 let caseNumber = 0;
 const queues = [];

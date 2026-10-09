@@ -21,7 +21,7 @@ const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
   Gio.SettingsSchemaSource.get_default(),
   false,
 );
-const schema = schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false);
+const schema = schemaSource.lookup('org.gnome.shell.extensions.clipboard-x-gnome', false);
 assert(schema.get_key('editor-command').get_default_value().deepUnpack() === '',
   'Image editor command must be unconfigured by default');
 
@@ -273,7 +273,7 @@ await assertRejects(
 let missingEditorRejected = false;
 try {
   await launchEditor({
-    command: '/definitely/missing/clipboard-x-editor %u',
+    command: '/definitely/missing/clipboard-x-gnome-editor %u',
     uri: 'file:///tmp/image.png',
   });
 } catch (error) {

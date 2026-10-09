@@ -11,7 +11,7 @@ const FILE_ATTRIBUTES = [
 ].join(',');
 
 export function dataPath(filename) {
-  return GLib.build_filenamev([GLib.get_user_data_dir(), 'clipboard-x', filename]);
+  return GLib.build_filenamev([GLib.get_user_data_dir(), 'clipboard-x-gnome', filename]);
 }
 
 export async function readJson(path, maximumBytes, cancellable = null) {

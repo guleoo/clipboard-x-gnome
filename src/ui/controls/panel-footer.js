@@ -14,7 +14,7 @@ class PanelFooter extends St.BoxLayout {
       x_expand: true,
       orientation: Clutter.Orientation.VERTICAL,
     });
-    this._clipboardXControlType = 'panel-footer';
+    this._clipboardXGnomeControlType = 'panel-footer';
     this.divider = new St.Widget({
       style_class: 'cbx-panel-divider cbx-panel-footer-divider',
       x_expand: true,

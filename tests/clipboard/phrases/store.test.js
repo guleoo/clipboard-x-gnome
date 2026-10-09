@@ -20,7 +20,7 @@ const settings = {
     return newestFirst;
   },
 };
-const directory = GLib.dir_make_tmp('clipboard-x-phrases-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-gnome-phrases-test-XXXXXX');
 const path = GLib.build_filenamev([directory, 'quick-phrases.json']);
 const store = new PhraseStore(settings, {path});
 

@@ -19,7 +19,7 @@ const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
   false,
 );
 const settings = new Gio.Settings({
-  settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false),
+  settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x-gnome', false),
 });
 assert(!settings.get_boolean('sync-use-sha256sum'), 'external file verification must be disabled by default');
 settings.set_boolean('sync-use-sha256sum', true);

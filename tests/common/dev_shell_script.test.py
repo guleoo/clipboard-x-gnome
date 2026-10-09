@@ -62,10 +62,10 @@ exit "${TEST_SESSION_EXIT:-0}"
                     "TEST_JOURNAL": str(self.journal),
                     "TEST_JOURNAL_PID": str(self.root / "journal.pid"),
                     "TEST_SHELL_PID": str(self.root / "shell.pid"),
-                    "CLIPBOARD_X_DEV_BUILD_DIR": str(self.root / "build with spaces")}
-        self.env.pop("CLIPBOARD_X_DEV_SESSION", None)
-        self.env.pop("CLIPBOARD_X_DEV_JOURNAL", None)
-        self.env.pop("CLIPBOARD_X_DEV_ROOT", None)
+                    "CLIPBOARD_X_GNOME_DEV_BUILD_DIR": str(self.root / "build with spaces")}
+        self.env.pop("CLIPBOARD_X_GNOME_DEV_SESSION", None)
+        self.env.pop("CLIPBOARD_X_GNOME_DEV_JOURNAL", None)
+        self.env.pop("CLIPBOARD_X_GNOME_DEV_ROOT", None)
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -100,7 +100,7 @@ exit "${TEST_SESSION_EXIT:-0}"
         lines = self.trace.read_text().splitlines()
         journal = [line for line in lines if line.startswith("journal:")]
         self.assertEqual(len(journal), 1)
-        self.assertIn("--identifier=clipboard-x-devkit --priority=info", journal[0])
+        self.assertIn("--identifier=clipboard-x-gnome-devkit --priority=info", journal[0])
         self.assertTrue(any(line.startswith("settings:set org.gnome.shell enabled-extensions") for line in lines))
         self.assertEqual(sum(line.startswith("shell:") for line in lines), 1)
         self.assertIn("[BUILD]", result.stdout)
@@ -132,7 +132,7 @@ exit "${TEST_SESSION_EXIT:-0}"
         self.assertIn("[ERROR]", result.stderr)
 
     def test_isolation_path_conflict_is_visible(self):
-        extension = self.root / "runtime/clipboard-x-devkit/data/gnome-shell/extensions/clipboard-x@guleoo.github.io"
+        extension = self.root / "runtime/clipboard-x-gnome-devkit/data/gnome-shell/extensions/clipboard-x-gnome@guleoo.github.io"
         extension.mkdir(parents=True)
         result = self.run_script()
         self.assertEqual(result.returncode, 1)
@@ -193,7 +193,7 @@ console.error("Clipboard X Gnome [ERROR] {marker}-error");'
         deadline = time.monotonic() + 3
         while True:
             query = subprocess.run(["journalctl", "--user", "-b", "-o", "cat",
-                                    "--no-pager", "-t", "clipboard-x-devkit", "--grep", marker],
+                                    "--no-pager", "-t", "clipboard-x-gnome-devkit", "--grep", marker],
                                    capture_output=True, text=True, check=False)
             if query.stdout.count(marker) >= 3 or time.monotonic() >= deadline:
                 break
@@ -223,7 +223,7 @@ console.error("Clipboard X Gnome [ERROR] {marker}-error");'
                 process.communicate()
 
     def test_unisolated_inner_invocation_is_still_rejected(self):
-        result = self.run_script(CLIPBOARD_X_DEV_SESSION="1", XDG_CONFIG_HOME="/invalid")
+        result = self.run_script(CLIPBOARD_X_GNOME_DEV_SESSION="1", XDG_CONFIG_HOME="/invalid")
         self.assertEqual(result.returncode, 1)
         self.assertFalse(self.trace.exists())
 

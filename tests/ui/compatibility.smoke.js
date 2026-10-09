@@ -7,7 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import {ExtensionState} from 'resource:///org/gnome/shell/misc/extensionUtils.js';
 
-const UUID = 'clipboard-x@guleoo.github.io';
+const UUID = 'clipboard-x-gnome@guleoo.github.io';
 export const METRICS = {};
 const WAIT_TIMEOUT_MILLISECONDS = 15_000;
 const STARTUP_TIMEOUT_MILLISECONDS = 30_000;
@@ -26,7 +26,7 @@ function startupState() {
   const extension = Main.extensionManager?.lookup(UUID);
   const backgrounds = (layout?._bgManagers ?? []).map(manager =>
     manager.backgroundActor?.content?.background?.isLoaded ?? 'unknown');
-  return `shellStartingUp=${layout?._startingUp ?? 'unknown'}; monitors=${layout?.monitors.length ?? 0}; backgroundLoaded=${backgrounds.join(',') || 'none'}; extensionState=${extension?.state ?? 'unknown'}; indicatorPresent=${Boolean(Main.panel?.statusArea['clipboard-x'])}`;
+  return `shellStartingUp=${layout?._startingUp ?? 'unknown'}; monitors=${layout?.monitors.length ?? 0}; backgroundLoaded=${backgrounds.join(',') || 'none'}; extensionState=${extension?.state ?? 'unknown'}; indicatorPresent=${Boolean(Main.panel?.statusArea['clipboard-x-gnome'])}`;
 }
 
 // GNOME calls init() before startup-complete and run() only after its automation helper is ready.
@@ -87,7 +87,7 @@ async function indicator(previous = null) {
   stage('waiting-for-indicator');
   for (let attempt = 0; attempt < 60; attempt++) {
     const extension = Main.extensionManager.lookup(UUID);
-    const actor = Main.panel.statusArea['clipboard-x'];
+    const actor = Main.panel.statusArea['clipboard-x-gnome'];
     if (extension?.enabled && extension.state === ExtensionState.ACTIVE
         && actor && actor !== previous) {
       print('Clipboard X Gnome [compatibility] indicator ready');
@@ -107,7 +107,7 @@ async function disable() {
       const extension = Main.extensionManager.lookup(UUID);
       assert(extension && extension.state !== ExtensionState.ERROR,
         `Extension failed while disabling: ${extension?.error ?? 'not installed'}`);
-      if (extension.state === ExtensionState.INACTIVE && !Main.panel.statusArea['clipboard-x'])
+      if (extension.state === ExtensionState.INACTIVE && !Main.panel.statusArea['clipboard-x-gnome'])
         return;
       await Scripting.sleep(20);
     }

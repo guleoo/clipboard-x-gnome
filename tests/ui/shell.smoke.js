@@ -7,8 +7,8 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import St from 'gi://St';
 
-const UUID = 'clipboard-x@guleoo.github.io';
-const STATUS_AREA_NAME = 'clipboard-x';
+const UUID = 'clipboard-x-gnome@guleoo.github.io';
+const STATUS_AREA_NAME = 'clipboard-x-gnome';
 const TEST_DIRECTORY = Gio.File.new_for_uri(import.meta.url).get_parent().get_path();
 
 export const METRICS = {};
@@ -91,12 +91,12 @@ export async function run() {
   for (const item of indicator._controller.items)
     indicator._controller.remove(item.id);
   await Scripting.sleep(200);
-  const expectedSearchTranslation = GLib.getenv('CLIPBOARD_X_EXPECT_SEARCH_TRANSLATION')
-    ?? (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1' ? '搜索剪切板历史…' : null);
+  const expectedSearchTranslation = GLib.getenv('CLIPBOARD_X_GNOME_EXPECT_SEARCH_TRANSLATION')
+    ?? (GLib.getenv('CLIPBOARD_X_GNOME_EXPECT_CHINESE') === '1' ? '搜索剪切板历史…' : null);
   if (expectedSearchTranslation) {
     assert(history.searchEntry.hint_text === expectedSearchTranslation,
       `Clipboard X Gnome translation was not loaded (${history.searchEntry.hint_text})`);
-    if (GLib.getenv('CLIPBOARD_X_TRANSLATION_ONLY') === '1')
+    if (GLib.getenv('CLIPBOARD_X_GNOME_TRANSLATION_ONLY') === '1')
       return;
   }
 
@@ -400,10 +400,10 @@ export async function run() {
   indicator._settings.set_strv('entry-actions', ['delete', 'pin', 'sync', 'tokenize', 'edit']);
   indicator._settings.set_strv('entry-hidden-actions', ['pin', 'sync']);
   const reorderedRow = history.entry(capturedText);
-  assert(reorderedRow.focusActors.slice(1).map(actor => actor._clipboardXEntryAction).join()
+  assert(reorderedRow.focusActors.slice(1).map(actor => actor._clipboardXGnomeEntryAction).join()
       === 'delete,tokenize',
     'Entry action visibility and order were not reflected in keyboard focus order');
-  assert(reorderedRow._clipboardXFocusRow.length === 3,
+  assert(reorderedRow._clipboardXGnomeFocusRow.length === 3,
     'Hidden entry icons must not occupy focus matrix cells');
   reorderedRow.destroy();
   indicator._settings.set_strv('entry-hidden-actions', originalEntryActions);
@@ -596,7 +596,7 @@ export async function run() {
   history.handleEntryKey(disposable, entryEvent(Clutter.KEY_Delete));
   assert(!indicator._controller.items.includes(disposable), 'Clipboard history entry could not be deleted');
 
-  if (GLib.getenv('CLIPBOARD_X_SKIP_EXTERNAL_SOURCES') !== '1') {
+  if (GLib.getenv('CLIPBOARD_X_GNOME_SKIP_EXTERNAL_SOURCES') !== '1') {
     // Without data-control, wl-copy needs its temporary window to receive focus.
     Main.overview.hide();
     assert(await waitUntil(() => !Main.overview.visible),
@@ -884,7 +884,7 @@ export async function run() {
   syncDisabledRow.destroy();
 
   indicator._controller.remove(imageItem.id);
-  const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-screenshot-pipeline-XXXXXX.png');
+  const [screenshotFile, screenshotStream] = Gio.File.new_tmp('clipboard-x-gnome-screenshot-pipeline-XXXXXX.png');
   screenshotStream.get_output_stream().write_all(png, null);
   screenshotStream.close(null);
   const screenshotPortal = extensionObject._portal;

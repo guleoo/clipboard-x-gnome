@@ -73,7 +73,7 @@ export class QuickPhrasesPanel {
       x_expand: true,
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
-    this.entry.get_hint_actor()._clipboardXTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    this.entry.get_hint_actor()._clipboardXGnomeTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
     this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
       const key = event.get_key_symbol();
       if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
@@ -102,7 +102,7 @@ export class QuickPhrasesPanel {
 
     this.focusGrid = new FocusGrid({
       ensureVisible: actor => {
-        const row = actor._clipboardXPhraseRow;
+        const row = actor._clipboardXGnomePhraseRow;
         if (row?.mapped)
           AnimationUtils.ensureActorVisibleInScrollView(this.scroll, row);
       },
@@ -136,7 +136,7 @@ export class QuickPhrasesPanel {
     const focusRows = [];
     for (const phrase of this._store.all) {
       const row = new ContentItem();
-      row._clipboardXPhrase = phrase;
+      row._clipboardXGnomePhrase = phrase;
       const content = new St.Button({
         can_focus: true,
         track_hover: true,
@@ -163,7 +163,7 @@ export class QuickPhrasesPanel {
       );
       row.addAction(remove);
       for (const actor of row.focusActors)
-        actor._clipboardXPhraseRow = row;
+        actor._clipboardXGnomePhraseRow = row;
       this._buttons.push(content);
       this._rows.push(row);
       focusRows.push([content, remove]);
@@ -190,10 +190,10 @@ export class QuickPhrasesPanel {
   }
 
   handleKey(event) {
-    const row = global.stage.get_key_focus()?._clipboardXPhraseRow;
+    const row = global.stage.get_key_focus()?._clipboardXGnomePhraseRow;
     if (!row || !this._rows.includes(row))
       return Clutter.EVENT_PROPAGATE;
-    const phrase = row._clipboardXPhrase;
+    const phrase = row._clipboardXGnomePhrase;
     let action;
     if (matchesShortcut(this._settings, 'history-paste-shortcut', event))
       action = () => this._onPaste(phrase);

@@ -39,20 +39,20 @@ export function create({
     contentBody.add_child(swatch);
   contentBody.add_child(item.isText ? textPreview(item) : imagePreview(item));
   content.set_child(contentBody);
-  content._clipboardXTypeOnClick = false;
+  content._clipboardXGnomeTypeOnClick = false;
   content.connect('button-press-event', (_button, event) => {
-    content._clipboardXTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
+    content._clipboardXGnomeTypeOnClick = event.get_button() === Clutter.BUTTON_PRIMARY
       && Boolean(event.get_state() & Clutter.ModifierType.CONTROL_MASK);
     return Clutter.EVENT_PROPAGATE;
   });
   content.connect('key-press-event', (_button, event) => {
-    content._clipboardXTypeOnClick = false;
+    content._clipboardXGnomeTypeOnClick = false;
     const result = actions.handleKey(event);
     return result === Clutter.EVENT_PROPAGATE ? actions.handlePanelKey(event) : result;
   });
   content.connect('clicked', () => {
-    const type = content._clipboardXTypeOnClick;
-    content._clipboardXTypeOnClick = false;
+    const type = content._clipboardXGnomeTypeOnClick;
+    content._clipboardXGnomeTypeOnClick = false;
     if (type)
       actions.type();
     else
@@ -101,12 +101,12 @@ export function create({
   };
   for (const action of actionOrder) {
     const button = buttons[action]();
-    button._clipboardXEntryAction = action;
+    button._clipboardXGnomeEntryAction = action;
     row.addAction(button);
   }
-  row._clipboardXFocusRow = row.focusActors;
-  for (const actor of row._clipboardXFocusRow)
-    actor._clipboardXHistoryRow = row;
+  row._clipboardXGnomeFocusRow = row.focusActors;
+  for (const actor of row._clipboardXGnomeFocusRow)
+    actor._clipboardXGnomeHistoryRow = row;
   row.connect('key-press-event', (_row, event) => actions.handleKey(event));
   return row;
 }
