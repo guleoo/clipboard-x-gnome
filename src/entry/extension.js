@@ -214,6 +214,7 @@ export default class ClipboardXExtension extends Extension {
 
     this._indicator?.destroy();
     this._terminalInput?.destroy();
+    this._textTokenizer?.destroy();
     const queueShutdown = this._uploadQueue?.destroy();
     this._sync?.destroy();
     this._shutdown = Promise.all([

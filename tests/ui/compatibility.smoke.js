@@ -280,11 +280,51 @@ export async function run() {
     'Shared scroll adjustment API is unavailable');
 
   stage('tokenizer-panel');
-  actor._panelManager.show('tokenizer', actor._tokenizer.createState(null, 'Hello, world!'));
+  actor._panelManager.show('tokenizer', await actor._tokenizer.createState(null, 'Hello, world!'));
   await Scripting.sleep(100);
   assert(actor._tokenizer._buttons.length > 0, 'Tokenizer panel did not render tokens');
   assert(actor._tokenizer.header.orientation === Clutter.Orientation.VERTICAL,
     'Shared panel header must use orientation');
+  const actions = actor._actions;
+  const tokenize = actions.tokenizeText;
+  const release = deferred();
+  const resume = deferred();
+  try {
+    stage('delayed-tokenizer-navigation');
+    const {ClipboardItem} = await import(`${actions.extensionObject.dir.get_uri()}/clipboard/item.js`);
+    const source = ClipboardItem.fromText('Hello, world!');
+    const delayed = deferred();
+    actions.tokenizeText = async text => {
+      delayed.resolve();
+      await release.promise;
+      return tokenize(text);
+    };
+    const pending = actor._openTokenizer(source);
+    await wait('dictionary-loading', delayed.promise);
+    actor._openPhrases();
+    actor._closePhrases();
+    release.resolve();
+    await wait('superseded-tokenizer', pending);
+    assert(actor._panelManager.is('history'), 'Late dictionary loading must not override panel navigation');
+
+    const closing = deferred();
+    actions.tokenizeText = async text => {
+      closing.resolve();
+      await resume.promise;
+      return tokenize(text);
+    };
+    const closed = actor._openTokenizer(source);
+    await wait('dictionary-loading-before-close', closing.promise);
+    actor.menu.close();
+    actor.menu.open();
+    resume.resolve();
+    await wait('closed-tokenizer-request', closed);
+    assert(actor._panelManager.is('history'), 'Reopening the menu must not revive a closed tokenizer request');
+  } finally {
+    release.resolve();
+    resume.resolve();
+    actions.tokenizeText = tokenize;
+  }
   stage('quick-phrases-panel');
   actor._openPhrases();
   await Scripting.sleep(100);

@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 
 import {loadFile, writeFile} from '../../../common/files.js';
 import {createLogger} from '../../../common/logger.js';
-import {parseDictionary, serializeDictionary} from './format.js';
+import {parseDictionaryAsync, serializeDictionary} from './format.js';
 import {inferLocale, localeCandidates, SYSTEM_DICTIONARY_ID} from './locale.js';
 import {Lexicon} from './lexicon.js';
 
@@ -17,20 +17,66 @@ function decode(contents) {
   return new TextDecoder().decode(contents).replace(/^\uFEFF/u, '');
 }
 
-function ensureDirectory(directory) {
+async function ensureDirectory(directory, cancellable) {
   try {
-    directory.make_directory_with_parents(null);
+    await io(directory, 'make_directory', [], cancellable);
   } catch (error) {
-    if (!error.matches(Gio.io_error_quark(), Gio.IOErrorEnum.EXISTS))
+    if (error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS))
+      return;
+    if (!error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND) || !directory.get_parent())
       throw error;
+    await ensureDirectory(directory.get_parent(), cancellable);
+    await ensureDirectory(directory, cancellable);
   }
 }
 
-function loadText(file) {
-  const [ok, contents] = file.load_contents(null);
-  if (!ok)
-    throw new Error(`Unable to read ${file.get_uri()}`);
-  return decode(contents);
+function io(object, operation, args, cancellable = null) {
+  return new Promise((resolve, reject) => {
+    object[`${operation}_async`](...args, GLib.PRIORITY_DEFAULT, cancellable, (source, result) => {
+      try {
+        resolve(source[`${operation}_finish`](result));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+async function loadText(file, cancellable) {
+  return decode((await loadFile(file, cancellable)).get_data());
+}
+
+function checkpoint(cancellable) {
+  if (cancellable?.is_cancelled())
+    return Promise.reject(new GLib.Error(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED, 'Dictionary loading cancelled'));
+  let signal = 0;
+  let source = 0;
+  return new Promise((resolve, reject) => {
+    source = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      source = 0;
+      resolve();
+      return GLib.SOURCE_REMOVE;
+    });
+    if (cancellable) {
+      signal = cancellable.connect(() => {
+        if (source)
+          GLib.Source.remove(source);
+        source = 0;
+        reject(new GLib.Error(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED, 'Dictionary loading cancelled'));
+      });
+    }
+  }).finally(() => {
+    if (signal)
+      cancellable.disconnect(signal);
+    if (source)
+      GLib.Source.remove(source);
+  });
+}
+
+async function parse(file, defaults, cancellable) {
+  return parseDictionaryAsync(await loadText(file, cancellable), defaults, {
+    checkpoint: () => checkpoint(cancellable),
+  });
 }
 
 function checksum(value) {
@@ -56,6 +102,7 @@ export class DictionaryStore {
     this._root = Gio.File.new_for_path(path);
     this._seedPaths = seedPaths;
     this._seedsReady = false;
+    this._seedsPending = null;
   }
 
   get path() {
@@ -68,22 +115,37 @@ export class DictionaryStore {
     return this._root.get_child(fileName);
   }
 
-  ensureSeeds() {
+  async ensureSeeds(cancellable = null) {
     if (this._seedsReady)
       return;
-    ensureDirectory(this._root);
+    if (!this._seedsPending) {
+      const pending = this._importSeeds(cancellable);
+      this._seedsPending = pending;
+      pending.finally(() => {
+        if (this._seedsPending === pending)
+          this._seedsPending = null;
+      }).catch(() => {});
+    }
+    await this._seedsPending;
+    cancellable?.set_error_if_cancelled();
+  }
+
+  async _importSeeds(cancellable) {
+    await ensureDirectory(this._root, cancellable);
     const stateFile = this._root.get_child('.seed-state.json');
     let state = {imported: []};
-    if (stateFile.query_exists(null)) {
-      try {
-        const parsed = JSON.parse(loadText(stateFile));
-        if (Array.isArray(parsed.imported))
-          state = {imported: parsed.imported.filter(value => typeof value === 'string')};
-      } catch (error) {
+    let changed = false;
+    try {
+      const parsed = JSON.parse(await loadText(stateFile, cancellable));
+      if (Array.isArray(parsed.imported))
+        state = {imported: parsed.imported.filter(value => typeof value === 'string')};
+    } catch (error) {
+      if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        throw error;
+      changed = true;
+      if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
         logger.error('load-seed-state', error);
-      }
     }
-    let changed = !stateFile.query_exists(null);
     for (const seedPath of this._seedPaths) {
       const source = Gio.File.new_for_path(seedPath);
       const fileName = source.get_basename();
@@ -91,35 +153,39 @@ export class DictionaryStore {
         throw new Error(`Invalid seed dictionary filename: ${fileName}`);
       if (!state.imported.includes(fileName)) {
         const target = this._root.get_child(fileName);
-        if (!target.query_exists(null))
-          source.copy(target, Gio.FileCopyFlags.NONE, null, null);
+        try {
+          await new Promise((resolve, reject) => source.copy_async(
+            target, Gio.FileCopyFlags.NONE, GLib.PRIORITY_DEFAULT, cancellable, null,
+            (file, result) => {
+              try { resolve(file.copy_finish(result)); } catch (error) { reject(error); }
+            },
+          ));
+        } catch (error) {
+          if (!error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS))
+            throw error;
+        }
         state.imported.push(fileName);
         changed = true;
       }
     }
     if (changed) {
-      stateFile.replace_contents(
-        new TextEncoder().encode(`${JSON.stringify(state)}\n`),
-        null,
-        false,
-        Gio.FileCreateFlags.REPLACE_DESTINATION,
-        null,
-      );
+      await writeFile(stateFile,
+        new GLib.Bytes(new TextEncoder().encode(`${JSON.stringify(state)}\n`)), cancellable);
     }
     this._seedsReady = true;
   }
 
-  list() {
-    this.ensureSeeds();
+  async list(cancellable = null) {
+    await this.ensureSeeds(cancellable);
     const dictionaries = [];
-    for (const file of this._dictionaryFiles()) {
+    for (const file of await this._dictionaryFiles(cancellable)) {
       try {
         const fileName = file.get_basename();
         const locale = fileName.match(FILE_PATTERN)?.[1] ?? '';
-        const parsed = parseDictionary(loadText(file), {
+        const parsed = await parse(file, {
           locale,
           name: fileName.replace(/\.dict$/u, ''),
-        });
+        }, cancellable);
         dictionaries.push({
           fileName,
           locale: parsed.locale,
@@ -128,6 +194,8 @@ export class DictionaryStore {
           entryCount: parsed.entries.length,
         });
       } catch (error) {
+        if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+          throw error;
         logger.error('load-dictionary', error);
       }
     }
@@ -135,13 +203,13 @@ export class DictionaryStore {
       || left.name.localeCompare(right.name));
   }
 
-  load(languageNames, selectedFiles = []) {
-    this.ensureSeeds();
+  async load(languageNames, selectedFiles = [], cancellable = null) {
+    await this.ensureSeeds(cancellable);
     const locales = new Set(localeCandidates(languageNames));
     if (locales.size === 0)
       return {lexicon: new Lexicon(), systemEnabled: true};
     const lexicon = new Lexicon([], MAXIMUM_ACTIVE_ENTRIES);
-    const files = this._dictionaryFiles()
+    const files = (await this._dictionaryFiles(cancellable))
       .sort((left, right) => left.get_basename().localeCompare(right.get_basename()))
       .filter(file => locales.has(file.get_basename().match(FILE_PATTERN)?.[1]));
     const enabled = new Set(selectedFiles);
@@ -154,11 +222,17 @@ export class DictionaryStore {
     for (const file of selected) {
       const locale = file.get_basename().match(FILE_PATTERN)?.[1];
       try {
-        lexicon.add(parseDictionary(loadText(file), {
+        const dictionary = await parse(file, {
           locale,
           name: file.get_basename(),
-        }).entries);
+        }, cancellable);
+        for (let offset = 0; offset < dictionary.entries.length; offset += 512) {
+          await checkpoint(cancellable);
+          lexicon.add(dictionary.entries.slice(offset, offset + 512));
+        }
       } catch (error) {
+        if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+          throw error;
         logger.error('load-dictionary', error);
       }
     }
@@ -166,15 +240,15 @@ export class DictionaryStore {
   }
 
   async importFile(file, defaultLocale) {
-    this.ensureSeeds();
+    await this.ensureSeeds();
     const bytes = await loadFile(file);
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
     const basename = file.get_basename();
-    const parsed = parseDictionary(decode(bytes.get_data()), {
+    const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
       locale: inferLocale(basename, defaultLocale),
       name: basename.replace(/\.[^.]+$/u, ''),
-    });
+    }, {checkpoint: () => checkpoint()});
     if (parsed.entries.length > MAXIMUM_IMPORT_ENTRIES)
       throw new Error(`Dictionary exceeds the ${MAXIMUM_IMPORT_ENTRIES} entry import limit`);
     const fileName = `${parsed.locale}--${GLib.uuid_string_random()}.dict`;
@@ -193,22 +267,22 @@ export class DictionaryStore {
 
   async refreshSource(uri, defaultLocale) {
     const source = validateNetworkLocation(uri);
-    this.ensureSeeds();
+    await this.ensureSeeds();
     const bytes = await loadFile(Gio.File.new_for_uri(source));
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
-    const parsed = parseDictionary(decode(bytes.get_data()), {
+    const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
       locale: inferLocale(source, defaultLocale),
       name: source.split('/').pop()?.replace(/\.[^.]+$/u, '') || source,
       source,
-    });
+    }, {checkpoint: () => checkpoint()});
     if (parsed.entries.length > MAXIMUM_IMPORT_ENTRIES)
       throw new Error(`Dictionary exceeds the ${MAXIMUM_IMPORT_ENTRIES} entry import limit`);
-    const previous = this.list().find(dictionary => dictionary.source === source);
+    const previous = (await this.list()).find(dictionary => dictionary.source === source);
     const fileName = previous?.fileName
       ?? `${parsed.locale}--${checksum(source)}.dict`;
     if (previous && !fileName.startsWith(`${parsed.locale}--`))
-      this.remove(previous.fileName);
+      await this.remove(previous.fileName);
     const targetName = previous && fileName.startsWith(`${parsed.locale}--`)
       ? fileName
       : `${parsed.locale}--${checksum(source)}.dict`;
@@ -225,27 +299,34 @@ export class DictionaryStore {
     };
   }
 
-  remove(fileName) {
+  async remove(fileName) {
     const file = this.getFile(fileName);
-    if (file.query_exists(null))
-      file.delete(null);
+    try {
+      await io(file, 'delete', []);
+    } catch (error) {
+      if (!error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
+        throw error;
+    }
   }
 
-  _dictionaryFiles() {
+  async _dictionaryFiles(cancellable) {
     const files = [];
-    const enumerator = this._root.enumerate_children(
-      Gio.FILE_ATTRIBUTE_STANDARD_NAME,
+    const enumerator = await io(this._root, 'enumerate_children', [
+      `${Gio.FILE_ATTRIBUTE_STANDARD_NAME},${Gio.FILE_ATTRIBUTE_STANDARD_TYPE}`,
       Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-      null,
-    );
+    ], cancellable);
     try {
-      let info;
-      while ((info = enumerator.next_file(null))) {
-        if (FILE_PATTERN.test(info.get_name()))
-          files.push(this._root.get_child(info.get_name()));
+      while (true) {
+        const batch = await io(enumerator, 'next_files', [64], cancellable);
+        if (batch.length === 0)
+          break;
+        for (const info of batch) {
+          if (info.get_file_type() === Gio.FileType.REGULAR && FILE_PATTERN.test(info.get_name()))
+            files.push(this._root.get_child(info.get_name()));
+        }
       }
     } finally {
-      enumerator.close(null);
+      await io(enumerator, 'close', []);
     }
     return files;
   }

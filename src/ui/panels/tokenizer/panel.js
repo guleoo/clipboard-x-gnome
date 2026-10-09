@@ -119,11 +119,11 @@ export class TokenizerPanel {
     return this._buttons;
   }
 
-  createState(item, source) {
+  async createState(item, source) {
     return {
       item,
       source,
-      tokens: this._tokenize(source),
+      tokens: await this._tokenize(source),
       selected: new Set(),
       keyboardSelection: null,
     };
