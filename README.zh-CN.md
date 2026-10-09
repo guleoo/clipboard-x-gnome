@@ -207,6 +207,11 @@ flatpak run be.alexandervanhee.gradia %u
 各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
 
+待上传任务按服务器分别持久化，并绑定提交时的 Channel 和 DeviceId。上传中断或切换服务器
+不会丢弃任务；重试前会检查本地条目，并请求服务器复用或确认同一发布，已经完成的内容不再
+重复上传。已删除的本地条目和隐私内容不会上传。关闭同步只暂停已有任务；关闭期间复制的
+条目不加入队列，重新开启后也不会自动补传。
+
 > [!NOTE]
 > 当前在扩展中删除条目，只会删除本设备的本地历史副本，不会请求从整个 Channel 删除。
 > 服务端发出的删除事件则会同步到客户端。
@@ -221,6 +226,7 @@ flatpak run be.alexandervanhee.gradia %u
 | 词库 | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | 同步连接信息 | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | 同步 cursor | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x/sync-outbox/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读
 [安全与隐私说明](SECURITY.zh-CN.md)。

@@ -223,7 +223,8 @@ function fixture(transports = [new Transport('current')], options = {}) {
     ...options,
   });
   for (const event of ['status-changed', 'status-details-changed', 'configuration-changed',
-    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed']) {
+    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed',
+    'poll-completed']) {
     client.connect(event, (_client, ...args) => events.push({event, args: copy(args)}));
   }
   return {client, settings, store, created, events};
@@ -231,7 +232,7 @@ function fixture(transports = [new Transport('current')], options = {}) {
 
 function snapshot(f) {
   return JSON.stringify({
-    connected: f.client.connected, capabilities: f.client.capabilities,
+    connected: f.client.connected, ready: f.client.ready, capabilities: f.client.capabilities,
     configuration: f.client.configuration, status: f.client.status,
     devices: f.client.devices, channels: f.client.channels,
     transfer: f.client.getTransferForItem(itemId), events: f.events,
@@ -257,6 +258,74 @@ async function test(name, action) {
     failures.push(`${name}: ${error.message}`);
     print(`FAIL ${name}: ${error.message}`);
   }
+}
+
+await test('upload replay waits for the complete initialization pipeline', async () => {
+  const transport = new Transport('current');
+  const gate = transport.hold('work');
+  const f = fixture([transport]);
+  const pending = observe(f.client.start());
+  try {
+    await bounded(gate.entered.promise);
+    assert(f.client.connected && !f.client.ready,
+      'authentication alone must not expose a ready upload destination');
+    assert(!f.events.some(value => value.event === 'poll-completed'),
+      'an incomplete startup must not wake the durable upload queue');
+    gate.resolve({cursor: 'initial', hasMore: false, work: []});
+    await bounded(pending);
+    assert(f.client.ready, 'uploads may resume only after initial changes and source work finish');
+    await f.client._poll();
+    assert(f.events.filter(value => value.event === 'poll-completed').length === 1,
+      'a subsequent poll must wake the queue for retry');
+    f.client.destroy();
+    assert(!f.client.ready, 'destroy must immediately prevent replay');
+  } finally {
+    f.client.destroy();
+    gate.resolve({cursor: 'initial', hasMore: false, work: []});
+    await pending;
+  }
+});
+
+for (const phase of ['transfer-chain', 'publication-manifest']) {
+  await test(`publication rechecks source eligibility after waiting for ${phase}`, async () => {
+    const transport = new PublicationTransport('current');
+    const f = fixture([transport]);
+    const release = deferred();
+    const entered = deferred();
+    let eligible = true;
+    let blocker;
+    let pending;
+    let manifestGate;
+    try {
+      f.settings.values.set('sync-text', true);
+      await bounded(f.client.start());
+      if (phase === 'transfer-chain') {
+        blocker = observe(f.client._enqueueTransfer(() => {
+          entered.resolve();
+          return release.promise;
+        }));
+        await bounded(entered.promise);
+      } else {
+        manifestGate = transport.hold('createItem');
+      }
+      pending = observe(f.client.publish(publicationItem, {guard: () => eligible}));
+      if (manifestGate)
+        await bounded(manifestGate.entered.promise);
+      eligible = false;
+      release.resolve();
+      manifestGate?.resolve(copy(transport.publication));
+      assertCancelled(await bounded(pending));
+      assert(!transport.calls.some(method => ['uploadPreview', 'uploadContent', 'completeUpload'].includes(method)),
+        'Invalidated source content must never be sent or completed after a wait');
+      if (phase === 'transfer-chain')
+        assert(!transport.calls.includes('createItem'), 'An invalidated queued source must not publish a manifest');
+    } finally {
+      f.client.destroy();
+      release.resolve();
+      manifestGate?.resolve({});
+      await Promise.all([...(pending ? [pending] : []), ...(blocker ? [blocker] : [])]);
+    }
+  });
 }
 
 await test('successive restarts discard delayed configuration loads', async () => {

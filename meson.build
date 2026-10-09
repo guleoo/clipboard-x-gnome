@@ -112,6 +112,7 @@ test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 't
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
+test('sync-upload-queue', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/upload-queue.test.js'])
 test('sync-lifecycle', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/lifecycle.test.js'])
 test('sync-receive', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/sync/receive.test.js'],

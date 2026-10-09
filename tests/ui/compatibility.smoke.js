@@ -129,6 +129,7 @@ async function verifyHistoryLifecycle(actor) {
   const extensionObject = actor._actions.extensionObject;
   await wait('clipboard-startup', extensionObject._startup);
   const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
+  const {SyncConfigurationStore} = await import(`${extensionObject.dir.get_uri()}/sync/configuration-store.js`);
   const historical = ClipboardItem.fromText('History before delayed initialization');
   actor._controller.add(historical);
   await wait('initial-history-save', actor._controller.persist());
@@ -139,6 +140,12 @@ async function verifyHistoryLifecycle(actor) {
   const startSync = syncPrototype.start;
   const restartSync = syncPrototype.restart;
   const publishSync = syncPrototype.publish;
+  const configurationPrototype = SyncConfigurationStore.prototype;
+  const loadConfiguration = configurationPrototype.load;
+  const uploadConfiguration = {
+    serverAddress: 'http://compatibility.invalid', apiKey: 'isolated-test-key',
+    activeChannelId: '22222222-2222-4222-8222-222222222222',
+  };
   const loading = deferred();
   const releaseLoad = deferred();
   let syncStarts = 0;
@@ -153,7 +160,12 @@ async function verifyHistoryLifecycle(actor) {
       await releaseLoad.promise;
       return snapshot;
     };
-    syncPrototype.start = async () => { syncStarts++; };
+    configurationPrototype.load = async () => ({...uploadConfiguration});
+    syncPrototype.start = async function () {
+      syncStarts++;
+      this._configuration = {...uploadConfiguration, apiKeyConfigured: true};
+      this._ready = true;
+    };
     syncPrototype.restart = async () => { syncRestarts++; };
     syncPrototype.publish = async () => {
       assert(syncStarts === 1, 'Publication ran before synchronization startup');
@@ -191,6 +203,7 @@ async function verifyHistoryLifecycle(actor) {
     syncPrototype.start = startSync;
     syncPrototype.restart = restartSync;
     syncPrototype.publish = publishSync;
+    configurationPrototype.load = loadConfiguration;
   }
 
   const latest = ClipboardItem.fromText('History immediately before disable');

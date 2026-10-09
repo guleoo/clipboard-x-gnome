@@ -301,6 +301,23 @@ try {
     'completed server progress must replace local streaming progress');
   assert(client._remoteTransferIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
+  const createItem = transport.createItem.bind(transport);
+  const completeUpload = transport.completeUpload.bind(transport);
+  const completedUploadBytes = transport.uploadedBytes;
+  transport.createItem = async (...args) => {
+    const publication = await createItem(...args);
+    return {...publication, transfer: transport._transfer('completed', transport.totalBytes)};
+  };
+  await client.publish(item);
+  assert(transport.uploadedBytes === completedUploadBytes,
+    'an already-completed remote publication must be acknowledged without re-uploading bytes');
+  transport.createItem = createItem;
+  transport.completeUpload = async () => ({transfer: transport._transfer('cancelled', 0)});
+  let unconfirmed = null;
+  try { await client.publish(item); } catch (error) { unconfirmed = error; }
+  assert(unconfirmed?.code === 'upload_failed',
+    'a cancelled server acknowledgement must not complete a durable upload intent');
+  transport.completeUpload = completeUpload;
   const verificationModes = [];
   transport.downloadContent = async (_channelId, _itemId, _contentId, _targetPath, options) => {
     verificationModes.push(options.useSha256sum);
@@ -380,12 +397,17 @@ retentionTransport.transfer = async () => retentionTransport._transfer(remoteSta
 const retentionClient = new SyncClient(new TestSettings(), {
   configurationStore: new TestStore(), transportFactory: () => retentionTransport,
 });
+const cancelledPublications = [];
+retentionClient.connect('publication-cancelled', (_client, id) => cancelledPublications.push(id));
 try {
   await retentionClient.start();
   const active = await retentionClient.getTransfer(transferId);
+  retentionClient._recordTransfer(active, true);
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
     'a looked-up remote task must remain cancellable and release its marker after DELETE');
+  assert(cancelledPublications.length === 1 && cancelledPublications[0] === retentionTransport.itemId,
+    'explicit cancellation must identify the publication whose durable intent should be removed');
 
   await retentionClient.getTransfer(transferId);
   retentionClient._recordTransfer(active, true);

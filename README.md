@@ -229,6 +229,13 @@ The server address, API key, and active Channel are stored in
 `sync-state.json`. A newly joined device starts from the retained Channel change history and downloads
 metadata and previews first; complete large objects remain lazy.
 
+Pending uploads are saved in a separate queue for each server, bound to the original Channel and
+DeviceId. Interrupting an upload or switching servers preserves its task. Before retrying, Clipboard X
+checks the local entry and asks the server to reuse or acknowledge the same publication, avoiding
+another content upload when it is already complete. Missing local entries and sensitive content are
+not uploaded. Disabling synchronization pauses existing tasks; entries copied while it is disabled
+are not queued or automatically backfilled when it is re-enabled.
+
 > [!NOTE]
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
 > request a Channel-wide deletion. Server-originated removal events do propagate to clients.
@@ -245,6 +252,7 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 | Dictionaries | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | Sync connection | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | Sync cursors | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x/sync-outbox/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)
 before enabling synchronization or handling sensitive material.
