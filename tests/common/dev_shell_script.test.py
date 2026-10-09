@@ -79,6 +79,21 @@ exit "${TEST_SESSION_EXIT:-0}"
         return subprocess.run([str(self.script), *arguments], env={**self.env, **environment},
                               capture_output=True, text=True, check=False, timeout=10)
 
+    def wait_for_pids(self, *paths):
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                published = [path.read_text() for path in paths]
+            except FileNotFoundError:
+                published = []
+            # File creation is not readiness; use only complete PID lines from one read.
+            if len(published) == len(paths) and all(
+                    re.fullmatch(r"[1-9][0-9]*\n", pid) for pid in published):
+                return [int(pid) for pid in published]
+            if time.monotonic() >= deadline:
+                self.fail("mock processes must publish complete PIDs before interruption")
+            time.sleep(0.01)
+
     def test_journal_wrapper_runs_once_and_keeps_isolation(self):
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -194,21 +209,9 @@ console.error("Clipboard X [ERROR] {marker}-error");'
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, start_new_session=True)
         try:
-            deadline = time.monotonic() + 5
             shell_pid = self.root / "shell.pid"
             journal_pid = self.root / "journal.pid"
-            while True:
-                try:
-                    published_pids = [path.read_text() for path in (shell_pid, journal_pid)]
-                except FileNotFoundError:
-                    published_pids = []
-                # A complete PID line is the readiness marker, not file creation.
-                if len(published_pids) == 2 and all(
-                        re.fullmatch(r"[1-9][0-9]*\n", pid) for pid in published_pids):
-                    break
-                if time.monotonic() >= deadline:
-                    self.fail("mock Shell and journal writer must publish complete PIDs before interruption")
-                time.sleep(0.01)
+            self.wait_for_pids(shell_pid, journal_pid)
             os.killpg(process.pid, signal.SIGINT)
             process.communicate(timeout=5)
             self.assertEqual(process.returncode, 130)
@@ -269,11 +272,9 @@ printf '(gnome-shell:123): Gjs-CRITICAL: Object St.BoxLayout (0x456), has been a
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, start_new_session=True)
         try:
-            deadline = time.monotonic() + 5
             shell_pid = self.root / "shell.pid"
-            while not shell_pid.exists() and time.monotonic() < deadline:
-                time.sleep(0.01)
-            self.assertTrue(shell_pid.exists())
+            (pid,) = self.wait_for_pids(shell_pid)
+            deadline = time.monotonic() + 5
             live_output = ""
             while "session stdout" not in live_output and time.monotonic() < deadline:
                 if select.select([process.stdout], [], [], 0.1)[0]:
@@ -284,7 +285,7 @@ printf '(gnome-shell:123): Gjs-CRITICAL: Object St.BoxLayout (0x456), has been a
             self.assertIn("session stdout", live_output,
                           "raw fallback must be visible before the session stops")
             # Stop only the mock Shell to finish the stream and reap the wrapper.
-            os.kill(int(shell_pid.read_text()), signal.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
             stdout, stderr = process.communicate(timeout=5)
             self.assertEqual(process.returncode, 143)
             self.assertIn("switching to raw output", stderr)

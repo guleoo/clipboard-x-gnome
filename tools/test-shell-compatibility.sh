@@ -17,7 +17,22 @@ fi
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
 test_runtime=$(mktemp -d /tmp/clipboard-x-shell-test-XXXXXX)
-trap 'rm -rf -- "$test_runtime"' EXIT
+cleanup_runtime() {
+  local result=$?
+  local attempt
+  trap - EXIT
+  # Bus-activated helpers can still be unmounting the document portal after Shell exits.
+  # Do not traverse their mounts, and retry transient removal failures without hiding the test status.
+  for ((attempt = 0; attempt < 50; attempt++)); do
+    if rm -rf --one-file-system -- "$test_runtime" 2>/dev/null; then
+      exit "$result"
+    fi
+    sleep 0.1
+  done
+  printf 'Warning: could not clean up test runtime: %s\n' "$test_runtime" >&2
+  exit "$result"
+}
+trap cleanup_runtime EXIT
 export XDG_RUNTIME_DIR="$test_runtime"
 export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
 # Do not depend on the performance tool's animated wallpaper or distro background packages.
