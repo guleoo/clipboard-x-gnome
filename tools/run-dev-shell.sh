@@ -14,10 +14,10 @@ for argument in "$@"; do
   esac
 done
 
-extension_uuid='clipboard-x-gnome@guleoo.github.io'
+extension_uuid='clipboard-x@guleoo.github.io'
 
-if [[ "${CLIPBOARD_X_GNOME_DEV_SESSION:-0}" == '1' ]]; then
-  if [[ -z "${CLIPBOARD_X_GNOME_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_GNOME_DEV_ROOT/config" ]]; then
+if [[ "${CLIPBOARD_X_DEV_SESSION:-0}" == '1' ]]; then
+  if [[ -z "${CLIPBOARD_X_DEV_ROOT:-}" || "${XDG_CONFIG_HOME:-}" != "$CLIPBOARD_X_DEV_ROOT/config" ]]; then
     printf '%s\n' 'Clipboard X Gnome [ERROR] Refusing to start Devkit without an isolated configuration directory.' >&2
     exit 1
   fi
@@ -29,9 +29,9 @@ fi
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
 script_path="$project_dir/tools/run-dev-shell.sh"
-build_dir=${CLIPBOARD_X_GNOME_DEV_BUILD_DIR:-"$project_dir/build-devkit"}
+build_dir=${CLIPBOARD_X_DEV_BUILD_DIR:-"$project_dir/build-devkit"}
 runtime_dir=${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is required}
-dev_root=${CLIPBOARD_X_GNOME_DEV_ROOT:-"$runtime_dir/clipboard-x-gnome-devkit"}
+dev_root=${CLIPBOARD_X_DEV_ROOT:-"$runtime_dir/clipboard-x-devkit"}
 extension_parent="$dev_root/data/gnome-shell/extensions"
 extension_link="$extension_parent/$extension_uuid"
 extension_build="$build_dir/$extension_uuid"
@@ -54,11 +54,11 @@ report_exit() {
   fi
 }
 
-if [[ "${CLIPBOARD_X_GNOME_DEV_JOURNAL:-0}" != '1' ]]; then
+if [[ "${CLIPBOARD_X_DEV_JOURNAL:-0}" != '1' ]]; then
   if command -v systemd-cat >/dev/null 2>&1 && command -v tee >/dev/null 2>&1; then
     printf '%s\n' 'Clipboard X Gnome Devkit logs are displayed in the terminal and saved to the system journal.' \
-      "View: journalctl --user -b -f -t clipboard-x-gnome-devkit + _EXE=$(command -v gnome-shell)"
-    exec {dev_journal_fd}> >(systemd-cat --identifier=clipboard-x-gnome-devkit --priority=info)
+      "View: journalctl --user -b -f -t clipboard-x-devkit + _EXE=$(command -v gnome-shell)"
+    exec {dev_journal_fd}> >(systemd-cat --identifier=clipboard-x-devkit --priority=info)
     dev_journal_pid=$!
     trap 'exec {dev_journal_fd}>&-; kill "$dev_journal_pid" 2>/dev/null || true; wait "$dev_journal_pid" 2>/dev/null || true' EXIT
     trap 'exit 130' INT
@@ -67,7 +67,7 @@ if [[ "${CLIPBOARD_X_GNOME_DEV_JOURNAL:-0}" != '1' ]]; then
     # to journald. tee forwards that output once, while keeping the terminal live.
     if (
       exec {dev_journal_fd}>&-
-      exec env CLIPBOARD_X_GNOME_DEV_JOURNAL=1 "$script_path" "$@"
+      exec env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path" "$@"
     ) 2>&1 | tee --output-error=warn-nopipe "/dev/fd/$dev_journal_fd" \
       | format_output; then
       dev_session_status=0
@@ -89,7 +89,7 @@ if [[ "${CLIPBOARD_X_GNOME_DEV_JOURNAL:-0}" != '1' ]]; then
     exit "$dev_session_status"
   fi
   printf '%s\n' 'systemd-cat or tee not found; build and session output is only displayed in the terminal. No log files are created.' >&2
-  if env CLIPBOARD_X_GNOME_DEV_JOURNAL=1 "$script_path" "$@" 2>&1 \
+  if env CLIPBOARD_X_DEV_JOURNAL=1 "$script_path" "$@" 2>&1 \
     | format_output; then
     exit 0
   else
@@ -146,8 +146,8 @@ printf 'Clipboard X Gnome Devkit configuration: %s\n' "$dev_root"
 printf '%s\n' 'Clipboard X Gnome [INFO] devkit Starting development session'
 
 exec env \
-  CLIPBOARD_X_GNOME_DEV_SESSION=1 \
-  CLIPBOARD_X_GNOME_DEV_ROOT="$dev_root" \
+  CLIPBOARD_X_DEV_SESSION=1 \
+  CLIPBOARD_X_DEV_ROOT="$dev_root" \
   XDG_CONFIG_HOME="$dev_root/config" \
   XDG_DATA_HOME="$dev_root/data" \
   XDG_CACHE_HOME="$dev_root/cache" \

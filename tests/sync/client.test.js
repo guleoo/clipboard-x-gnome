@@ -217,7 +217,7 @@ class TestTransport {
   }
 }
 
-const directory = GLib.dir_make_tmp('clipboard-x-gnome-sync-client-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-sync-client-test-XXXXXX');
 const path = GLib.build_filenamev([directory, 'content.txt']);
 const file = Gio.File.new_for_path(path);
 const settings = new TestSettings();

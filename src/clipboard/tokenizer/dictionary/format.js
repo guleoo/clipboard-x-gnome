@@ -48,7 +48,7 @@ function completeDictionary(metadata, entries) {
 
 export function serializeDictionary(dictionary) {
   const lines = [
-    '# clipboard-x-gnome-dictionary: 1',
+    '# clipboard-x-dictionary: 1',
     `# locale: ${dictionary.locale}`,
     `# name: ${dictionary.name.replaceAll('\n', ' ')}`,
     ...(dictionary.source ? [`# source: ${dictionary.source}`] : []),

@@ -51,7 +51,7 @@ journal 中查看。
 ```
 
 `tools/run-dev-shell.sh` 在存在 `systemd-cat` 时，将**未过滤的**构建输出及独立 Devkit 会话的
-标准输出、标准错误接入系统 journal，标识为 `clipboard-x-gnome-devkit`。终端过滤只影响显示，
+标准输出、标准错误接入系统 journal，标识为 `clipboard-x-devkit`。终端过滤只影响显示，
 不会减少 journal 保存的内容，不需要额外打开终端或启动 journal 跟随器。脚本合并标准输出
 和标准错误，先通过 `tee` 转发一次，再过滤终端显示。
 标准错误接到普通管道时，[GLib 默认日志写入器](https://docs.gtk.org/glib/func.log_writer_default.html)
@@ -60,7 +60,7 @@ journal 中查看。
 如果需要单独查看已保存的输出，可以运行：
 
 ```sh
-journalctl --user -b -f -o cat -t clipboard-x-gnome-devkit + _EXE="$(command -v gnome-shell)"
+journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-shell)"
 ```
 
 `+` 将 Devkit 输出与 Shell 原生 journal 消息合并查询。宿主会话及独立启动的进程，其 GJS

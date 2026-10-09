@@ -134,7 +134,7 @@ class DownloadClient extends HttpClient {
   }
 }
 
-const directory = GLib.dir_make_tmp('clipboard-x-gnome-http-client-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-http-client-test-XXXXXX');
 const targetPath = GLib.build_filenamev([directory, 'object']);
 try {
   const downloadClient = new DownloadClient({

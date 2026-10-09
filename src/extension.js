@@ -1,3 +1,3 @@
-import ClipboardXGnomeExtension from './entry/extension.js';
+import ClipboardXExtension from './entry/extension.js';
 
-export default ClipboardXGnomeExtension;
+export default ClipboardXExtension;

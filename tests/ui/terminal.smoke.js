@@ -4,8 +4,8 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-const UUID = 'clipboard-x-gnome@guleoo.github.io';
-const STATUS_AREA_NAME = 'clipboard-x-gnome';
+const UUID = 'clipboard-x@guleoo.github.io';
+const STATUS_AREA_NAME = 'clipboard-x';
 const TEST_DIRECTORY = Gio.File.new_for_uri(import.meta.url).get_parent().get_path();
 const TARGET_TITLE = 'Clipboard X Gnome Typing Target';
 
@@ -41,7 +41,7 @@ export async function run() {
   assert(terminalInput, 'Clipboard X Gnome terminal input is unavailable');
   const originalModifierState = terminalInput._modifierState.bind(terminalInput);
 
-  const [output, outputStream] = Gio.File.new_tmp('clipboard-x-gnome-typing-XXXXXX');
+  const [output, outputStream] = Gio.File.new_tmp('clipboard-x-typing-XXXXXX');
   outputStream.close(null);
   const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
   launcher.setenv('GDK_BACKEND', 'wayland', true);

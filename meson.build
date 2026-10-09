@@ -9,8 +9,8 @@ gnome = import('gnome')
 fs = import('fs')
 i18n = import('i18n')
 
-extension_uuid = 'clipboard-x-gnome@guleoo.github.io'
-schema_id = 'org.gnome.shell.extensions.clipboard-x-gnome'
+extension_uuid = 'clipboard-x@guleoo.github.io'
+schema_id = 'org.gnome.shell.extensions.clipboard-x'
 target = get_option('target')
 release_archive = 'clipboard-x-gnome_@0@.zip'.format(meson.project_version())
 
@@ -52,7 +52,7 @@ install_data('data/stylesheet.css', install_dir: extension_dir)
 
 subdir('po')
 
-schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x-gnome.gschema.xml')
+schema_source = files('schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml')
 install_data(schema_source, install_dir: schema_dir)
 
 if target != 'system'
@@ -165,7 +165,7 @@ if target == 'package'
     meson.project_source_root() / 'tools' / 'package.sh',
     meson.project_build_root() / release_archive,
     extension_dir,
-    'org.gnome.shell.extensions.clipboard-x-gnome.gschema.xml',
+    'org.gnome.shell.extensions.clipboard-x.gschema.xml',
     meson.project_source_root() / 'src',
   )
 endif

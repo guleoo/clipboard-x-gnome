@@ -76,7 +76,7 @@ function fileSize(file) {
 
 async function runCase(mode, fullPath, iterations) {
   const temporaryRoot = Gio.File.new_for_path(GLib.dir_make_tmp(
-    `clipboard-x-gnome-tokenizer-${mode}-XXXXXX`,
+    `clipboard-x-tokenizer-${mode}-XXXXXX`,
   ));
   const storeRoot = temporaryRoot.get_child('dictionaries');
   const seedPath = Gio.File.new_for_uri(import.meta.url)

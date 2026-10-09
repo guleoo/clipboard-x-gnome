@@ -251,7 +251,7 @@ class Indicator extends PanelMenu.Button {
   _applyTextVerticalOffset() {
     const offset = this._settings.get_int('panel-text-vertical-offset');
     const apply = actor => {
-      const actorOffset = actor._clipboardXGnomeTextBaselineOffset ?? 0;
+      const actorOffset = actor._clipboardXTextBaselineOffset ?? 0;
       if (actor instanceof St.Entry)
         actor.clutter_text.translation_y = offset;
       else if (actor instanceof St.Label)
@@ -439,8 +439,8 @@ class Indicator extends PanelMenu.Button {
     });
     if (stateful && this._stateHoverTransfer)
       this._skipStateHoverTransition(button);
-    button._clipboardXGnomeShowTooltip = showTooltip;
-    button._clipboardXGnomeTooltipScope = tooltipScope;
+    button._clipboardXShowTooltip = showTooltip;
+    button._clipboardXTooltipScope = tooltipScope;
     this._setHint(button, hintText);
     return button;
   }
@@ -464,8 +464,8 @@ class Indicator extends PanelMenu.Button {
       actor.accessible_name = text;
       actor._hintText = text;
     }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
+    if (actor._clipboardXShowTooltip)
+      this._tooltip.attach(actor, text, {scope: actor._clipboardXTooltipScope});
   }
 
   _handleMenuKey(event) {

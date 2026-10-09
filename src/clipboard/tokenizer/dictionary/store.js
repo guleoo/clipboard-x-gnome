@@ -96,7 +96,7 @@ export class DictionaryStore {
   constructor({rootPath = '', seedPaths = []} = {}) {
     const path = rootPath || GLib.build_filenamev([
       GLib.get_user_data_dir(),
-      'clipboard-x-gnome',
+      'clipboard-x',
       'dictionaries',
     ]);
     this._root = Gio.File.new_for_path(path);

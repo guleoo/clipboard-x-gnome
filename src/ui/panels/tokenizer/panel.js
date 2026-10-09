@@ -101,7 +101,7 @@ export class TokenizerPanel {
 
     this.focusGrid = new FocusGrid({
       ensureVisible: actor => {
-        if (actor._clipboardXGnomeToken)
+        if (actor._clipboardXToken)
           AnimationUtils.ensureActorVisibleInScrollView(this.scroll, actor);
       },
     });
@@ -170,9 +170,9 @@ export class TokenizerPanel {
         checked: state.selected.has(token.index),
         style_class: `button cbx-token cbx-token-${token.type}`,
       });
-      button._clipboardXGnomeMaximumWidth = maximumRowWidth;
-      button._clipboardXGnomeToken = token;
-      button._clipboardXGnomeTokenState = state;
+      button._clipboardXMaximumWidth = maximumRowWidth;
+      button._clipboardXToken = token;
+      button._clipboardXTokenState = state;
       this._buttons.push(button);
       button.connect('key-press-event', (_actor, event) => {
         const result = this.handleKey(button, event);
@@ -200,8 +200,8 @@ export class TokenizerPanel {
           this._applySelectionDrag(button);
       });
       button.connect('clicked', () => {
-        if (button._clipboardXGnomeSuppressClick) {
-          button._clipboardXGnomeSuppressClick = false;
+        if (button._clipboardXSuppressClick) {
+          button._clipboardXSuppressClick = false;
           return;
         }
         state.keyboardSelection = null;
@@ -271,8 +271,8 @@ export class TokenizerPanel {
   }
 
   handleKey(button, event) {
-    const token = button._clipboardXGnomeToken;
-    const state = button._clipboardXGnomeTokenState;
+    const token = button._clipboardXToken;
+    const state = button._clipboardXTokenState;
     for (const [setting, direction] of SELECTION_SHORTCUTS) {
       if (matchesShortcut(this._settings, setting, event)) {
         this._extendSelection(button, state, direction);
@@ -296,8 +296,8 @@ export class TokenizerPanel {
   }
 
   setSelected(button, selected, updateResult = true) {
-    const token = button._clipboardXGnomeToken;
-    const state = button._clipboardXGnomeTokenState;
+    const token = button._clipboardXToken;
+    const state = button._clipboardXTokenState;
     if (selected)
       state.selected.add(token.index);
     else
@@ -310,10 +310,10 @@ export class TokenizerPanel {
 
   beginSelectionDrag(button) {
     this.endSelectionDrag();
-    const token = button._clipboardXGnomeToken;
-    const state = button._clipboardXGnomeTokenState;
+    const token = button._clipboardXToken;
+    const state = button._clipboardXTokenState;
     state.keyboardSelection = null;
-    button._clipboardXGnomeSuppressClick = true;
+    button._clipboardXSuppressClick = true;
     this._selectionDrag = {
       state,
       selected: !state.selected.has(token.index),
@@ -361,11 +361,11 @@ export class TokenizerPanel {
     if (!button)
       return;
     if (!deferClickReset) {
-      button._clipboardXGnomeSuppressClick = false;
+      button._clipboardXSuppressClick = false;
       return;
     }
     GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      button._clipboardXGnomeSuppressClick = false;
+      button._clipboardXSuppressClick = false;
       return GLib.SOURCE_REMOVE;
     });
   }
@@ -415,7 +415,7 @@ export class TokenizerPanel {
       state.keyboardSelection = {
         anchorPosition: position,
         baseSelected: new Set(state.selected),
-        targetSelected: !state.selected.has(button._clipboardXGnomeToken.index),
+        targetSelected: !state.selected.has(button._clipboardXToken.index),
       };
     }
     const {anchorPosition, baseSelected, targetSelected} = state.keyboardSelection;
@@ -425,14 +425,14 @@ export class TokenizerPanel {
     const start = Math.min(anchorPosition, targetPosition);
     const end = Math.max(anchorPosition, targetPosition);
     for (let index = start; index <= end; index++) {
-      const tokenIndex = this._buttons[index]._clipboardXGnomeToken.index;
+      const tokenIndex = this._buttons[index]._clipboardXToken.index;
       if (targetSelected)
         state.selected.add(tokenIndex);
       else
         state.selected.delete(tokenIndex);
     }
     for (const candidate of this._buttons) {
-      const candidateToken = candidate._clipboardXGnomeToken;
+      const candidateToken = candidate._clipboardXToken;
       candidate.checked = state.selected.has(candidateToken.index);
       this._updateButtonStyle(candidate);
     }
@@ -469,15 +469,15 @@ export class TokenizerPanel {
 
   _applySelectionDrag(button) {
     const drag = this._selectionDrag;
-    const token = button?._clipboardXGnomeToken;
-    if (!drag || !token || button._clipboardXGnomeTokenState !== drag.state)
+    const token = button?._clipboardXToken;
+    if (!drag || !token || button._clipboardXTokenState !== drag.state)
       return;
     const start = Math.min(drag.lastIndex, token.index);
     const end = Math.max(drag.lastIndex, token.index);
     let changed = false;
     for (const candidate of this._buttons) {
-      const candidateToken = candidate._clipboardXGnomeToken;
-      if (candidate._clipboardXGnomeTokenState !== drag.state
+      const candidateToken = candidate._clipboardXToken;
+      if (candidate._clipboardXTokenState !== drag.state
           || candidateToken.index < start || candidateToken.index > end
           || drag.visited.has(candidateToken.index))
         continue;
@@ -491,8 +491,8 @@ export class TokenizerPanel {
   }
 
   _updateButtonStyle(button) {
-    const token = button._clipboardXGnomeToken;
-    const styles = [`max-width: ${button._clipboardXGnomeMaximumWidth}px`];
+    const token = button._clipboardXToken;
+    const styles = [`max-width: ${button._clipboardXMaximumWidth}px`];
     if (button.checked) {
       if (this._accentColor)
         styles.push(`background-color: ${this._accentColor}`, 'color: white');

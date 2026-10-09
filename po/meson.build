@@ -1,5 +1,5 @@
 i18n.gettext(
-  'clipboard-x-gnome',
+  'clipboard-x',
   install_dir: extension_dir / 'locale',
   languages: [
     'ar',

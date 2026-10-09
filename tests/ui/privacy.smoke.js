@@ -2,7 +2,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import GLib from 'gi://GLib';
 
-const UUID = 'clipboard-x-gnome@guleoo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 
 export const METRICS = {};
 
@@ -18,7 +18,7 @@ export async function run() {
 
   const extension = Main.extensionManager.lookup(UUID);
   assert(extension?.stateObj, 'Clipboard X Gnome extension is unavailable');
-  const indicator = Main.panel.statusArea['clipboard-x-gnome'];
+  const indicator = Main.panel.statusArea['clipboard-x'];
   assert(indicator, 'Clipboard X Gnome indicator is unavailable');
 
   const controller = indicator._controller;
@@ -65,7 +65,7 @@ export async function run() {
 
     settings.set_boolean('sync-enabled', true);
     const row = indicator._historyPanel.entry(markedItem);
-    assert(!row.focusActors.some(actor => actor._clipboardXGnomeEntryAction === 'sync'),
+    assert(!row.focusActors.some(actor => actor._clipboardXEntryAction === 'sync'),
       'Sensitive history row exposed a synchronization action');
     row.destroy();
 

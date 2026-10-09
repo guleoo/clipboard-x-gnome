@@ -27,7 +27,7 @@ Shell interaction and preferences checks run separately from Meson, in an isolat
 
 ```sh
 run_shell_check() (
-  test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
+  test_runtime=$(mktemp -d /tmp/clipboard-x-check-XXXXXX)
   trap 'rm -rf -- "$test_runtime"' EXIT
   export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
   unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
@@ -101,8 +101,8 @@ v1 field in place from this client.
 User-visible strings use the extension's `gettext` domain. After adding strings, run:
 
 ```sh
-meson compile -C build clipboard-x-gnome-pot
-meson compile -C build clipboard-x-gnome-update-po
+meson compile -C build clipboard-x-pot
+meson compile -C build clipboard-x-update-po
 ```
 
 Then update every catalog listed in `po/LINGUAS` and run

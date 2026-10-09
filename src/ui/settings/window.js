@@ -18,7 +18,7 @@ import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
 import {create as createAboutPage} from './about.js';
 
-export default class ClipboardXGnomePreferences extends ExtensionPreferences {
+export default class ClipboardXPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
     this._rows = new PreferenceRows(settings);
@@ -64,7 +64,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       content.append(new Gtk.Image({icon_name: iconName, pixel_size: 16}));
       content.append(new Gtk.Label({label: page.title, xalign: 0, hexpand: true}));
       row.set_child(content);
-      row._clipboardXGnomePageName = name;
+      row._clipboardXPageName = name;
       navigation.append(row);
     }
     const sidebar = new Gtk.ScrolledWindow({
@@ -91,7 +91,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     navigation.connect('row-selected', (_list, row) => {
       if (!row)
         return;
-      stack.visible_child_name = row._clipboardXGnomePageName;
+      stack.visible_child_name = row._clipboardXPageName;
       contentPage.title = stack.visible_child.title;
       splitView.show_content = true;
     });
@@ -394,7 +394,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
         if (!value)
           return true;
         try {
-          buildEditorArgv(value, 'file:///tmp/clipboard-x-gnome.png', '/tmp/clipboard-x-gnome.png');
+          buildEditorArgv(value, 'file:///tmp/clipboard-x.png', '/tmp/clipboard-x.png');
           return true;
         } catch (_error) {
           return false;

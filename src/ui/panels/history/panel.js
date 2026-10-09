@@ -162,7 +162,7 @@ export class HistoryPanel {
 
     this.focusGrid = new FocusGrid({
       ensureVisible: actor => {
-        const row = actor._clipboardXGnomeHistoryRow;
+        const row = actor._clipboardXHistoryRow;
         if (row?.mapped)
           AnimationUtils.ensureActorVisibleInScrollView(this.scroll, row);
       },
@@ -218,7 +218,7 @@ export class HistoryPanel {
     for (const item of items.slice(0, limit)) {
       const row = this.entry(item);
       this._section.addMenuItem(row);
-      focusRows.push(row._clipboardXGnomeFocusRow);
+      focusRows.push(row._clipboardXFocusRow);
     }
     this._setFocusRows(focusRows);
   }
@@ -463,7 +463,7 @@ export class HistoryPanel {
     }
     button.set_child(new St.Icon({
       icon_name: iconName,
-      icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
+      icon_size: button._clipboardXIconSize ?? ICON_SIZE,
     }));
   }
 
@@ -474,8 +474,8 @@ export class HistoryPanel {
       actor.accessible_name = text;
       actor._hintText = text;
     }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
+    if (actor._clipboardXShowTooltip)
+      this._tooltip.attach(actor, text, {scope: actor._clipboardXTooltipScope});
   }
 
   _activate(item) {

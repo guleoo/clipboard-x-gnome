@@ -14,7 +14,7 @@ function assert(condition, message) {
 }
 
 const SIZE = STRESS_SYNC_LOAD.largeObjectBytes;
-const directory = GLib.dir_make_tmp('clipboard-x-gnome-sync-stream-stress-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-sync-stream-stress-XXXXXX');
 const sourcePath = GLib.build_filenamev([directory, 'source.bin']);
 const targetPath = GLib.build_filenamev([directory, 'target.bin']);
 const source = Gio.File.new_for_path(sourcePath);

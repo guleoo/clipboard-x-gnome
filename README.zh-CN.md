@@ -76,12 +76,8 @@ meson install -C build
 
 ```sh
 gnome-extensions install --force build/clipboard-x-gnome_1.0.3.zip
-gnome-extensions enable clipboard-x-gnome@guleoo.github.io
+gnome-extensions enable clipboard-x@guleoo.github.io
 ```
-
-如果此前安装过 `clipboard-x@guleoo.github.io`，请先禁用旧扩展再安装此版本。
-新扩展使用独立设置和 `$XDG_DATA_HOME/clipboard-x-gnome` 数据目录；旧设置与数据不会
-自动迁移，也不会删除。
 
 Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 
@@ -208,7 +204,7 @@ flatpak run be.alexandervanhee.gradia %u
 `sha256sum` 的软件包（通常是 `coreutils`）。校验会再次读取下载的文件；依赖失效或校验失败
 不会跳过完整性检查。关闭时仍使用现有 GLib 校验，无需额外命令，但大文件内存峰值可能较高。
 
-服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x-gnome/sync.json`；
+服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x/sync.json`；
 各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
 
@@ -226,12 +222,12 @@ flatpak run be.alexandervanhee.gradia %u
 
 | 数据 | 默认位置 |
 | --- | --- |
-| 历史记录 | `$XDG_DATA_HOME/clipboard-x-gnome/history/<DeviceId>` |
-| 快捷语句 | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
-| 词库 | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
-| 同步连接信息 | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| 同步 cursor | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
-| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<服务器地址哈希>.json` |
+| 历史记录 | `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>` |
+| 快捷语句 | `$XDG_DATA_HOME/clipboard-x/quick-phrases.json` |
+| 词库 | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
+| 同步连接信息 | `$XDG_DATA_HOME/clipboard-x/sync.json` |
+| 同步 cursor | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x/sync-queues/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读
 [安全与隐私说明](SECURITY.zh-CN.md)。

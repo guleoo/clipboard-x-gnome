@@ -78,12 +78,8 @@ Install the generated `build/clipboard-x-gnome_1.0.3.zip`:
 
 ```sh
 gnome-extensions install --force build/clipboard-x-gnome_1.0.3.zip
-gnome-extensions enable clipboard-x-gnome@guleoo.github.io
+gnome-extensions enable clipboard-x@guleoo.github.io
 ```
-
-If you previously installed `clipboard-x@guleoo.github.io`, disable it before installing this
-build. The new extension uses separate settings and `$XDG_DATA_HOME/clipboard-x-gnome` storage;
-old settings and data are not automatically migrated or deleted.
 
 GNOME Shell on Wayland cannot reload all extension code in place.
 
@@ -230,7 +226,7 @@ Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends b
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
 
 The server address, API key, and active Channel are stored in
-`$XDG_DATA_HOME/clipboard-x-gnome/sync.json`. Per-Channel change cursors are stored separately in
+`$XDG_DATA_HOME/clipboard-x/sync.json`. Per-Channel change cursors are stored separately in
 `sync-state.json`. A newly joined device starts from the retained Channel change history and downloads
 metadata and previews first; complete large objects remain lazy.
 
@@ -252,12 +248,12 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 
 | Data | Default location |
 | --- | --- |
-| History | `$XDG_DATA_HOME/clipboard-x-gnome/history/<DeviceId>` |
-| Quick phrases | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
-| Dictionaries | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
-| Sync connection | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| Sync cursors | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
-| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<server-address-hash>.json` |
+| History | `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>` |
+| Quick phrases | `$XDG_DATA_HOME/clipboard-x/quick-phrases.json` |
+| Dictionaries | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
+| Sync connection | `$XDG_DATA_HOME/clipboard-x/sync.json` |
+| Sync cursors | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
+| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x/sync-queues/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)
 before enabling synchronization or handling sensitive material.

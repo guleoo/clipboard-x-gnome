@@ -9,7 +9,7 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
-const directory = GLib.dir_make_tmp('clipboard-x-gnome-connection-test-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-connection-test-XXXXXX');
 const files = [];
 const savedChannel = '11111111-1111-4111-8111-111111111111';
 const draftChannel = '22222222-2222-4222-8222-222222222222';

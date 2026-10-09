@@ -3,7 +3,7 @@ import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 
-const UUID = 'clipboard-x-gnome@guleoo.github.io';
+const UUID = 'clipboard-x@guleoo.github.io';
 
 function assert(condition, message) {
   if (!condition)
@@ -25,8 +25,8 @@ export async function run() {
     await Main.extensionManager._initializationPromise;
   const extension = Main.extensionManager.lookup(UUID);
   assert(extension?.enabled, 'Clipboard X Gnome was not enabled');
-  await waitUntil(() => Boolean(Main.panel.statusArea['clipboard-x-gnome']));
-  const indicator = Main.panel.statusArea['clipboard-x-gnome'];
+  await waitUntil(() => Boolean(Main.panel.statusArea['clipboard-x']));
+  const indicator = Main.panel.statusArea['clipboard-x'];
   const history = indicator._historyPanel;
   const entry = history.searchEntry;
   const text = entry.clutter_text;

@@ -7,7 +7,7 @@ export const ContentItem = GObject.registerClass(
 class ContentItem extends PopupMenu.PopupBaseMenuItem {
   _init({leading = [], content = null, actions = []} = {}) {
     super._init({reactive: false, can_focus: false});
-    this._clipboardXGnomeControlType = 'content-item';
+    this._clipboardXControlType = 'content-item';
     this.add_style_class_name('cbx-entry');
     this.track_hover = true;
     for (const actor of leading)

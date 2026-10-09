@@ -33,7 +33,7 @@ const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
   false,
 );
 const settings = new Gio.Settings({
-  settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x-gnome', false),
+  settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x', false),
 });
 const {PreferenceRows} = await import('../../src/ui/settings/rows.js');
 const {DEVICE_ICONS, deviceIcon} = await import('../../src/ui/icons/device.js');

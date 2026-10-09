@@ -35,15 +35,15 @@ class ReleasePackageTest(unittest.TestCase):
             "prefs.js": b"preferences",
             "metadata.json": json.dumps(
                 {
-                    "uuid": "clipboard-x-gnome@guleoo.github.io",
-                    "settings-schema": "org.gnome.shell.extensions.clipboard-x-gnome",
+                    "uuid": "clipboard-x@guleoo.github.io",
+                    "settings-schema": "org.gnome.shell.extensions.clipboard-x",
                     "version-name": "0.1.0",
                     "shell-version": ["50", "51"],
                 }
             ).encode(),
             "stylesheet.css": b".panel { color: white; }",
-            "schemas/org.gnome.shell.extensions.clipboard-x-gnome.gschema.xml": b"<schema/>",
-            "locale/zh_CN/LC_MESSAGES/clipboard-x-gnome.mo": b"translation",
+            "schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml": b"<schema/>",
+            "locale/zh_CN/LC_MESSAGES/clipboard-x.mo": b"translation",
         }
 
     def write_archive(self):
@@ -67,7 +67,7 @@ class ReleasePackageTest(unittest.TestCase):
             check_release.validate(self.root, self.archive)
 
     def test_rejects_missing_runtime_file(self):
-        del self.files["schemas/org.gnome.shell.extensions.clipboard-x-gnome.gschema.xml"]
+        del self.files["schemas/org.gnome.shell.extensions.clipboard-x.gschema.xml"]
         self.write_archive()
         with self.assertRaisesRegex(check_release.ReleaseError, "missing="):
             check_release.validate(self.root, self.archive)

@@ -26,9 +26,9 @@ HTTP 会使 API Key 和内容在网络中明文传输；需要链路机密性和
 
 ## 本地保护
 
-- 历史位于 `$XDG_DATA_HOME/clipboard-x-gnome/history/<DeviceId>`，按来源设备分区，目录权限
+- 历史位于 `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`，按来源设备分区，目录权限
   为 `0700`。旧缓存首次加载后迁移到该结构。
-- 快捷语句位于 `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json`，并按私有数据写入；
+- 快捷语句位于 `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`，并按私有数据写入；
   `sync.json` 与 `sync-state.json` 位于同一个数据根目录。按当前产品约定，插件不检查或
   强制修改 `sync.json` 的文件系统权限；不含凭据的 `sync-state.json` 使用私有权限。
 - API Key 不写入 GSettings，不通过日志、状态对象或设置页公共模型读回；GSettings 中只

@@ -1,3 +1,3 @@
-import ClipboardXGnomePreferences from './ui/settings/window.js';
+import ClipboardXPreferences from './ui/settings/window.js';
 
-export default ClipboardXGnomePreferences;
+export default ClipboardXPreferences;

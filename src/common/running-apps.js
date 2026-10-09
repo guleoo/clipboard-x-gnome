@@ -1,6 +1,6 @@
-export const BUS_NAME = 'org.gnome.Shell.Extensions.ClipboardXGnome';
-export const OBJECT_PATH = '/org/gnome/Shell/Extensions/ClipboardXGnome';
-export const INTERFACE = 'org.gnome.Shell.Extensions.ClipboardXGnome';
+export const BUS_NAME = 'org.gnome.Shell.Extensions.ClipboardX';
+export const OBJECT_PATH = '/org/gnome/Shell/Extensions/ClipboardX';
+export const INTERFACE = 'org.gnome.Shell.Extensions.ClipboardX';
 export const INTROSPECTION_XML = `
 <node>
   <interface name="${INTERFACE}">

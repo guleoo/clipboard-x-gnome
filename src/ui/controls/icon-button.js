@@ -22,8 +22,8 @@ class IconButton extends St.Button {
       style_class: 'cbx-icon-button',
       accessible_name: label,
     });
-    this._clipboardXGnomeControlType = 'icon-button';
-    this._clipboardXGnomeIconSize = iconSize;
+    this._clipboardXControlType = 'icon-button';
+    this._clipboardXIconSize = iconSize;
     this._selectable = selectable;
     if (selectable)
       this.add_style_class_name('cbx-state-icon');
@@ -57,7 +57,7 @@ class IconButton extends St.Button {
   setIcon(iconName) {
     this.set_child(new St.Icon({
       icon_name: iconName,
-      icon_size: this._clipboardXGnomeIconSize,
+      icon_size: this._clipboardXIconSize,
     }));
   }
 
