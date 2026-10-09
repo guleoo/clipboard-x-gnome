@@ -252,7 +252,7 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 | Dictionaries | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | Sync connection | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | Sync cursors | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
-| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x/sync-outbox/<server-address-hash>.json` |
+| Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x/sync-queues/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)
 before enabling synchronization or handling sensitive material.

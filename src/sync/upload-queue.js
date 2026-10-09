@@ -16,7 +16,7 @@ const MAX_BATCH = 20;
 // The outbox stores references, not clipboard snapshots or connection credentials.
 export class UploadQueue {
   constructor(settings, {
-    directory = dataPath('sync-outbox'),
+    directory = dataPath('sync-queues'),
     afterShutdown = null,
     configuration,
     current,

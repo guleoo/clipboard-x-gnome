@@ -226,7 +226,7 @@ flatpak run be.alexandervanhee.gradia %u
 | 词库 | `$XDG_DATA_HOME/clipboard-x/dictionaries` |
 | 同步连接信息 | `$XDG_DATA_HOME/clipboard-x/sync.json` |
 | 同步 cursor | `$XDG_DATA_HOME/clipboard-x/sync-state.json` |
-| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x/sync-outbox/<服务器地址哈希>.json` |
+| 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x/sync-queues/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读
 [安全与隐私说明](SECURITY.zh-CN.md)。
