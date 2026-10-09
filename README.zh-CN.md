@@ -72,10 +72,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome_1.0.3.zip`：
+安装生成的 `build/clipboard-x-gnome_1.0.4.zip`：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.3.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.0.4.zip
 gnome-extensions enable clipboard-x-gnome@guleoo.github.io
 ```
 
@@ -262,8 +262,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.4.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.4.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -273,7 +273,7 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.3.zip t
 ## 文档
 
 - [中文文档索引](docs/README_CN.md)
-- [1.0.3 发布说明](docs/release/v1.0.3-cn.md)
+- [1.0.4 发布说明](docs/release/v1.0.4-cn.md)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/ui-architecture_CN.md)
 - [同步性能与压力测试](docs/sync-performance-testing_CN.md)

@@ -19,7 +19,7 @@ Release 只在推送 `v*` 标签时执行。每个任务构建前检查实际 Sh
 本地构建安装包后，可运行范围较小的生命周期检查：
 
 ```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.3.zip
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.4.zip
 ```
 
 末尾可添加 `50` 或 `51`，要求本机已安装的 Shell 必须是指定版本。脚本不会安装或升级 GNOME。

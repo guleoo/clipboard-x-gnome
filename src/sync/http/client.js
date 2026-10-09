@@ -155,11 +155,11 @@ export class HttpClient {
       }
     }
 
-    const declaredBytes = message.response_headers.get_content_length();
+    const headers = message.response_headers;
+    const length = headers.get_one('Content-Length')?.trim();
+    const encoding = headers.get_one('Content-Encoding')?.trim().toLowerCase();
+    let declaredBytes = headers.get_content_length();
     if (useSha256sum) {
-      const headers = message.response_headers;
-      const length = headers.get_one('Content-Length')?.trim();
-      const encoding = headers.get_one('Content-Encoding')?.trim().toLowerCase();
       const version = message.get_http_version();
       if (message.status_code !== 200 || !length || !/^\d+$/.test(length) || !Number.isSafeInteger(declaredBytes)
           || !Number.isSafeInteger(maximumBytes) || maximumBytes < 0
@@ -169,12 +169,24 @@ export class HttpClient {
         input.close(null);
         throw new HttpError('Native download requires a bounded, uncompressed response', {code: 'invalid_response'});
       }
+    } else if (!length || headers.get_encoding() !== Soup.Encoding.CONTENT_LENGTH
+        || (encoding && encoding !== 'identity')) {
+      // Missing lengths read as zero; compressed lengths describe encoded bytes,
+      // while Soup's stream contains decoded bytes. Bound those streams as read.
+      declaredBytes = -1;
     }
-    if (declaredBytes > maximumBytes || (expectedBytes >= 0 && declaredBytes >= 0 && declaredBytes !== expectedBytes)) {
+    if (declaredBytes > maximumBytes) {
       input.close(null);
       throw new HttpError('Synchronization content size exceeds its declared limit', {
         status: message.status_code,
         code: 'invalid_content_size',
+      });
+    }
+    if (expectedBytes >= 0 && declaredBytes >= 0 && declaredBytes !== expectedBytes) {
+      input.close(null);
+      throw new HttpError('Synchronization content size does not match its manifest', {
+        status: message.status_code,
+        code: 'size_mismatch',
       });
     }
     if (useSha256sum) {
