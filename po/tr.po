@@ -1274,6 +1274,3 @@ msgstr "Sorun bildir"
 
 msgid "License"
 msgstr "Lisans"
-
-msgid "Open"
-msgstr "Aç"

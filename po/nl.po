@@ -1288,6 +1288,3 @@ msgstr "Probleem melden"
 
 msgid "License"
 msgstr "Licentie"
-
-msgid "Open"
-msgstr "Openen"

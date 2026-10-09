@@ -1285,6 +1285,3 @@ msgstr "Hiba jelentése"
 
 msgid "License"
 msgstr "Licenc"
-
-msgid "Open"
-msgstr "Megnyitás"

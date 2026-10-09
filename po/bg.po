@@ -1289,6 +1289,3 @@ msgstr "Докладване на проблем"
 
 msgid "License"
 msgstr "Лиценз"
-
-msgid "Open"
-msgstr "Отваряне"

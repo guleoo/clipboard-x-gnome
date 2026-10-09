@@ -1294,6 +1294,3 @@ msgstr "Problem melden"
 
 msgid "License"
 msgstr "Lizenz"
-
-msgid "Open"
-msgstr "Öffnen"

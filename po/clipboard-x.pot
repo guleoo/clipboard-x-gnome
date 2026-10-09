@@ -1202,7 +1202,3 @@ msgstr ""
 #: src/ui/settings/about.js
 msgid "License"
 msgstr ""
-
-#: src/ui/settings/about.js
-msgid "Open"
-msgstr ""

@@ -1412,6 +1412,3 @@ msgstr "报告问题"
 
 msgid "License"
 msgstr "许可证"
-
-msgid "Open"
-msgstr "打开"

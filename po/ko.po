@@ -1261,6 +1261,3 @@ msgstr "문제 보고"
 
 msgid "License"
 msgstr "라이선스"
-
-msgid "Open"
-msgstr "열기"

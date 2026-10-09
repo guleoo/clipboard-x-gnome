@@ -1293,6 +1293,3 @@ msgstr "Segnala un problema"
 
 msgid "License"
 msgstr "Licenza"
-
-msgid "Open"
-msgstr "Apri"

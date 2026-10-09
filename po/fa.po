@@ -1270,6 +1270,3 @@ msgstr "گزارش مشکل"
 
 msgid "License"
 msgstr "مجوز"
-
-msgid "Open"
-msgstr "باز کردن"

@@ -1269,6 +1269,3 @@ msgstr "問題を報告"
 
 msgid "License"
 msgstr "ライセンス"
-
-msgid "Open"
-msgstr "開く"

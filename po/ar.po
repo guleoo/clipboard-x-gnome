@@ -1257,6 +1257,3 @@ msgstr "الإبلاغ عن مشكلة"
 
 msgid "License"
 msgstr "الترخيص"
-
-msgid "Open"
-msgstr "فتح"

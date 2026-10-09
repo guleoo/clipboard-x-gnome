@@ -1277,6 +1277,3 @@ msgstr "Nahlásiť problém"
 
 msgid "License"
 msgstr "Licencia"
-
-msgid "Open"
-msgstr "Otvoriť"

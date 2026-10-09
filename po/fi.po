@@ -1283,6 +1283,3 @@ msgstr "Ilmoita ongelmasta"
 
 msgid "License"
 msgstr "Lisenssi"
-
-msgid "Open"
-msgstr "Avaa"

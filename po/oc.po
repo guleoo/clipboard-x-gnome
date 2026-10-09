@@ -1292,6 +1292,3 @@ msgstr "Senhalar un problèma"
 
 msgid "License"
 msgstr "Licéncia"
-
-msgid "Open"
-msgstr "Dobrir"

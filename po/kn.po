@@ -1266,6 +1266,3 @@ msgstr "ಸಮಸ್ಯೆಯನ್ನು ವರದಿ ಮಾಡಿ"
 
 msgid "License"
 msgstr "ಪರವಾನಗಿ"
-
-msgid "Open"
-msgstr "ತೆರೆಯಿರಿ"

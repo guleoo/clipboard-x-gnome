@@ -1281,6 +1281,3 @@ msgstr "Сообщить о проблеме"
 
 msgid "License"
 msgstr "Лицензия"
-
-msgid "Open"
-msgstr "Открыть"

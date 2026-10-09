@@ -1292,6 +1292,3 @@ msgstr "Informeu d’un problema"
 
 msgid "License"
 msgstr "Llicència"
-
-msgid "Open"
-msgstr "Obre"

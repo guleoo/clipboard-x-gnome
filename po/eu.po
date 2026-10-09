@@ -1282,6 +1282,3 @@ msgstr "Eman arazo baten berri"
 
 msgid "License"
 msgstr "Lizentzia"
-
-msgid "Open"
-msgstr "Ireki"
