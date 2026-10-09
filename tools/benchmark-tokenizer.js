@@ -11,7 +11,7 @@ const LANGUAGE_NAMES = ['zh_CN.UTF-8', 'zh', 'C'];
 const SENTENCES = [
   '注销密钥之后重新打开剪切板同步设置。',
   '剪切板分词工具需要保留中文标点、URL 和邮箱地址。',
-  'Clipboard X supports lazy loading for large images and long text snapshots.',
+  'Clipboard X Gnome supports lazy loading for large images and long text snapshots.',
   '请检查设备同步状态，并确认图片编辑器命令可以正常启动。',
   'https://github.com/guleoo/clipboard-x-gnome/issues/123 联系 dev@example.com。',
   '截图完成后可以使用系统默认图片编辑器继续处理。',
@@ -178,7 +178,7 @@ if (ARGV[0] === '--child') {
     throw new Error('迭代次数必须是大于 0 的整数');
   const compact = spawnCase('compact', fullPath, iterations);
   const full = spawnCase('full', fullPath, iterations);
-  print('Clipboard X tokenizer benchmark');
+  print('Clipboard X Gnome tokenizer benchmark');
   print(`输入：${fullPath}`);
   print(`迭代次数：${iterations}`);
   print('');

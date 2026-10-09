@@ -18,7 +18,7 @@ application.connect('activate', app => {
   });
   const window = new Gtk.ApplicationWindow({
     application: app,
-    title: 'Clipboard X Typing Target',
+    title: 'Clipboard X Gnome Typing Target',
     default_width: 640,
     default_height: 480,
     child: textView,

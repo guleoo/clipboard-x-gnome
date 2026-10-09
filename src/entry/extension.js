@@ -241,7 +241,7 @@ export default class ClipboardXExtension extends Extension {
     await uploadQueue.enqueue(item, {automatic});
     await this._startup;
     if (this._controller !== controller)
-      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard X was disabled'});
+      throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Clipboard X Gnome was disabled'});
     if (!this._settings.get_boolean('sync-enabled'))
       throw new SyncError('disabled', 'Synchronization is disabled');
     return uploadQueue.flush();
@@ -434,7 +434,7 @@ export default class ClipboardXExtension extends Extension {
       return;
     logger.error('operation', error);
     Main.notifyError(
-      'Clipboard X',
+      'Clipboard X Gnome',
       syncErrorMessage(error, _) || _('Operation failed'),
     );
   }

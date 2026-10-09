@@ -52,7 +52,7 @@ if [ "$1" = "${TEST_FAIL_STAGE:-compile}" ]; then exit "${TEST_BUILD_EXIT:-0}"; 
 printf 'shell:%s\\n' "$*" >> "$TEST_TRACE"
 printf 'session stdout\\n'
 printf 'session stderr\\n' >&2
-printf 'GNOME Shell-Message: 00:00:00.000: Clipboard X [INFO] extension enable\\n'
+printf 'GNOME Shell-Message: 00:00:00.000: Clipboard X Gnome [INFO] extension enable\\n'
 printf '%s\\n' $$ > "$TEST_SHELL_PID"
 if [ "${TEST_WAIT:-0}" = 1 ]; then exec sleep 30; fi
 exit "${TEST_SESSION_EXIT:-0}"
@@ -112,7 +112,7 @@ exit "${TEST_SESSION_EXIT:-0}"
         self.assertNotIn("session stderr", result.stdout)
         journal_text = self.journal.read_text()
         self.assertEqual(journal_text.count("build output"), 3)
-        for message in ["session stdout", "session stderr", "Clipboard X [INFO] extension enable"]:
+        for message in ["session stdout", "session stderr", "Clipboard X Gnome [INFO] extension enable"]:
             self.assertEqual(journal_text.count(message), 1)
         self.assert_process_gone(self.root / "journal.pid")
         self.assertFalse((self.root / "build with spaces/logs").exists())
@@ -166,9 +166,9 @@ exit "${TEST_SESSION_EXIT:-0}"
         self.executable(self.bin / "gnome-shell", """
 exec gjs -c 'const GLib = imports.gi.GLib;
 print("stderr-is-journal=" + GLib.log_writer_is_journald(2));
-console.log("Clipboard X [INFO] gjs-stream-log");
-console.warn("Clipboard X [WARN] gjs-stream-warning");
-console.error("Clipboard X [ERROR] gjs-stream-error");'
+console.log("Clipboard X Gnome [INFO] gjs-stream-log");
+console.warn("Clipboard X Gnome [WARN] gjs-stream-warning");
+console.error("Clipboard X Gnome [ERROR] gjs-stream-error");'
 """)
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -183,9 +183,9 @@ console.error("Clipboard X [ERROR] gjs-stream-error");'
         (self.bin / "systemd-cat").unlink()
         marker = f"cbx-terminal-probe-{uuid.uuid4()}"
         self.executable(self.bin / "gnome-shell", f"""
-exec gjs -c 'console.log("Clipboard X [INFO] {marker}-log");
-console.warn("Clipboard X [WARN] {marker}-warning");
-console.error("Clipboard X [ERROR] {marker}-error");'
+exec gjs -c 'console.log("Clipboard X Gnome [INFO] {marker}-log");
+console.warn("Clipboard X Gnome [WARN] {marker}-warning");
+console.error("Clipboard X Gnome [ERROR] {marker}-error");'
 """)
         result = self.run_script()
         self.assertEqual(result.returncode, 0, result.stderr)

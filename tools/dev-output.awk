@@ -22,8 +22,8 @@ function system_message(level, message, key) {
         next
     }
     # Remove GJS/GLib's process prefix; keep the plugin's own readable line.
-    if (match($0, /Clipboard X \[(INFO|WARN|ERROR|BUILD)\] /)) {
-        show(substr($0, RSTART + length("Clipboard X ")))
+    if (match($0, /Clipboard X Gnome \[(INFO|WARN|ERROR|BUILD)\] /)) {
+        show(substr($0, RSTART + length("Clipboard X Gnome ")))
         next
     }
     if ($0 ~ /^Installing |^Running custom install script|^Program .*found:|^Source dir:|^Build dir:/ ||

@@ -128,7 +128,7 @@ jobs:
           else
             gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
               --repo "$GITHUB_REPOSITORY" --verify-tag \
-              --title "Clipboard X ${GITHUB_REF_NAME#v}" --notes-file "$notes_file"
+              --title "Clipboard X Gnome ${GITHUB_REF_NAME#v}" --notes-file "$notes_file"
           fi
 
   ego-upload:

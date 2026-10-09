@@ -2,7 +2,7 @@
 
 > English · [简体中文](CONTRIBUTING.zh-CN.md)
 
-Clipboard X targets GNOME Shell 50+ and GJS 1.88 or later. Shell UI code must use St, Clutter, and
+Clipboard X Gnome targets GNOME Shell 50+ and GJS 1.88 or later. Shell UI code must use St, Clutter, and
 Shell APIs; GTK 4 and Libadwaita are restricted to the separate preferences process.
 
 ## Development workflow

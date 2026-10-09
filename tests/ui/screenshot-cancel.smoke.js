@@ -13,9 +13,9 @@ export async function run() {
   if (Main.extensionManager._initializationPromise)
     await Main.extensionManager._initializationPromise;
   const extension = Main.extensionManager.lookup(UUID);
-  assert(extension?.enabled, 'Clipboard X was not enabled');
+  assert(extension?.enabled, 'Clipboard X Gnome was not enabled');
   const indicator = Main.panel.statusArea['clipboard-x'];
-  assert(indicator, 'Clipboard X indicator was not added');
+  assert(indicator, 'Clipboard X Gnome indicator was not added');
   const app = extension.stateObj;
   for (let attempt = 0; app._controller.loading && attempt < 60; attempt++)
     await Scripting.sleep(50);

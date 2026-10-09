@@ -2,7 +2,7 @@
 
 > 简体中文 · [English](diagnostics.md)
 
-Clipboard X 按照 [GNOME 扩展调试指南](https://gjs.guide/extensions/development/debugging.html)，
+Clipboard X Gnome 按照 [GNOME 扩展调试指南](https://gjs.guide/extensions/development/debugging.html)，
 使用标准 GJS console 和系统 journal，不创建插件专用日志文件，也不启动日志后台服务。
 日志保留期限、重启后是否仍然保留，由系统 journald 配置决定，插件不修改这些配置。
 
@@ -10,21 +10,21 @@ Clipboard X 按照 [GNOME 扩展调试指南](https://gjs.guide/extensions/devel
 
 ```sh
 # 当前启动周期内，宿主与嵌套会话的最近日志
-journalctl --user -b -o cat --grep='Clipboard X ' -n 100
+journalctl --user -b -o cat --grep='Clipboard X Gnome ' -n 100
 
 # 复现问题时实时查看
-journalctl --user -b -f -o cat --grep='Clipboard X '
+journalctl --user -b -f -o cat --grep='Clipboard X Gnome '
 ```
 
 如果桌面会话日志不在用户 journal 中，去掉 `--user` 再查询。日志访问权限取决于发行版的
 设置，插件本身不需要 `sudo`。
 
 插件和开发脚本的诊断日志统一使用英文，不随界面语言变化；GNOME 和其他工具仍保留其自身的
-输出语言。插件生成的诊断消息统一以 `Clipboard X ` 开头，使用普通文本：
+输出语言。插件生成的诊断消息统一以 `Clipboard X Gnome ` 开头，使用普通文本：
 
 ```text
-Clipboard X [INFO] sync initialize completed · 187 ms
-Clipboard X [ERROR] sync initialize failed at channels · HttpError:channel_forbidden · 120 ms · /sync/client.js:123:5
+Clipboard X Gnome [INFO] sync initialize completed · 187 ms
+Clipboard X Gnome [ERROR] sync initialize failed at channels · HttpError:channel_forbidden · 120 ms · /sync/client.js:123:5
 ```
 
 - `[INFO]`、`[WARN]`、`[ERROR]` 表示日志级别。GJS 可能将 console 警告与错误映射到相同的
@@ -66,7 +66,7 @@ journalctl --user -b -f -o cat -t clipboard-x-devkit + _EXE="$(command -v gnome-
 `+` 将 Devkit 输出与 Shell 原生 journal 消息合并查询。宿主会话及独立启动的进程，其 GJS
 消息可能直接写 journal，不携带 Devkit 标识，**不能仅按这个标识查找所有插件报错**。
 查看插件自身的诊断时，使用上面的
-`Clipboard X ` 筛选即可。完整 Shell 查询也会包含宿主 Shell，需要时间时使用
+`Clipboard X Gnome ` 筛选即可。完整 Shell 查询也会包含宿主 Shell，需要时间时使用
 `journalctl -o short`，需要按进程区分时使用 `-o verbose` 查看 PID 元数据。
 
 包装保留构建、会话退出码和 Ctrl+C 行为，退出时回收转发进程，不创建日志文件。
@@ -81,7 +81,7 @@ journal。
 复现一次后，只收集相关时间范围：
 
 ```sh
-journalctl --user -b --since '10 minutes ago' -o cat --grep='Clipboard X '
+journalctl --user -b --since '10 minutes ago' -o cat --grep='Clipboard X Gnome '
 ```
 
 反馈时附上扩展版本、GNOME 版本、宿主或 Devkit 会话、是否启用同步以及操作步骤。

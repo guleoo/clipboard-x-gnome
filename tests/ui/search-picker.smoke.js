@@ -24,7 +24,7 @@ export async function run() {
   if (Main.extensionManager._initializationPromise)
     await Main.extensionManager._initializationPromise;
   const extension = Main.extensionManager.lookup(UUID);
-  assert(extension?.enabled, 'Clipboard X was not enabled');
+  assert(extension?.enabled, 'Clipboard X Gnome was not enabled');
   await waitUntil(() => Boolean(Main.panel.statusArea['clipboard-x']));
   const indicator = Main.panel.statusArea['clipboard-x'];
   const history = indicator._historyPanel;

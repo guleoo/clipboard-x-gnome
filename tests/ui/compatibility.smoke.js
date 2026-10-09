@@ -18,7 +18,7 @@ let startedSignal = 0;
 
 function stage(name) {
   phase = name;
-  print(`Clipboard X [compatibility] ${name}`);
+  print(`Clipboard X Gnome [compatibility] ${name}`);
 }
 
 function startupState() {
@@ -40,7 +40,7 @@ export function init() {
   });
   startupWatchdog = GLib.timeout_add(GLib.PRIORITY_DEFAULT, STARTUP_TIMEOUT_MILLISECONDS, () => {
     startupWatchdog = 0;
-    printerr(`Clipboard X [compatibility] Timeout after ${STARTUP_TIMEOUT_MILLISECONDS} ms: ${phase}; ${startupState()}`);
+    printerr(`Clipboard X Gnome [compatibility] Timeout after ${STARTUP_TIMEOUT_MILLISECONDS} ms: ${phase}; ${startupState()}`);
     Meta.exit(Meta.ExitCode.ERROR);
     return GLib.SOURCE_REMOVE;
   });
@@ -70,7 +70,7 @@ async function wait(name, promise) {
       });
     });
     const result = await Promise.race([promise, timeout]);
-    print(`Clipboard X [compatibility] ${name} completed`);
+    print(`Clipboard X Gnome [compatibility] ${name} completed`);
     return result;
   } finally {
     if (source)
@@ -90,7 +90,7 @@ async function indicator(previous = null) {
     const actor = Main.panel.statusArea['clipboard-x'];
     if (extension?.enabled && extension.state === ExtensionState.ACTIVE
         && actor && actor !== previous) {
-      print('Clipboard X [compatibility] indicator ready');
+      print('Clipboard X Gnome [compatibility] indicator ready');
       return actor;
     }
     await Scripting.sleep(50);
@@ -349,5 +349,5 @@ export async function run() {
   stage('final-disable');
   await disable();
   stage('completed');
-  print('Clipboard X: shared Shell APIs and enable/disable/re-enable passed.');
+  print('Clipboard X Gnome: shared Shell APIs and enable/disable/re-enable passed.');
 }

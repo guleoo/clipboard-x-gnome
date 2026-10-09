@@ -25,9 +25,9 @@ export async function readJson(path, maximumBytes, cancellable = null) {
     throw error;
   }
   if (info.get_file_type() !== Gio.FileType.REGULAR || info.get_is_symlink())
-    throw new Error('Clipboard X data file is not a regular file');
+    throw new Error('Clipboard X Gnome data file is not a regular file');
   if (info.get_size() > maximumBytes)
-    throw new Error(`Clipboard X data file exceeds ${maximumBytes} bytes`);
+    throw new Error(`Clipboard X Gnome data file exceeds ${maximumBytes} bytes`);
   return JSON.parse(stringFromBytes(await loadFile(file, cancellable)));
 }
 
@@ -41,7 +41,7 @@ export async function writeJson(path, value, {
   try {
     const info = await queryInfo(file, cancellable);
     if (info.get_file_type() !== Gio.FileType.REGULAR || info.get_is_symlink())
-      throw new Error('Clipboard X data file is not a regular file');
+      throw new Error('Clipboard X Gnome data file is not a regular file');
   } catch (error) {
     if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
       throw error;

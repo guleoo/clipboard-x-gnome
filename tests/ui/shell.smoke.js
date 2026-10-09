@@ -74,8 +74,8 @@ export async function run() {
     await Main.extensionManager._initializationPromise;
 
   const extension = Main.extensionManager.lookup(UUID);
-  assert(extension, 'Clipboard X extension was not installed');
-  assert(extension.enabled, `Clipboard X was not enabled (${extension.error ?? 'unknown error'})`);
+  assert(extension, 'Clipboard X Gnome extension was not installed');
+  assert(extension.enabled, `Clipboard X Gnome was not enabled (${extension.error ?? 'unknown error'})`);
 
   await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]), 3000);
   if (!Main.panel.statusArea[STATUS_AREA_NAME]) {
@@ -85,7 +85,7 @@ export async function run() {
     await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]), 3000);
   }
   let indicator = Main.panel.statusArea[STATUS_AREA_NAME];
-  assert(indicator, `Clipboard X indicator was not added to the panel (${extension.error ?? 'no extension error'})`);
+  assert(indicator, `Clipboard X Gnome indicator was not added to the panel (${extension.error ?? 'no extension error'})`);
   await indicator._actions.extensionObject._startup;
   const history = indicator._historyPanel;
   for (const item of indicator._controller.items)
@@ -95,14 +95,14 @@ export async function run() {
     ?? (GLib.getenv('CLIPBOARD_X_EXPECT_CHINESE') === '1' ? '搜索剪切板历史…' : null);
   if (expectedSearchTranslation) {
     assert(history.searchEntry.hint_text === expectedSearchTranslation,
-      `Clipboard X translation was not loaded (${history.searchEntry.hint_text})`);
+      `Clipboard X Gnome translation was not loaded (${history.searchEntry.hint_text})`);
     if (GLib.getenv('CLIPBOARD_X_TRANSLATION_ONLY') === '1')
       return;
   }
 
   indicator.menu.open();
   await Scripting.sleep(200);
-  assert(indicator.menu.isOpen, 'Clipboard X menu did not open');
+  assert(indicator.menu.isOpen, 'Clipboard X Gnome menu did not open');
   assert(indicator.menu.actor.width === indicator._settings.get_int('panel-width'),
     'Configured panel width was not enforced on the popup actor');
   assert(Number.isFinite(history.captureView().scrollValue),
@@ -281,7 +281,7 @@ export async function run() {
 
   indicator.menu.close();
   await Scripting.sleep(100);
-  assert(!indicator.menu.isOpen, 'Clipboard X menu did not close');
+  assert(!indicator.menu.isOpen, 'Clipboard X Gnome menu did not close');
   indicator._settings.set_string('theme-color', '#123456');
   await Scripting.sleep(50);
   assert(indicator._customAccentColor === '#123456',
@@ -292,11 +292,11 @@ export async function run() {
     'Following the system theme did not clear the custom accent override');
 
   const deviceId = indicator._settings.get_string('device-id');
-  assert(/^[0-9a-f-]{36}$/u.test(deviceId), 'Opening Clipboard X did not create a DeviceId');
+  assert(/^[0-9a-f-]{36}$/u.test(deviceId), 'Opening Clipboard X Gnome did not create a DeviceId');
   const extensionObject = Main.panel.statusArea[STATUS_AREA_NAME]?._actions?.extensionObject
     ?? Main.extensionManager._extensionOrder?.find?.(candidate => candidate.uuid === UUID)
     ?? extension.stateObj;
-  assert(extensionObject, 'Clipboard X extension object is unavailable');
+  assert(extensionObject, 'Clipboard X Gnome extension object is unavailable');
   const terminalInput = extensionObject._terminalInput;
   const modifierState = terminalInput._modifierState;
   let simulatedModifiers = Clutter.ModifierType.CONTROL_MASK;
@@ -365,10 +365,10 @@ export async function run() {
   await Scripting.sleep(100);
   assert(extensionObject._shortcutBound, 'User shortcut was not registered');
 
-  St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'Clipboard X smoke test 你好 👋');
+  St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'Clipboard X Gnome smoke test 你好 👋');
   await Scripting.sleep(500);
   assert(indicator._controller.items.some(item => item.text.includes('smoke test')),
-    'Clipboard X did not capture a text clipboard change');
+    'Clipboard X Gnome did not capture a text clipboard change');
   const capturedText = indicator._controller.items.find(item => item.text.includes('smoke test'));
   indicator.menu.open();
   await Scripting.sleep(100);
@@ -607,19 +607,19 @@ export async function run() {
     );
     const waylandInput = waylandSource.get_stdin_pipe();
     waylandInput.write_all(
-      new TextEncoder().encode('Clipboard X native Wayland source'),
+      new TextEncoder().encode('Clipboard X Gnome native Wayland source'),
       null,
     );
     waylandInput.close(null);
     const capturedWaylandSource = await waitUntil(
-      () => indicator._controller.items.some(item => item.text === 'Clipboard X native Wayland source'),
+      () => indicator._controller.items.some(item => item.text === 'Clipboard X Gnome native Wayland source'),
     );
     const waylandMimeTypes = indicator._controller._selection
       .get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
     waylandSource.force_exit();
     await waitForExit(waylandSource);
     assert(capturedWaylandSource,
-      `Clipboard X did not capture a native Wayland application source (${waylandMimeTypes.join(', ')})`);
+      `Clipboard X Gnome did not capture a native Wayland application source (${waylandMimeTypes.join(', ')})`);
 
     const xwaylandLauncher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
     xwaylandLauncher.setenv('GDK_BACKEND', 'x11', true);
@@ -627,23 +627,23 @@ export async function run() {
       '/usr/bin/gjs',
       '-m',
       GLib.build_filenamev([TEST_DIRECTORY, '..', 'fixtures', 'clipboard-source.js']),
-      'Clipboard X XWayland source',
+      'Clipboard X Gnome XWayland source',
     ]);
     const capturedXwaylandSource = await waitUntil(
-      () => indicator._controller.items.some(item => item.text === 'Clipboard X XWayland source'),
+      () => indicator._controller.items.some(item => item.text === 'Clipboard X Gnome XWayland source'),
     );
     await waitForExit(xwaylandSource);
     assert(xwaylandSource.get_successful(),
       'XWayland clipboard source exited with an error');
     assert(capturedXwaylandSource,
-      'Clipboard X did not capture an XWayland application source');
+      'Clipboard X Gnome did not capture an XWayland application source');
   }
 
   for (let index = 0; index < 50; index++)
     St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, `rapid clipboard change ${index}`);
   await Scripting.sleep(800);
   assert(indicator._controller.items.some(item => item.text === 'rapid clipboard change 49'),
-    'Clipboard X lost the final value during rapid clipboard changes');
+    'Clipboard X Gnome lost the final value during rapid clipboard changes');
 
   const imageFixture = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, true, 8, 200, 100);
   imageFixture.fill(0x336699ff);
@@ -657,7 +657,7 @@ export async function run() {
   await Scripting.sleep(800);
   const imageItem = indicator._controller.items.find(item => item.isImage && item.preview?.path);
   assert(imageItem,
-    'Clipboard X did not asynchronously create an image thumbnail');
+    'Clipboard X Gnome did not asynchronously create an image thumbnail');
   assert(imageItem.primary.delivery === 'eager', 'small clipboard image did not use eager delivery');
   indicator._settings.set_string('editor-command', '');
   const ensureMaterialized = extensionObject._ensureMaterialized;
@@ -978,20 +978,20 @@ export async function run() {
   const oldSync = extensionObject._sync;
   Main.extensionManager.disableExtension(UUID);
   await Scripting.sleep(300);
-  assert(!Main.panel.statusArea[STATUS_AREA_NAME], 'Indicator remained after disabling Clipboard X');
-  assert(!extensionObject._colorPicker, 'Disabling Clipboard X did not close the active color picker');
+  assert(!Main.panel.statusArea[STATUS_AREA_NAME], 'Indicator remained after disabling Clipboard X Gnome');
+  assert(!extensionObject._colorPicker, 'Disabling Clipboard X Gnome did not close the active color picker');
   assert(oldController._destroyed && oldController._selectionSignal === 0
       && oldController._settingsSignals.length === 0,
-  'Disabling Clipboard X did not release clipboard and settings subscriptions');
+  'Disabling Clipboard X Gnome did not release clipboard and settings subscriptions');
   assert(oldSync._destroyed && oldSync._pollSource === 0
       && oldSync._activeCancellables.size === 0 && oldSync._transferWaiters.size === 0,
-  'Disabling Clipboard X did not release synchronization polling, requests or transfer waiters');
-  assert(!extensionObject._shortcutBound, 'Disabling Clipboard X did not remove its shortcut');
+  'Disabling Clipboard X Gnome did not release synchronization polling, requests or transfer waiters');
+  assert(!extensionObject._shortcutBound, 'Disabling Clipboard X Gnome did not remove its shortcut');
 
   Main.extensionManager.enableExtension(UUID);
   await Scripting.sleep(500);
   indicator = Main.panel.statusArea[STATUS_AREA_NAME];
-  assert(indicator, 'Clipboard X did not recover after being enabled again');
+  assert(indicator, 'Clipboard X Gnome did not recover after being enabled again');
   assert(indicator._settings.get_string('device-id') === deviceId,
     'DeviceId changed after the extension was disabled and enabled again');
   assert(indicator._controller.items.some(item => item.favorite && item.text === colorItem.text),
@@ -1000,11 +1000,11 @@ export async function run() {
   Main.sessionMode.pushMode('unlock-dialog');
   await Scripting.sleep(300);
   assert(!Main.panel.statusArea[STATUS_AREA_NAME],
-    'Clipboard X remained active after the session entered its lock mode');
+    'Clipboard X Gnome remained active after the session entered its lock mode');
   Main.sessionMode.popMode('unlock-dialog');
   await Scripting.sleep(500);
   indicator = Main.panel.statusArea[STATUS_AREA_NAME];
-  assert(indicator, 'Clipboard X did not recover after the session left its lock mode');
+  assert(indicator, 'Clipboard X Gnome did not recover after the session left its lock mode');
   assert(indicator._settings.get_string('device-id') === deviceId,
     'DeviceId changed across the lock/unlock lifecycle');
 
@@ -1015,7 +1015,7 @@ export async function run() {
   ], Gio.SubprocessFlags.NONE);
   await Scripting.sleep(900);
   assert(Main.panel.statusArea[STATUS_AREA_NAME],
-    'Clipboard X did not survive a nested Shell process suspend/resume cycle');
+    'Clipboard X Gnome did not survive a nested Shell process suspend/resume cycle');
   St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, 'clipboard after simulated resume');
   await Scripting.sleep(400);
   assert(indicator._controller.items.some(item => item.text === 'clipboard after simulated resume'),

@@ -105,12 +105,12 @@ const process = Gio.Subprocess.new(['gjs', '-c', program],
   Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
 const [ok, stdout, stderr] = process.communicate_utf8(null, null);
 assert(ok && process.get_successful(), 'production log probe must complete successfully');
-const output = `${stdout}\n${stderr}`.split('\n').filter(line => line.includes('Clipboard X ['));
+const output = `${stdout}\n${stderr}`.split('\n').filter(line => line.includes('Clipboard X Gnome ['));
 assert(output.length === 3, 'only one line per info, summary and failure must be emitted');
-assert(output[0].includes('Clipboard X [INFO] sync enable'), 'info output must be plain readable text');
-assert(output[1].includes('Clipboard X [INFO] sync initialize completed · 10 ms'),
+assert(output[0].includes('Clipboard X Gnome [INFO] sync enable'), 'info output must be plain readable text');
+assert(output[1].includes('Clipboard X Gnome [INFO] sync initialize completed · 10 ms'),
   'successful initialization must produce just its readable summary');
-assert(output[2].includes('Clipboard X [ERROR] sync connect failed at device'),
+assert(output[2].includes('Clipboard X Gnome [ERROR] sync connect failed at device'),
   'failures must retain their severity and readable operation/stage');
 assert(output[2].includes('server_unavailable') && output[2].includes('/sync/client.js:42:9'),
   'plain errors must include safe diagnostics and source positions');
