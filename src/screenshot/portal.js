@@ -70,7 +70,7 @@ export class ScreenshotPortal {
   }
 
   _newRequest() {
-    const token = `clipboard_x_${GLib.uuid_string_random().replaceAll('-', '_')}`;
+    const token = `clipboard_x_gnome_${GLib.uuid_string_random().replaceAll('-', '_')}`;
     const sender = this._connection.get_unique_name().slice(1).replaceAll('.', '_');
     return {
       token,

@@ -29,9 +29,9 @@ server authentication should deploy HTTPS or use a trusted, controlled network.
 
 ## Local protection
 
-- History is stored at `$XDG_DATA_HOME/clipboard-x/history/<DeviceId>`, separated by source device,
+- History is stored at `$XDG_DATA_HOME/clipboard-x-gnome/history/<DeviceId>`, separated by source device,
   with directory mode `0700). Legacy cache data is migrated on first load.
-- Quick phrases are stored at `$XDG_DATA_HOME/clipboard-x/quick-phrases.json`; `sync.json` and
+- Quick phrases are stored at `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json`; `sync.json` and
   `sync-state.json` use the same data root. The extension does not inspect or force permissions on
   `sync.json`; the non-secret state file uses private permissions.
 - The API key is not written to GSettings, logs, status objects, or the public preferences model.

@@ -2,7 +2,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import Gio from 'gi://Gio';
 
-const UUID = 'clipboard-x@guleoo.github.io';
+const UUID = 'clipboard-x-gnome@guleoo.github.io';
 
 export const METRICS = {};
 
@@ -33,8 +33,8 @@ export async function run() {
     `Clipboard X Gnome preferences opened an error page (${preferences.get_title()})`);
   const applications = await new Promise((resolve, reject) => {
     Gio.DBus.session.call(
-      'org.gnome.Shell.Extensions.ClipboardX', '/org/gnome/Shell/Extensions/ClipboardX',
-      'org.gnome.Shell.Extensions.ClipboardX', 'ListRunningApplications', null,
+      'org.gnome.Shell.Extensions.ClipboardXGnome', '/org/gnome/Shell/Extensions/ClipboardXGnome',
+      'org.gnome.Shell.Extensions.ClipboardXGnome', 'ListRunningApplications', null,
       null, Gio.DBusCallFlags.NONE, 3000, null,
       (connection, result) => {
         try {

@@ -4,7 +4,7 @@ import {UUID} from '../../entry/constants.js';
 import {isUuid} from '../../common/uuid.js';
 
 export function rootPath() {
-  return GLib.build_filenamev([GLib.get_user_data_dir(), 'clipboard-x', 'history']);
+  return GLib.build_filenamev([GLib.get_user_data_dir(), 'clipboard-x-gnome', 'history']);
 }
 
 export function legacyRootPath() {

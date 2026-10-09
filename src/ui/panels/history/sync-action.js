@@ -121,7 +121,7 @@ export class SyncAction {
       if (isPreviewPublished(item, transfer)) {
         button.set_child(new St.Icon({
           gicon: this._previewIcon,
-          icon_size: button._clipboardXIconSize ?? ICON_SIZE,
+          icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
         }));
       } else {
         this._setIcon(button, 'object-select-symbolic');
@@ -192,7 +192,7 @@ export class SyncAction {
     }
     button.set_child(new St.Icon({
       icon_name: iconName,
-      icon_size: button._clipboardXIconSize ?? ICON_SIZE,
+      icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
     }));
   }
 
@@ -203,8 +203,8 @@ export class SyncAction {
       actor.accessible_name = text;
       actor._hintText = text;
     }
-    if (actor._clipboardXShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXTooltipScope});
+    if (actor._clipboardXGnomeShowTooltip)
+      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _runAndClose(callback) {

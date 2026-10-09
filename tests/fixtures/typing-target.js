@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk?version=4.0';
 
 const output = Gio.File.new_for_path(ARGV[0]);
 const application = new Gtk.Application({
-  application_id: 'io.github.guleoo.ClipboardXTypingTarget',
+  application_id: 'io.github.guleoo.ClipboardXGnomeTypingTarget',
   flags: Gio.ApplicationFlags.NON_UNIQUE,
 });
 

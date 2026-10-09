@@ -22,7 +22,7 @@ class PanelHeader extends St.BoxLayout {
       x_expand: true,
       orientation: Clutter.Orientation.VERTICAL,
     });
-    this._clipboardXControlType = 'panel-header';
+    this._clipboardXGnomeControlType = 'panel-header';
     this._actions = [];
     this._balanceActors = [];
     this.row = new St.BoxLayout({
@@ -51,7 +51,7 @@ class PanelHeader extends St.BoxLayout {
       x_expand: true,
       y_align: Clutter.ActorAlign.CENTER,
     });
-    this.titleLabel._clipboardXTextBaselineOffset = titleOffset;
+    this.titleLabel._clipboardXGnomeTextBaselineOffset = titleOffset;
     this.row.add_child(this.titleLabel);
     this.row.add_child(this.trailing);
     for (const actor of actions)

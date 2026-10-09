@@ -34,7 +34,7 @@ const SHORTCUT_KEYS = Object.freeze([
 
 const logger = createLogger('extension');
 
-export default class ClipboardXExtension extends Extension {
+export default class ClipboardXGnomeExtension extends Extension {
   enable() {
     logger.info('enable');
     this._settings = this.getSettings();
@@ -100,7 +100,7 @@ export default class ClipboardXExtension extends Extension {
       reportError: error => this._reportError(error),
     };
     this._indicator = new Indicator(this._settings, this._controller, actions);
-    Main.panel.addToStatusArea('clipboard-x', this._indicator, 1);
+    Main.panel.addToStatusArea('clipboard-x-gnome', this._indicator, 1);
     this._runningAppsBridge = new RunningAppsBridge();
     try {
       this._runningAppsBridge.start();

@@ -26,9 +26,9 @@ class SearchEntry extends St.Entry {
         ? new St.Icon({icon_name: iconName, icon_size: iconSize})
         : null,
     });
-    this._clipboardXControlType = 'search-entry';
+    this._clipboardXGnomeControlType = 'search-entry';
     const hint = this.get_hint_actor();
-    hint._clipboardXTextBaselineOffset = placeholderOffset;
+    hint._clipboardXGnomeTextBaselineOffset = placeholderOffset;
     hint.margin_left = placeholderMargin;
 
     if (onChanged)

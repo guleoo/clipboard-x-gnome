@@ -96,7 +96,7 @@ assertEqual(
   'dictionary words should override character-level ICU fallback',
 );
 
-const testRoot = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-dictionaries-XXXXXX'));
+const testRoot = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-gnome-dictionaries-XXXXXX'));
 const storeRoot = testRoot.get_child('store');
 const importSource = testRoot.get_child('custom-ja.txt');
 const plainImportSource = testRoot.get_child('plain-words.txt');

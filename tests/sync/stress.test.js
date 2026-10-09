@@ -150,7 +150,7 @@ class StressTransport {
   }
 }
 
-const directory = GLib.dir_make_tmp('clipboard-x-sync-stress-XXXXXX');
+const directory = GLib.dir_make_tmp('clipboard-x-gnome-sync-stress-XXXXXX');
 const files = [];
 function createItem(prefix, index) {
   const text = `${prefix} payload ${index}`;
