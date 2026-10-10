@@ -1,7 +1,7 @@
 {
   "uuid": "@uuid@",
   "name": "Clipboard X Gnome",
-  "description": "Text and image clipboard history, word selection, quick phrases, screenshots and color picking in a compact GNOME panel.\n\nSearch and pin clipboard entries, select only the words you need, and reuse text through copy, paste or simulated typing. Customize keyboard shortcuts, dictionaries and panel layout, and open images with your preferred editor.\n\nThis extension reads clipboard content to maintain local history. Optional device synchronization uses a user-configured clipboard-x-server, sharing previews of large content and transferring originals on demand. Synchronization starts only when configured and enabled; the server can read synchronized content.",
+  "description": "Text and image clipboard history, word selection, quick phrases, screenshots and color picking in a compact GNOME panel.\n\nSearch and pin clipboard entries, select only the words you need, and reuse text through copy, paste or simulated typing. Customize keyboard shortcuts, dictionaries and panel layout, and open images with your preferred editor.\n\nThis extension reads clipboard content to maintain local history. Enable optional device sync through your own clipboard-x-server; the server can read synchronized content.",
   "shell-version": ["50", "51"],
   "settings-schema": "@schema@",
   "gettext-domain": "clipboard-x-gnome",
