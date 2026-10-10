@@ -66,7 +66,7 @@ export function create({
   const buttons = {
     tokenize: () => createIconButton(
       'format-text-plaintext-symbolic',
-      _('Segment text'),
+      _('Word Selection'),
       actions.tokenize,
       {showTooltip: false},
     ),

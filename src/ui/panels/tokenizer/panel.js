@@ -53,7 +53,7 @@ export class TokenizerPanel {
       {showTooltip: false},
     );
     this.header = new PanelHeader({
-      title: _('Segment text'),
+      title: _('Word Selection'),
       backButton: this.backButton,
       titleOffset: OPTICAL_BASELINE_OFFSET,
     });
