@@ -73,6 +73,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._dictionaryStore = new DictionaryStore();
     this._textTokenizer = new Tokenizer({store: this._dictionaryStore});
     this._colorPicker = null;
+    this._colorPickerDestroySignal = 0;
     this._settingsSignals = [];
     this._boundShortcuts = [];
 
@@ -177,6 +178,9 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._runningAppsBridge = null;
     this._unbindShortcuts();
     this._portal?.cancel();
+    if (this._colorPickerDestroySignal)
+      this._colorPicker.disconnect(this._colorPickerDestroySignal);
+    this._colorPickerDestroySignal = 0;
     this._colorPicker?.close();
     this._colorPicker = null;
 
@@ -286,9 +290,9 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._colorPicker = new ColorPicker(rgb => {
       const text = formatColor(rgb, this._settings.get_string('color-format'));
       St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
-      this._colorPicker = null;
     }, this._settings.get_string('color-format'));
-    this._colorPicker.connect('destroy', () => {
+    this._colorPickerDestroySignal = this._colorPicker.connect('destroy', () => {
+      this._colorPickerDestroySignal = 0;
       this._colorPicker = null;
     });
   }
