@@ -422,7 +422,7 @@ msgid "Add network location"
 msgstr ""
 
 #: src/ui/settings/dictionaries.js:183
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr ""
 
 #: src/ui/settings/dictionaries.js:194
@@ -823,10 +823,6 @@ msgstr ""
 msgid "Slow"
 msgstr ""
 
-#: src/ui/settings/window.js:229 src/ui/settings/window.js:432
-msgid "Tokenizer"
-msgstr ""
-
 #: src/ui/settings/window.js:231
 msgid "Show source text preview"
 msgstr ""
@@ -1126,19 +1122,15 @@ msgid "Type entry directly"
 msgstr ""
 
 #: src/ui/settings/window.js:433
-msgid "Active while a token has keyboard focus."
-msgstr ""
-
-#: src/ui/settings/window.js:437
-msgid "Copy selected tokens"
+msgid "Active while a word has keyboard focus."
 msgstr ""
 
 #: src/ui/settings/window.js:438
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr ""
 
 #: src/ui/settings/window.js:439
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr ""
 
 #: src/ui/settings/window.js:440

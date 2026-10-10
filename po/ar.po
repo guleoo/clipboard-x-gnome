@@ -440,7 +440,7 @@ msgid "Add network location"
 msgstr "إضافة موقع عبر الشبكة"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "محلل النظام"
 
 #: src/ui/settings/dictionaries.js:187
@@ -824,10 +824,6 @@ msgstr "قياسية"
 msgid "Slow"
 msgstr "بطيئة"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "مُجزِّئ النص"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "إظهار معاينة النص الأصلي"
@@ -1150,19 +1146,15 @@ msgid "Type entry instead of copying"
 msgstr "كتابة العنصر بدل نسخه"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "نشطة عندما يكون التركيز بلوحة المفاتيح على مقطع نصي."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "نسخ المقاطع المحددة"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "لصق المقاطع المحددة"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "كتابة المقاطع المحددة"
 
 #: src/ui/settings/window.js:407

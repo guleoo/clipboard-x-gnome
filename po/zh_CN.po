@@ -439,7 +439,7 @@ msgid "Add network location"
 msgstr "添加网络位置"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "系统分词器"
 
 #: src/ui/settings/dictionaries.js:187
@@ -822,10 +822,6 @@ msgstr "标准"
 msgid "Slow"
 msgstr "慢速"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "分词"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "显示原文预览"
@@ -1145,19 +1141,15 @@ msgid "Type entry instead of copying"
 msgstr "逐字输入条目而非复制"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "仅在分词获得键盘焦点时生效。"
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "复制所选分词"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "粘贴所选分词"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "逐字输入所选分词"
 
 #: src/ui/settings/window.js:407

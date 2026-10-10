@@ -446,7 +446,7 @@ msgid "Add network location"
 msgstr "Přidat síťové umístění"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "Systémový segmentátor"
 
 #: src/ui/settings/dictionaries.js:187
@@ -832,10 +832,6 @@ msgstr "Standardní"
 msgid "Slow"
 msgstr "Pomalá"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "Tokenizér"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "Zobrazit náhled původního textu"
@@ -1166,19 +1162,15 @@ msgid "Type entry instead of copying"
 msgstr "Napsat položku místo kopírování"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "Aktivní, když má textový segment zaměření klávesnice."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "Zkopírovat vybrané textové segmenty"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "Vložit vybrané textové segmenty"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "Napsat vybrané textové segmenty"
 
 #: src/ui/settings/window.js:407

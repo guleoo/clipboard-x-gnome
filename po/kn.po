@@ -441,7 +441,7 @@ msgid "Add network location"
 msgstr "ನೆಟ್‌ವರ್ಕ್ ಸ್ಥಳವನ್ನು ಸೇರಿಸಿ"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "ವ್ಯವಸ್ಥೆಯ ಪದ ವಿಭಜಕ"
 
 #: src/ui/settings/dictionaries.js:187
@@ -824,10 +824,6 @@ msgstr "ಸಾಮಾನ್ಯ"
 msgid "Slow"
 msgstr "ನಿಧಾನ"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "ಪದ ವಿಭಜಕ"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "ಮೂಲ ಪಠ್ಯದ ಮುನ್ನೋಟ ತೋರಿಸಿ"
@@ -1158,19 +1154,15 @@ msgid "Type entry instead of copying"
 msgstr "ನಕಲಿಸುವ ಬದಲು ಅಂಶವನ್ನು ಟೈಪ್ ಮಾಡಿ"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "ಪದದ ಮೇಲೆ ಕೀಲಿಮಣೆ ಫೋಕಸ್ ಇದ್ದಾಗ ಸಕ್ರಿಯವಾಗಿರುತ್ತದೆ."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ನಕಲಿಸಿ"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ಅಂಟಿಸಿ"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "ಆಯ್ಕೆಮಾಡಿದ ಪದಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ"
 
 #: src/ui/settings/window.js:407

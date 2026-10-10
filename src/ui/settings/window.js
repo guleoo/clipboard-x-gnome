@@ -229,7 +229,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       ['slow', _('Slow')],
     ]));
 
-    const tokenizer = new Adw.PreferencesGroup({title: _('Tokenizer')});
+    const tokenizer = new Adw.PreferencesGroup({title: _('Word Selection')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
 
@@ -437,14 +437,14 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       history.add(this._rows.shortcut(key, title, true));
 
     const tokenizer = new Adw.PreferencesGroup({
-      title: _('Tokenizer'),
-      description: _('Active while a token has keyboard focus.'),
+      title: _('Word Selection'),
+      description: _('Active while a word has keyboard focus.'),
     });
     page.add(tokenizer);
     for (const [key, title] of [
-      ['tokenizer-copy-shortcut', _('Copy selected tokens')],
-      ['tokenizer-paste-shortcut', _('Paste selected tokens')],
-      ['tokenizer-type-shortcut', _('Type selected tokens')],
+      ['tokenizer-copy-shortcut', _('Copy selected words')],
+      ['tokenizer-paste-shortcut', _('Paste selected words')],
+      ['tokenizer-type-shortcut', _('Type selected words')],
       ['tokenizer-select-previous-shortcut', _('Extend selection left')],
       ['tokenizer-select-next-shortcut', _('Extend selection right')],
       ['tokenizer-select-above-shortcut', _('Extend selection upward')],

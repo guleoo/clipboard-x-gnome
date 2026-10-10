@@ -144,11 +144,11 @@
     </key>
     <key name="tokenizer-dictionary-revision" type="u">
       <default>0</default>
-      <summary>Revision used to reload imported tokenizer dictionaries</summary>
+      <summary>Revision used to reload imported dictionaries</summary>
     </key>
     <key name="tokenizer-dictionary-files" type="as">
       <default>[]</default>
-      <summary>Enabled tokenizer dictionary files</summary>
+      <summary>Enabled dictionary files</summary>
     </key>
     <key name="panel-confine-focus" type="b">
       <default>true</default>
