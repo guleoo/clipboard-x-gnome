@@ -58,7 +58,7 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   `materialize(item, {withinThreshold: true})` downloads only eligible representations, while explicit
   use calls `materialize(item)` for every missing original. Both paths share in-flight requests.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
-- Entry actions, token buttons, and back buttons do not show tooltips by default. Global tools may use
+- Entry actions, word selection buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.

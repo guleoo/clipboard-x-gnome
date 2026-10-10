@@ -112,35 +112,35 @@
     </key>
     <key name="tokenizer-copy-shortcut" type="as">
       <default>['c']</default>
-      <summary>Context shortcut for copying selected tokens</summary>
+      <summary>Context shortcut for copying selected words</summary>
     </key>
     <key name="tokenizer-paste-shortcut" type="as">
       <default>['v']</default>
-      <summary>Context shortcut for pasting selected tokens</summary>
+      <summary>Context shortcut for pasting selected words</summary>
     </key>
     <key name="tokenizer-type-shortcut" type="as">
       <default>['apostrophe']</default>
-      <summary>Context shortcut for typing selected tokens</summary>
+      <summary>Context shortcut for typing selected words</summary>
     </key>
     <key name="tokenizer-select-previous-shortcut" type="as">
       <default>['&lt;Shift&gt;Left']</default>
-      <summary>Context shortcut for extending token selection backward</summary>
+      <summary>Context shortcut for extending word selection backward</summary>
     </key>
     <key name="tokenizer-select-next-shortcut" type="as">
       <default>['&lt;Shift&gt;Right']</default>
-      <summary>Context shortcut for extending token selection forward</summary>
+      <summary>Context shortcut for extending word selection forward</summary>
     </key>
     <key name="tokenizer-select-above-shortcut" type="as">
       <default>['&lt;Shift&gt;Up']</default>
-      <summary>Context shortcut for extending token selection upward</summary>
+      <summary>Context shortcut for extending word selection upward</summary>
     </key>
     <key name="tokenizer-select-below-shortcut" type="as">
       <default>['&lt;Shift&gt;Down']</default>
-      <summary>Context shortcut for extending token selection downward</summary>
+      <summary>Context shortcut for extending word selection downward</summary>
     </key>
     <key name="tokenizer-show-source-preview" type="b">
       <default>false</default>
-      <summary>Show the source text preview in the tokenizer panel</summary>
+      <summary>Show the source text preview in the word selection panel</summary>
     </key>
     <key name="tokenizer-dictionary-revision" type="u">
       <default>0</default>

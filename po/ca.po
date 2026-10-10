@@ -160,7 +160,7 @@ msgid "Copy original"
 msgstr "Copia l'original"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
-msgid "Segment text"
+msgid "Word Selection"
 msgstr "Segmenta el text"
 
 #: src/ui/panels/history/item.js:74

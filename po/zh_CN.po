@@ -148,7 +148,7 @@ msgid "Copy original"
 msgstr "复制原文"
 
 #: src/ui/panels/history/item.js:68 src/ui/panels/tokenizer/panel.js:56
-msgid "Segment text"
+msgid "Word Selection"
 msgstr "分词"
 
 #: src/ui/panels/history/item.js:74

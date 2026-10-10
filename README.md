@@ -4,7 +4,7 @@
 
 **Clipboard X Gnome — a GNOME clipboard extension built around your workflow.**
 
-History · Token selection · Quick phrases · Device sync · Screenshot editing · Quick color picking
+History · Word selection · Quick phrases · Device sync · Screenshot editing · Quick color picking
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
@@ -14,7 +14,7 @@ History · Token selection · Quick phrases · Device sync · Screenshot editing
 
 </div>
 
-Clipboard X Gnome is a GNOME Shell extension that brings text and image history, token selection, and quick
+Clipboard X Gnome is a GNOME Shell extension that brings text and image history, word selection, and quick
 phrases together in a top-bar panel. It also provides screenshot capture, color picking, and a way to
 open images in a configured editor. To share clipboard snapshots across devices, connect a
 `clipboard-x-server` that you configure yourself.
@@ -30,9 +30,9 @@ or refreshed by the user.
 
 ![Clipboard panel](docs/preivew/main-panel.png)
 
-**Token selection panel**
+**Word selection panel**
 
-![Token selection panel](docs/preivew/split-panel.png)
+![Word selection panel](docs/preivew/split-panel.png)
 
 **Preferences**
 
@@ -43,11 +43,11 @@ or refreshed by the user.
 ## Features
 
 - **Clipboard history** — Search local snapshots of text and images, with source-device icons for remote entries in multi-device history.
-- **Token selection** — Select words or ranges to copy, paste, or type; preserve links, email addresses, numbers, whitespace, and punctuation.
+- **Word selection** — Select words or ranges to copy, paste, or type; preserve links, email addresses, numbers, whitespace, and punctuation.
 - **Custom dictionaries** — Use the system `Intl.Segmenter` or combine local and network dictionaries for Chinese and Japanese.
 - **Quick phrases** — Save and reuse frequently used text locally.
 - **Privacy mode** — Pause history capture; password-manager-marked content stays in memory by default.
-- **Keyboard shortcuts** — Configure shortcuts to open the panel and act on entries or selected tokens; use arrow keys to navigate.
+- **Keyboard shortcuts** — Configure shortcuts to open the panel and act on entries or selected words; use arrow keys to navigate.
 - **Screenshots and editing** — Capture from the panel and open copied images with an editor command you configure.
 - **Color picker** — Copy a screen color as HEX, RGB, HSL, or OKLCH text.
 - **Device synchronization** — Send entries manually or automatically through a self-hosted `clipboard-x-server` and its Channels, with remote entries identified by device.
@@ -103,7 +103,7 @@ stable synchronization identity. The editable device tag and icon are only its h
 
 ### 2. Reuse clipboard history
 
-Click a history entry—or focus it and press Enter—to copy it. Each row also exposes tokenization or image
+Click a history entry—or focus it and press Enter—to copy it. Each row also exposes word selection or image
 editing, pinning, synchronization, and deletion actions when applicable. Search with `Ctrl+F`.
 
 Use **Preferences → General → Icon layout → History** to hide or reorder entry action icons.
@@ -126,7 +126,7 @@ The keyboard shortcuts in the table can be changed or disabled in Preferences; `
 Use simulated typing when the target application does not accept normal paste:
 
 1. Focus the target text field, then open Clipboard X Gnome.
-2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the token panel, select the words you need and press `'`.
+2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the word selection panel, select the words you need and press `'`.
 3. The panel closes and Clipboard X Gnome types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
 Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical
@@ -142,9 +142,9 @@ This changes the typing interval; it cannot guarantee that another application a
 > key presses. Pressing Ctrl, Alt, Shift, Super, Meta, or Hyper cancels the remaining input and shows a
 > GNOME notification.
 
-### 4. Tokenization mode
+### 4. Word selection mode
 
-Press the token button on a text entry. Move with the arrow keys, click or drag across tokens to select
+Press the word selection button on a text entry. Move with the arrow keys, click or drag across words to select
 them, and use `Shift` + arrow keys for keyboard range selection. The default actions are `c` to copy,
 `v` to paste, and `'` to simulate typing the selected result.
 
