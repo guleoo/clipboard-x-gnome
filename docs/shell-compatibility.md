@@ -44,7 +44,7 @@ before enabling again, then requires an active extension and a new indicator. Th
 settings changes from coalescing into a no-op and mistaking the previous instance for a restart.
 
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
-tokenizer rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
+word selection panel rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
 physical-keyboard, server-interoperability or visual-layout acceptance test. Those still require
 separate testing on the target desktop. The larger `shell.smoke.js` and preferences checks remain
 independent; a successful lifecycle test does not claim that every assertion in those suites passed.

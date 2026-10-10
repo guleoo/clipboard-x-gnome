@@ -446,7 +446,7 @@ msgid "Add network location"
 msgstr "ネットワークの場所を追加"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "システム標準の単語分割機能"
 
 #: src/ui/settings/dictionaries.js:187
@@ -831,10 +831,6 @@ msgstr "標準"
 msgid "Slow"
 msgstr "低速"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "単語分割"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "元のテキストのプレビューを表示"
@@ -1162,19 +1158,15 @@ msgid "Type entry instead of copying"
 msgstr "コピーせずに項目をキー入力"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "分割した語句にキーボードフォーカスがある場合に有効です。"
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "選択した語句をコピー"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "選択した語句を貼り付け"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "選択した語句をキー入力"
 
 #: src/ui/settings/window.js:407

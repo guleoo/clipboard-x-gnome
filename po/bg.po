@@ -450,7 +450,7 @@ msgid "Add network location"
 msgstr "Добавяне на мрежово местоположение"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "Системен сегментатор"
 
 #: src/ui/settings/dictionaries.js:187
@@ -841,10 +841,6 @@ msgstr "Стандартна"
 msgid "Slow"
 msgstr "Бавна"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "Сегментатор"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "Показване на преглед на оригиналния текст"
@@ -1180,19 +1176,15 @@ msgid "Type entry instead of copying"
 msgstr "Въвеждане на елемента вместо копиране"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "Активни, когато сегмент от текста има клавиатурния фокус."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "Копиране на избраните сегменти"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "Поставяне на избраните сегменти"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "Въвеждане на избраните сегменти"
 
 #: src/ui/settings/window.js:407

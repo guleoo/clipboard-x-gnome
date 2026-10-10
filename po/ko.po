@@ -442,7 +442,7 @@ msgid "Add network location"
 msgstr "네트워크 위치 추가"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "시스템 단어 분리기"
 
 #: src/ui/settings/dictionaries.js:187
@@ -826,10 +826,6 @@ msgstr "표준"
 msgid "Slow"
 msgstr "느림"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "단어 분리"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "원본 텍스트 미리 보기 표시"
@@ -1154,19 +1150,15 @@ msgid "Type entry instead of copying"
 msgstr "복사 대신 항목 입력"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "분리된 단어에 키보드 포커스가 있을 때 활성화됩니다."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "선택한 단어 복사"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "선택한 단어 붙여넣기"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "선택한 단어 입력"
 
 #: src/ui/settings/window.js:407

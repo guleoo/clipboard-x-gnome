@@ -446,7 +446,7 @@ msgid "Add network location"
 msgstr "Hálózati hely hozzáadása"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "Rendszerszegmentáló"
 
 #: src/ui/settings/dictionaries.js:187
@@ -836,10 +836,6 @@ msgstr "Normál"
 msgid "Slow"
 msgstr "Lassú"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "Tokenizáló"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "Eredeti szöveg előnézetének megjelenítése"
@@ -1175,19 +1171,15 @@ msgid "Type entry instead of copying"
 msgstr "Elem begépelése másolás helyett"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "Akkor aktív, amikor egy szövegrész billentyűzetfókuszban van."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "Kijelölt szövegrészek másolása"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "Kijelölt szövegrészek beillesztése"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "Kijelölt szövegrészek begépelése"
 
 #: src/ui/settings/window.js:407

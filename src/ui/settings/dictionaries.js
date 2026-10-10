@@ -195,7 +195,7 @@ export function create({settings, store, window}) {
     const entries = [
       {
         fileName: SYSTEM_DICTIONARY_ID,
-        name: _('System tokenizer'),
+        name: _('System word segmenter'),
         subtitle: '',
         system: true,
       },

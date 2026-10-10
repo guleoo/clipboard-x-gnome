@@ -450,7 +450,7 @@ msgid "Add network location"
 msgstr "Dodaj lokalizację sieciową"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "Segmenter systemowy"
 
 #: src/ui/settings/dictionaries.js:187
@@ -838,10 +838,6 @@ msgstr "Standardowa"
 msgid "Slow"
 msgstr "Wolna"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "Tokenizator"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "Pokaż podgląd tekstu źródłowego"
@@ -1174,19 +1170,15 @@ msgid "Type entry instead of copying"
 msgstr "Wpisz element zamiast go kopiować"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "Aktywne, gdy segment tekstu ma fokus klawiatury."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "Skopiuj wybrane segmenty"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "Wklej wybrane segmenty"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "Wpisz wybrane segmenty"
 
 #: src/ui/settings/window.js:407

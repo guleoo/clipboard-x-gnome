@@ -446,7 +446,7 @@ msgid "Add network location"
 msgstr "Gehitu sareko kokapena"
 
 #: src/ui/settings/dictionaries.js:176
-msgid "System tokenizer"
+msgid "System word segmenter"
 msgstr "Sistemaren segmentatzailea"
 
 #: src/ui/settings/dictionaries.js:187
@@ -835,10 +835,6 @@ msgstr "Arrunta"
 msgid "Slow"
 msgstr "Motela"
 
-#: src/ui/settings/window.js:192 src/ui/settings/window.js:399
-msgid "Tokenizer"
-msgstr "Tokenizatzailea"
-
 #: src/ui/settings/window.js:194
 msgid "Show source text preview"
 msgstr "Erakutsi jatorrizko testuaren aurrebista"
@@ -1173,19 +1169,15 @@ msgid "Type entry instead of copying"
 msgstr "Idatzi elementua kopiatu ordez"
 
 #: src/ui/settings/window.js:400
-msgid "Active while a token has keyboard focus."
+msgid "Active while a word has keyboard focus."
 msgstr "Aktibo dago testu-zati batek teklatuaren fokua duenean."
 
-#: src/ui/settings/window.js:404
-msgid "Copy selected tokens"
-msgstr "Kopiatu hautatutako zatiak"
-
 #: src/ui/settings/window.js:405
-msgid "Paste selected tokens"
+msgid "Paste selected words"
 msgstr "Itsatsi hautatutako zatiak"
 
 #: src/ui/settings/window.js:406
-msgid "Type selected tokens"
+msgid "Type selected words"
 msgstr "Idatzi hautatutako zatiak"
 
 #: src/ui/settings/window.js:407
