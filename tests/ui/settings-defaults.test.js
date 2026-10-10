@@ -21,6 +21,9 @@ const schemaSource = Gio.SettingsSchemaSource.new_from_directory(
 const settings = new Gio.Settings({
   settings_schema: schemaSource.lookup('org.gnome.shell.extensions.clipboard-x-gnome', false),
 });
+assert(settings.get_string('sensitive-content-mode') === 'discard',
+  'sensitive clipboard content must not be recorded by default');
+settings.set_string('sensitive-content-mode', 'memory');
 assert(!settings.get_boolean('sync-use-sha256sum'), 'external file verification must be disabled by default');
 settings.set_boolean('sync-use-sha256sum', true);
 const deviceId = GLib.uuid_string_random();

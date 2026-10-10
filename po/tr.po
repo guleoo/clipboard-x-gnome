@@ -196,6 +196,7 @@ msgstr "Renk seç"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Gizli kip"
 
@@ -845,10 +846,6 @@ msgid ""
 "it."
 msgstr ""
 "Dışlamak için çalışan bir uygulama seçin veya pencere sınıfını elle girin."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Pano kaydını duraklat"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

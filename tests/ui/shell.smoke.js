@@ -969,6 +969,8 @@ export async function run() {
   pickedColor.close();
   await Scripting.sleep(300);
   assert(!extensionObject._colorPicker, 'Color picker did not release its modal overlay');
+  assert(extensionObject._colorPickerDestroySignal === 0,
+    'Completed color picking retained the destroy signal ID');
   assert(indicator._controller.items.some(item => item.text.startsWith('#')),
     'Picked color did not enter clipboard history');
   const colorItem = indicator._controller.items.find(item => item.text.startsWith('#'));
@@ -992,6 +994,8 @@ export async function run() {
   });
   await Scripting.sleep(100);
   assert(!extensionObject._colorPicker, 'Escape did not cancel and release the color picker');
+  assert(extensionObject._colorPickerDestroySignal === 0,
+    'Cancelled color picking retained the destroy signal ID');
 
   extensionObject._pickColor();
   await Scripting.sleep(300);
@@ -1003,6 +1007,8 @@ export async function run() {
   await Scripting.sleep(300);
   assert(!Main.panel.statusArea[STATUS_AREA_NAME], 'Indicator remained after disabling Clipboard X Gnome');
   assert(!extensionObject._colorPicker, 'Disabling Clipboard X Gnome did not close the active color picker');
+  assert(extensionObject._colorPickerDestroySignal === 0,
+    'Disabling Clipboard X Gnome did not clear the color picker destroy signal ID');
   assert(oldController._destroyed && oldController._selectionSignal === 0
       && oldController._settingsSignals.length === 0,
   'Disabling Clipboard X Gnome did not release clipboard and settings subscriptions');

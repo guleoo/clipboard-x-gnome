@@ -202,6 +202,7 @@ msgstr "Избор на цвят"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Поверителен режим"
 
@@ -856,10 +857,6 @@ msgid ""
 msgstr ""
 "Изберете работеща програма или въведете ръчно класа на прозореца ѝ, за да я "
 "изключите."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Спиране на записването на буфера за обмен"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

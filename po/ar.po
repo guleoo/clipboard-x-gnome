@@ -192,6 +192,7 @@ msgstr "اختيار لون"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "وضع الخصوصية"
 
@@ -837,10 +838,6 @@ msgid ""
 "Select a running application or enter its window class manually to exclude "
 "it."
 msgstr "اختر تطبيقًا قيد التشغيل أو أدخل فئة نافذته يدويًا لاستبعاده."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "إيقاف تسجيل الحافظة مؤقتًا"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

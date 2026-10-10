@@ -193,6 +193,7 @@ msgstr "ಬಣ್ಣವನ್ನು ಆರಿಸಿ"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "ಖಾಸಗಿ ಮೋಡ್"
 
@@ -839,10 +840,6 @@ msgid ""
 msgstr ""
 "ಹೊರತುಪಡಿಸಲು ಚಾಲನೆಯಲ್ಲಿರುವ ಅಪ್ಲಿಕೇಶನ್ ಆಯ್ಕೆಮಾಡಿ ಅಥವಾ ಅದರ ವಿಂಡೊ ವರ್ಗವನ್ನು ಕೈಯಾರೆ "
 "ನಮೂದಿಸಿ."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ದಾಖಲಿಸುವುದನ್ನು ವಿರಾಮಗೊಳಿಸಿ"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

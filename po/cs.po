@@ -197,6 +197,7 @@ msgstr "Vybrat barvu"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Soukromý režim"
 
@@ -847,10 +848,6 @@ msgid ""
 msgstr ""
 "Vyberte spuštěnou aplikaci nebo ručně zadejte třídu jejího okna, chcete-li "
 "ji vyloučit."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Pozastavit zaznamenávání schránky"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

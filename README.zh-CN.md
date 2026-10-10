@@ -44,7 +44,7 @@ Clipboard X Gnome 是一款面向 GNOME Shell 的剪切板扩展。它通过顶�
 - **分词选择** — 选取单个或多个词后复制、粘贴或模拟输入，同时保留链接、邮箱、数字、空白和标点。
 - **自定义词库** — 使用系统 `Intl.Segmenter`，或为中文、日文组合本地与网络词库。
 - **快捷语句** — 在本机保存和复用常用文本。
-- **隐私模式** — 暂停记录历史；密码管理器标记的内容默认只留在内存中。
+- **隐私模式** — 暂停记录历史；密码管理器标记的内容默认不记录。
 - **键盘操作** — 使用可配置快捷键打开面板，并对条目或选中的词执行操作；通过方向键导航。
 - **截图编辑** — 从面板调用系统截图，使用自行配置的编辑器命令打开已复制的图片。
 - **取色器** — 选取屏幕颜色，并把 HEX、RGB、HSL 或 OKLCH 颜色值复制到剪切板。
@@ -72,10 +72,10 @@ meson compile -C build
 meson install -C build
 ```
 
-安装生成的 `build/clipboard-x-gnome_1.0.7.zip`：
+安装生成的 ZIP，下方的 `1.x.x` 请替换为实际构建的版本号：
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.7.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.x.x.zip
 gnome-extensions enable clipboard-x-gnome@guleoo.github.io
 ```
 
@@ -262,8 +262,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.7.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.7.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见
@@ -273,7 +273,6 @@ gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.7.zip t
 ## 文档
 
 - [中文文档索引](docs/README_CN.md)
-- [1.0.7 发布说明](docs/release/v1.0.7-cn.md)
 - [同步协议（HTTP API v1）](https://github.com/guleoo/clipboard-x-server/blob/master/docs/zh-CN/protocol.md) — 由 Clipboard X Server 维护
 - [UI 开发指南](docs/ui-architecture_CN.md)
 - [同步性能与压力测试](docs/sync-performance-testing_CN.md)

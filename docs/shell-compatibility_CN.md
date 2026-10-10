@@ -16,10 +16,10 @@ Release 只在推送 `v*` 标签时执行。每个任务构建前检查实际 Sh
 不会静默改测其他版本。Fedora 45 容器可能处于预发布阶段，兼容性目标以实际安装的 Shell 版本为准。
 两个任务均成功才能发布，只上传一份运行时 ZIP。
 
-本地构建安装包后，可运行范围较小的生命周期检查：
+本地构建安装包后，可运行范围较小的生命周期检查。下方的 `1.x.x` 请替换为实际构建的版本号：
 
 ```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.7.zip
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 ```
 
 末尾可添加 `50` 或 `51`，要求本机已安装的 Shell 必须是指定版本。脚本不会安装或升级 GNOME。

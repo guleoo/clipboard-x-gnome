@@ -19,10 +19,10 @@ headless Shell lifecycle test. A version mismatch fails rather than silently tes
 Fedora 45 may be a prerelease container; the installed Shell version is the compatibility target.
 Both jobs must succeed before publication. Only one runtime ZIP is uploaded.
 
-Run the narrow lifecycle check locally after building the package:
+Run the narrow lifecycle check locally after building the package. Replace `1.x.x` with the version you built:
 
 ```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.0.7.zip
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 ```
 
 Optionally append `50` or `51` to require that exact installed Shell version. The script does not
