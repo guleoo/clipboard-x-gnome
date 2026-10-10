@@ -197,6 +197,7 @@ msgstr "Szín kiválasztása"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Privát mód"
 
@@ -851,10 +852,6 @@ msgid ""
 msgstr ""
 "Válasszon ki egy futó alkalmazást, vagy adja meg kézzel az ablakosztályát a "
 "kizárásához."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Vágólap rögzítésének szüneteltetése"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

@@ -46,7 +46,7 @@ or refreshed by the user.
 - **Word selection** — Select words or ranges to copy, paste, or type; preserve links, email addresses, numbers, whitespace, and punctuation.
 - **Custom dictionaries** — Use the system `Intl.Segmenter` or combine local and network dictionaries for Chinese and Japanese.
 - **Quick phrases** — Save and reuse frequently used text locally.
-- **Privacy mode** — Pause history capture; password-manager-marked content stays in memory by default.
+- **Privacy mode** — Pause history capture; password-manager-marked content is not recorded by default.
 - **Keyboard shortcuts** — Configure shortcuts to open the panel and act on entries or selected words; use arrow keys to navigate.
 - **Screenshots and editing** — Capture from the panel and open copied images with an editor command you configure.
 - **Color picker** — Copy a screen color as HEX, RGB, HSL, or OKLCH text.

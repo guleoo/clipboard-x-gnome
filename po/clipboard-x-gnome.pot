@@ -178,6 +178,7 @@ msgstr ""
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:408
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr ""
 
@@ -835,10 +836,6 @@ msgstr ""
 msgid ""
 "Select a running application or enter its window class manually to exclude "
 "it."
-msgstr ""
-
-#: src/ui/settings/window.js:238
-msgid "Pause clipboard recording"
 msgstr ""
 
 #: src/ui/settings/window.js:240

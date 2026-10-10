@@ -200,6 +200,7 @@ msgstr "Causir una color"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Mòde privat"
 
@@ -856,10 +857,6 @@ msgid ""
 msgstr ""
 "Seleccionatz una aplicacion en cors d’execucion o picatz manualament sa "
 "classa de fenèstra per l’exclure."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Metre en pausa l’enregistrament del quichapapièrs"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

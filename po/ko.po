@@ -194,6 +194,7 @@ msgstr "색상 선택"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "개인정보 보호 모드"
 
@@ -839,10 +840,6 @@ msgid ""
 "Select a running application or enter its window class manually to exclude "
 "it."
 msgstr "제외할 실행 중인 앱을 선택하거나 창 클래스를 직접 입력하세요."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "클립보드 기록 일시 중지"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

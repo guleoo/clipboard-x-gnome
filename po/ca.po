@@ -203,6 +203,7 @@ msgstr "Tria un color"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Mode privat"
 
@@ -857,10 +858,6 @@ msgid ""
 msgstr ""
 "Seleccioneu una aplicació en execució o introduïu-ne manualment la classe de "
 "finestra per excloure-la."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Atura temporalment el registre del porta-retalls"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

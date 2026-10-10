@@ -252,7 +252,7 @@
         <choice value="discard"/>
         <choice value="memory"/>
       </choices>
-      <default>'memory'</default>
+      <default>'discard'</default>
       <summary>Handling policy for clipboard content marked by password managers</summary>
     </key>
     <key name="sync-enabled" type="b">

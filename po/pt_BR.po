@@ -203,6 +203,7 @@ msgstr "Escolher cor"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "Modo privado"
 
@@ -856,10 +857,6 @@ msgid ""
 msgstr ""
 "Selecione um aplicativo em execução ou digite a classe da janela para excluí-"
 "lo do registro."
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "Pausar o registro da área de transferência"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

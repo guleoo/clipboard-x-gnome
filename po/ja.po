@@ -197,6 +197,7 @@ msgstr "色を選択"
 
 #: src/ui/panels/history/panel.js:99 src/ui/panels/history/panel.js:411
 #: src/ui/settings/panel-actions.js:137
+#: src/ui/settings/window.js:241
 msgid "Privacy mode"
 msgstr "プライバシーモード"
 
@@ -845,10 +846,6 @@ msgid ""
 "it."
 msgstr ""
 "実行中のアプリケーションから選ぶか、ウィンドウクラスを手入力して除外します。"
-
-#: src/ui/settings/window.js:201
-msgid "Pause clipboard recording"
-msgstr "クリップボードの記録を一時停止"
 
 #: src/ui/settings/window.js:202 src/ui/settings/window.js:292
 msgid "Sensitive content"

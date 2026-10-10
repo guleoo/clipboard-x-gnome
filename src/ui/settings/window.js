@@ -238,7 +238,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       description: _('Select a running application or enter its window class manually to exclude it.'),
     });
     page.add(privacy);
-    privacy.add(this._rows.switch('private-mode', _('Pause clipboard recording')));
+    privacy.add(this._rows.switch('private-mode', _('Privacy mode')));
     privacy.add(this._rows.combo('sensitive-content-mode', _('Sensitive content'), [
       ['discard', _('Do not record')],
       ['memory', _('Keep until extension stops')],
