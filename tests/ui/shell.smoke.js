@@ -481,7 +481,7 @@ export async function run() {
   assert(tokenButtons.length === tokenState.tokens.length,
     'Text segmentation did not render one visible button for each token');
   assert(tokenButtons.every(button => button.mapped && button.width > 0 && button.height > 0),
-    'Text segmentation rendered token buttons outside the visible layout');
+    'Text segmentation rendered word selection buttons outside the visible layout');
   assert(global.stage.get_key_focus() === indicator._tokenizer.focusAnchor,
     'Opening the tokenizer did not focus its anchor');
   assert(indicator._tokenizer.focusAnchor.handle(capturedKeyEvent(Clutter.KEY_Right))
@@ -519,7 +519,7 @@ export async function run() {
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)
       && global.stage.get_key_focus() === tokenButtons[1],
-    'Shift+Arrow did not extend token selection and keyboard focus');
+    'Shift+Arrow did not extend word selection and keyboard focus');
   tokenButtons[0].grab_key_focus();
   assert(indicator._tokenizer.handleKey(
     tokenButtons[0], entryEvent(Clutter.KEY_Up),
@@ -560,7 +560,7 @@ export async function run() {
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)
       && tokenButtons[0].checked && tokenButtons[1].checked,
-    'Press-and-drag token selection did not select every visited token');
+    'Press-and-drag word selection did not select every visited word');
   indicator._tokenizer.setSelected(tokenButtons[1], false);
   assert(indicator._tokenizer.resultLabel.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');
