@@ -133,5 +133,5 @@ meson compile -C build clipboard-x-gnome-update-po
 ```
 
 生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
-`clipboard-x-gnome_1.0.5.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
+`clipboard-x-gnome_1.0.6.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。

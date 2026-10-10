@@ -1,6 +1,6 @@
 project(
   'clipboard-x-gnome',
-  version: '1.0.5',
+  version: '1.0.6',
   license: 'GPL-3.0-or-later',
   meson_version: '>=1.6.0',
 )
