@@ -556,11 +556,34 @@ export async function run() {
     secondTokenX + secondTokenWidth / 2,
     secondTokenY + secondTokenHeight / 2,
   );
+  const [firstTokenX, firstTokenY] = tokenButtons[0].get_transformed_position();
+  const [firstTokenWidth, firstTokenHeight] = tokenButtons[0].get_transformed_size();
+  indicator._tokenizer.applySelectionAt(
+    firstTokenX + firstTokenWidth / 2,
+    firstTokenY + firstTokenHeight / 2,
+  );
+  assert(tokenState.selected.has(tokenState.tokens[0].index)
+      && !tokenState.selected.has(tokenState.tokens[1].index),
+    'Backtracking a mouse selection did not restore words outside the current range');
+  indicator._tokenizer.applySelectionAt(
+    secondTokenX + secondTokenWidth / 2,
+    secondTokenY + secondTokenHeight / 2,
+  );
   indicator._tokenizer.endSelectionDrag();
   assert(tokenState.selected.has(tokenState.tokens[0].index)
       && tokenState.selected.has(tokenState.tokens[1].index)
       && tokenButtons[0].checked && tokenButtons[1].checked,
     'Press-and-drag word selection did not select every visited word');
+  indicator._tokenizer.beginSelectionDrag(tokenButtons[0]);
+  indicator._tokenizer.applySelectionAt(
+    secondTokenX + secondTokenWidth / 2,
+    secondTokenY + secondTokenHeight / 2,
+  );
+  indicator._tokenizer.endSelectionDrag();
+  assert(!tokenState.selected.has(tokenState.tokens[0].index)
+      && !tokenState.selected.has(tokenState.tokens[1].index),
+    'Dragging from a selected word did not deselect the range');
+  indicator._tokenizer.setSelected(tokenButtons[0], true);
   indicator._tokenizer.setSelected(tokenButtons[1], false);
   assert(indicator._tokenizer.resultLabel.text === tokenState.tokens[0].text,
     'Selected token did not update the copy result preview');

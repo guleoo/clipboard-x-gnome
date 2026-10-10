@@ -32,7 +32,7 @@ export class TokenizerPanel {
     this._contentWidth = 260;
     this._accentColor = null;
     this._selectionDrag = null;
-    this._dragCaptureId = 0;
+    this._dragSourceId = 0;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -40,6 +40,10 @@ export class TokenizerPanel {
       orientation: Clutter.Orientation.VERTICAL,
       style_class: 'cbx-token-panel',
       x_expand: true,
+    });
+    this.actor.connect('notify::mapped', () => {
+      if (!this.actor.mapped)
+        this.endSelectionDrag();
     });
     this.focusAnchor = new FocusAnchor({
       onNavigate: () => this._focusFirstToken(),
@@ -180,28 +184,19 @@ export class TokenizerPanel {
       });
       button.connect('key-focus-in', () =>
         AnimationUtils.ensureActorVisibleInScrollView(this.scroll, button));
-      button.connect('button-press-event', (_actor, event) => {
-        if (event.get_button() === Clutter.BUTTON_PRIMARY)
+      button.connect('notify::pressed', () => {
+        const [, , modifiers] = global.get_pointer();
+        if (button.pressed && !this._selectionDrag
+            && (modifiers & Clutter.ModifierType.BUTTON1_MASK))
           this.beginSelectionDrag(button);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('motion-event', (_actor, event) => {
-        const [x, y] = event.get_coords();
-        this.applySelectionAt(x, y);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('button-release-event', (_actor, event) => {
-        if (event.get_button() === Clutter.BUTTON_PRIMARY)
-          this.endSelectionDrag(true);
-        return Clutter.EVENT_PROPAGATE;
-      });
-      button.connect('notify::hover', () => {
-        if (button.hover)
-          this._applySelectionDrag(button);
       });
       button.connect('clicked', () => {
-        if (button._clipboardXGnomeSuppressClick) {
-          button._clipboardXGnomeSuppressClick = false;
+        // Pointer presses already changed selection. Do not toggle it again
+        // on release, even if the held-selection timer ended first.
+        if (Clutter.get_current_event()?.type() === Clutter.EventType.BUTTON_RELEASE) {
+          const [x, y] = global.get_pointer();
+          this.applySelectionAt(x, y);
+          this.endSelectionDrag();
           return;
         }
         state.keyboardSelection = null;
@@ -313,25 +308,33 @@ export class TokenizerPanel {
     const token = button._clipboardXGnomeToken;
     const state = button._clipboardXGnomeTokenState;
     state.keyboardSelection = null;
-    button._clipboardXGnomeSuppressClick = true;
     this._selectionDrag = {
       state,
       selected: !state.selected.has(token.index),
-      initialButton: button,
-      lastIndex: token.index,
-      visited: new Set(),
+      anchorIndex: token.index,
+      currentIndex: null,
+      baseSelected: new Set(state.selected),
     };
     this._applySelectionDrag(button);
-    this._dragCaptureId = global.stage.connect('captured-event', (_stage, event) => {
-      const type = event.type();
-      if (type === Clutter.EventType.MOTION) {
-        const [x, y] = event.get_coords();
+    let lastX = null;
+    let lastY = null;
+    // St.Button's click gesture can consume release/motion events before actor
+    // signals. Sample only during a held selection, including releases outside
+    // the panel; hovering alone must never extend a selection.
+    this._dragSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
+      const [x, y, modifiers] = global.get_pointer();
+      if (!(modifiers & Clutter.ModifierType.BUTTON1_MASK)) {
         this.applySelectionAt(x, y);
-      } else if (type === Clutter.EventType.BUTTON_RELEASE
-          && event.get_button() === Clutter.BUTTON_PRIMARY) {
-        this.endSelectionDrag(true);
+        this._dragSourceId = 0;
+        this.endSelectionDrag();
+        return GLib.SOURCE_REMOVE;
       }
-      return Clutter.EVENT_PROPAGATE;
+      if (x !== lastX || y !== lastY) {
+        this.applySelectionAt(x, y);
+        lastX = x;
+        lastY = y;
+      }
+      return GLib.SOURCE_CONTINUE;
     });
   }
 
@@ -351,23 +354,12 @@ export class TokenizerPanel {
     }
   }
 
-  endSelectionDrag(deferClickReset = false) {
-    if (this._dragCaptureId) {
-      global.stage.disconnect(this._dragCaptureId);
-      this._dragCaptureId = 0;
+  endSelectionDrag() {
+    if (this._dragSourceId) {
+      GLib.Source.remove(this._dragSourceId);
+      this._dragSourceId = 0;
     }
-    const button = this._selectionDrag?.initialButton;
     this._selectionDrag = null;
-    if (!button)
-      return;
-    if (!deferClickReset) {
-      button._clipboardXGnomeSuppressClick = false;
-      return;
-    }
-    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-      button._clipboardXGnomeSuppressClick = false;
-      return GLib.SOURCE_REMOVE;
-    });
   }
 
   updateResult() {
@@ -472,20 +464,23 @@ export class TokenizerPanel {
     const token = button?._clipboardXGnomeToken;
     if (!drag || !token || button._clipboardXGnomeTokenState !== drag.state)
       return;
-    const start = Math.min(drag.lastIndex, token.index);
-    const end = Math.max(drag.lastIndex, token.index);
+    if (drag.currentIndex === token.index)
+      return;
+    drag.currentIndex = token.index;
+    const start = Math.min(drag.anchorIndex, token.index);
+    const end = Math.max(drag.anchorIndex, token.index);
     let changed = false;
     for (const candidate of this._buttons) {
       const candidateToken = candidate._clipboardXGnomeToken;
-      if (candidate._clipboardXGnomeTokenState !== drag.state
-          || candidateToken.index < start || candidateToken.index > end
-          || drag.visited.has(candidateToken.index))
+      if (candidate._clipboardXGnomeTokenState !== drag.state)
         continue;
-      drag.visited.add(candidateToken.index);
-      this.setSelected(candidate, drag.selected, false);
+      const selected = candidateToken.index >= start && candidateToken.index <= end
+        ? drag.selected : drag.baseSelected.has(candidateToken.index);
+      if (drag.state.selected.has(candidateToken.index) === selected)
+        continue;
+      this.setSelected(candidate, selected, false);
       changed = true;
     }
-    drag.lastIndex = token.index;
     if (changed)
       this.updateResult();
   }
