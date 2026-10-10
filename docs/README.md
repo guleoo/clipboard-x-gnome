@@ -9,6 +9,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Releases
 
+- [1.0.7 release notes](release/v1.0.7-en.md): fixes for mouse dragging and range selection in Word Selection mode.
 - [1.0.6 release notes](release/v1.0.6-en.md): clearer English word selection labels and an updated extension description.
 - [1.0.5 release notes](release/v1.0.5-en.md): fewer redundant synchronization-state writes.
 - [1.0.4 release notes](release/v1.0.4-en.md): fixes for small-text synchronization and streamed download size checks.
