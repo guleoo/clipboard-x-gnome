@@ -146,5 +146,5 @@ To build a local release ZIP without installing it into the desktop or changing 
 ```
 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
-`clipboard-x-gnome_1.0.7.zip`. The version comes from Meson. The script configures a dedicated package build,
+`clipboard-x-gnome_1.x.x.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.

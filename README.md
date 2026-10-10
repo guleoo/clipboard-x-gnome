@@ -74,10 +74,10 @@ meson compile -C build
 meson install -C build
 ```
 
-Install the generated `build/clipboard-x-gnome_1.0.7.zip`:
+Install the generated ZIP. Replace `1.x.x` below with the version you built:
 
 ```sh
-gnome-extensions install --force build/clipboard-x-gnome_1.0.7.zip
+gnome-extensions install --force build/clipboard-x-gnome_1.x.x.zip
 gnome-extensions enable clipboard-x-gnome@guleoo.github.io
 ```
 
@@ -289,8 +289,8 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.7.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.0.7.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/preferences.smoke.js
 ```
 
 Clipboard X Gnome does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,
@@ -300,7 +300,6 @@ the private process described in [SECURITY.md](SECURITY.md), not a public issue.
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [1.0.7 release notes](docs/release/v1.0.7-en.md)
 - [Synchronization Protocol (HTTP API v1)](https://github.com/guleoo/clipboard-x-server/blob/master/docs/protocol.md) — owned by Clipboard X Server
 - [UI development guide](docs/ui-architecture.md)
 - [Synchronization performance and stress testing](docs/sync-performance-testing.md)
