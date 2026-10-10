@@ -126,7 +126,7 @@ Each version has separate `v<version>-en.md` and `v<version>-cn.md` release note
 Release ZIPs must contain only the runtime extension, schemas, CSS, metadata, and compiled translations;
 they must not include tests, protocol source, dictionaries, or the central server.
 
-## Releases
+## CI and local packages
 
 The [CI workflow](.github/workflows/ci.yml) runs on every push (branches and tags) and pull request in a
 Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
@@ -148,36 +148,3 @@ To build a local release ZIP without installing it into the desktop or changing 
 The result is `build/release/clipboard-x-gnome_<version>.zip`, for example
 `clipboard-x-gnome_1.0.5.zip`. The version comes from Meson. The script configures a dedicated package build,
 checks JavaScript syntax, runs the full Meson suite, and validates the archive and version.
-
-To publish, update the matching `version` values in `meson.build` and `package.json` using `X.Y.Z`,
-commit all changes, then run `./tools/release.sh --publish`. This additionally pushes the current
-branch, creates an annotated `vX.Y.Z` tag, and pushes the tag to its configured remote. If multiple
-remotes are available, specify one with `--remote NAME`. Publishing requires a clean working tree
-and working Git credentials; it never force-pushes or overwrites an existing remote tag.
-
-The tag must match both project versions and the generated `metadata.json` `version-name`, or the
-workflow stops before publication. A passing tag build creates a GitHub Release with
-`clipboard-x-gnome_<version>.zip` attached. Do not set the EGO-managed numeric `metadata.version` yourself.
-Before tagging, prepare and commit both `docs/release/v<version>-en.md` and
-`docs/release/v<version>-cn.md`. The workflow requires both files and uses the English file as the
-GitHub Release description; notes are written ahead of time, not generated from commits.
-Include a Simplified Chinese link at the top of the English file and an English link in the Chinese
-file. Use absolute URLs pointing to these files at the matching version tag so the links work both
-in the repository and in the GitHub Release, and remain tied to that version.
-
-For each version, summarize changes and fixes and end both
-language files with a **Full Changelog** comparison of the previous release tag and the new one.
-For example, for v1.0.1 following v1.0.0:
-
-```md
-**Full Changelog**: [v1.0.0...v1.0.1](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.0.1)
-```
-
-Submission to [GNOME Shell Extensions](https://extensions.gnome.org/) is optional. To enable it,
-set the repository Actions variable `EGO_UPLOAD_ENABLED` to `true` and add repository secrets
-`EGO_USER` and `EGO_PASSWORD` for an account authorized to upload this extension. On a passing
-release tag, the workflow submits the same checked ZIP with `gnome-extensions upload`; it passes the
-password via standard input and keeps the CLI token cache in the disposable CI environment. Without
-the variable, no upload is attempted. If the variable is enabled but either secret is missing, the
-upload job fails clearly. Upload success means **submitted for review**, not yet approved or visible
-in the GNOME extension store.

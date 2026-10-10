@@ -117,7 +117,7 @@ meson compile -C build clipboard-x-gnome-update-po
 
 发布 ZIP 必须是最小运行时集合，不能包含测试、协议源码或翻译源码。
 
-## 发布版本
+## CI 与本地打包
 
 [CI 工作流](.github/workflows/ci.yml)会在每次推送（分支和标签）和 Pull Request 时，使用 Fedora 44 / GNOME 50 和 Fedora 45 / GNOME 51
 环境检查 JavaScript 语法、使用 `--no-suite stress` 运行 Meson 普通回归测试、构建扩展 ZIP，并确认归档中只有运行时文件和编译好的
@@ -135,30 +135,3 @@ meson compile -C build clipboard-x-gnome-update-po
 生成的文件在 `build/release/clipboard-x-gnome_<version>.zip`，例如
 `clipboard-x-gnome_1.0.5.zip`，版本号取自 Meson。脚本使用独立的 package 构建目录，检查
 JavaScript 语法、运行完整 Meson 测试，并校验归档内容和版本。
-
-需要正式发布时，先把 `meson.build` 和 `package.json` 的版本号同步改为 `X.Y.Z`，提交所有改动，
-再运行 `./tools/release.sh --publish`。脚本会额外推送当前分支、创建带注释的 `vX.Y.Z` 标签并
-推送标签。如果有多个远端，可用 `--remote NAME` 指定。发布要求工作区干净、Git 认证可用；
-脚本不会强制推送，也不会覆盖远端已有的同名标签。
-
-标签、两处项目版本和生成的 `metadata.json` 中的 `version-name` 必须一致，否则工作流会在发布前
-停止。标签构建通过后，会创建附带 `clipboard-x-gnome_<version>.zip` 的 GitHub Release。不要自行设置由
-GNOME 扩展网站管理的数字型 `metadata.version`。
-打标签前提前编写并提交 `docs/release/v<version>-en.md` 和 `docs/release/v<version>-cn.md`。
-工作流要求两份文件都存在，并使用英文文件作为 GitHub Release 正文，不从 commit 自动生成内容。
-英文文件顶部提供中文入口，中文文件提供英文入口。使用指向对应版本标签下文档的完整 URL，
-确保链接在仓库文档和 GitHub Release 中都能使用，并始终对应该版本。
-
-每个版本概述改动和修复，并在两种语言文档末尾添加 **Full Changelog**，
-链接到上一发布标签与当前标签之间的对比页面。例如，1.0.1 相比 1.0.0：
-
-```md
-**Full Changelog**: [v1.0.0...v1.0.1](https://github.com/guleoo/clipboard-x-gnome/compare/v1.0.0...v1.0.1)
-```
-
-向 [GNOME Shell Extensions 插件商店](https://extensions.gnome.org/)送审是可选的。需要启用时，
-把仓库 Actions 变量 `EGO_UPLOAD_ENABLED` 设为 `true`，并设置有权上传该扩展的账号所对应的
-仓库密钥 `EGO_USER`、`EGO_PASSWORD`。标签构建通过后，工作流会用 `gnome-extensions upload`
-提交同一个经过检查的 ZIP；密码通过标准输入传递，CLI 的登录令牌缓存只保留在临时 CI 环境。
-不设置该变量就不会上传；开启后缺少任一密钥，上传任务会明确失败。上传成功只代表**已送审**，
-不代表已经通过审核或在商店中可见。
