@@ -9,7 +9,7 @@ import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTyp
 import {search as searchHistory} from './history/search.js';
 import {order as orderHistory} from './history/order.js';
 import {HistoryStore} from './history/store.js';
-import {trimRepresentations} from './text.js';
+import {filterEmptyHtml, trimRepresentations} from './text.js';
 import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
@@ -163,9 +163,10 @@ export class ClipboardController extends EventEmitter {
         hasImage ||= normalizedMimeType.startsWith('image/');
         values.push({mimeType: normalizedMimeType, bytes});
       }
+      const nonemptyValues = filterEmptyHtml(values);
       const capturedValues = this._settings.get_boolean('trim-whitespace')
-        ? trimRepresentations(values)
-        : values;
+        ? trimRepresentations(nonemptyValues)
+        : nonemptyValues;
       if (capturedValues.length === 0)
         return null;
 

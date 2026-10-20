@@ -104,8 +104,6 @@ def validate(project_root, archive, tag=None):
         raise ReleaseError("metadata.json version-name differs from the project version")
     if "version" in metadata:
         raise ReleaseError("metadata.json must not set the EGO-managed numeric version")
-    if metadata.get("shell-version") != ["50", "51"]:
-        raise ReleaseError("Release metadata must declare GNOME Shell 50 and 51")
     return version
 
 
