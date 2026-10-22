@@ -98,6 +98,11 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizer.focusGrid,
+      captureView: () => this._tokenizer.captureView(),
+      restoreView: (viewState, _state, previous) => {
+        if (previous === 'tokenizer')
+          this._tokenizer.restoreView(viewState);
+      },
       enter: () => {
         this._showPanelChrome('tokenizer');
       },
@@ -111,6 +116,11 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('phrases', {
       focusGrid: this._quickPhrases.focusGrid,
+      captureView: () => this._quickPhrases.captureView(),
+      restoreView: (viewState, _state, previous) => {
+        if (previous === 'phrases')
+          this._quickPhrases.restoreView(viewState);
+      },
       enter: () => this._showPanelChrome('phrases'),
       leave: () => this._quickPhrases.leave(),
       destroy: () => this._quickPhrases.destroy(),
@@ -225,6 +235,7 @@ class Indicator extends PanelMenu.Button {
           .catch(error => this._actions.reportError(error));
       },
       tokenize: text => this._actions.tokenizeText(text),
+      isActive: () => (this._panelManager?.is('tokenizer') ?? false) && this.menu.isOpen,
     });
     this.menu.addMenuItem(this._tokenizer.item);
 
@@ -397,7 +408,6 @@ class Indicator extends PanelMenu.Button {
     this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
     this._historyPanel.setAccent(this._customAccentColor);
     this._tokenizer.setAccent(this._customAccentColor);
-    this._refresh();
   }
 
   _updatePanelStateRetention() {

@@ -25,6 +25,10 @@ const INDEX_VERSION = 1;
 const MIGRATION_MARKER = '.cache-migrated-v1';
 const logger = createLogger('history');
 
+function contentKey(content) {
+  return JSON.stringify([content.sha256, content.mimeType, content.size]);
+}
+
 function ensurePrivateDirectory(path) {
   GLib.mkdir_with_parents(path, 0o700);
   Gio.File.new_for_path(path).set_attribute_uint32(
@@ -36,7 +40,7 @@ function ensurePrivateDirectory(path) {
 }
 
 export class HistoryStore {
-  constructor({rootPath = null, deviceId, legacyPath = undefined} = {}) {
+  constructor({rootPath = null, deviceId, legacyPath = undefined, items = () => []} = {}) {
     if (!isUuid(deviceId))
       throw new Error('HistoryStore requires a local DeviceId');
     this.rootPath = GLib.canonicalize_filename(rootPath ?? defaultRootPath(), null);
@@ -49,6 +53,9 @@ export class HistoryStore {
     this._stagingPath = GLib.build_filenamev([this.rootPath, '.staging']);
     this._staged = new Map();
     this._closed = false;
+    this._items = items;
+    this._uses = new Map();
+    this._discarded = new Set();
   }
 
   directory(deviceId = this.deviceId) {
@@ -223,18 +230,59 @@ export class HistoryStore {
     }
   }
 
-  discard(items, retained = []) {
+  async use(item, load) {
+    if (this._closed)
+      throw new Error('Clipboard history storage is closed');
+    // Register before the loader yields. Consumers joining a shared download
+    // may not receive its descriptor until after a queued discard has run.
+    const keys = new Set(item.representations.map(contentKey));
+    for (const key of keys)
+      this._uses.set(key, (this._uses.get(key) ?? 0) + 1);
+    try {
+      return await load();
+    } finally {
+      for (const key of keys) {
+        const count = this._uses.get(key) ?? 0;
+        if (count > 1)
+          this._uses.set(key, count - 1);
+        else
+          this._uses.delete(key);
+      }
+      if (!this._closed)
+        await this._enqueue(() => this._collectStaged());
+    }
+  }
+
+  discard(items) {
     if (this._closed)
       return Promise.resolve();
-    const keep = new Set(retained.flatMap(value => [...value.representations, value.preview]));
     return this._enqueue(async () => {
       for (const item of items) {
         for (const content of [...item.representations, item.preview]) {
-          if (content && !keep.has(content) && this._staged.has(content.path))
-            await this._discardStaged(content.path);
+          if (content && this._staged.has(content.path))
+            this._discarded.add(content.path);
         }
       }
+      await this._collectStaged();
     });
+  }
+
+  async _collectStaged() {
+    for (const path of this._discarded) {
+      const entry = this._staged.get(path);
+      if (!entry) {
+        this._discarded.delete(path);
+        continue;
+      }
+      if (this._uses.has(contentKey(entry.content)))
+        continue;
+      const retained = this._items().some(item => [...item.representations, item.preview]
+        .some(content => content === entry.content || content?.path === path));
+      if (retained)
+        this._discarded.delete(path);
+      else
+        await this._discardStaged(path);
+    }
   }
 
   async close() {
@@ -246,6 +294,7 @@ export class HistoryStore {
     await this._chain.catch(() => {});
     for (const path of this._staged.keys())
       await this._discardStaged(path);
+    this._uses.clear();
   }
 
   async _discardStaged(path) {
@@ -256,6 +305,7 @@ export class HistoryStore {
         throw error;
     }
     this._staged.delete(path);
+    this._discarded.delete(path);
   }
 
   async _adopt(content, targetPath, cancellable) {
@@ -275,6 +325,7 @@ export class HistoryStore {
           });
       });
       this._staged.delete(path);
+      this._discarded.delete(path);
     }
     content.path = targetPath;
     return true;

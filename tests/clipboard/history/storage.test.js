@@ -246,7 +246,9 @@ try {
     await concurrent.close();
   }
 
-  const staging = new HistoryStore({rootPath: `${rootPath}/staging-test`, deviceId: localDeviceId});
+  const retained = [];
+  const staging = new HistoryStore({rootPath: `${rootPath}/staging-test`, deviceId: localDeviceId,
+    items: () => retained});
   try {
     const item = ClipboardItem.fromText('verified staged content', {originDeviceId: localDeviceId});
     const bytes = item.primary.bytes;
@@ -276,7 +278,8 @@ try {
     assert(Gio.File.new_for_path(path).query_exists(null),
       'startup cleanup must preserve a file staged after its asynchronous scan began');
     const sharing = new ClipboardItem({representations: [item.primary]});
-    await staging.discard([item], [sharing]);
+    retained.push(sharing);
+    await staging.discard([item]);
     assert(Gio.File.new_for_path(path).query_exists(null), 'discard must preserve a retained shared descriptor');
     const read = staging._materialize;
     const save = staging._save;
@@ -318,6 +321,33 @@ try {
     await staging.discard([discarded]);
     assert(!Gio.File.new_for_path(discardedPath).query_exists(null),
       'discarded content must not leave a staging file behind');
+
+    const abandoned = ClipboardItem.fromText('abandoned shared content');
+    let releaseUse;
+    let acquired;
+    const useRelease = new Promise(resolve => { releaseUse = resolve; });
+    const useEntered = new Promise(resolve => { acquired = resolve; });
+    const failure = new Error('Consumer stopped');
+    const using = staging.use(abandoned, async () => {
+      await staging.stage(abandoned.primary,
+        path => writeFile(Gio.File.new_for_path(path), abandoned.primary.bytes));
+      acquired();
+      await useRelease;
+      throw failure;
+    });
+    const stopped = assertRejects(using, /Consumer stopped/u, 'an interrupted content consumer');
+    await useEntered;
+    try {
+      await staging.discard([abandoned]);
+      assert(Gio.File.new_for_path(abandoned.primary.path).query_exists(null),
+        'staged content must remain available until its last active consumer finishes');
+    } finally {
+      releaseUse();
+      await stopped;
+    }
+    assert(!Gio.File.new_for_path(abandoned.primary.path).query_exists(null)
+        && staging._uses.size === 0 && staging._discarded.size === 0,
+      'a failed last consumer must release deferred content and its ownership bookkeeping');
 
     const wrong = ClipboardItem.fromText('expected content');
     let failedPath;

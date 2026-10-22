@@ -8,6 +8,20 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+async function rejection(promise, message) {
+  try {
+    await promise;
+  } catch (error) {
+    return error;
+  }
+  throw new Error(message);
+}
+
+function contents(path) {
+  const [, bytes] = Gio.File.new_for_path(path).load_contents(null);
+  return new TextDecoder().decode(bytes);
+}
+
 let limit = 3;
 let newestFirst = true;
 const settings = {
@@ -22,6 +36,9 @@ const settings = {
 };
 const directory = GLib.dir_make_tmp('clipboard-x-gnome-phrases-test-XXXXXX');
 const path = GLib.build_filenamev([directory, 'quick-phrases.json']);
+const invalidPath = GLib.build_filenamev([directory, 'invalid-quick-phrases.json']);
+const recoveryPath = GLib.build_filenamev([directory, 'recovery-quick-phrases.json']);
+const backupPath = GLib.build_filenamev([directory, 'preserved-quick-phrases.json']);
 const store = new PhraseStore(settings, {path});
 
 try {
@@ -60,11 +77,59 @@ try {
     .query_info(Gio.FILE_ATTRIBUTE_UNIX_MODE, Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null)
     .get_attribute_uint32(Gio.FILE_ATTRIBUTE_UNIX_MODE);
   assert((mode & 0o077) === 0, 'quick phrases file must not grant group or other access');
+
+  for (const document of ['{invalid JSON', JSON.stringify({version: 2, phrases: ['preserved']})]) {
+    GLib.file_set_contents(invalidPath, document);
+    const invalid = new PhraseStore(settings, {path: invalidPath});
+    const loadError = await rejection(invalid.ready, 'an invalid phrases file must reject initialization');
+    const mutations = [
+      ['add', () => invalid.add('new phrase')],
+      ['remove', () => invalid.remove('preserved')],
+      ['trim', () => invalid.trim()],
+      ['replace', () => invalid.replace(['replacement'])],
+    ];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      for (const [name, mutate] of mutations) {
+        const error = await rejection(mutate(), `${name} must reject after initialization fails`);
+        assert(error === loadError && invalid.all.length === 0,
+          `${name} must preserve the initialization error without mutating unloaded phrases`);
+        assert(contents(invalidPath) === document,
+          `${name} must not overwrite the original file after initialization fails`);
+      }
+    }
+  }
+
+  limit = 3;
+  newestFirst = true;
+  const recovery = new PhraseStore(settings, {path: recoveryPath});
+  await recovery.ready;
+  await recovery.replace(['preserved']);
+  const saved = contents(recoveryPath);
+  const recoveryFile = Gio.File.new_for_path(recoveryPath);
+  recoveryFile.move(Gio.File.new_for_path(backupPath), Gio.FileCopyFlags.NONE, null, null);
+  recoveryFile.make_directory(null);
+  await Promise.all([
+    rejection(recovery.add('failed addition'), 'adding phrases must reject a failed write'),
+    rejection(recovery.remove('preserved'), 'removing phrases must reject a failed write'),
+    rejection(recovery.replace(['failed replacement']), 'replacing phrases must reject a failed write'),
+  ]);
+  assert(recovery.all.join(',') === 'preserved' && contents(backupPath) === saved,
+    'failed writes must preserve committed phrases in memory and on disk');
+  recoveryFile.delete(null);
+  Gio.File.new_for_path(backupPath).move(recoveryFile, Gio.FileCopyFlags.NONE, null, null);
+  assert(await recovery.add('recovered') && recovery.all.join(',') === 'recovered,preserved',
+    'a successful mutation must continue after ordinary write failures without using failed changes');
+  const recovered = new PhraseStore(settings, {path: recoveryPath});
+  await recovered.ready;
+  assert(recovered.all.join(',') === 'recovered,preserved',
+    'recovered mutations must persist only successfully committed phrases');
 } finally {
-  try {
-    Gio.File.new_for_path(path).delete(null);
-  } catch (_error) {
-    // The test may fail before the file is created.
+  for (const target of [path, invalidPath, recoveryPath, backupPath]) {
+    try {
+      Gio.File.new_for_path(target).delete(null);
+    } catch (_error) {
+      // The test may fail before the file is created.
+    }
   }
   Gio.File.new_for_path(directory).delete(null);
 }

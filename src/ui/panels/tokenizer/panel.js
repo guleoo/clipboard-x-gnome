@@ -22,17 +22,20 @@ const SELECTION_SHORTCUTS = Object.freeze([
 ]);
 
 export class TokenizerPanel {
-  constructor({settings, createIconButton, handlePanelKey, onBack, runAction, tokenize}) {
+  constructor({settings, createIconButton, handlePanelKey, onBack, runAction, tokenize, isActive}) {
     this._settings = settings;
     this._handlePanelKey = handlePanelKey;
     this._run = runAction;
     this._tokenize = tokenize;
+    this._isActive = isActive;
     this._buttons = [];
     this._state = null;
     this._contentWidth = 260;
     this._accentColor = null;
     this._selectionDrag = null;
     this._dragSourceId = 0;
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -230,12 +233,59 @@ export class TokenizerPanel {
   }
 
   leave() {
+    this._cancelFocus();
     this.focusAnchor.cancel();
     this.endSelectionDrag();
   }
 
   focusStart() {
+    this._cancelFocus();
     this.focusAnchor.focus();
+  }
+
+  captureView() {
+    if (this._pendingViewState)
+      return this._pendingViewState;
+    const focus = global.stage.get_key_focus();
+    const tokenIndex = focus?._clipboardXGnomeToken?.index ?? null;
+    return {
+      state: this._state,
+      tokenIndex,
+      focusActor: tokenIndex === null && (focus === this.focusAnchor || this.focusGrid.contains(focus))
+        ? focus : null,
+      scrollValue: this.scroll.get_vadjustment().value,
+    };
+  }
+
+  restoreView(viewState) {
+    if (!viewState || viewState.state !== this._state)
+      return;
+    this._cancelFocus();
+    this._pendingViewState = viewState;
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      this._pendingViewState = null;
+      if (!this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      const target = viewState.tokenIndex === null ? viewState.focusActor
+        : this._buttons.find(button => button._clipboardXGnomeToken.index === viewState.tokenIndex);
+      if (target === this.focusAnchor)
+        target.grab_key_focus();
+      else
+        this.focusGrid.focusAt(this.focusGrid.location(target));
+      const adjustment = this.scroll.get_vadjustment();
+      adjustment.remove_transition('value');
+      adjustment.value = Math.max(adjustment.lower,
+        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size));
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _cancelFocus() {
+    if (this._focusIdleId)
+      GLib.Source.remove(this._focusIdleId);
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
   }
 
   _focusFirstToken() {

@@ -47,6 +47,7 @@ export default class ClipboardXGnomeExtension extends Extension {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
       applyChanges: (changes, scope) => content.receive(changes, scope),
       stageFile: (value, write, cancellable) => controller.stageContent(value, write, cancellable),
+      useContent: (item, load) => controller.useContent(item, load),
     });
     const sync = this._sync;
     const content = new Content({

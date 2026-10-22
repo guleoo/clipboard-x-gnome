@@ -58,7 +58,7 @@ class History {
     return this.items.includes(item);
   }
   materialize(item) { return this.store.materialize(item); }
-  discardContent(items) { return this.store.discard(items, this.items); }
+  discardContent(items) { return this.store.discard(items); }
   async activate(item, {guard}) {
     await this.materialize(item);
     if (guard())
@@ -68,7 +68,7 @@ class History {
 
 const root = GLib.dir_make_tmp('clipboard-x-gnome-content-test-XXXXXX');
 const deviceId = GLib.uuid_string_random();
-const store = new HistoryStore({rootPath: root, deviceId});
+const store = new HistoryStore({rootPath: root, deviceId, items: () => history.items});
 const history = new History(store);
 const incoming = new Map();
 const errors = [];

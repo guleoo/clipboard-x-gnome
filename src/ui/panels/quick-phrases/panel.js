@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
@@ -37,6 +38,8 @@ export class QuickPhrasesPanel {
     this._formVisible = false;
     this._buttons = [];
     this._rows = [];
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -192,6 +195,7 @@ export class QuickPhrasesPanel {
   }
 
   focus() {
+    this._cancelFocus();
     if (this._destroyed || !this._isActive())
       return;
     const target = this._formVisible ? this.entry.clutter_text : this.addButton;
@@ -221,11 +225,58 @@ export class QuickPhrasesPanel {
   }
 
   focusStart() {
+    this._cancelFocus();
     this.focusAnchor.focus();
   }
 
   leave() {
+    this._cancelFocus();
     this.focusAnchor.cancel();
+  }
+
+  captureView() {
+    if (this._pendingViewState)
+      return this._pendingViewState;
+    const focus = global.stage.get_key_focus();
+    const row = focus?._clipboardXGnomePhraseRow;
+    return {
+      phrase: row?._clipboardXGnomePhrase ?? null,
+      action: row?.focusActors.indexOf(focus) ?? 0,
+      focusActor: !row && (focus === this.focusAnchor || this.focusGrid.contains(focus)) ? focus : null,
+      scrollValue: this.scroll.get_vadjustment().value,
+    };
+  }
+
+  restoreView(viewState) {
+    if (!viewState)
+      return;
+    this._cancelFocus();
+    this._pendingViewState = viewState;
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      this._pendingViewState = null;
+      if (this._destroyed || !this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      const row = this._rows.find(value => value._clipboardXGnomePhrase === viewState.phrase);
+      const target = viewState.phrase === null ? viewState.focusActor
+        : row?.focusActors[viewState.action] ?? this.addButton;
+      if (target === this.focusAnchor)
+        target.grab_key_focus();
+      else
+        this.focusGrid.focusAt(this.focusGrid.location(target));
+      const adjustment = this.scroll.get_vadjustment();
+      adjustment.remove_transition('value');
+      adjustment.value = Math.max(adjustment.lower,
+        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size));
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _cancelFocus() {
+    if (this._focusIdleId)
+      GLib.Source.remove(this._focusIdleId);
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
   }
 
   destroy() {

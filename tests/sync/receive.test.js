@@ -30,7 +30,9 @@ const settings = {
   get_string: key => key === 'device-id' ? deviceId : 'Test',
   get_boolean: () => false,
 };
-const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId});
+const retained = [];
+const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId,
+  items: () => retained});
 const manifests = new Map();
 const objects = new Map();
 const requests = [];
@@ -78,6 +80,7 @@ const transport = {
 const client = new SyncClient(settings, {
   configurationStore: {},
   stageFile: (content, write, cancellable) => store.stage(content, write, cancellable),
+  useContent: (item, load) => store.use(item, load),
   logger: createLogger('sync', {sink: () => {}}),
 });
 client._transport = transport;
@@ -250,6 +253,59 @@ try {
   failDownload = false;
   await client.materialize(failed);
   assert(isComplete(failed), 'A failed automatic download must remain manually retryable');
+
+  // The replacement joins before it has the first consumer's descriptor.
+  // Cleanup must defer to the whole acquisition, then inspect live references.
+  const removed = await client.getItem(manifest([['text/plain;charset=utf-8', 'shared original after rejoining']]).id);
+  const replacement = ClipboardItem.fromJSON(JSON.parse(JSON.stringify(removed.toJSON())));
+  retained.push(removed);
+  let enterOldSave;
+  let releaseOldSave;
+  let publishShared;
+  const oldSaveEntered = new Promise(resolve => { enterOldSave = resolve; });
+  const oldSaveRelease = new Promise(resolve => { releaseOldSave = resolve; });
+  const sharedPublication = new Promise(resolve => { publishShared = resolve; });
+  store._removeUnreferencedFiles = async function (...args) {
+    enterOldSave();
+    await oldSaveRelease;
+    return cleanup.apply(this, args);
+  };
+  const oldSave = store.save(retained);
+  let firstUse;
+  let secondUse;
+  let discard;
+  const sharedRequests = requests.length;
+  try {
+    await oldSaveEntered;
+    store._enqueue = function (action) {
+      const result = enqueue.call(this, action);
+      publishShared();
+      return result;
+    };
+    firstUse = client.materialize(removed);
+    await sharedPublication;
+    retained.splice(retained.indexOf(removed), 1);
+    discard = store.discard([removed]);
+    retained.push(replacement);
+    secondUse = client.materialize(replacement);
+    releaseOldSave();
+    await Promise.all([oldSave, firstUse, secondUse, discard]);
+    assert(removed.primary === replacement.primary && requests.length === sharedRequests + 1
+        && Gio.File.new_for_path(replacement.primary.path).query_exists(null),
+      'removing the first consumer must not delete a shared original retained by its replacement');
+    store._enqueue = enqueue;
+    store._removeUnreferencedFiles = cleanup;
+    await store.save(retained);
+    await store.materialize(replacement);
+    assert(replacement.text === 'shared original after rejoining',
+      'the replacement must remain readable and durable after queued cleanup');
+    retained.splice(retained.indexOf(replacement), 1);
+  } finally {
+    releaseOldSave();
+    await Promise.allSettled([oldSave, firstUse, secondUse, discard]);
+    store._enqueue = enqueue;
+    store._removeUnreferencedFiles = cleanup;
+  }
 
   if (ARGV.includes('--stress')) {
     const beforeBurst = downloads.length;

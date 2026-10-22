@@ -63,11 +63,16 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - Downloaded originals and thumbnails enter history-owned staging. History serializes file reads,
   pathname publication, adoption into permanent storage, and garbage collection. Indexes and cleanup
   use the same persisted descriptor snapshot; download I/O remains concurrent.
+- Shared original acquisition is scoped by history storage. Discarded staging files remain protected
+  until active consumers settle, then cleanup checks live history references rather than an old snapshot.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, word selection buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.
+- Refreshable panels capture and restore focused content identity and scroll position. History uses
+  item ID plus action; only removal falls back to a nearby row. Word selection uses token index within
+  its state, and quick phrases use phrase text plus action. Theme updates do not rebuild content.
 - Scrollable content uses an overlay scrollbar and the shared thin-scrollbar style.
 - Panel geometry, text vertical offset, and scene restoration are settings, not hard-coded per-user values.
 

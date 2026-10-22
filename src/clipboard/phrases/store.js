@@ -14,8 +14,8 @@ export class PhraseStore {
     this._settings = settings;
     this.path = path;
     this._phrases = [];
-    this._operation = this._load();
-    this.ready = this._operation;
+    this.ready = this._load();
+    this._operation = Promise.resolve();
   }
 
   get all() {
@@ -54,6 +54,7 @@ export class PhraseStore {
 
   _mutate(createNext) {
     const run = this._operation.then(async () => {
+      await this.ready;
       const next = createNext(this.all);
       if (same(this._phrases, next))
         return false;

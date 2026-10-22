@@ -44,6 +44,7 @@ export class SyncClient extends EventEmitter {
     sourceItem = () => null,
     applyChanges = async () => {},
     stageFile,
+    useContent = (_item, load) => load(),
     logger = createLogger('sync'),
   } = {}) {
     super();
@@ -56,6 +57,7 @@ export class SyncClient extends EventEmitter {
     this._sourceItem = sourceItem;
     this._applyChanges = applyChanges;
     this._stageFile = stageFile;
+    this._useContent = useContent;
     this._logger = logger;
     this._settingsSignals = [];
     this._transport = null;
@@ -141,7 +143,8 @@ export class SyncClient extends EventEmitter {
   }
 
   materialize(item, options = {}) {
-    return this._logger.run('materialize', () => this._materialize(item, options), {quiet: true});
+    return this._logger.run('materialize', () =>
+      this._useContent(item, () => this._materialize(item, options)), {quiet: true});
   }
 
   async getChanges(cursor, options = {}) {

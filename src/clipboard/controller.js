@@ -26,7 +26,7 @@ export class ClipboardController extends EventEmitter {
     this._settings = settings;
     this._clipboard = St.Clipboard.get_default();
     const {deviceId} = ensureDeviceIdentity(settings);
-    this._store = new HistoryStore({deviceId});
+    this._store = new HistoryStore({deviceId, items: () => this._items});
     this._items = [];
     this._selection = null;
     this._selectionSignal = 0;
@@ -327,8 +327,12 @@ export class ClipboardController extends EventEmitter {
     return this._store.stage(content, write, cancellable);
   }
 
+  useContent(item, load) {
+    return this._store.use(item, load);
+  }
+
   discardContent(items) {
-    return this._store.discard(items, this._items);
+    return this._store.discard(items);
   }
 
   _discardContent(items) {
