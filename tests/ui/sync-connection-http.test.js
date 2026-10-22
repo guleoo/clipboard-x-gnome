@@ -92,6 +92,11 @@ try {
       System.gc();
   }
   assert(requests === 60, 'Thirty consecutive probes must perform exactly sixty read-only requests');
+  const channels = await connection.channels(draft);
+  assert(channels.configuration.activeChannelId === channelId && channels.channels[0].active
+      && requests === 61 && saves === 0 && notifications === 0
+      && JSON.stringify(store.current) === snapshot && closed === sessions,
+    'Direct native channel reads must select a fallback without saving, notifying or leaking sessions');
   for (const path of ['/api/v1/status', '/api/v1/channels']) {
     failure = path;
     let error;

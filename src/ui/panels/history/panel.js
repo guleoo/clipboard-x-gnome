@@ -347,8 +347,8 @@ export class HistoryPanel {
     this._sync.setStatus(status, capabilities);
   }
 
-  setTransfer(transfer) {
-    this._sync.setTransfer(transfer);
+  refreshTransfer(itemId) {
+    this._sync.refresh(itemId);
   }
 
   destroy() {

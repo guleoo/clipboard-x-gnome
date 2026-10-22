@@ -6,7 +6,6 @@ import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
 } from '../clipboard/constants.js';
-import {devicePaths} from '../clipboard/history/paths.js';
 import {sha256, stringFromBytes} from '../common/bytes.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {writeFile} from '../common/files.js';
@@ -44,6 +43,7 @@ export class SyncClient extends EventEmitter {
     transportFactory = (configuration, options) => new HttpTransport(configuration, options),
     sourceItem = () => null,
     applyChanges = async () => {},
+    stageFile,
     logger = createLogger('sync'),
   } = {}) {
     super();
@@ -55,6 +55,7 @@ export class SyncClient extends EventEmitter {
     this._transportFactory = transportFactory;
     this._sourceItem = sourceItem;
     this._applyChanges = applyChanges;
+    this._stageFile = stageFile;
     this._logger = logger;
     this._settingsSignals = [];
     this._transport = null;
@@ -203,19 +204,17 @@ export class SyncClient extends EventEmitter {
             derivedFrom: selected.contentId,
           };
         } else {
-          const paths = devicePaths(remote.originDeviceId);
-          GLib.mkdir_with_parents(paths.previews, 0o700);
-          const path = GLib.build_filenamev([paths.previews, selected.sha256]);
-          await writeFile(Gio.File.new_for_path(path), bytes, cancellable);
-          check();
           preview = {
             mimeType: selected.mimeType,
-            path,
             size: selected.size,
             sha256: selected.sha256,
             truncated: selected.truncated,
             derivedFrom: selected.contentId,
           };
+          await this._stageFile(preview, async path => {
+            await writeFile(Gio.File.new_for_path(path), bytes, cancellable);
+            check();
+          }, cancellable);
         }
       }
 
@@ -545,10 +544,14 @@ export class SyncClient extends EventEmitter {
     if (representation.bytes || representation.path)
       return;
     const key = `${channelId}:${item.id}:${representation.id}`;
-    const path = await this._transfers.materialize(key, () =>
-      this._requestRepresentation(channelId, item, representation, generation).then(() => representation.path));
+    const content = await this._transfers.materialize(key, () =>
+      this._requestRepresentation(channelId, item, representation, generation).then(() => representation));
     this._requireCurrent(generation);
-    representation.path = path;
+    // Concurrent consumers share the descriptor, not a stale staging pathname.
+    // History adoption can subsequently move that file without invalidating one
+    // consumer while the other still refers to the temporary location.
+    if (content !== representation)
+      item.representations = item.representations.map(value => value === representation ? content : value);
   }
 
   async _requestRepresentation(channelId, item, representation, generation) {
@@ -595,33 +598,31 @@ export class SyncClient extends EventEmitter {
       errorCode: '',
       errorMessage: '',
     };
-    const targetPath = GLib.build_filenamev([
-      devicePaths(item.originDeviceId).objects,
-      representation.sha256,
-    ]);
     return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
       track(transfer, {remote: false});
-      const result = await transport.downloadContent(
-        channelId,
-        item.id,
-        representation.id,
-        targetPath,
-        {
-          maximumBytes: effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES),
-          expectedBytes: representation.size,
-          expectedSha256: representation.sha256,
-          mimeType: representation.mimeType,
-          useSha256sum: this._settings.get_boolean('sync-use-sha256sum'),
-          cancellable,
-          onProgress: completedBytes => update({completedBytes}),
-          onVerifying: () => update({
-            state: 'verifying',
-            completedBytes: representation.size,
-          }, true),
-        },
-      );
+      await this._stageFile(representation, async targetPath => {
+        await transport.downloadContent(
+          channelId,
+          item.id,
+          representation.id,
+          targetPath,
+          {
+            maximumBytes: effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES),
+            expectedBytes: representation.size,
+            expectedSha256: representation.sha256,
+            mimeType: representation.mimeType,
+            useSha256sum: this._settings.get_boolean('sync-use-sha256sum'),
+            cancellable,
+            onProgress: completedBytes => update({completedBytes}),
+            onVerifying: () => update({
+              state: 'verifying',
+              completedBytes: representation.size,
+            }, true),
+          },
+        );
+        check();
+      }, cancellable);
       check();
-      representation.path = result.path;
       update({
         state: 'completed',
         completedBytes: representation.size,

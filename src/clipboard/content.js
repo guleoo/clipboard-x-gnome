@@ -1,7 +1,8 @@
 import Gio from 'gi://Gio';
 
 // Coordinates local content, remote originals and history commits. The transport
-// owns downloads; the history owns retention and the final clipboard write.
+// writes into history-owned staging; history owns adoption, retention and the
+// final clipboard write.
 export class Content {
   constructor({history, remote, receiveMode, deviceId, onError = () => {}}) {
     this._history = history;
@@ -18,19 +19,24 @@ export class Content {
     if (item.remote) {
       const availability = item.availability;
       try {
-        await this._remote.materialize(item, {withinThreshold});
-      } catch (error) {
-        if (this._current(item, guard))
+        try {
+          await this._remote.materialize(item, {withinThreshold});
+        } catch (error) {
+          if (this._current(item, guard))
+            this._history.commitContent(item);
+          throw error;
+        }
+        this._check(item, guard);
+        if (missing || availability !== item.availability)
           this._history.commitContent(item);
-        throw error;
+        this._check(item, guard);
+        if (missing && flush)
+          await this._history.persist();
+        this._check(item, guard);
+      } finally {
+        if (!this._current(item, guard))
+          await this._history.discardContent([item]);
       }
-      this._check(item, guard);
-      if (missing || availability !== item.availability)
-        this._history.commitContent(item);
-      this._check(item, guard);
-      if (missing && flush)
-        await this._history.persist();
-      this._check(item, guard);
     }
     return item;
   }
@@ -93,14 +99,21 @@ export class Content {
         this._history.remove(change.itemId);
         continue;
       }
-      if (!current())
+      if (!current()) {
+        await this._history.discardContent([incoming]);
         return;
-      if (incoming.originDeviceId === this._deviceId())
+      }
+      if (incoming.originDeviceId === this._deviceId()) {
+        await this._history.discardContent([incoming]);
         continue;
+      }
       const duplicate = this._history.items.find(item => item.equals(incoming));
       const replaceDuplicate = duplicate?.remote && duplicate.id !== incoming.id
         && duplicate.representations.some(value => !value.bytes && !value.path);
-      received.add(this._history.add(incoming, 'remote', {replaceDuplicate}));
+      const retained = this._history.add(incoming, 'remote', {replaceDuplicate});
+      received.add(retained);
+      if (retained !== incoming)
+        await this._history.discardContent([incoming]);
       changed = true;
     }
     if (changed)

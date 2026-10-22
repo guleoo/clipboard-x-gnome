@@ -190,7 +190,110 @@ try {
   assert((await migrationStore.load()).length === 1,
     'the migration marker must prevent duplicate legacy imports');
 
+  const staging = new HistoryStore({rootPath: `${rootPath}/staging-test`, deviceId: localDeviceId});
+  try {
+    const item = ClipboardItem.fromText('verified staged content', {originDeviceId: localDeviceId});
+    const bytes = item.primary.bytes;
+    item.primary.bytes = null;
+    let enterCleanup;
+    let releaseCleanup;
+    const cleanupEntered = new Promise(resolve => { enterCleanup = resolve; });
+    const cleanupRelease = new Promise(resolve => { releaseCleanup = resolve; });
+    const prune = staging._pruneDirectory;
+    staging._pruneDirectory = async function (...args) {
+      enterCleanup();
+      await cleanupRelease;
+      return prune.apply(this, args);
+    };
+    const loading = staging.load();
+    await cleanupEntered;
+    let path;
+    try {
+      path = await staging.stage(item.primary, path => writeFile(Gio.File.new_for_path(path), bytes));
+    } finally {
+      releaseCleanup();
+      await loading;
+      staging._pruneDirectory = prune;
+    }
+    assert(path.includes('/.staging/') && !path.startsWith(staging.directory().objects),
+      'writers must receive a private staging path, not a permanent history object');
+    assert(Gio.File.new_for_path(path).query_exists(null),
+      'startup cleanup must preserve a file staged after its asynchronous scan began');
+    const sharing = new ClipboardItem({representations: [item.primary]});
+    await staging.discard([item], [sharing]);
+    assert(Gio.File.new_for_path(path).query_exists(null), 'discard must preserve a retained shared descriptor');
+    const read = staging._materialize;
+    const save = staging._save;
+    let enterRead;
+    let releaseRead;
+    const readEntered = new Promise(resolve => { enterRead = resolve; });
+    const readRelease = new Promise(resolve => { releaseRead = resolve; });
+    let savingStarted = false;
+    staging._materialize = async function (...args) {
+      enterRead();
+      await readRelease;
+      return read.apply(this, args);
+    };
+    staging._save = function (...args) {
+      savingStarted = true;
+      return save.apply(this, args);
+    };
+    const reading = staging.materialize(item);
+    await readEntered;
+    const saving = staging.save([item]);
+    try {
+      await Promise.resolve();
+      assert(!savingStarted, 'adoption and GC must wait for an active staged-file read');
+    } finally {
+      releaseRead();
+      await Promise.all([reading, saving]);
+      staging._materialize = read;
+      staging._save = save;
+    }
+    assert(item.text === 'verified staged content', 'a read concurrent with adoption must return the exact original');
+    assert(!Gio.File.new_for_path(path).query_exists(null)
+        && item.primary.path.startsWith(staging.directory().objects)
+        && sharing.primary.path === item.primary.path,
+      'adoption must move the staged file and update all consumers of the shared descriptor');
+
+    const discarded = ClipboardItem.fromText('discarded staged content');
+    const discardedPath = await staging.stage(discarded.primary,
+      path => writeFile(Gio.File.new_for_path(path), discarded.primary.bytes));
+    await staging.discard([discarded]);
+    assert(!Gio.File.new_for_path(discardedPath).query_exists(null),
+      'discarded content must not leave a staging file behind');
+
+    const wrong = ClipboardItem.fromText('expected content');
+    let failedPath;
+    await assertRejects(staging.stage(wrong.primary, path => {
+      failedPath = path;
+      return writeFile(Gio.File.new_for_path(path), bytesFromString('wrong'));
+    }), /metadata/u, 'staging size validation');
+    assert(!wrong.primary.path && !Gio.File.new_for_path(failedPath).query_exists(null),
+      'a failed writer must not publish a path or retain a partial staging file');
+
+    const pending = ClipboardItem.fromText('cancelled writer');
+    const cancellable = new Gio.Cancellable();
+    let finishWriter;
+    let pendingPath;
+    const writing = staging.stage(pending.primary, async path => {
+      pendingPath = path;
+      await new Promise(resolve => { finishWriter = resolve; });
+      await writeFile(Gio.File.new_for_path(path), pending.primary.bytes);
+    }, cancellable);
+    const rejected = assertRejects(writing, /cancelled|canceled/iu, 'closing an active writer');
+    const closing = staging.close();
+    assert(cancellable.is_cancelled(), 'closing storage must cancel active staging writes');
+    finishWriter();
+    await Promise.all([rejected, closing]);
+    assert(!pending.primary.path && !Gio.File.new_for_path(pendingPath).query_exists(null),
+      'late writer completion after close must be cleaned without exposing an original');
+  } finally {
+    await staging.close();
+  }
+
 } finally {
+  await store.close();
   deleteTree(Gio.File.new_for_path(rootPath));
 }
 

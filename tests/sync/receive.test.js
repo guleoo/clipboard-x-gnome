@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {HistoryStore} from '../../src/clipboard/history/store.js';
+import {ClipboardItem} from '../../src/clipboard/item.js';
 import {bytesFromString, sha256} from '../../src/common/bytes.js';
 import {writeFile} from '../../src/common/files.js';
 import {createLogger} from '../../src/common/logger.js';
@@ -29,6 +30,7 @@ const settings = {
   get_string: key => key === 'device-id' ? deviceId : 'Test',
   get_boolean: () => false,
 };
+const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId});
 const manifests = new Map();
 const objects = new Map();
 const requests = [];
@@ -75,6 +77,7 @@ const transport = {
 };
 const client = new SyncClient(settings, {
   configurationStore: {},
+  stageFile: (content, write, cancellable) => store.stage(content, write, cancellable),
   logger: createLogger('sync', {sink: () => {}}),
 });
 client._transport = transport;
@@ -113,13 +116,60 @@ try {
   assert(events.some(value => value.state === 'verifying') && events.at(-1).state === 'completed',
     'Automatic receiving must emit verifying and completed progress states');
 
-  const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId});
   await store.save([received]);
   const restored = (await store.load())[0];
   assert(restored && !restored.primary.bytes && isComplete(restored),
     'Received completion must survive storage reload without transfer records or eager memory reads');
   await store.materialize(restored);
   assert(restored.text === '几个字', 'Stored automatic downloads must restore the exact original text');
+
+  // Pause an older snapshot immediately before GC, then receive both an image
+  // preview and its original through the real client/store integration.
+  const prior = ClipboardItem.fromText('previous remote snapshot', {originDeviceId: sourceDeviceId});
+  await store.save([prior]);
+  let enterCleanup;
+  let releaseCleanup;
+  const cleanupEntered = new Promise(resolve => { enterCleanup = resolve; });
+  const cleanupRelease = new Promise(resolve => { releaseCleanup = resolve; });
+  const cleanup = store._removeUnreferencedFiles;
+  store._removeUnreferencedFiles = async function (items, paths, cancellable) {
+    if (paths.directory === this.directory(sourceDeviceId).directory) {
+      enterCleanup();
+      await cleanupRelease;
+    }
+    return cleanup.call(this, items, paths, cancellable);
+  };
+  let previousSave;
+  try {
+    previousSave = store.save([prior]);
+    await cleanupEntered;
+    const imageManifest = manifest([['image/png', new Uint8Array(8)]]);
+    const thumbnail = bytesFromString('preview');
+    const thumbnailId = sha256(thumbnail);
+    objects.set(thumbnailId, thumbnail);
+    imageManifest.previews = [{id: thumbnailId, sha256: thumbnailId, size: thumbnail.get_size(),
+      contentId: imageManifest.contents[0].id, mimeType: 'image/png', truncated: true}];
+    const image = await client.getItem(imageManifest.id);
+    await client.materialize(image);
+    const temporaryPaths = [image.preview.path, image.primary.path];
+    releaseCleanup();
+    await previousSave;
+    assert(temporaryPaths.every(path => Gio.File.new_for_path(path).query_exists(null)),
+      'An older snapshot GC must not delete newly received previews or originals');
+    store._removeUnreferencedFiles = cleanup;
+    await store.save([prior, image]);
+    assert(image.preview.path.startsWith(store.directory(sourceDeviceId).previews)
+        && image.primary.path.startsWith(store.directory(sourceDeviceId).objects)
+        && temporaryPaths.every(path => !Gio.File.new_for_path(path).query_exists(null)),
+      'History persistence must adopt both staged files and release their temporary locations');
+    const savedImage = (await store.load()).find(value => value.id === image.id);
+    assert(savedImage && isComplete(savedImage) && savedImage.preview.path === image.preview.path,
+      'A received image must reload with its durable preview and original after concurrent GC');
+  } finally {
+    releaseCleanup();
+    await previousSave;
+    store._removeUnreferencedFiles = cleanup;
+  }
 
   const large = await client.getItem(manifest([['text/plain;charset=utf-8', '0123456789']]).id);
   const beforeLarge = requests.length;
@@ -207,6 +257,7 @@ try {
     'Automatic receiving must serialize file movement and release bounded operation state');
 } finally {
   client.destroy();
+  await store.close();
   deleteTree(Gio.File.new_for_path(directory));
 }
 

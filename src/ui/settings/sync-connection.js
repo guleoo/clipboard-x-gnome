@@ -24,28 +24,15 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     notifyChanged();
     return current;
   };
-  const channels = async (current, {persistFallback = true} = {}) =>
-    withTransport(current, async transport => {
-      const result = validateChannels(await transport.channels(), current.activeChannelId);
-      if (result.length > 0 && !result.some(item => item.id === current.activeChannelId)) {
-        current = {...current, activeChannelId: result[0].id};
-        if (persistFallback) {
-          current = await store.saveConnection(current);
-          notifyChanged();
-        }
-      }
-      return {
-        configuration: current,
-        channels: result.map(item => ({...item, active: item.id === current.activeChannelId})),
-      };
-    });
+  const channels = current => withTransport(current, async transport =>
+    selectChannels(current, await transport.channels()));
   const test = async inputs => {
     const current = configuration(inputs);
     const started = now();
     const server = await withTransport(current, transport => transport.status());
     const status = validateStatus(server);
     const latency = Math.max(0, Math.round(now() - started));
-    const result = await channels(current, {persistFallback: false});
+    const result = await channels(current);
     return {...result, status, latency};
   };
   const apply = async inputs => {
@@ -62,16 +49,10 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
           tag: profile.deviceTag,
           iconKind: profile.deviceIconKind,
         }), profile.deviceId);
-        const values = validateChannels(await transport.channels(), saved.activeChannelId);
-        const activeChannelId = values.some(value => value.id === saved.activeChannelId)
-          ? saved.activeChannelId
-          : values[0]?.id ?? saved.activeChannelId;
-        return {device, activeChannelId, channels: values.map(value => ({
-          ...value, active: value.id === activeChannelId,
-        }))};
+        return {device, ...selectChannels(saved, await transport.channels())};
       });
-      if (result.activeChannelId !== saved.activeChannelId)
-        saved = await store.saveConnection({...saved, activeChannelId: result.activeChannelId});
+      if (result.configuration.activeChannelId !== saved.activeChannelId)
+        saved = await store.saveConnection(result.configuration);
       return {configuration: saved, channels: result.channels, device: result.device};
     } catch (error) {
       return {configuration: saved, error};
@@ -80,6 +61,17 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     }
   };
   return {save, channels, test, apply};
+}
+
+function selectChannels(current, rawValue) {
+  const values = validateChannels(rawValue, current.activeChannelId);
+  const activeChannelId = values.some(value => value.id === current.activeChannelId)
+    ? current.activeChannelId
+    : values[0]?.id ?? current.activeChannelId;
+  return {
+    configuration: {...current, activeChannelId},
+    channels: values.map(value => ({...value, active: value.id === activeChannelId})),
+  };
 }
 
 export function createRunner({setBusy, onError}) {

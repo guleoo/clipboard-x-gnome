@@ -58,6 +58,7 @@ class History {
     return this.items.includes(item);
   }
   materialize(item) { return this.store.materialize(item); }
+  discardContent(items) { return this.store.discard(items, this.items); }
   async activate(item, {guard}) {
     await this.materialize(item);
     if (guard())

@@ -240,6 +240,12 @@ function fixture(transports = [new Transport('current')], options = {}) {
   const client = new SyncClient(settings, {
     configurationStore: store,
     progressStore,
+    async stageFile(reference, write, cancellable) {
+      const targetPath = '/unused-staged-test-double';
+      await write(targetPath);
+      cancellable.set_error_if_cancelled();
+      reference.path = targetPath;
+    },
     transportFactory(configuration, options) {
       const transport = transports[created.length];
       assert(transport, 'Stale initialization must not create an additional transport');
@@ -287,24 +293,6 @@ async function test(name, action) {
     print(`FAIL ${name}: ${error.message}`);
   }
 }
-
-await test('shared transfer waiters settle together on completion and teardown', async () => {
-  const f = fixture();
-  try {
-    await f.client.start();
-    f.client._transfers.record({...transfer('queued'), transferId}, true);
-    const first = f.client._transfers.wait(transferId);
-    const second = f.client._transfers.wait(transferId);
-    f.client._transfers.record({...transfer('completed'), transferId}, true);
-    await bounded(Promise.all([first, second]));
-    f.client._transfers.record({...transfer('queued'), transferId}, true);
-    const waiting = observe(f.client._transfers.wait(transferId));
-    f.client.destroy();
-    assert((await bounded(waiting)).error, 'Session teardown must reject outstanding content waiters');
-  } finally {
-    f.client.destroy();
-  }
-});
 
 await test('upload replay waits for the complete initialization pipeline', async () => {
   const transport = new Transport('current');

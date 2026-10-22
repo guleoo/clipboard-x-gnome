@@ -270,8 +270,8 @@ class Indicator extends PanelMenu.Button {
     this._historyPanel.setSyncStatus(status, capabilities);
   }
 
-  setTransfer(transfer) {
-    this._historyPanel.setTransfer(transfer);
+  refreshTransfer(itemId) {
+    this._historyPanel.refreshTransfer(itemId);
   }
 
   _refresh() {

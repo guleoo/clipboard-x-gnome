@@ -218,6 +218,12 @@ const client = new SyncClient(settings, {
   configurationStore: store,
   progressStore,
   transportFactory: () => transport,
+  async stageFile(reference, write, cancellable) {
+    const targetPath = '/unused-staged-test-double';
+    await write(targetPath);
+    cancellable.set_error_if_cancelled();
+    reference.path = targetPath;
+  },
 });
 
 try {
@@ -467,7 +473,8 @@ try {
   const active = await retentionClient.getTransfer(transferId);
   retentionClient._transfers.record(active, true);
   await retentionClient.cancelTransfer(transferId);
-  assert(cancellations === 1 && retentionClient._transfers._remoteIds.size === 0,
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 1,
     'a looked-up remote task must remain cancellable and release its marker after DELETE');
   assert(cancelledPublications.length === 1 && cancelledPublications[0] === retentionTransport.itemId,
     'explicit cancellation must identify the publication whose durable intent should be removed');
@@ -482,31 +489,28 @@ try {
 
   await retentionClient.getTransfer(transferId);
   retentionClient._transfers.record({...active, state: 'failed'}, true);
-  assert(retentionClient._transfers._remoteIds.has(transferId),
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 3,
     'a local failure is not proof that the server has finished the task');
+  await retentionClient.getTransfer(transferId);
   remoteState = 'failed';
   await retentionClient.getTransfer(transferId);
-  assert(retentionClient._transfers._remoteIds.size === 0,
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 3,
     'confirmed server failure must release remote cancellation state');
 
   remoteState = 'queued';
   retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
   await retentionClient.getTransfer(transferId);
   try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
-  assert(retentionClient._transfers._remoteIds.has(transferId),
+  retentionTransport.cancel = async () => { cancellations++; };
+  await retentionClient.cancelTransfer(transferId);
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 4,
     'a failed remote cancellation must retain the ability to retry');
-
-  const localId = GLib.uuid_string_random();
-  const localOperation = new Gio.Cancellable();
-  retentionClient._transfers._operations.set(localId, localOperation);
-  await retentionClient.cancelTransfer(localId);
-  assert(localOperation.is_cancelled() && cancellations === 2,
-    'local-only download cancellation must not call the server DELETE endpoint');
 } finally {
   retentionClient.destroy();
 }
-assert(retentionClient._transfers._remoteIds.size === 0,
-  'destroy must clear markers for still-active or unconfirmed remote tasks');
 
 // Exercise the actual initialization pipeline, not a synthetic list of stage names.
 for (const phase of ['configuration', 'transport', 'status', 'device', 'profile',

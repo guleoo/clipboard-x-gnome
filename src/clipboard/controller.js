@@ -236,6 +236,7 @@ export class ClipboardController extends EventEmitter {
       renewed.favorite = existing.favorite;
       renewed.createdAt = Date.now();
       this._items.push(renewed);
+      this._discardContent([renewed === item ? existing : item]);
       orderHistory(this._items);
       this._scheduleSave();
       if (renewed === item)
@@ -256,7 +257,8 @@ export class ClipboardController extends EventEmitter {
     const index = this._items.findIndex(item => item.id === itemId);
     if (index < 0)
       return;
-    this._items.splice(index, 1);
+    const [removed] = this._items.splice(index, 1);
+    this._discardContent([removed]);
     this._scheduleSave();
     this.emit('changed');
   }
@@ -291,7 +293,9 @@ export class ClipboardController extends EventEmitter {
   }
 
   clear() {
+    const removed = this._items.filter(item => !item.favorite);
     this._items = this._items.filter(item => item.favorite);
+    this._discardContent(removed);
     this._scheduleSave();
     this.emit('changed');
   }
@@ -319,6 +323,19 @@ export class ClipboardController extends EventEmitter {
     return this._store.materialize(item, this._cancellable);
   }
 
+  stageContent(content, write, cancellable) {
+    return this._store.stage(content, write, cancellable);
+  }
+
+  discardContent(items) {
+    return this._store.discard(items, this._items);
+  }
+
+  _discardContent(items) {
+    if (items.length > 0)
+      this.discardContent(items).catch(error => logger.warn('discard-content', error));
+  }
+
   async persist() {
     await this._initialization;
     if (this._destroyed)
@@ -343,13 +360,8 @@ export class ClipboardController extends EventEmitter {
         this._cancellable,
       );
       const digest = sha256(thumbnail.bytes);
-      const previewsPath = this._store.directory(item.originDeviceId).previews;
-      const previewPath = GLib.build_filenamev([previewsPath, `${digest}.png`]);
-      GLib.mkdir_with_parents(previewsPath, 0o700);
-      await writeFile(Gio.File.new_for_path(previewPath), thumbnail.bytes, this._cancellable);
-      item.preview = {
+      const preview = {
         mimeType: thumbnail.mimeType,
-        path: previewPath,
         size: thumbnail.bytes.get_size(),
         width: thumbnail.width,
         height: thumbnail.height,
@@ -357,6 +369,10 @@ export class ClipboardController extends EventEmitter {
         truncated: true,
         derivedFrom: representation.id,
       };
+      await this._store.stage(preview,
+        path => writeFile(Gio.File.new_for_path(path), thumbnail.bytes, this._cancellable),
+        this._cancellable);
+      item.preview = preview;
     } catch (error) {
       logger.warn('thumbnail', error);
     }
@@ -430,6 +446,7 @@ export class ClipboardController extends EventEmitter {
   }
 
   _trim() {
+    const previous = this._items;
     orderHistory(this._items);
     const limit = this._settings.get_int('history-size');
     const retentionDays = this._settings.get_int('history-retention-days');
@@ -449,6 +466,8 @@ export class ClipboardController extends EventEmitter {
       currentBytes -= localItemSize(item);
       this._items.splice(index, 1);
     }
+    const retained = new Set(this._items);
+    this._discardContent(previous.filter(item => !retained.has(item)));
   }
 
   _scheduleSave() {
@@ -489,7 +508,8 @@ export class ClipboardController extends EventEmitter {
     this._searchCache = new WeakMap();
     this._shutdown = Promise.resolve(this._initialization)
       .catch(() => {})
-      .then(() => snapshot ? this._store.save(snapshot) : undefined);
+      .then(() => snapshot ? this._store.save(snapshot) : undefined)
+      .finally(() => this._store.close());
     return this._shutdown;
   }
 }

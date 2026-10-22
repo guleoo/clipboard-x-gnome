@@ -114,6 +114,7 @@ test('sync-http-failures', test_runner,
   env: {'CBX_TEST_PYTHON': find_program('python3').full_path()},
   timeout: 30)
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
+test('sync-transfer-session', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfer-session.test.js'])
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])

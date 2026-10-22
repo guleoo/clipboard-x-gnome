@@ -46,6 +46,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
       applyChanges: (changes, scope) => content.receive(changes, scope),
+      stageFile: (value, write, cancellable) => controller.stageContent(value, write, cancellable),
     });
     const sync = this._sync;
     const content = new Content({
@@ -99,6 +100,7 @@ export default class ClipboardXGnomeExtension extends Extension {
       readItem: item => content.read(item),
       publish: item => this._publish(item),
       cancelTransfer: transferId => this._sync.cancelTransfer(transferId),
+      transferForItem: itemId => sync.getTransferForItem(itemId),
       copyText: text => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text),
       pasteText: text => this._pasteText(text),
       typeText: text => this._terminalInput.type(text),
@@ -163,7 +165,7 @@ export default class ClipboardXGnomeExtension extends Extension {
           if (item)
             controller.update(item);
         }
-        this._indicator?.setTransfer(transfer);
+        this._indicator?.refreshTransfer(transfer.itemId);
       },
     );
 

@@ -18,7 +18,6 @@ export class SyncAction {
     this._actions = actions;
     this._createIconButton = createIconButton;
     this._closeMenu = closeMenu;
-    this._transfers = new Map();
     this._buttons = new Map();
     this._status = 'offline';
     this._capabilities = null;
@@ -42,6 +41,10 @@ export class SyncAction {
     );
     button._clipboardItem = item;
     this._buttons.set(item.id, button);
+    button.connect('destroy', () => {
+      if (this._buttons.get(item.id) === button)
+        this._buttons.delete(item.id);
+    });
     this._update(item, button);
     return button;
   }
@@ -54,6 +57,8 @@ export class SyncAction {
     this._status = status;
     this._capabilities = capabilities;
     this._updateStatus();
+    for (const button of this._buttons.values())
+      this._update(button._clipboardItem, button);
   }
 
   setAccent(color) {
@@ -98,9 +103,8 @@ export class SyncAction {
     this._updateSelected();
   }
 
-  setTransfer(transfer) {
-    this._transfers.set(transfer.itemId, {...transfer});
-    const button = this._buttons.get(transfer.itemId);
+  refresh(itemId) {
+    const button = this._buttons.get(itemId);
     if (button)
       this._update(button._clipboardItem, button);
   }
@@ -108,12 +112,11 @@ export class SyncAction {
   destroy() {
     this._settings.disconnect(this._enabledSignal);
     this._buttons.clear();
-    this._transfers.clear();
     this._previewIcon = null;
   }
 
   _update(item, button) {
-    const transfer = this._transfers.get(item.id);
+    const transfer = this._actions.transferForItem(item.id);
     if (isComplete(item, transfer)) {
       if (isPreviewPublished(item, transfer)) {
         button.setIcon(this._previewIcon);
@@ -163,7 +166,7 @@ export class SyncAction {
   }
 
   async _activate(item) {
-    const transfer = this._transfers.get(item.id);
+    const transfer = this._actions.transferForItem(item.id);
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       await this._actions.cancelTransfer(transfer.transferId);
       return;

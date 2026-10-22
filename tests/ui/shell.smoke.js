@@ -856,10 +856,32 @@ async function images(indicator, extensionObject) {
       errorMessage: '',
     };
     const progressButton = history._sync.button(imageItem);
-    indicator.setTransfer(transfer);
+    extensionObject._sync._transfers.record(transfer, true);
     assert(progressButton.get_child() instanceof St.DrawingArea && progressButton.hint.includes('50%'),
       'Exact per-item transfer progress was not rendered as a ring');
     progressButton.destroy();
+    indicator._settings.set_boolean('sync-enabled', false);
+    assert(!extensionObject._sync.getTransferForItem(imageItem.id),
+      'Restarted synchronization must clear authoritative transfer state');
+    indicator._settings.set_boolean('sync-enabled', true);
+    const retryButton = history._sync.button(imageItem);
+    assert(!(retryButton.get_child() instanceof St.DrawingArea),
+      'A newly rendered button must not inherit progress from the previous transfer session');
+    let retriedPublishes = 0;
+    const cancelTransfer = extensionObject._sync.cancelTransfer;
+    extensionObject._publish = async () => retriedPublishes++;
+    extensionObject._sync.cancelTransfer = async () => {
+      throw new Error('A restarted button must not cancel a transfer from the previous session');
+    };
+    try {
+      await history._sync._activate(imageItem);
+      assert(retriedPublishes === 1,
+        'An interrupted publication must be retryable after replacing the transfer session');
+    } finally {
+      extensionObject._publish = publish;
+      extensionObject._sync.cancelTransfer = cancelTransfer;
+      retryButton.destroy();
+    }
 
     let automaticPublishes = 0;
     extensionObject._publish = async () => automaticPublishes++;
