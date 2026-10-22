@@ -26,6 +26,8 @@ class TestSettings {
       ['sync-text', true],
       ['sync-html', true],
       ['sync-images', true],
+      ['text-full-threshold', 64 * 1024],
+      ['image-full-threshold', 512 * 1024],
       ['text-preview-limit', 4096],
       ['thumbnail-byte-limit', 256 * 1024],
       ['sync-transfer-timeout-seconds', 30],
@@ -147,6 +149,7 @@ class TestTransport {
   }
 
   createItem(_channelId, manifest) {
+    this.manifest = manifest;
     this.itemId = manifest.id;
     const previewIds = manifest.previews.map(value => value.id);
     const contentIds = manifest.contents.filter(value => value.delivery === 'eager').map(value => value.id);
@@ -298,6 +301,20 @@ try {
     'completed server progress must replace local streaming progress');
   assert(client._remoteTransferIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
+  const confirmedDeliveries = [];
+  client.connect('transfer-changed', (_client, value) => {
+    if (value.itemId === item.id && value.state === 'completed')
+      confirmedDeliveries.push(item.primary.delivery);
+  });
+  settings._values.set('text-full-threshold', 0);
+  const beforeLazyPublication = transport.uploadedBytes;
+  await client.publish(item);
+  assert(transport.manifest.contents[0].delivery === 'on-demand'
+      && transport.uploadedBytes - beforeLazyPublication === item.preview.text.length,
+    'publishing old history must apply the current threshold and upload only the lazy preview');
+  assert(item.primary.delivery === 'on-demand' && confirmedDeliveries.at(-1) === 'on-demand',
+    'confirmed delivery must update before completion observers persist the item');
+  settings._values.set('text-full-threshold', 64 * 1024);
   const createItem = transport.createItem.bind(transport);
   const completeUpload = transport.completeUpload.bind(transport);
   const completedUploadBytes = transport.uploadedBytes;
@@ -308,12 +325,18 @@ try {
   await client.publish(item);
   assert(transport.uploadedBytes === completedUploadBytes,
     'an already-completed remote publication must be acknowledged without re-uploading bytes');
+  assert(item.primary.delivery === 'eager',
+    'an already-completed acknowledgement must update the confirmed manifest policy too');
   transport.createItem = createItem;
+  settings._values.set('text-full-threshold', 0);
   transport.completeUpload = async () => ({transfer: transport._transfer('cancelled', 0)});
   let unconfirmed = null;
   try { await client.publish(item); } catch (error) { unconfirmed = error; }
   assert(unconfirmed?.code === 'upload_failed',
     'a cancelled server acknowledgement must not complete a durable upload intent');
+  assert(transport.manifest.contents[0].delivery === 'on-demand' && item.primary.delivery === 'eager',
+    'a failed publication must not overwrite the historical confirmed delivery policy');
+  settings._values.set('text-full-threshold', 64 * 1024);
   transport.completeUpload = completeUpload;
   const verificationModes = [];
   transport.downloadContent = async (_channelId, _itemId, _contentId, _targetPath, options) => {
@@ -472,7 +495,11 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
   try {
     let caught = null;
     try { await diagnosticClient.start(); } catch (error) { caught = error; }
-    assert(caught === failure, `initialization must preserve the original ${phase} failure`);
+    const retryablePoll = ['changes', 'work', 'transfer-refresh'].includes(phase);
+    assert(retryablePoll ? caught === null && diagnosticClient.ready
+        && diagnosticClient.connected && diagnosticClient.status.state === 'error'
+      : caught === failure,
+    `initialization must ${retryablePoll ? 'retain a usable connection after' : 'preserve'} the ${phase} failure`);
     const failed = records.filter(record => record.outcome === 'failed');
     assert(failed.length === 1 && failed[0].phase === phase,
       `initialization failure must identify the exact ${phase} stage once`);

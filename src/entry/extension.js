@@ -44,7 +44,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
-      applyChange: (change, scope) => this._applyRemoteChange(change, scope),
+      applyChanges: (changes, scope) => this._applyRemoteChanges(changes, scope),
     });
     const sync = this._sync;
     const configurationStore = new SyncConfigurationStore();
@@ -79,7 +79,6 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._boundShortcuts = [];
 
     const actions = {
-      extensionObject: this,
       ensureIdentity: () => ensureDeviceIdentity(this._settings),
       screenshot: () => this._takeScreenshot(),
       pickColor: () => this._pickColor(),
@@ -149,6 +148,11 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._transferSignal = this._sync.connect(
       'transfer-changed',
       (_sync, transfer) => {
+        if (transfer.kind === 'publish' && transfer.state === 'completed') {
+          const item = controller.items.find(value => value.id === transfer.itemId);
+          if (item)
+            controller.update(item);
+        }
         this._indicator?.setTransfer(transfer);
       },
     );
@@ -345,44 +349,75 @@ export default class ClipboardXGnomeExtension extends Extension {
     return item;
   }
 
-  async _applyRemoteChange(change, {isCurrent}) {
+  async _applyRemoteChanges(changes, {isCurrent}) {
     const controller = this._controller;
     const sync = this._sync;
     const settings = this._settings;
-    if (!isCurrent())
-      return;
-    if (change.kind !== 'upsert') {
-      controller.remove(change.itemId);
-      await controller.persist();
-      return;
+    const received = new Set();
+    let changed = false;
+    for (const change of changes) {
+      if (!isCurrent())
+        return;
+      if (change.kind !== 'upsert') {
+        // A replay may already be absent in memory after a failed disk write.
+        // Persist removal again before acknowledging its cursor.
+        changed = true;
+        controller.remove(change.itemId);
+        continue;
+      }
+      if (settings.get_string('sync-receive-mode') === 'disabled')
+        continue;
+      let incoming;
+      try {
+        incoming = await sync.getItem(change.itemId);
+      } catch (error) {
+        if (!isCurrent())
+          return;
+        if (error.code !== 'not_found')
+          throw error;
+        // A retained upsert may already have expired on the server. Treat the
+        // authoritative absence as removal rather than retrying this page forever.
+        changed = true;
+        controller.remove(change.itemId);
+        continue;
+      }
+      if (!isCurrent())
+        return;
+      if (incoming.originDeviceId === ensureDeviceIdentity(settings).deviceId)
+        continue;
+      const duplicate = controller.items.find(item => item.equals(incoming));
+      const replaceDuplicate = duplicate?.remote && duplicate.id !== incoming.id
+        && duplicate.representations.some(value => !value.bytes && !value.path);
+      received.add(controller.add(incoming, 'remote', {replaceDuplicate}));
+      changed = true;
     }
-    if (settings.get_string('sync-receive-mode') === 'disabled')
-      return;
-    const incoming = await sync.getItem(change.itemId);
-    if (!isCurrent() || incoming.originDeviceId === ensureDeviceIdentity(settings).deviceId)
-      return;
-    const item = controller.add(incoming, 'remote');
-    // Acknowledge only durable metadata. Waiting for an offline source here would
-    // block the very polling loop needed to observe its transfer completion.
-    await controller.persist();
+    // Persist once per page, not once per entry. Only durable metadata is
+    // acknowledged; waiting for offline originals here would block polling.
+    if (changed)
+      await controller.persist();
     if (!isCurrent())
       return;
-    const finish = async () => {
+    const retained = item => isCurrent() && controller.items.includes(item);
+    const finish = async item => {
+      if (!retained(item))
+        return;
       const activate = settings.get_string('sync-receive-mode') === 'activate';
       await sync.materialize(item, {withinThreshold: !activate});
-      if (!isCurrent())
+      if (!retained(item))
         return;
       controller.update(item);
       if (settings.get_string('sync-receive-mode') === 'activate'
           && item.availability === 'ready')
-        await controller.activate(item);
+        await controller.activate(item, {guard: () => retained(item)});
     };
-    finish().catch(error => {
-      if (isCurrent()) {
-        controller.update(item);
-        this._reportError(error);
-      }
-    });
+    for (const item of received) {
+      finish(item).catch(error => {
+        if (retained(item)) {
+          controller.update(item);
+          this._reportError(error);
+        }
+      });
+    }
   }
 
   _editorCommand() {

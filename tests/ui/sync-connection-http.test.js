@@ -23,7 +23,7 @@ let notifications = 0;
 let device = {id: deviceId, tag: 'Waiting for device profile', iconKind: 'computer',
   state: 'online', lastSeenAt: 1};
 const store = {current: {serverAddress: '', apiKey: '', activeChannelId: ''},
-  async save(value) {
+  async saveConnection(value) {
     assert(applying, 'A connection probe must not save configuration');
     saves++;
     this.current = {...value};

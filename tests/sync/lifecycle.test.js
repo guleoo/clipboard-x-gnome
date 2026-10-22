@@ -39,6 +39,7 @@ class Settings {
     this.values = new Map([
       ['sync-enabled', true], ['device-id', deviceId], ['device-tag', 'Current device'],
       ['device-icon-kind', 'laptop'], ['sync-poll-interval-seconds', 3600],
+      ['text-full-threshold', 4096],
     ]);
     this.signals = new Map();
     this.next = 1;
@@ -186,12 +187,45 @@ class PublicationTransport extends Transport {
   }
 }
 
+class DownloadTransport extends Transport {
+  item() {
+    return this.reply('item', {
+      id: itemId, createdAt: 1,
+      origin: {deviceId, tag: 'Source', iconKind: 'laptop'},
+      contents: [{id: 'content', mimeType: 'text/plain', size: 4,
+        sha256: 'a'.repeat(64), delivery: 'on-demand'}],
+      previews: [],
+    });
+  }
+
+  contentResponse() {
+    return {transfer: {...sourceTransfer('completed'), direction: 'download'}};
+  }
+
+  requestContent() {
+    return this.reply('requestContent', this.contentResponse());
+  }
+
+  downloadContent(_channel, _item, _content, _path, options) {
+    this.download = options;
+    return this.reply('downloadContent', {path: '/unused-downloaded-test-double'});
+  }
+}
+
 const publicationItem = {
   id: itemId, createdAt: 1, sensitive: false,
   representations: [{id: 'content', mimeType: 'text/plain', size: 4,
     sha256: 'a'.repeat(64), delivery: 'eager', path: '/unused-publication-test-double'}],
   preview: {mimeType: 'text/plain', text: 'test', derivedFrom: 'content', truncated: false},
 };
+function remoteItem() {
+  const item = copy(publicationItem);
+  item.remote = true;
+  item.originDeviceId = deviceId;
+  item.availability = 'preview';
+  item.representations[0].path = null;
+  return item;
+}
 const cancelled = () => new Gio.IOErrorEnum({
   code: Gio.IOErrorEnum.CANCELLED, message: 'Operation was cancelled',
 });
@@ -579,6 +613,151 @@ for (const lateFailure of [false, true]) {
   });
 }
 
+await test('source work requires a completed acknowledgement before advancing its cursor', async () => {
+  const transport = new Transport('current');
+  const f = fixture([transport], {sourceItem});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.workCursor;
+    transport.work = () => Promise.resolve({cursor: 'unconfirmed-work', hasMore: false, work: [sourceWork]});
+    transport.completeUpload = () => Promise.resolve({transfer: sourceTransfer('cancelled')});
+    const result = await bounded(observe(f.client._poll()));
+    assert(result.error?.code === 'source_upload_failed',
+      'A non-completed acknowledgement must fail source work instead of treating it as delivered');
+    assert(f.client._progress.workCursor === cursor,
+      'Unconfirmed source work must remain replayable at its existing cursor');
+    assert(f.client.getTransferForItem(itemId).state === 'failed',
+      'The shared lifecycle must expose failure for unconfirmed source content');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+for (const method of ['item', 'requestContent', 'downloadContent']) {
+  for (const action of ['restart', 'destroy']) {
+    for (const lateFailure of [false, true]) {
+      await test(`remote ${method} ignores late ${lateFailure ? 'failure' : 'reply'} after ${action}`, async () => {
+        const stale = new DownloadTransport('stale');
+        const current = new DownloadTransport('current');
+        const f = fixture([stale, current]);
+        const item = remoteItem();
+        let gate;
+        let pending;
+        try {
+          await bounded(f.client.start());
+          gate = stale.hold(method);
+          pending = observe(method === 'item' ? f.client.getItem(itemId) : f.client.materialize(item));
+          await bounded(gate.entered.promise);
+          await bounded(f.client[action]());
+          const expected = snapshot(f);
+          const expectedItem = copy(item);
+          const oldCalls = stale.calls.length;
+          const currentCalls = current.calls.length;
+          if (stale.download) {
+            assert(stale.download.cancellable.is_cancelled(), 'Reset must cancel the old download');
+            stale.download.onProgress(4);
+            stale.download.onVerifying();
+          }
+          if (lateFailure)
+            gate.reject(new Error('Late remote content failure'));
+          else
+            gate.resolve(method === 'requestContent' ? stale.contentResponse()
+              : method === 'downloadContent' ? {path: '/unused-late-test-double'} : {});
+          assertCancelled(await bounded(pending));
+          assert(snapshot(f) === expected && JSON.stringify(item) === JSON.stringify(expectedItem),
+            'Old remote content must not restore transfers, set paths, or change availability');
+          assert(stale.calls.length === oldCalls && current.calls.length === currentCalls,
+            'Old remote requests must not continue on either transport generation');
+        } finally {
+          f.client.destroy();
+          gate?.resolve({});
+          if (pending)
+            await pending;
+        }
+      });
+    }
+  }
+}
+
+await test('a remote download queued behind old work cannot run on a replacement connection', async () => {
+  const stale = new DownloadTransport('stale');
+  const current = new DownloadTransport('current');
+  const f = fixture([stale, current]);
+  const entered = deferred();
+  const release = deferred();
+  const item = remoteItem();
+  let blocker;
+  let pending;
+  try {
+    await bounded(f.client.start());
+    blocker = observe(f.client._enqueueTransfer(() => {
+      entered.resolve();
+      return release.promise;
+    }));
+    await bounded(entered.promise);
+    pending = observe(f.client.materialize(item));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert(stale.calls.includes('requestContent') && !stale.calls.includes('downloadContent'),
+      'The fixture must wait after requesting content but before starting its queued download');
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    release.resolve();
+    assertCancelled(await bounded(pending));
+    assert(snapshot(f) === expected && item.representations[0].path === null,
+      'A stale queued download must not mutate the replacement state or original content');
+    assert(!stale.calls.includes('downloadContent') && !current.calls.includes('downloadContent'),
+      'Neither transport may perform the stale queued download');
+  } finally {
+    f.client.destroy();
+    release.resolve();
+    await Promise.all([...(blocker ? [blocker] : []), ...(pending ? [pending] : [])]);
+  }
+});
+
+await test('explicit download cancellation prevents a late result from becoming usable', async () => {
+  const transport = new DownloadTransport('current');
+  const f = fixture([transport]);
+  const item = remoteItem();
+  let gate;
+  let pending;
+  try {
+    await bounded(f.client.start());
+    gate = transport.hold('downloadContent');
+    pending = observe(f.client.materialize(item));
+    await bounded(gate.entered.promise);
+    const active = f.client.getTransferForItem(item.id);
+    await f.client.cancelTransfer(active.transferId);
+    gate.resolve({path: '/unused-cancelled-test-double'});
+    assertCancelled(await bounded(pending));
+    assert(transport.download.cancellable.is_cancelled() && item.representations[0].path === null,
+      'A transport ignoring cancellation must not make the returned file usable');
+    assert(f.client.getTransferForItem(item.id).state === 'cancelled' && !transport.calls.includes('cancel'),
+      'Local-only cancellation must remain cancelled and must not delete a server task');
+  } finally {
+    f.client.destroy();
+    gate?.resolve({});
+    if (pending)
+      await pending;
+  }
+});
+
+await test('completed transfer scopes ignore any additional progress callbacks', async () => {
+  const transport = new DownloadTransport('current');
+  const f = fixture([transport]);
+  const item = remoteItem();
+  try {
+    await bounded(f.client.start());
+    await bounded(f.client.materialize(item));
+    const expected = snapshot(f);
+    transport.download.onProgress(1);
+    transport.download.onVerifying();
+    assert(snapshot(f) === expected,
+      'Progress after a completed scope must not resurrect or regress its terminal state');
+  } finally {
+    f.client.destroy();
+  }
+});
+
 await test('scheduled poll failure cannot mark the replacement connection as failed', async () => {
   const stale = new Transport('stale');
   const current = new Transport('current');
@@ -740,7 +919,7 @@ await test('changes wait for durable acceptance and retry rejected entries', asy
   const transport = new Transport('current');
   const acceptance = deferred();
   let attempts = 0;
-  const f = fixture([transport], {applyChange: async () => {
+  const f = fixture([transport], {applyChanges: async () => {
     attempts++;
     if (attempts === 1)
       await acceptance.promise;
@@ -773,7 +952,7 @@ await test('changes wait for durable acceptance and retry rejected entries', asy
 await test('progress write failures do not advance in-memory cursors', async () => {
   const transport = new Transport('current');
   let attempts = 0;
-  const f = fixture([transport], {applyChange: async () => { attempts++; }});
+  const f = fixture([transport], {applyChanges: async () => { attempts++; }});
   try {
     await bounded(f.client.start());
     const cursor = f.client._progress.cursors[channelId];
@@ -798,7 +977,7 @@ await test('initial receive failure leaves polling available for retry', async (
   let attempts = 0;
   transport.changes = async () => ({cursor: 'accepted-changes', hasMore: false,
     changes: [{itemId, sequence: 1, kind: 'upsert'}]});
-  const f = fixture([transport], {applyChange: async () => {
+  const f = fixture([transport], {applyChanges: async () => {
     if (++attempts === 1)
       throw new Error('Temporary receive failure');
   }});
@@ -819,7 +998,7 @@ await test('superseded change acceptance cannot commit progress or notify', asyn
   const current = new Transport('current');
   const acceptance = deferred();
   const entered = deferred();
-  const f = fixture([stale, current], {applyChange: async (_change, scope) => {
+  const f = fixture([stale, current], {applyChanges: async (_changes, scope) => {
     entered.resolve();
     await acceptance.promise;
     assert(!scope.isCurrent(), 'The receiver must be able to detect supersession');

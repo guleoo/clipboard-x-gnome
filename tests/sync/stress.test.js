@@ -23,6 +23,7 @@ class StressSettings {
       ['sync-enabled', true], ['device-id', deviceId], ['device-tag', 'Stress laptop'],
       ['device-icon-kind', 'laptop'], ['sync-text', true], ['sync-html', true],
       ['sync-images', true], ['text-preview-limit', 4096], ['thumbnail-byte-limit', 256 * 1024],
+      ['text-full-threshold', 64 * 1024],
       ['sync-transfer-timeout-seconds', 30],
     ]);
     this._nextSignal = 1;

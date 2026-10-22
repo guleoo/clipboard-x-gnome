@@ -10,7 +10,6 @@ import {search as searchHistory} from './history/search.js';
 import {order as orderHistory} from './history/order.js';
 import {HistoryStore} from './history/store.js';
 import {filterEmptyHtml, trimRepresentations} from './text.js';
-import {delivery} from '../sync/policy.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {createThumbnail} from './thumbnail.js';
 import {sha256} from '../common/bytes.js';
@@ -226,14 +225,14 @@ export class ClipboardController extends EventEmitter {
     return item;
   }
 
-  add(item, source = 'remote') {
+  add(item, source = 'remote', {replaceDuplicate = false} = {}) {
     if (this._destroyed)
       return item;
     const existingIndex = this._items.findIndex(existing => existing.equals(item));
     if (existingIndex >= 0) {
       const [existing] = this._items.splice(existingIndex, 1);
-      // Replace a persisted duplicate when the new copy is marked sensitive.
-      const renewed = item.sensitive && !existing.sensitive ? item : existing;
+      // Keep the newer remote locator when the retained copy lacks originals.
+      const renewed = replaceDuplicate || item.sensitive && !existing.sensitive ? item : existing;
       renewed.favorite = existing.favorite;
       renewed.createdAt = Date.now();
       this._items.push(renewed);
@@ -286,8 +285,10 @@ export class ClipboardController extends EventEmitter {
     this.emit('changed');
   }
 
-  async activate(item) {
+  async activate(item, {guard = () => true} = {}) {
     await this._store.materialize(item, this._cancellable);
+    if (this._destroyed || !guard())
+      return;
     if (!item.primary?.bytes)
       throw new Error('Clipboard content is not materialized');
 
@@ -318,10 +319,6 @@ export class ClipboardController extends EventEmitter {
   }
 
   async _prepareItem(item) {
-    for (const representation of item.representations) {
-      representation.delivery = delivery(this._settings, representation.mimeType, representation.size);
-    }
-
     if (!item.isImage || item.sensitive || item.primary.mimeType === 'image/svg+xml')
       return;
 
