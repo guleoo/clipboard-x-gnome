@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {SyncClient} from '../../src/sync/client.js';
 import {createLogger} from '../../src/common/logger.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -75,8 +76,6 @@ class TestStore {
       serverAddress: 'http://127.0.0.1:8765',
       apiKey: 'test-api-key',
       activeChannelId: channelId,
-      cursors: {},
-      workCursor: '',
     };
   }
 
@@ -94,13 +93,8 @@ class TestStore {
     return this.current;
   }
 
-  async saveProgress(value) {
-    this.value = {...value, cursors: {...value.cursors}};
-    return this.current;
-  }
-
   get current() {
-    return {...this.value, cursors: {...this.value.cursors}};
+    return {...this.value};
   }
 }
 
@@ -222,9 +216,11 @@ const path = GLib.build_filenamev([directory, 'content.txt']);
 const file = Gio.File.new_for_path(path);
 const settings = new TestSettings();
 const store = new TestStore();
+const progressStore = new MemoryProgressStore();
 const transport = new TestTransport();
 const client = new SyncClient(settings, {
   configurationStore: store,
+  progressStore,
   transportFactory: () => transport,
 });
 
@@ -287,7 +283,8 @@ try {
   transport.updateProfile = originalUpdateProfile;
   assert(client.devices[0].iconKind === 'archlinux' && !Object.hasOwn(client.devices[0], 'iconColor'),
     'the final server profile must not be overwritten by an older response');
-  assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
+  const progress = await progressStore.load({serverAddress: store.value.serverAddress, deviceId});
+  assert(progress.cursors[channelId] === 'initial' && progress.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 
   const item = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
@@ -369,6 +366,7 @@ const channelRequiredStore = new TestStore();
 channelRequiredStore.value.activeChannelId = '';
 const channelRequiredClient = new SyncClient(settings, {
   configurationStore: channelRequiredStore,
+  progressStore: new MemoryProgressStore(),
   transportFactory: () => new TestTransport([]),
 });
 try {
@@ -395,7 +393,8 @@ retentionTransport.cancel = async () => { cancellations++; };
 let remoteState = 'queued';
 retentionTransport.transfer = async () => retentionTransport._transfer(remoteState, 0);
 const retentionClient = new SyncClient(new TestSettings(), {
-  configurationStore: new TestStore(), transportFactory: () => retentionTransport,
+  configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+  transportFactory: () => retentionTransport,
 });
 const cancelledPublications = [];
 retentionClient.connect('publication-cancelled', (_client, id) => cancelledPublications.push(id));
@@ -464,6 +463,7 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
     localTransport[methods[phase]] = fail;
   const diagnosticClient = new SyncClient(new TestSettings(), {
     configurationStore: localStore,
+    progressStore: new MemoryProgressStore(),
     transportFactory: phase === 'transport' ? fail : () => localTransport,
     logger: createLogger('sync', {sink: record => records.push(record)}),
   });
@@ -484,7 +484,8 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
 
 const pollRecords = [];
 const pollClient = new SyncClient(new TestSettings(), {
-  configurationStore: new TestStore(), transportFactory: () => new TestTransport(),
+  configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+  transportFactory: () => new TestTransport(),
   logger: createLogger('sync', {sink: record => pollRecords.push(record)}),
 });
 try {

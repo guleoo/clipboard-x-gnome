@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {TransferTracker} from '../../src/sync/transfers.js';
 import {SyncClient} from '../../src/sync/client.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
 import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 import {delay} from './integration/measure.js';
 import {STRESS_SYNC_LOAD} from './load-profile.js';
@@ -38,22 +39,15 @@ class StressStore {
   constructor() {
     this.value = {
       serverAddress: 'http://127.0.0.1:8765', apiKey: 'stress-key', activeChannelId: channelId,
-      cursors: {}, workCursor: '',
     };
-    this.progressSaves = 0;
   }
 
   async load() { return this.current; }
   async saveConnection(value) {
-    this.value = {...this.value, ...value, cursors: {...this.value.cursors}};
+    this.value = {...this.value, ...value};
     return this.current;
   }
-  async saveProgress(value) {
-    this.progressSaves++;
-    this.value = {...value, cursors: {...value.cursors}};
-    return this.current;
-  }
-  get current() { return {...this.value, cursors: {...this.value.cursors}}; }
+  get current() { return {...this.value}; }
 }
 
 class StressTransport {
@@ -164,12 +158,14 @@ function createItem(prefix, index) {
 }
 const settings = new StressSettings();
 const store = new StressStore();
+const progressStore = new MemoryProgressStore();
 const transport = new StressTransport();
 const sources = Array.from({length: STRESS_SYNC_LOAD.publishedItems}, (_, index) => createItem('publish', index));
 const workItems = Array.from({length: STRESS_SYNC_LOAD.onDemandWork}, (_, index) => createItem('work', index));
 const sourceById = new Map(workItems.map(item => [item.id, item]));
 const client = new SyncClient(settings, {
   configurationStore: store,
+  progressStore,
   transportFactory: () => transport,
   sourceItem: itemId => sourceById.get(itemId),
 });
@@ -184,8 +180,9 @@ try {
   const elapsedSeconds = (GLib.get_monotonic_time() - started) / 1_000_000;
 
   assert(available.size === STRESS_SYNC_LOAD.incomingChanges, '10x distinct changes must all be observed');
-  assert(store.value.cursors[channelId] === String(STRESS_SYNC_LOAD.incomingChanges), 'changes cursor must reach the final page');
-  assert(store.value.workCursor === String(STRESS_SYNC_LOAD.onDemandWork), 'work cursor must reach the final page');
+  const progress = await progressStore.load({serverAddress: store.value.serverAddress, deviceId});
+  assert(progress.cursors[channelId] === String(STRESS_SYNC_LOAD.incomingChanges), 'changes cursor must reach the final page');
+  assert(progress.workCursor === String(STRESS_SYNC_LOAD.onDemandWork), 'work cursor must reach the final page');
   assert(transport.completedUploads === STRESS_SYNC_LOAD.publishedItems + STRESS_SYNC_LOAD.onDemandWork,
     'all 10x publish and on-demand uploads must complete');
   assert(transport.maxConcurrentUploads === 1, 'the transfer queue must keep network uploads serialized');

@@ -44,6 +44,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
+      applyChange: (change, scope) => this._applyRemoteChange(change, scope),
     });
     const sync = this._sync;
     const configurationStore = new SyncConfigurationStore();
@@ -136,12 +137,6 @@ export default class ClipboardXGnomeExtension extends Extension {
       uploadQueue.prune().catch(error => logger.error('prune-uploads', error));
     });
 
-    this._syncItemSignal = this._sync.connect('item-available', (_sync, itemId) => {
-      this._receiveRemoteItem(itemId).catch(error => this._reportError(error));
-    });
-    this._syncRemovedSignal = this._sync.connect('item-removed', (_sync, itemId) => {
-      this._controller.remove(itemId);
-    });
     this._syncStatusSignal = this._sync.connect('status-changed', (_sync, status, capabilities) => {
       this._indicator?.setSyncStatus(status, capabilities);
       this._drainUploads(uploadQueue);
@@ -186,12 +181,8 @@ export default class ClipboardXGnomeExtension extends Extension {
 
     if (this._itemAddedSignal)
       this._controller.disconnect(this._itemAddedSignal);
-    if (this._syncItemSignal)
-      this._sync.disconnect(this._syncItemSignal);
     if (this._favoriteSignal)
       this._controller.disconnect(this._favoriteSignal);
-    if (this._syncRemovedSignal)
-      this._sync.disconnect(this._syncRemovedSignal);
     if (this._syncStatusSignal)
       this._sync.disconnect(this._syncStatusSignal);
     if (this._transferSignal)
@@ -203,9 +194,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     if (this._queueCancelSignal)
       this._sync.disconnect(this._queueCancelSignal);
     this._itemAddedSignal = 0;
-    this._syncItemSignal = 0;
     this._favoriteSignal = 0;
-    this._syncRemovedSignal = 0;
     this._syncStatusSignal = 0;
     this._transferSignal = 0;
     this._queuePruneSignal = 0;
@@ -356,16 +345,44 @@ export default class ClipboardXGnomeExtension extends Extension {
     return item;
   }
 
-  async _receiveRemoteItem(itemId) {
-    if (this._settings.get_string('sync-receive-mode') === 'disabled')
+  async _applyRemoteChange(change, {isCurrent}) {
+    const controller = this._controller;
+    const sync = this._sync;
+    const settings = this._settings;
+    if (!isCurrent())
       return;
-    const item = await this._sync.getItem(itemId);
-    if (item.originDeviceId === ensureDeviceIdentity(this._settings).deviceId)
+    if (change.kind !== 'upsert') {
+      controller.remove(change.itemId);
+      await controller.persist();
       return;
-    this._controller.add(item, 'remote');
-    await this._ensureMaterialized(item, {withinThreshold: true});
-    if (this._settings.get_string('sync-receive-mode') === 'activate')
-      await this._activateItem(item);
+    }
+    if (settings.get_string('sync-receive-mode') === 'disabled')
+      return;
+    const incoming = await sync.getItem(change.itemId);
+    if (!isCurrent() || incoming.originDeviceId === ensureDeviceIdentity(settings).deviceId)
+      return;
+    const item = controller.add(incoming, 'remote');
+    // Acknowledge only durable metadata. Waiting for an offline source here would
+    // block the very polling loop needed to observe its transfer completion.
+    await controller.persist();
+    if (!isCurrent())
+      return;
+    const finish = async () => {
+      const activate = settings.get_string('sync-receive-mode') === 'activate';
+      await sync.materialize(item, {withinThreshold: !activate});
+      if (!isCurrent())
+        return;
+      controller.update(item);
+      if (settings.get_string('sync-receive-mode') === 'activate'
+          && item.availability === 'ready')
+        await controller.activate(item);
+    };
+    finish().catch(error => {
+      if (isCurrent()) {
+        controller.update(item);
+        this._reportError(error);
+      }
+    });
   }
 
   _editorCommand() {

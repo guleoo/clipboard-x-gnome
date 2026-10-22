@@ -20,7 +20,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     }
   };
   const save = async inputs => {
-    const current = await store.save(configuration(inputs));
+    const current = await store.saveConnection(configuration(inputs));
     notifyChanged();
     return current;
   };
@@ -30,7 +30,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
       if (result.length > 0 && !result.some(item => item.id === current.activeChannelId)) {
         current = {...current, activeChannelId: result[0].id};
         if (persistFallback) {
-          current = await store.save(current);
+          current = await store.saveConnection(current);
           notifyChanged();
         }
       }
@@ -53,7 +53,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     const profile = identity();
     // Keep connection changes locally even if the server cannot be reached.
     // Notify Shell only once, after profile upload and final channel selection.
-    let saved = await store.save(current);
+    let saved = await store.saveConnection(current);
     try {
       if (!saved.serverAddress || !saved.apiKey)
         return {configuration: saved, channels: []};
@@ -71,7 +71,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
         }))};
       });
       if (result.activeChannelId !== saved.activeChannelId)
-        saved = await store.save({...saved, activeChannelId: result.activeChannelId});
+        saved = await store.saveConnection({...saved, activeChannelId: result.activeChannelId});
       return {configuration: saved, channels: result.channels, device: result.device};
     } catch (error) {
       return {configuration: saved, error};

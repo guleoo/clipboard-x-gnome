@@ -209,7 +209,7 @@ flatpak run be.alexandervanhee.gradia %u
 不会跳过完整性检查。关闭时仍使用现有 GLib 校验，无需额外命令，但大文件内存峰值可能较高。
 
 服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x-gnome/sync.json`；
-各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
+增量 cursor 与 work cursor 按服务器和 DeviceId 分别保存在 `sync-progress/` 中。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
 
 待上传任务按服务器分别持久化，并绑定提交时的 Channel 和 DeviceId。上传中断或切换服务器
@@ -230,7 +230,7 @@ flatpak run be.alexandervanhee.gradia %u
 | 快捷语句 | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
 | 词库 | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
 | 同步连接信息 | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| 同步 cursor | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
+| 同步 cursor | `$XDG_DATA_HOME/clipboard-x-gnome/sync-progress/`（每个服务器与 DeviceId 一个文件） |
 | 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读

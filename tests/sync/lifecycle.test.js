@@ -1,6 +1,7 @@
 import Gio from 'gi://Gio';
 
 import {SyncClient} from '../../src/sync/client.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
 
 const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
@@ -59,7 +60,7 @@ class Store {
   constructor() {
     this.value = {
       serverAddress: 'http://memory.invalid', apiKey: 'memory-key',
-      activeChannelId: channelId, cursors: {}, workCursor: '',
+      activeChannelId: channelId,
     };
     this.loads = [];
     this.saves = [];
@@ -67,7 +68,6 @@ class Store {
 
   load() { return this.loads.length ? this.loads.shift().promise : Promise.resolve(copy(this.value)); }
   saveConnection(value) { return this.save('connection', value); }
-  saveProgress(value) { return this.save('progress', value); }
   save(kind, value) {
     this.saves.push({kind, value: copy(value)});
     this.value = copy(value);
@@ -209,10 +209,12 @@ const logger = {
 function fixture(transports = [new Transport('current')], options = {}) {
   const settings = new Settings();
   const store = new Store();
+  const progressStore = new MemoryProgressStore();
   const created = [];
   const events = [];
   const client = new SyncClient(settings, {
     configurationStore: store,
+    progressStore,
     transportFactory(configuration, options) {
       const transport = transports[created.length];
       assert(transport, 'Stale initialization must not create an additional transport');
@@ -227,7 +229,7 @@ function fixture(transports = [new Transport('current')], options = {}) {
     'poll-completed']) {
     client.connect(event, (_client, ...args) => events.push({event, args: copy(args)}));
   }
-  return {client, settings, store, created, events};
+  return {client, settings, store, progressStore, created, events};
 }
 
 function snapshot(f) {
@@ -237,6 +239,7 @@ function snapshot(f) {
     devices: f.client.devices, channels: f.client.channels,
     transfer: f.client.getTransferForItem(itemId), events: f.events,
     saves: f.store.saves,
+    progressSaves: f.progressStore.saves,
   });
 }
 
@@ -730,6 +733,114 @@ await test('public publication superseded before its logger callback is cancelle
       'A deferred publish callback must not enter the queue after its generation is replaced');
   } finally {
     f.client.destroy();
+  }
+});
+
+await test('changes wait for durable acceptance and retry rejected entries', async () => {
+  const transport = new Transport('current');
+  const acceptance = deferred();
+  let attempts = 0;
+  const f = fixture([transport], {applyChange: async () => {
+    attempts++;
+    if (attempts === 1)
+      await acceptance.promise;
+  }});
+  try {
+    await bounded(f.client.start());
+    const before = copy(f.client._progress);
+    transport.changes = async () => ({cursor: 'accepted-changes', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    const pending = observe(f.client._poll());
+    await Promise.resolve();
+    await Promise.resolve();
+    assert(f.client._progress.cursors[channelId] === before.cursors[channelId],
+      'Pending acceptance must not advance the changes cursor');
+    acceptance.reject(new Error('Temporary history write failure'));
+    assert((await bounded(pending)).error, 'An acceptance failure must fail the poll');
+    assert(f.client._progress.cursors[channelId] === before.cursors[channelId],
+      'A rejected entry must leave the previous cursor retryable');
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.client._progress.cursors[channelId] === 'accepted-changes',
+      'The next poll must accept the failed entry before saving its cursor');
+    assert(f.events.filter(value => value.event === 'item-available').length === 1,
+      'Only accepted changes may emit availability notifications');
+  } finally {
+    acceptance.resolve();
+    f.client.destroy();
+  }
+});
+
+await test('progress write failures do not advance in-memory cursors', async () => {
+  const transport = new Transport('current');
+  let attempts = 0;
+  const f = fixture([transport], {applyChange: async () => { attempts++; }});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.cursors[channelId];
+    transport.changes = async () => ({cursor: 'next-changes', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    const save = f.progressStore.save.bind(f.progressStore);
+    f.progressStore.save = async () => { throw new Error('Temporary progress write failure'); };
+    assert((await observe(f.client._poll())).error, 'The poll must report persistence failure');
+    assert(f.client._progress.cursors[channelId] === cursor,
+      'Unpersisted progress must never become the next request cursor');
+    f.progressStore.save = save;
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.client._progress.cursors[channelId] === 'next-changes',
+      'Progress persistence failure must safely replay the page');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('initial receive failure leaves polling available for retry', async () => {
+  const transport = new Transport('current');
+  let attempts = 0;
+  transport.changes = async () => ({cursor: 'accepted-changes', hasMore: false,
+    changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+  const f = fixture([transport], {applyChange: async () => {
+    if (++attempts === 1)
+      throw new Error('Temporary receive failure');
+  }});
+  try {
+    await bounded(f.client.start());
+    assert(f.client.ready && f.client.connected && f.client._pollSource > 0,
+      'A failed initial page must not strand an authenticated client without polling');
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.client.status.state === 'online',
+      'A later successful poll must recover and accept the page');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('superseded change acceptance cannot commit progress or notify', async () => {
+  const stale = new Transport('stale');
+  const current = new Transport('current');
+  const acceptance = deferred();
+  const entered = deferred();
+  const f = fixture([stale, current], {applyChange: async (_change, scope) => {
+    entered.resolve();
+    await acceptance.promise;
+    assert(!scope.isCurrent(), 'The receiver must be able to detect supersession');
+  }});
+  let pending;
+  try {
+    await bounded(f.client.start());
+    stale.changes = async () => ({cursor: 'stale-accepted', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    pending = observe(f.client._poll());
+    await bounded(entered.promise);
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    acceptance.resolve();
+    await bounded(pending);
+    assert(snapshot(f) === expected, 'Late acceptance must leave the replacement session untouched');
+  } finally {
+    acceptance.resolve();
+    f.client.destroy();
+    if (pending)
+      await pending;
   }
 });
 

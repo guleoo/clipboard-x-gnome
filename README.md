@@ -230,8 +230,8 @@ Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends b
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
 
 The server address, API key, and active Channel are stored in
-`$XDG_DATA_HOME/clipboard-x-gnome/sync.json`. Per-Channel change cursors are stored separately in
-`sync-state.json`. A newly joined device starts from the retained Channel change history and downloads
+`$XDG_DATA_HOME/clipboard-x-gnome/sync.json`. Change and work cursors are stored separately for each
+server and DeviceId in `sync-progress/`. A newly joined device starts from the retained Channel change history and downloads
 metadata and previews first; complete large objects remain lazy.
 
 Pending uploads are saved in a separate queue for each server, bound to the original Channel and
@@ -256,7 +256,7 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 | Quick phrases | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
 | Dictionaries | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
 | Sync connection | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| Sync cursors | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
+| Sync cursors | `$XDG_DATA_HOME/clipboard-x-gnome/sync-progress/` (one file per server and DeviceId) |
 | Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)

@@ -45,20 +45,20 @@ async function fixture({status = online, channels = available, fail = '',
   const path = GLib.build_filenamev([directory, `${files.length}-connection.json`]);
   const progressPath = GLib.build_filenamev([directory, `${files.length}-progress.json`]);
   files.push(path, progressPath);
-  const store = new SyncConfigurationStore({path, progressPath});
+  const store = new SyncConfigurationStore({path});
   await store.saveConnection({
     serverAddress: 'saved.invalid:8765',
     apiKey: 'saved-test-key',
     activeChannelId: savedChannel,
   });
-  await store.saveProgress({cursors: {[savedChannel]: 'cursor-7'}, workCursor: 'work-4'});
+  GLib.file_set_contents(progressPath, 'unrelated progress data');
   const snapshot = JSON.stringify(store.current);
   const connectionDocument = contents(path);
   const progressDocument = contents(progressPath);
   const state = {saves: 0, revision: 17, reconnects: 0, transports: [], requests: [],
     profiles: [], events: []};
-  const save = store.save.bind(store);
-  store.save = value => {
+  const save = store.saveConnection.bind(store);
+  store.saveConnection = value => {
     state.saves++;
     state.events.push('save');
     if (fail === 'save')
@@ -189,8 +189,8 @@ try {
   assert(apply.state.saves === 1 && apply.state.revision === 18 && apply.state.reconnects === 1,
     'Explicit saving must persist inputs and notify synchronization');
   assert(saved.serverAddress === 'draft.invalid:8765' && saved.apiKey === 'draft-test-key'
-      && saved.activeChannelId === draftChannel && saved.cursors[savedChannel] === 'cursor-7',
-    'Explicit saving must normalize inputs without losing progress');
+      && saved.activeChannelId === draftChannel && !Object.hasOwn(saved, 'cursors'),
+    'Explicit saving must normalize connection inputs without exposing progress');
   await apply.actions.channels(saved);
   assert(apply.state.saves === 2 && apply.state.revision === 19
       && apply.store.current.activeChannelId === fallbackChannel,

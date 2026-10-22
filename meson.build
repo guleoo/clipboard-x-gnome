@@ -89,6 +89,7 @@ test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tes
 test('sync-errors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/errors.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
+test('sync-progress-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/progress-store.test.js'])
 test('sync-connection-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection.test.js'])
 test('sync-connection-http', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection-http.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])

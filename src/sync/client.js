@@ -15,6 +15,7 @@ import {createLogger} from '../common/logger.js';
 import {isUuid} from '../common/uuid.js';
 import {configuration as publicConfiguration} from './configuration.js';
 import {SyncConfigurationStore} from './configuration-store.js';
+import {SyncProgressStore} from './progress-store.js';
 import {ensureDeviceIdentity} from './device.js';
 import {SyncError} from './errors.js';
 import {HttpTransport} from './http/transport.js';
@@ -40,15 +41,21 @@ const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'e
 export class SyncClient extends EventEmitter {
   constructor(settings, {
     configurationStore = new SyncConfigurationStore(),
+    progressStore = new SyncProgressStore(),
     transportFactory = (configuration, options) => new HttpTransport(configuration, options),
     sourceItem = () => null,
+    applyChange = async () => {},
     logger = createLogger('sync'),
   } = {}) {
     super();
     this._settings = settings;
     this._configurationStore = configurationStore;
+    this._progressStore = progressStore;
+    this._progressScope = null;
+    this._progress = {cursors: {}, workCursor: ''};
     this._transportFactory = transportFactory;
     this._sourceItem = sourceItem;
+    this._applyChange = applyChange;
     this._logger = logger;
     this._settingsSignals = [];
     this._transport = null;
@@ -325,6 +332,16 @@ export class SyncClient extends EventEmitter {
         return;
       }
 
+      const progressScope = {
+        serverAddress: configuration.serverAddress,
+        deviceId: ensureDeviceIdentity(this._settings).deviceId,
+      };
+      const progress = await scope.step('progress', () => this._progressStore.load(progressScope));
+      if (!this._isCurrent(generation))
+        return;
+      this._progressScope = progressScope;
+      this._progress = progress;
+
       const identity = scope.step('transport', () => {
         this._closeConnection();
         cancellable = new Gio.Cancellable();
@@ -365,11 +382,24 @@ export class SyncClient extends EventEmitter {
       await scope.step('transfers', () => this.listTransfers());
       if (!this._isCurrent(generation))
         return;
-      await this._poll(scope);
+      let pollError = null;
+      try {
+        await this._poll(scope);
+      } catch (error) {
+        pollError = error;
+      }
       if (!this._isCurrent(generation))
         return;
       this._ready = true;
-      this._setStatus(capabilities.status, capabilities, 'online');
+      if (pollError) {
+        this._setStatus('error', {
+          error: pollError.message,
+          errorCode: String(pollError.code ?? 'request_failed'),
+        }, 'request-failed');
+        this._report(pollError);
+      } else {
+        this._setStatus(capabilities.status, capabilities, 'online');
+      }
       this._schedulePoll();
     } catch (error) {
       if (!this._isCurrent(generation))
@@ -740,13 +770,16 @@ export class SyncClient extends EventEmitter {
     const channelId = this._storedConfiguration.activeChannelId;
     if (!channelId)
       return;
-    let cursor = this._storedConfiguration.cursors[channelId] ?? '';
+    let cursor = this._progress.cursors[channelId] ?? '';
     let hasMore;
     do {
       const page = await this.getChanges(cursor, {limit: 200});
       if (!this._isCurrent(generation))
         return;
       for (const change of page.changes) {
+        if (!this._isCurrent(generation))
+          return;
+        await this._applyChange(change, {isCurrent: () => this._isCurrent(generation)});
         if (!this._isCurrent(generation))
           return;
         if (change.kind === 'upsert')
@@ -759,8 +792,7 @@ export class SyncClient extends EventEmitter {
       if (page.nextCursor === cursor && page.hasMore)
         throw new Error('Synchronization server returned a non-advancing changes cursor');
       cursor = page.nextCursor;
-      this._storedConfiguration.cursors[channelId] = cursor;
-      await this._saveProgress();
+      await this._saveProgress({...this._progress, cursors: {...this._progress.cursors, [channelId]: cursor}});
       if (!this._isCurrent(generation))
         return;
       hasMore = page.hasMore;
@@ -770,7 +802,7 @@ export class SyncClient extends EventEmitter {
   async _syncWork() {
     const generation = this._generation;
     const transport = this._transport;
-    let cursor = this._storedConfiguration.workCursor;
+    let cursor = this._progress.workCursor;
     let hasMore;
     do {
       const page = validateWorkPage(await transport.work(cursor));
@@ -784,8 +816,7 @@ export class SyncClient extends EventEmitter {
       if (page.cursor === cursor && page.hasMore)
         throw new Error('Synchronization server returned a non-advancing work cursor');
       cursor = page.cursor;
-      this._storedConfiguration.workCursor = cursor;
-      await this._saveProgress();
+      await this._saveProgress({...this._progress, workCursor: cursor});
       if (!this._isCurrent(generation))
         return;
       hasMore = page.hasMore;
@@ -1025,15 +1056,12 @@ export class SyncClient extends EventEmitter {
     this._applyPublicConfiguration();
   }
 
-  async _saveProgress() {
+  async _saveProgress(progress) {
     const generation = this._generation;
-    const configuration = await this._configurationStore.saveProgress(
-      this._storedConfiguration,
-    );
+    const saved = await this._progressStore.save(this._progressScope, progress);
     if (!this._isCurrent(generation))
       return;
-    this._storedConfiguration = configuration;
-    this._applyPublicConfiguration();
+    this._progress = saved;
   }
 
   _schedulePoll() {
@@ -1160,6 +1188,7 @@ export class SyncClient extends EventEmitter {
     this._configurationStore = null;
     this._transportFactory = null;
     this._sourceItem = null;
+    this._applyChange = null;
     this.disconnectAll();
   }
 }
