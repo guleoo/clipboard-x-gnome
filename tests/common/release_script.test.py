@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the local release command's safe defaults and publish guard."""
+"""Check release command safeguards without contacting GitHub."""
 
 import os
 import shutil
@@ -10,23 +10,10 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "tools/release.sh"
-PROJECT = SCRIPT.parent.parent
+PUBLISH_SCRIPT = SCRIPT.with_name("publish-release.sh")
 
 
 class ReleaseScriptTest(unittest.TestCase):
-    @staticmethod
-    def release_commands():
-        lines = (PROJECT / ".github/workflows/release.yml").read_text(encoding="utf-8").splitlines()
-        start = next(index for index, line in enumerate(lines)
-                     if line.strip().startswith("notes_file="))
-        indentation = len(lines[start]) - len(lines[start].lstrip())
-        commands = []
-        for line in lines[start:]:
-            if line.strip() and len(line) - len(line.lstrip()) < indentation:
-                break
-            commands.append(line[indentation:])
-        return "\n".join(commands)
-
     def test_release_requires_both_languages_and_publishes_only_english(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -48,9 +35,9 @@ exit 3
             trace = root / "gh-calls.txt"
             body = root / "release-body.txt"
             env = {**os.environ, "PATH": f"{root}:{os.environ['PATH']}",
-                   "GITHUB_REF_NAME": "v1.0.0", "GITHUB_REPOSITORY": "guleoo/clipboard-x-gnome",
-                   "ARCHIVE_NAME": "clipboard-x-gnome_1.0.0.zip",
                    "TEST_GH_CALLS": str(trace), "TEST_RELEASE_BODY": str(body)}
+            command = ["bash", str(PUBLISH_SCRIPT), "v1.0.0",
+                       "clipboard-x-gnome_1.0.0.zip", "guleoo/clipboard-x-gnome"]
             english = notes / "v1.0.0-en.md"
             chinese = notes / "v1.0.0-cn.md"
             for missing in (english, chinese):
@@ -58,14 +45,14 @@ exit 3
                     english.write_text("English release notes", encoding="utf-8")
                     chinese.write_text("Chinese release notes", encoding="utf-8")
                     missing.unlink()
-                    result = subprocess.run(["bash", "-eu", "-c", self.release_commands()],
+                    result = subprocess.run(command,
                                             cwd=root, env=env, capture_output=True, text=True)
                     self.assertEqual(result.returncode, 1)
                     self.assertIn(f"Release notes are missing: docs/release/{missing.name}", result.stderr)
                     self.assertFalse(trace.exists(), "missing notes must prevent GitHub writes")
             english.write_text("English release notes", encoding="utf-8")
             chinese.write_text("Chinese release notes", encoding="utf-8")
-            result = subprocess.run(["bash", "-eu", "-c", self.release_commands()],
+            result = subprocess.run(command,
                                     cwd=root, env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(body.read_text(encoding="utf-8"), english.read_text(encoding="utf-8"))

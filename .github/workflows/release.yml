@@ -109,27 +109,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ARCHIVE_NAME: ${{ needs.distcheck.outputs.archive-name }}
         run: |
-          notes_file="docs/release/${GITHUB_REF_NAME}-en.md"
-          chinese_notes_file="docs/release/${GITHUB_REF_NAME}-cn.md"
-          for file in "$notes_file" "$chinese_notes_file"; do
-            if [[ ! -f "$file" ]]; then
-              echo "Release notes are missing: $file" >&2
-              exit 1
-            fi
-          done
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                --json assets --jq '.assets[].name' | grep -Fxq "$ARCHIVE_NAME"; then
-              echo 'Release ZIP already exists; leaving the published asset untouched.'
-            else
-              gh release upload "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
-                --repo "$GITHUB_REPOSITORY"
-            fi
-          else
-            gh release create "$GITHUB_REF_NAME" "$ARCHIVE_NAME" \
-              --repo "$GITHUB_REPOSITORY" --verify-tag \
-              --title "Clipboard X Gnome ${GITHUB_REF_NAME#v}" --notes-file "$notes_file"
-          fi
+          bash tools/publish-release.sh "$GITHUB_REF_NAME" "$ARCHIVE_NAME" "$GITHUB_REPOSITORY"
 
   ego-upload:
     name: Submit to GNOME Extensions
