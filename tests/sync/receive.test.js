@@ -132,6 +132,7 @@ try {
   const cleanupEntered = new Promise(resolve => { enterCleanup = resolve; });
   const cleanupRelease = new Promise(resolve => { releaseCleanup = resolve; });
   const cleanup = store._removeUnreferencedFiles;
+  const enqueue = store._enqueue;
   store._removeUnreferencedFiles = async function (items, paths, cancellable) {
     if (paths.directory === this.directory(sourceDeviceId).directory) {
       enterCleanup();
@@ -149,11 +150,23 @@ try {
     objects.set(thumbnailId, thumbnail);
     imageManifest.previews = [{id: thumbnailId, sha256: thumbnailId, size: thumbnail.get_size(),
       contentId: imageManifest.contents[0].id, mimeType: 'image/png', truncated: true}];
-    const image = await client.getItem(imageManifest.id);
-    await client.materialize(image);
-    const temporaryPaths = [image.preview.path, image.primary.path];
+    let publishQueued;
+    const publicationQueued = new Promise(resolve => { publishQueued = resolve; });
+    store._enqueue = function (action) {
+      const result = enqueue.call(this, action);
+      publishQueued();
+      return result;
+    };
+    const receiving = client.getItem(imageManifest.id);
+    await publicationQueued;
+    assert([...store._staged.keys()].some(path => Gio.File.new_for_path(path).query_exists(null)),
+      'Preview I/O may finish concurrently with GC, before its descriptor is published');
     releaseCleanup();
     await previousSave;
+    const image = await receiving;
+    store._enqueue = enqueue;
+    await client.materialize(image);
+    const temporaryPaths = [image.preview.path, image.primary.path];
     assert(temporaryPaths.every(path => Gio.File.new_for_path(path).query_exists(null)),
       'An older snapshot GC must not delete newly received previews or originals');
     store._removeUnreferencedFiles = cleanup;
@@ -169,6 +182,7 @@ try {
     releaseCleanup();
     await previousSave;
     store._removeUnreferencedFiles = cleanup;
+    store._enqueue = enqueue;
   }
 
   const large = await client.getItem(manifest([['text/plain;charset=utf-8', '0123456789']]).id);

@@ -58,9 +58,11 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   `materialize(item, {withinThreshold: true})` downloads only eligible representations, while explicit
   use calls `materialize(item)` for every missing original. Both paths share in-flight requests.
 - Transfer buttons query the current synchronization session; notifications only trigger a refresh.
-  The UI does not retain a second transfer history across connection changes.
+  Active tasks take precedence, and task order is local to the session rather than based on clocks
+  from different devices. The UI does not retain a second transfer history across connection changes.
 - Downloaded originals and thumbnails enter history-owned staging. History serializes file reads,
-  adoption into permanent storage, and garbage collection so a pending save cannot delete new content.
+  pathname publication, adoption into permanent storage, and garbage collection. Indexes and cleanup
+  use the same persisted descriptor snapshot; download I/O remains concurrent.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, word selection buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.

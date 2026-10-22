@@ -204,8 +204,16 @@ export class HistoryStore {
       if (info.get_file_type() !== Gio.FileType.REGULAR || info.get_is_symlink()
           || info.get_size() !== entry.size)
         throw new Error('Staged clipboard content does not match its metadata');
-      content.path = path;
-      return path;
+      // Network/file I/O stays concurrent, but publishing a pathname changes the
+      // live item used by save(). Commit that mutation between store operations,
+      // never after persistence checks but before index serialization.
+      return this._enqueue(() => {
+        cancellable.set_error_if_cancelled();
+        if (this._closed)
+          throw new Error('Clipboard history storage is closed');
+        content.path = path;
+        return path;
+      });
     })();
     try {
       return await entry.pending;
@@ -323,23 +331,31 @@ export class HistoryStore {
     const paths = this.directory(deviceId);
     ensurePrivateDirectory(paths.objects);
     ensurePrivateDirectory(paths.previews);
+    const stored = [];
     for (const item of items) {
-      for (const representation of item.representations)
+      // A second consumer can replace its descriptor array while awaiting I/O.
+      // Serialize precisely the descriptors persisted here, not that later view.
+      const representations = [...item.representations];
+      const preview = item.preview;
+      for (const representation of representations)
         await this._persistRepresentation(item, representation, paths.objects, cancellable);
-      await this._persistPreview(item.preview, paths.previews, cancellable);
+      await this._persistPreview(preview, paths.previews, cancellable);
+      stored.push({...item.toJSON(),
+        representations: representations.map(({bytes: _bytes, ...value}) => value),
+        preview: preview ? {...preview} : null});
     }
     const document = {
       version: INDEX_VERSION,
       deviceId,
       updatedAt: Date.now(),
-      items: items.map(item => item.toJSON()),
+      items: stored,
     };
     const body = JSON.stringify(document);
     if (new TextEncoder().encode(body).length > MAX_INDEX_BYTES)
       throw new Error(`Clipboard history index exceeds ${MAX_INDEX_BYTES} bytes`);
     await writeFile(Gio.File.new_for_path(paths.index), bytesFromString(body), cancellable);
     if (generation === this._saveGeneration)
-      await this._removeUnreferencedFiles(items, paths, cancellable);
+      await this._removeUnreferencedFiles(stored, paths, cancellable);
   }
 
   async _persistRepresentation(item, representation, objectsPath, cancellable) {

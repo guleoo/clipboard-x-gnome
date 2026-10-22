@@ -190,6 +190,62 @@ try {
   assert((await migrationStore.load()).length === 1,
     'the migration marker must prevent duplicate legacy imports');
 
+  const concurrent = new HistoryStore({rootPath: `${rootPath}/concurrent-test`, deviceId: localDeviceId});
+  const downloading = ClipboardItem.fromText('download finishes during index persistence', {
+    originDeviceId: remoteDeviceId, remote: true, availability: 'preview',
+  });
+  const originalBytes = downloading.primary.bytes;
+  downloading.primary.bytes = null;
+  let enterSave;
+  let releaseSave;
+  let publishQueued;
+  const saveEntered = new Promise(resolve => { enterSave = resolve; });
+  const saveRelease = new Promise(resolve => { releaseSave = resolve; });
+  const publicationQueued = new Promise(resolve => { publishQueued = resolve; });
+  const persistPreview = concurrent._persistPreview;
+  const enqueue = concurrent._enqueue;
+  concurrent._persistPreview = async function (...args) {
+    enterSave();
+    await saveRelease;
+    return persistPreview.apply(this, args);
+  };
+  const metadataSave = concurrent.save([downloading]);
+  let downloaded;
+  try {
+    await saveEntered;
+    concurrent._enqueue = function (action) {
+      const result = enqueue.call(this, action);
+      publishQueued();
+      return result;
+    };
+    downloaded = concurrent.stage(downloading.primary,
+      path => writeFile(Gio.File.new_for_path(path), originalBytes));
+    await publicationQueued;
+    assert(!downloading.primary.path,
+      'a verified download must not publish its staged path during an active index save');
+    releaseSave();
+    await Promise.all([metadataSave, downloaded]);
+    concurrent._enqueue = enqueue;
+    concurrent._persistPreview = persistPreview;
+    const [, indexContents] = Gio.File.new_for_path(concurrent.directory(remoteDeviceId).index).load_contents(null);
+    const metadata = JSON.parse(new TextDecoder().decode(indexContents));
+    assert(!metadata.items[0].representations[0].path
+        && metadata.items[0].availability === 'preview'
+        && (await concurrent.load()).some(value => value.id === downloading.id),
+      'the completed metadata save must remain reloadable without a follow-up save repairing the index');
+    downloading.availability = 'ready';
+    await concurrent.save([downloading]);
+    const original = (await concurrent.load()).find(value => value.id === downloading.id);
+    await concurrent.materialize(original);
+    assert(original.text === 'download finishes during index persistence'
+        && original.primary.path.startsWith(concurrent.directory(remoteDeviceId).objects),
+      'the subsequent content save must adopt and reload the exact verified original');
+  } finally {
+    releaseSave();
+    await Promise.allSettled([metadataSave, downloaded]);
+    await concurrent.close();
+  }
+
   const staging = new HistoryStore({rootPath: `${rootPath}/staging-test`, deviceId: localDeviceId});
   try {
     const item = ClipboardItem.fromText('verified staged content', {originDeviceId: localDeviceId});

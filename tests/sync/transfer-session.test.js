@@ -63,6 +63,52 @@ try {
       && !session.running(transfer.transferId),
     'a cancelled operation must reject and release its registration when it finishes');
 
+  const server = {...transfer, transferId: '44444444-4444-4444-8444-444444444444',
+    state: 'completed', updatedAt: Date.now() + 60_000};
+  session.record(server, true);
+  const startDownload = transferId => {
+    let finish;
+    const gate = new Promise(resolve => { finish = resolve; });
+    let operation;
+    let progress;
+    const pending = observe(session.run(async ({cancellable, track, update}) => {
+      operation = cancellable;
+      progress = update;
+      track({...transfer, transferId, state: 'transferring', updatedAt: Date.now()}, {remote: false});
+      await gate;
+    }));
+    return {transferId, pending, finish, operation, progress};
+  };
+  const downloads = [startDownload('55555555-5555-4555-8555-555555555555'),
+    startDownload('66666666-6666-4666-8666-666666666666')];
+  try {
+    const [older, newer] = downloads;
+    older.progress({completedBytes: 1}, true);
+    newer.progress({completedBytes: 2}, true);
+    session.record({...server, updatedAt: server.updatedAt + 1}, true);
+    const current = session.forItem(transfer.itemId);
+    assert(current.transferId === newer.transferId && current.completedBytes === 2,
+      'item queries must expose the newest active download progress despite ahead-clock server completion');
+    await session.cancel(current.transferId);
+    assert(newer.operation.is_cancelled() && !older.operation.is_cancelled()
+        && session.get(newer.transferId).state === 'cancelled'
+        && session.forItem(transfer.itemId).transferId === older.transferId,
+      'cancelling the queried download must stop only that operation and expose the remaining active download');
+    await session.cancel(session.forItem(transfer.itemId).transferId);
+    session.record({...server, updatedAt: server.updatedAt + 2}, true);
+    assert(older.operation.is_cancelled() && cancellations.length === 0
+        && session.forItem(transfer.itemId).transferId === newer.transferId
+        && session.forItem(transfer.itemId).state === 'cancelled',
+      'after every local download is cancelled, queries must retain the newest operation without a server DELETE');
+  } finally {
+    for (const download of downloads)
+      download.finish();
+    const results = await bounded(Promise.all(downloads.map(download => download.pending)));
+    assert(results.every(value => value.error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        && downloads.every(download => !session.running(download.transferId)),
+      'cancelled concurrent downloads must reject and release all operation registrations');
+  }
+
   const teardownTransfer = {...transfer, transferId: '33333333-3333-4333-8333-333333333333'};
   session.record(teardownTransfer, true);
   const waiting = [observe(session.wait(teardownTransfer.transferId)),
