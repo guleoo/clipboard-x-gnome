@@ -1,4 +1,5 @@
 import {apiKey, configuration, serverAddress} from '../../src/sync/configuration.js';
+import {normalize as normalizeServerAddress} from '../../src/sync/server-address.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -15,6 +16,14 @@ function assertRejects(callback, message) {
 }
 
 const channelId = '11111111-1111-4111-8111-111111111111';
+assert(normalizeServerAddress('127.0.0.1:8765/') === 'http://127.0.0.1:8765',
+  'plain host and port must default to HTTP');
+assert(normalizeServerAddress('https://example.test/cbx/') === 'https://example.test/cbx',
+  'reverse-proxy base paths must be preserved');
+assertRejects(() => normalizeServerAddress('https://user:secret@example.test'),
+  'credentials must not be embedded in the server URL');
+assertRejects(() => normalizeServerAddress('https://example.test/?token=secret'),
+  'configuration URLs must not contain queries');
 assert(serverAddress(' 192.168.1.2:8765 ') === '192.168.1.2:8765',
   'server addresses may omit the scheme');
 assert(serverAddress('http://127.0.0.1:8765') === 'http://127.0.0.1:8765',

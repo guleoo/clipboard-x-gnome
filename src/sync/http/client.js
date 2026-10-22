@@ -6,6 +6,7 @@ import {bytesFromString, stringFromBytes} from '../../common/bytes.js';
 import {dependency as fileVerifier} from './file-verifier.js';
 import {download as downloadFile} from './file-transfer.js';
 import {stage} from './diagnostics.js';
+import {normalize as normalizeServerAddress} from '../server-address.js';
 
 const JSON_LIMIT_BYTES = 4 * 1024 * 1024;
 const ERROR_LIMIT_BYTES = 64 * 1024;
@@ -320,22 +321,6 @@ export class HttpClient {
       },
     );
   }
-}
-
-export function normalizeServerAddress(value) {
-  let address = String(value ?? '').trim();
-  if (!/^[a-z][a-z0-9+.-]*:\/\//iu.test(address))
-    address = `http://${address}`;
-  let uri;
-  try {
-    uri = GLib.Uri.parse(address, GLib.UriFlags.NONE);
-  } catch (_error) {
-    throw new HttpError('Synchronization server address is invalid', {code: 'invalid_server_address'});
-  }
-  if (!['http', 'https'].includes(uri.get_scheme()) || !uri.get_host()
-      || uri.get_userinfo() || uri.get_fragment() || uri.get_query())
-    throw new HttpError('Synchronization server address is invalid', {code: 'invalid_server_address'});
-  return address.replace(/\/+$/u, '');
 }
 
 async function readAll(stream, maximumBytes, cancellable) {

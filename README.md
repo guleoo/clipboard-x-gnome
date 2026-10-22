@@ -241,6 +241,11 @@ another content upload when it is already complete. Missing local entries and se
 not uploaded. Disabling synchronization pauses existing tasks; entries copied while it is disabled
 are not queued or automatically backfilled when it is re-enabled.
 
+Before the first publication request, its manifest is saved locally without clipboard bodies or API
+keys. Retries reuse this manifest, including after a restart or threshold change. Updated transfer
+settings apply to entries whose publication has not started; retained manifests are removed when
+their local entries are deleted or become private.
+
 > [!NOTE]
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
 > request a Channel-wide deletion. Server-originated removal events do propagate to clients.

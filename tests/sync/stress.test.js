@@ -5,6 +5,7 @@ import {ClipboardItem} from '../../src/clipboard/item.js';
 import {TransferTracker} from '../../src/sync/transfers.js';
 import {SyncClient} from '../../src/sync/client.js';
 import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {publication as wirePublication} from './fixtures/wire.js';
 import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 import {delay} from './integration/measure.js';
 import {STRESS_SYNC_LOAD} from './load-profile.js';
@@ -89,13 +90,10 @@ class StressTransport {
 
   createItem(_channel, manifest) {
     const uploadId = GLib.uuid_string_random();
-    const previewIds = manifest.previews.map(value => value.id);
-    const contentIds = manifest.contents.filter(value => value.delivery === 'eager').map(value => value.id);
-    const totalBytes = manifest.previews.reduce((sum, value) => sum + value.size, 0)
-      + manifest.contents.filter(value => value.delivery === 'eager').reduce((sum, value) => sum + value.size, 0);
-    this._uploads.set(uploadId, {itemId: manifest.id, transferId: GLib.uuid_string_random(), totalBytes, kind: 'publish'});
-    return Promise.resolve({itemId: manifest.id, uploadId, previewIds, contentIds,
-      transfer: this._transfer(this._uploads.get(uploadId), 'queued', 0, 'publish', 'upload')});
+    const result = wirePublication(manifest, {deviceId, uploadId, transferId: GLib.uuid_string_random()});
+    this._uploads.set(uploadId, {itemId: manifest.id, transferId: result.transfer.id,
+      totalBytes: result.transfer.totalBytes, kind: 'publish'});
+    return Promise.resolve(result);
   }
 
   uploadPreview(uploadId, _previewId, source, onProgress) { return this._upload(uploadId, source, onProgress); }
@@ -188,11 +186,11 @@ try {
     'all 10x publish and on-demand uploads must complete');
   assert(transport.maxConcurrentUploads === 1, 'the transfer queue must keep network uploads serialized');
   assert(client._transfers.values().length <= MAX_TRANSFER_STATES
-      && client._transfers._lastEmittedAt.size <= MAX_TRANSFER_STATES
-      && client._transfers._pendingSources.size === 0,
+      && client._transfers._tracker._lastEmittedAt.size <= MAX_TRANSFER_STATES
+      && client._transfers._tracker._pendingSources.size === 0,
     'all local transfer metadata must remain bounded');
-  assert(client._remoteTransferIds.size === 0 && client._operations.size === 0
-      && client._activeCancellables.size === 0,
+  assert(client._transfers._remoteIds.size === 0 && client._transfers._operations.size === 0
+      && client._transfers._cancellables.size === 0,
     'completed transfers must not retain cancellation state');
   assert(new Set([...transport._uploads.values()].map(value => value.itemId)).size
       === STRESS_SYNC_LOAD.publishedItems + STRESS_SYNC_LOAD.onDemandWork,

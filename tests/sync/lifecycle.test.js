@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 
 import {SyncClient} from '../../src/sync/client.js';
 import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {transfer as wireTransfer, publication as wirePublication} from './fixtures/wire.js';
 
 const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
@@ -81,10 +82,7 @@ function device(tag = 'Current device') {
 }
 
 function transfer(state = 'completed') {
-  return {
-    id: transferId, itemId, deviceId, kind: 'publish', direction: 'upload', state,
-    completedBytes: 0, totalBytes: 0, peerDeviceIds: [], createdAt: 1, updatedAt: 2,
-  };
+  return wireTransfer({id: transferId, itemId, deviceId, state});
 }
 
 function sourceTransfer(state = 'queued') {
@@ -161,14 +159,7 @@ class Transport {
 
 class PublicationTransport extends Transport {
   createItem(_channelId, manifest) {
-    const previewIds = manifest.previews.map(value => value.id);
-    const eager = manifest.contents.filter(value => value.delivery === 'eager');
-    const totalBytes = [...manifest.previews, ...eager].reduce((sum, value) => sum + value.size, 0);
-    this.publication = {
-      itemId: manifest.id, uploadId: itemId, previewIds,
-      contentIds: eager.map(value => value.id),
-      transfer: {...transfer('queued'), totalBytes},
-    };
+    this.publication = wirePublication(manifest, {deviceId, uploadId: itemId, transferId});
     return this.reply('createItem', this.publication);
   }
 
@@ -297,6 +288,24 @@ async function test(name, action) {
   }
 }
 
+await test('shared transfer waiters settle together on completion and teardown', async () => {
+  const f = fixture();
+  try {
+    await f.client.start();
+    f.client._transfers.record({...transfer('queued'), transferId}, true);
+    const first = f.client._transfers.wait(transferId);
+    const second = f.client._transfers.wait(transferId);
+    f.client._transfers.record({...transfer('completed'), transferId}, true);
+    await bounded(Promise.all([first, second]));
+    f.client._transfers.record({...transfer('queued'), transferId}, true);
+    const waiting = observe(f.client._transfers.wait(transferId));
+    f.client.destroy();
+    assert((await bounded(waiting)).error, 'Session teardown must reject outstanding content waiters');
+  } finally {
+    f.client.destroy();
+  }
+});
+
 await test('upload replay waits for the complete initialization pipeline', async () => {
   const transport = new Transport('current');
   const gate = transport.hold('work');
@@ -337,7 +346,7 @@ for (const phase of ['transfer-chain', 'publication-manifest']) {
       f.settings.values.set('sync-text', true);
       await bounded(f.client.start());
       if (phase === 'transfer-chain') {
-        blocker = observe(f.client._enqueueTransfer(() => {
+        blocker = observe(f.client._transfers.enqueue(() => {
           entered.resolve();
           return release.promise;
         }));
@@ -690,7 +699,7 @@ await test('a remote download queued behind old work cannot run on a replacement
   let pending;
   try {
     await bounded(f.client.start());
-    blocker = observe(f.client._enqueueTransfer(() => {
+    blocker = observe(f.client._transfers.enqueue(() => {
       entered.resolve();
       return release.promise;
     }));

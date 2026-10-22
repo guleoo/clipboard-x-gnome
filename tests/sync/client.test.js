@@ -5,6 +5,7 @@ import {ClipboardItem} from '../../src/clipboard/item.js';
 import {SyncClient} from '../../src/sync/client.js';
 import {createLogger} from '../../src/common/logger.js';
 import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {publication as wirePublication, Publications} from './fixtures/wire.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -108,6 +109,7 @@ class TestTransport {
     this.totalBytes = 0;
     this.channelValues = channels;
     this.updatedProfiles = [];
+    this.publications = new Publications();
   }
 
   status() {
@@ -148,22 +150,13 @@ class TestTransport {
     return Promise.resolve({cursor: cursor || 'initial', hasMore: false, work: []});
   }
 
-  createItem(_channelId, manifest) {
+  createItem(channel, manifest) {
+    this.publications.accept(channel, manifest);
     this.manifest = manifest;
     this.itemId = manifest.id;
-    const previewIds = manifest.previews.map(value => value.id);
-    const contentIds = manifest.contents.filter(value => value.delivery === 'eager').map(value => value.id);
-    this.totalBytes = [
-      ...manifest.previews.map(value => value.size),
-      ...manifest.contents.filter(value => value.delivery === 'eager').map(value => value.size),
-    ].reduce((sum, value) => sum + value, 0);
-    return Promise.resolve({
-      itemId: manifest.id,
-      uploadId,
-      previewIds,
-      contentIds,
-      transfer: this._transfer('queued', 0),
-    });
+    const result = wirePublication(manifest, {deviceId, uploadId, transferId});
+    this.totalBytes = result.transfer.totalBytes;
+    return Promise.resolve(result);
   }
 
   uploadPreview(_uploadId, _previewId, source, onProgress) {
@@ -299,20 +292,22 @@ try {
     'preview and eager content must be streamed exactly once');
   assert(client.getTransferForItem(item.id).state === 'completed',
     'completed server progress must replace local streaming progress');
-  assert(client._remoteTransferIds.size === 0,
+  assert(client._transfers._remoteIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
   const confirmedDeliveries = [];
+  const lazyItem = ClipboardItem.fromText('lazy', {originDeviceId: deviceId});
+  lazyItem.primary.path = path;
   client.connect('transfer-changed', (_client, value) => {
-    if (value.itemId === item.id && value.state === 'completed')
-      confirmedDeliveries.push(item.primary.delivery);
+    if (value.itemId === lazyItem.id && value.state === 'completed')
+      confirmedDeliveries.push(lazyItem.primary.delivery);
   });
   settings._values.set('text-full-threshold', 0);
   const beforeLazyPublication = transport.uploadedBytes;
-  await client.publish(item);
+  await client.publish(lazyItem);
   assert(transport.manifest.contents[0].delivery === 'on-demand'
-      && transport.uploadedBytes - beforeLazyPublication === item.preview.text.length,
+      && transport.uploadedBytes - beforeLazyPublication === lazyItem.preview.text.length,
     'publishing old history must apply the current threshold and upload only the lazy preview');
-  assert(item.primary.delivery === 'on-demand' && confirmedDeliveries.at(-1) === 'on-demand',
+  assert(lazyItem.primary.delivery === 'on-demand' && confirmedDeliveries.at(-1) === 'on-demand',
     'confirmed delivery must update before completion observers persist the item');
   settings._values.set('text-full-threshold', 64 * 1024);
   const createItem = transport.createItem.bind(transport);
@@ -329,12 +324,14 @@ try {
     'an already-completed acknowledgement must update the confirmed manifest policy too');
   transport.createItem = createItem;
   settings._values.set('text-full-threshold', 0);
+  const failedItem = ClipboardItem.fromText('failed', {originDeviceId: deviceId});
+  failedItem.primary.path = path;
   transport.completeUpload = async () => ({transfer: transport._transfer('cancelled', 0)});
   let unconfirmed = null;
-  try { await client.publish(item); } catch (error) { unconfirmed = error; }
+  try { await client.publish(failedItem); } catch (error) { unconfirmed = error; }
   assert(unconfirmed?.code === 'upload_failed',
     'a cancelled server acknowledgement must not complete a durable upload intent');
-  assert(transport.manifest.contents[0].delivery === 'on-demand' && item.primary.delivery === 'eager',
+  assert(transport.manifest.contents[0].delivery === 'on-demand' && failedItem.primary.delivery === 'eager',
     'a failed publication must not overwrite the historical confirmed delivery policy');
   settings._values.set('text-full-threshold', 64 * 1024);
   transport.completeUpload = completeUpload;
@@ -424,47 +421,47 @@ retentionClient.connect('publication-cancelled', (_client, id) => cancelledPubli
 try {
   await retentionClient.start();
   const active = await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer(active, true);
+  retentionClient._transfers.record(active, true);
   await retentionClient.cancelTransfer(transferId);
-  assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
+  assert(cancellations === 1 && retentionClient._transfers._remoteIds.size === 0,
     'a looked-up remote task must remain cancellable and release its marker after DELETE');
   assert(cancelledPublications.length === 1 && cancelledPublications[0] === retentionTransport.itemId,
     'explicit cancellation must identify the publication whose durable intent should be removed');
 
   await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer(active, true);
+  retentionClient._transfers.record(active, true);
   for (let index = 0; index < 1100; index++)
-    retentionClient._recordTransfer({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
+    retentionClient._transfers.record({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
   assert(!retentionClient._transfers.get(transferId), 'fixture must evict the active UI record');
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 2, 'UI eviction must not silently disable remote cancellation');
 
   await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer({...active, state: 'failed'}, true);
-  assert(retentionClient._remoteTransferIds.has(transferId),
+  retentionClient._transfers.record({...active, state: 'failed'}, true);
+  assert(retentionClient._transfers._remoteIds.has(transferId),
     'a local failure is not proof that the server has finished the task');
   remoteState = 'failed';
   await retentionClient.getTransfer(transferId);
-  assert(retentionClient._remoteTransferIds.size === 0,
+  assert(retentionClient._transfers._remoteIds.size === 0,
     'confirmed server failure must release remote cancellation state');
 
   remoteState = 'queued';
   retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
   await retentionClient.getTransfer(transferId);
   try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
-  assert(retentionClient._remoteTransferIds.has(transferId),
+  assert(retentionClient._transfers._remoteIds.has(transferId),
     'a failed remote cancellation must retain the ability to retry');
 
   const localId = GLib.uuid_string_random();
   const localOperation = new Gio.Cancellable();
-  retentionClient._operations.set(localId, localOperation);
+  retentionClient._transfers._operations.set(localId, localOperation);
   await retentionClient.cancelTransfer(localId);
   assert(localOperation.is_cancelled() && cancellations === 2,
     'local-only download cancellation must not call the server DELETE endpoint');
 } finally {
   retentionClient.destroy();
 }
-assert(retentionClient._remoteTransferIds.size === 0,
+assert(retentionClient._transfers._remoteIds.size === 0,
   'destroy must clear markers for still-active or unconfirmed remote tasks');
 
 // Exercise the actual initialization pipeline, not a synthetic list of stage names.

@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 
 import {bytesFromString, sha256, stringFromBytes} from '../../src/common/bytes.js';
-import {HttpClient, HttpError, normalizeServerAddress} from '../../src/sync/http/client.js';
+import {HttpClient, HttpError} from '../../src/sync/http/client.js';
 import {HttpTransport} from '../../src/sync/http/transport.js';
 import {message as syncErrorMessage} from '../../src/sync/errors.js';
 
@@ -11,24 +11,6 @@ function assert(condition, message) {
   if (!condition)
     throw new Error(message);
 }
-
-function assertRejects(callback, message) {
-  try {
-    callback();
-  } catch (_error) {
-    return;
-  }
-  throw new Error(message);
-}
-
-assert(normalizeServerAddress('127.0.0.1:8765/') === 'http://127.0.0.1:8765',
-  'plain host and port must default to HTTP');
-assert(normalizeServerAddress('https://example.test/cbx/') === 'https://example.test/cbx',
-  'reverse-proxy base paths must be preserved');
-assertRejects(() => normalizeServerAddress('https://user:secret@example.test'),
-  'credentials must not be embedded in the server URL');
-assertRejects(() => normalizeServerAddress('https://example.test/?token=secret'),
-  'configuration URLs must not contain queries');
 
 const authenticatedClient = new HttpClient({
   serverAddress: 'https://example.test/cbx',

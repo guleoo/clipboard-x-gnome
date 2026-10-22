@@ -1,5 +1,5 @@
 import {isUuid} from '../common/uuid.js';
-import {normalizeServerAddress} from './http/client.js';
+import {normalize as normalizeServerAddress} from './server-address.js';
 
 const MAX_SERVER_ADDRESS_LENGTH = 2048;
 const MAX_API_KEY_LENGTH = 4096;

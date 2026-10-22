@@ -3,7 +3,7 @@ import GLib from 'gi://GLib';
 import {bytesFromString, sha256} from '../common/bytes.js';
 import {dataPath, readJson, writeJson} from '../common/data-store.js';
 import {isUuid} from '../common/uuid.js';
-import {normalizeServerAddress} from './http/client.js';
+import {normalize as normalizeServerAddress} from './server-address.js';
 
 const VERSION = 1;
 const MAX_FILE_BYTES = 64 * 1024;

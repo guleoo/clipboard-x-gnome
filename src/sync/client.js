@@ -5,10 +5,9 @@ import {ClipboardItem} from '../clipboard/item.js';
 import {
   ABSOLUTE_ITEM_LIMIT_BYTES,
   ABSOLUTE_PREVIEW_LIMIT_BYTES,
-  MAX_ITEM_REPRESENTATIONS,
 } from '../clipboard/constants.js';
 import {devicePaths} from '../clipboard/history/paths.js';
-import {bytesFromString, sha256, stringFromBytes, truncateUtf8} from '../common/bytes.js';
+import {sha256, stringFromBytes} from '../common/bytes.js';
 import {EventEmitter} from '../common/event-emitter.js';
 import {writeFile} from '../common/files.js';
 import {createLogger} from '../common/logger.js';
@@ -30,11 +29,11 @@ import {
   status as validateStatus,
   transfer as validateTransfer,
   transfers as validateTransfers,
-  validateLocalRepresentation,
   workPage as validateWorkPage,
 } from './protocol.js';
-import {TransferTracker} from './transfers.js';
+import {TransferSession} from './transfer-session.js';
 import {delivery} from './policy.js';
+import * as publicationPlan from './publication.js';
 
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
@@ -74,13 +73,7 @@ export class SyncClient extends EventEmitter {
     this._polling = false;
     this._generation = 0;
     this._destroyed = false;
-    this._transferWaiters = new Map();
-    this._materializations = new Map();
-    this._operations = new Map();
-    this._remoteTransferIds = new Set();
-    this._activeCancellables = new Set();
-    this._transferChain = Promise.resolve();
-    this._transfers = new TransferTracker(transfer => this._transferChanged(transfer));
+    this._transfers = this._newTransferSession();
   }
 
   get connected() {
@@ -136,13 +129,13 @@ export class SyncClient extends EventEmitter {
       this.emit('status-changed', 'offline', null);
   }
 
-  publish(item, {guard = () => true} = {}) {
+  publish(item, {guard = () => true, manifest = null, saveManifest = async value => value} = {}) {
     if (item.sensitive)
       return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
     const generation = this._generation;
     return this._logger.run('publish', () => {
       this._requireCurrent(generation);
-      return this._enqueueTransfer(() => this._publish(item, {guard}));
+      return this._transfers.enqueue(() => this._publish(item, {guard, manifest, saveManifest}));
     }, {quiet: true});
   }
 
@@ -163,10 +156,9 @@ export class SyncClient extends EventEmitter {
 
   async getItem(itemId) {
     this._requireConnection();
-    const generation = this._generation;
     validateItemId(itemId);
     const channelId = this._requireChannel();
-    return this._runTransfer(async ({transport, cancellable, check}) => {
+    return this._transfers.run(async ({transport, cancellable, check}) => {
       const response = await transport.item(channelId, itemId);
       check();
       const remote = validateItem(response, itemId);
@@ -239,7 +231,7 @@ export class SyncClient extends EventEmitter {
         remote: true,
         availability: 'preview',
       });
-    }, {generation, errorCode: 'download_failed'});
+    }, {errorCode: 'download_failed'});
   }
 
   async cancelTransfer(transferId) {
@@ -248,19 +240,7 @@ export class SyncClient extends EventEmitter {
     const publication = this._transfers.get(transferId);
     if (publication?.kind === 'publish' && !TERMINAL_TRANSFER_STATES.has(publication.state))
       this.emit('publication-cancelled', publication.itemId);
-    this._operations.get(transferId)?.cancel();
-    if (this._connected && this._remoteTransferIds.has(transferId)) {
-      try {
-        await this._transport.cancel(transferId);
-        this._remoteTransferIds.delete(transferId);
-      } catch (error) {
-        if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-          throw error;
-      }
-    }
-    const current = this._transfers.get(transferId);
-    if (current && !TERMINAL_TRANSFER_STATES.has(current.state))
-      this._recordTransfer({...current, state: 'cancelled', updatedAt: Date.now()}, true);
+    await this._transfers.cancel(transferId);
   }
 
   async getTransfer(transferId) {
@@ -272,7 +252,7 @@ export class SyncClient extends EventEmitter {
     const {deviceId} = ensureDeviceIdentity(this._settings);
     const transfer = validateTransfer(await transport.transfer(transferId), deviceId);
     if (this._isCurrent(generation))
-      this._observeRemoteTransfer(transfer);
+      this._transfers.observe(transfer);
     return transfer;
   }
 
@@ -285,8 +265,8 @@ export class SyncClient extends EventEmitter {
     if (!this._isCurrent(generation))
       return [];
     for (const transfer of values) {
-      this._observeRemoteTransfer(transfer);
-      this._recordTransfer(transfer, true);
+      this._transfers.observe(transfer);
+      this._transfers.record(transfer, true);
     }
     return values;
   }
@@ -324,6 +304,8 @@ export class SyncClient extends EventEmitter {
 
   async _initialize(scope) {
     const generation = ++this._generation;
+    this._transfers.close(new Error('Synchronization connection was initialized'));
+    this._transfers = this._newTransferSession();
     let transport = null;
     let cancellable = null;
     try {
@@ -440,7 +422,7 @@ export class SyncClient extends EventEmitter {
       });
   }
 
-  async _publish(item, {guard = () => true} = {}) {
+  async _publish(item, {guard = () => true, manifest = null, saveManifest = async value => value} = {}) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
     this._requireConnection();
@@ -450,51 +432,20 @@ export class SyncClient extends EventEmitter {
       throw new Error('Item ID must be a UUID v4');
     const channelId = this._requireChannel();
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    const representations = item.representations
-      .filter(representation => this._canPublish(representation.mimeType))
-      .map(representation => ({
-        ...representation,
-        delivery: delivery(this._settings, representation.mimeType, representation.size),
-      }));
-    if (representations.length === 0 || representations.length > MAX_ITEM_REPRESENTATIONS)
-      throw new Error('Synchronization policy rejects all representations or their count');
-    for (const representation of representations) {
-      validateLocalRepresentation(representation);
-      if (!representation.path)
-        throw new Error('Clipboard snapshot must be persisted before publication');
-    }
+    manifest = manifest ? publicationPlan.validate(manifest, {itemId: item.id, deviceId})
+      : publicationPlan.create(item, {settings: this._settings, capabilities: this._capabilities, deviceId});
+    // Freeze before POST: a response can disappear after the server commits it.
+    manifest = publicationPlan.validate(await saveManifest(manifest), {itemId: item.id, deviceId});
+    this._requireOperation(generation, guard);
+    const representations = manifest.contents;
     const declaredBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
     const itemLimit = effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
     if (declaredBytes > itemLimit)
       throw new Error(`Synchronization item exceeds the effective limit of ${itemLimit} bytes`);
-
-    const previews = this._publicationPreviews(item);
-    const sources = new Map();
-    for (const preview of previews)
-      sources.set(`preview:${preview.id}`, preview.source);
-    for (const representation of representations.filter(value => value.delivery === 'eager')) {
-      sources.set(`content:${representation.id}`, {
-        path: representation.path,
-        size: representation.size,
-        mimeType: representation.mimeType,
-      });
-    }
-    const manifest = {
-      id: item.id,
-      createdAt: item.createdAt,
-      originDeviceId: deviceId,
-      contents: representations.map(representation => ({
-        id: representation.id,
-        mimeType: representation.mimeType,
-        size: representation.size,
-        sha256: representation.sha256,
-        delivery: representation.delivery,
-      })),
-      previews: previews.map(({source: _source, ...preview}) => preview),
-    };
+    const sources = publicationPlan.sources(item, manifest);
 
     let completedBytes = 0;
-    return this._runTransfer(async ({transport, cancellable, check, track, update}) => {
+    return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
       const confirm = completed => {
         check();
         if (completed.state !== 'completed')
@@ -551,7 +502,7 @@ export class SyncClient extends EventEmitter {
       check();
       const completed = validateTransfer(rawCompleted.transfer, deviceId);
       return confirm(completed);
-    }, {generation, guard, errorCode: 'upload_failed'});
+    }, {guard, errorCode: 'upload_failed'});
   }
 
   async _materialize(item, {withinThreshold = false} = {}) {
@@ -588,20 +539,10 @@ export class SyncClient extends EventEmitter {
     if (representation.bytes || representation.path)
       return;
     const key = `${channelId}:${item.id}:${representation.id}`;
-    let operation = this._materializations.get(key);
-    if (!operation) {
-      operation = this._requestRepresentation(channelId, item, representation, generation)
-        .then(() => representation.path);
-      this._materializations.set(key, operation);
-    }
-    try {
-      const path = await operation;
-      this._requireCurrent(generation);
-      representation.path = path;
-    } finally {
-      if (this._materializations.get(key) === operation)
-        this._materializations.delete(key);
-    }
+    const path = await this._transfers.materialize(key, () =>
+      this._requestRepresentation(channelId, item, representation, generation).then(() => representation.path));
+    this._requireCurrent(generation);
+    representation.path = path;
   }
 
   async _requestRepresentation(channelId, item, representation, generation) {
@@ -617,14 +558,14 @@ export class SyncClient extends EventEmitter {
     if (request.transfer.kind !== 'content' || request.transfer.direction !== 'download'
         || request.transfer.itemId !== item.id)
       throw new Error('Synchronization server returned an invalid content request transfer');
-    this._observeRemoteTransfer(request.transfer);
-    this._recordTransfer(request.transfer, true);
+    this._transfers.observe(request.transfer);
+    this._transfers.record(request.transfer, true);
     if (!TERMINAL_TRANSFER_STATES.has(request.transfer.state))
-      await this._waitForTransfer(request.transfer.transferId);
+      await this._transfers.wait(request.transfer.transferId);
     else if (request.transfer.state !== 'completed')
       throw new Error(request.transfer.errorMessage || `Transfer ${request.transfer.state}`);
     this._requireCurrent(generation);
-    await this._enqueueTransfer(() => this._downloadRepresentation(channelId, item, representation, generation));
+    await this._transfers.enqueue(() => this._downloadRepresentation(channelId, item, representation, generation));
     this._requireCurrent(generation);
   }
 
@@ -652,7 +593,7 @@ export class SyncClient extends EventEmitter {
       devicePaths(item.originDeviceId).objects,
       representation.sha256,
     ]);
-    return this._runTransfer(async ({transport, cancellable, check, track, update}) => {
+    return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
       track(transfer, {remote: false});
       const result = await transport.downloadContent(
         channelId,
@@ -679,40 +620,7 @@ export class SyncClient extends EventEmitter {
         state: 'completed',
         completedBytes: representation.size,
       }, true);
-    }, {generation, errorCode: 'download_failed'});
-  }
-
-  _publicationPreviews(item) {
-    if (item.preview?.text) {
-      const result = truncateUtf8(item.preview.text, this._effectivePreviewLimit(false));
-      const bytes = bytesFromString(result.text);
-      const digest = sha256(bytes);
-      return [{
-        id: digest,
-        contentId: item.preview.derivedFrom,
-        mimeType: item.preview.mimeType,
-        size: bytes.get_size(),
-        sha256: digest,
-        truncated: item.preview.truncated || result.truncated,
-        source: {bytes, size: bytes.get_size(), mimeType: item.preview.mimeType},
-      }];
-    }
-    if (item.preview?.path && item.preview.size <= this._effectivePreviewLimit(true)) {
-      return [{
-        id: item.preview.sha256,
-        contentId: item.preview.derivedFrom,
-        mimeType: item.preview.mimeType,
-        size: item.preview.size,
-        sha256: item.preview.sha256,
-        truncated: true,
-        source: {
-          path: item.preview.path,
-          size: item.preview.size,
-          mimeType: item.preview.mimeType,
-        },
-      }];
-    }
-    return [];
+    }, {errorCode: 'download_failed'});
   }
 
   async _poll() {
@@ -788,7 +696,7 @@ export class SyncClient extends EventEmitter {
       if (!this._isCurrent(generation))
         return;
       for (const work of page.work) {
-        await this._enqueueTransfer(() => this._performWork(work));
+        await this._transfers.enqueue(() => this._performWork(work));
         if (!this._isCurrent(generation))
           return;
       }
@@ -803,11 +711,10 @@ export class SyncClient extends EventEmitter {
   }
 
   async _performWork(work) {
-    const generation = this._generation;
     const item = this._sourceItem(work.itemId);
     const representation = item?.representations.find(value => value.id === work.contentId);
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    return this._runTransfer(async ({transport, cancellable, check, track, update}) => {
+    return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
       if (!item || !representation || (!representation.path && !representation.bytes)) {
         await transport.rejectWork(work.id, 'source_content_missing');
         check();
@@ -843,65 +750,21 @@ export class SyncClient extends EventEmitter {
       if (completed.state !== 'completed')
         throw new SyncError('source_upload_failed', 'Source upload was not confirmed complete by the server');
       track({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)});
-    }, {generation, errorCode: 'source_upload_failed'});
+    }, {errorCode: 'source_upload_failed'});
   }
 
   async _refreshActiveTransfers() {
     const generation = this._generation;
     const active = this._transfers.values()
-      .filter(value => !TERMINAL_TRANSFER_STATES.has(value.state) && !this._operations.has(value.transferId));
+      .filter(value => !TERMINAL_TRANSFER_STATES.has(value.state) && !this._transfers.running(value.transferId));
     for (const current of active) {
       const transfer = await this.getTransfer(current.transferId);
       if (!this._isCurrent(generation))
         return;
-      this._recordTransfer(transfer, true);
+      this._transfers.record(transfer, true);
       if (!this._isCurrent(generation))
         return;
     }
-  }
-
-  _waitForTransfer(transferId) {
-    const current = this._transfers.get(transferId);
-    if (!current)
-      return Promise.reject(new Error('Synchronization transfer ID is unknown'));
-    if (current.state === 'completed')
-      return Promise.resolve();
-    if (TERMINAL_TRANSFER_STATES.has(current.state))
-      return Promise.reject(new Error(current.errorMessage || `Transfer ${current.state}`));
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this._transferWaiters.delete(transferId);
-        this.cancelTransfer(transferId).catch(() => {});
-        reject(new Error('Timed out waiting for synchronized content'));
-      }, this._settings.get_uint('sync-transfer-timeout-seconds') * 1000);
-      this._transferWaiters.set(transferId, {resolve, reject, timeout});
-    });
-  }
-
-  _observeRemoteTransfer(transfer) {
-    // Only confirmed server terminal states release remote cancellation markers.
-    // A local failed upload can still leave an active transfer on the server.
-    if (TERMINAL_TRANSFER_STATES.has(transfer.state))
-      this._remoteTransferIds.delete(transfer.transferId);
-    else
-      this._remoteTransferIds.add(transfer.transferId);
-  }
-
-  _recordTransfer(transfer, immediate = false) {
-    this._transfers.update(transfer, {immediate});
-    const waiter = this._transferWaiters.get(transfer.transferId);
-    if (!waiter || !TERMINAL_TRANSFER_STATES.has(transfer.state))
-      return;
-    clearTimeout(waiter.timeout);
-    this._transferWaiters.delete(transfer.transferId);
-    if (transfer.state === 'completed')
-      waiter.resolve();
-    else
-      waiter.reject(new Error(transfer.errorMessage || `Transfer ${transfer.state}`));
-  }
-
-  _transferChanged(transfer) {
-    this.emit('transfer-changed', transfer);
   }
 
   _queueProfileUpdate(force = false) {
@@ -939,26 +802,6 @@ export class SyncClient extends EventEmitter {
     this._devices.set(current.deviceId, current);
     this._registeredProfile = serialized;
     this.emit('devices-changed', this.devices);
-  }
-
-  _canPublish(mimeType) {
-    if (mimeType === 'text/html' && !this._settings.get_boolean('sync-html'))
-      return false;
-    if (mimeType.startsWith('text/') && mimeType !== 'text/html'
-        && !this._settings.get_boolean('sync-text'))
-      return false;
-    if (mimeType.startsWith('image/') && !this._settings.get_boolean('sync-images'))
-      return false;
-    return this._capabilities.supportedMimeTypes.length === 0
-      || this._capabilities.supportedMimeTypes.includes(mimeType);
-  }
-
-  _effectivePreviewLimit(image) {
-    const configured = this._settings.get_uint(image ? 'thumbnail-byte-limit' : 'text-preview-limit');
-    return effectiveLimit(
-      this._capabilities.maxPreviewBytes,
-      Math.min(configured, ABSOLUTE_PREVIEW_LIMIT_BYTES),
-    );
   }
 
   _setStatus(state, capabilities, networkState) {
@@ -1036,66 +879,14 @@ export class SyncClient extends EventEmitter {
     this._schedulePoll();
   }
 
-  _enqueueTransfer(operation) {
+  _newTransferSession() {
     const generation = this._generation;
-    const guardedOperation = () => {
-      this._requireCurrent(generation);
-      return operation();
-    };
-    const result = this._transferChain.then(guardedOperation, guardedOperation);
-    this._transferChain = result.catch(() => {});
-    return result;
-  }
-
-  async _runTransfer(action, {errorCode, generation = this._generation, guard = () => true} = {}) {
-    this._requireOperation(generation, guard);
-    this._requireConnection();
-    const transport = this._transport;
-    const cancellable = new Gio.Cancellable();
-    this._activeCancellables.add(cancellable);
-    let transfer = null;
-    let finished = false;
-    const check = () => {
-      this._requireOperation(generation, guard);
-      cancellable.set_error_if_cancelled();
-    };
-    const track = (value, {remote = true} = {}) => {
-      check();
-      transfer = {...value};
-      if (remote)
-        this._observeRemoteTransfer(transfer);
-      this._operations.set(transfer.transferId, cancellable);
-      this._recordTransfer(transfer, true);
-    };
-    const update = (value, immediate = false) => {
-      // Progress callbacks may still arrive after abort; never throw into the I/O callback.
-      if (finished || !transfer || !this._isCurrent(generation) || !guard() || cancellable.is_cancelled())
-        return;
-      transfer = {...transfer, ...value, updatedAt: Date.now()};
-      this._recordTransfer(transfer, immediate);
-    };
-    try {
-      const result = await action({transport, cancellable, check, track, update});
-      check();
-      return result;
-    } catch (error) {
-      this._requireCurrent(generation);
-      if (transfer) {
-        this._recordTransfer({
-          ...transfer,
-          state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
-          updatedAt: Date.now(),
-          errorCode: String(error.code ?? errorCode),
-          errorMessage: error.message,
-        }, true);
-      }
-      throw error;
-    } finally {
-      finished = true;
-      if (transfer && this._operations.get(transfer.transferId) === cancellable)
-        this._operations.delete(transfer.transferId);
-      this._activeCancellables.delete(cancellable);
-    }
+    return new TransferSession({
+      isCurrent: () => this._isCurrent(generation),
+      transport: () => this._transport,
+      timeout: () => this._settings.get_uint('sync-transfer-timeout-seconds') * 1000,
+      onChange: transfer => this.emit('transfer-changed', transfer),
+    });
   }
 
   _requireConnection() {
@@ -1128,25 +919,13 @@ export class SyncClient extends EventEmitter {
   }
 
   _resetRuntime(error) {
-    this._materializations.clear();
+    this._transfers.close(error);
     if (this._pollSource)
       GLib.Source.remove(this._pollSource);
     this._pollSource = 0;
-    for (const cancellable of this._activeCancellables)
-      cancellable.cancel();
-    this._activeCancellables.clear();
-    this._operations.clear();
-    this._remoteTransferIds.clear();
-    this._transferChain = Promise.resolve();
     this._profileUpdateChain = Promise.resolve();
     this._closeConnection();
     this._polling = false;
-    for (const waiter of this._transferWaiters.values()) {
-      clearTimeout(waiter.timeout);
-      waiter.reject(error);
-    }
-    this._transferWaiters.clear();
-    this._transfers.clear();
   }
 
   _closeConnection() {
@@ -1159,7 +938,6 @@ export class SyncClient extends EventEmitter {
     this._capabilities = null;
     this._devices.clear();
     this._channels = [];
-    this._remoteTransferIds.clear();
     this._registeredProfile = '';
   }
 

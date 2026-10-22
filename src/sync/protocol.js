@@ -219,10 +219,6 @@ export function representation(rawValue) {
   };
 }
 
-export function validateLocalRepresentation(value) {
-  representation({...value, availability: value.availability ?? 'available'});
-}
-
 export function contentId(value) {
   return typeof value === 'string' && value.length > 0 && value.length <= 128
     && !/[\r\n\0]/u.test(value);

@@ -163,11 +163,11 @@ try {
     'Automatic and manual use must share one source request while waiting');
   assert(downloads.length === beforeDownloads && !isComplete(lazySource, {state: 'completed'}),
     'Source readiness must precede local original download');
-  client._recordTransfer({...pendingTransfer, transferId: pendingTransfer.id,
+  client._transfers.record({...pendingTransfer, transferId: pendingTransfer.id,
     state: 'completed', completedBytes: pendingTransfer.totalBytes, updatedAt: 2}, true);
   await Promise.all([automatic, manual]);
   assert(isComplete(lazySource) && downloads.length === beforeDownloads + 1
-      && client._materializations.size === 0,
+      && client._transfers._materializations.size === 0,
     'Shared materialization must download once and release its operation state');
   waitForSource = false;
 
@@ -181,7 +181,7 @@ try {
   }
   assert(error?.code === 'hash_mismatch' && failed.availability === 'failed'
       && failed.preview.text === 'failed' && !failed.primary.path && !isComplete(failed)
-      && client._materializations.size === 0,
+      && client._transfers._materializations.size === 0,
     'Failed verification must retain the preview without declaring completion or retaining operations');
   failDownload = false;
   await client.materialize(failed);
@@ -202,8 +202,8 @@ try {
       'A 10x daily incoming burst must complete every below-threshold original');
     print(`Receiving stress: ${receivedBurst.length} items completed.`);
   }
-  assert(peakDownloads === 1 && client._materializations.size === 0
-      && client._transferWaiters.size === 0 && client._transfers.values().length <= MAX_TRANSFER_STATES,
+  assert(peakDownloads === 1 && client._transfers._materializations.size === 0
+      && client._transfers._waiters.size === 0 && client._transfers.values().length <= MAX_TRANSFER_STATES,
     'Automatic receiving must serialize file movement and release bounded operation state');
 } finally {
   client.destroy();
