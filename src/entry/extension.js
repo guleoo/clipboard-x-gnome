@@ -8,6 +8,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
+import {Content} from '../clipboard/content.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
@@ -44,9 +45,17 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
-      applyChanges: (changes, scope) => this._applyRemoteChanges(changes, scope),
+      applyChanges: (changes, scope) => content.receive(changes, scope),
     });
     const sync = this._sync;
+    const content = new Content({
+      history: controller,
+      remote: sync,
+      receiveMode: () => settings.get_string('sync-receive-mode'),
+      deviceId: () => ensureDeviceIdentity(settings).deviceId,
+      onError: error => this._reportError(error),
+    });
+    this._content = content;
     const configurationStore = new SyncConfigurationStore();
     const uploadQueue = new UploadQueue(settings, {
       afterShutdown: this._shutdown,
@@ -83,10 +92,11 @@ export default class ClipboardXGnomeExtension extends Extension {
       screenshot: () => this._takeScreenshot(),
       pickColor: () => this._pickColor(),
       editItem: item => this._editItem(item),
-      activateItem: item => this._activateItem(item),
+      activateItem: item => content.activate(item),
       pasteItem: item => this._pasteItem(item),
       typeItem: item => this._typeItem(item),
-      materializeItem: item => this._ensureMaterialized(item),
+      materializeItem: item => content.ensure(item),
+      readItem: item => content.read(item),
       publish: item => this._publish(item),
       cancelTransfer: transferId => this._sync.cancelTransfer(transferId),
       copyText: text => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text),
@@ -210,6 +220,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._settingsSignals = [];
 
     this._indicator?.destroy();
+    this._content?.destroy();
     this._terminalInput?.destroy();
     this._textTokenizer?.destroy();
     const queueShutdown = this._uploadQueue?.destroy();
@@ -222,6 +233,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._sync = null;
     this._uploadQueue = null;
     this._controller = null;
+    this._content = null;
     this._portal = null;
     this._terminalInput = null;
     this._textTokenizer = null;
@@ -299,125 +311,25 @@ export default class ClipboardXGnomeExtension extends Extension {
       throw new SyncError('original_image_requires_sync',
         'The original image has not been downloaded and synchronization is disabled');
     }
-    await this._ensureMaterialized(item);
-    await this._controller.persist();
-    const path = item.primary?.path;
-    if (!path)
-      throw new Error('The original image is not available locally');
+    const path = await this._content.file(item);
     await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes, command);
   }
 
-  async _activateItem(item) {
-    await this._ensureMaterialized(item);
-    await this._controller.activate(item);
-  }
-
   async _pasteItem(item) {
-    await this._activateItem(item);
+    await this._content.activate(item);
     await this._terminalInput.paste();
   }
 
   async _typeItem(item) {
-    await this._ensureMaterialized(item);
     if (!item.isText)
       throw new Error('Only text clipboard entries can be typed');
+    await this._content.read(item);
     await this._terminalInput.type(item.text);
   }
 
   async _pasteText(text) {
     St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
     await this._terminalInput.paste();
-  }
-
-  async _ensureMaterialized(item, options = {}) {
-    const requiresRemoteContent = item.remote
-      && item.representations.some(representation => !representation.bytes && !representation.path);
-    if (requiresRemoteContent) {
-      try {
-        await this._sync.materialize(item, options);
-        this._controller.update(item);
-        // Incoming batches use the controller's debounced save; explicit use flushes immediately.
-        if (!options.withinThreshold)
-          await this._controller.persist();
-      } catch (error) {
-        this._controller.update(item);
-        throw error;
-      }
-    } else {
-      await this._controller.materialize(item);
-    }
-    return item;
-  }
-
-  async _applyRemoteChanges(changes, {isCurrent}) {
-    const controller = this._controller;
-    const sync = this._sync;
-    const settings = this._settings;
-    const received = new Set();
-    let changed = false;
-    for (const change of changes) {
-      if (!isCurrent())
-        return;
-      if (change.kind !== 'upsert') {
-        // A replay may already be absent in memory after a failed disk write.
-        // Persist removal again before acknowledging its cursor.
-        changed = true;
-        controller.remove(change.itemId);
-        continue;
-      }
-      if (settings.get_string('sync-receive-mode') === 'disabled')
-        continue;
-      let incoming;
-      try {
-        incoming = await sync.getItem(change.itemId);
-      } catch (error) {
-        if (!isCurrent())
-          return;
-        if (error.code !== 'not_found')
-          throw error;
-        // A retained upsert may already have expired on the server. Treat the
-        // authoritative absence as removal rather than retrying this page forever.
-        changed = true;
-        controller.remove(change.itemId);
-        continue;
-      }
-      if (!isCurrent())
-        return;
-      if (incoming.originDeviceId === ensureDeviceIdentity(settings).deviceId)
-        continue;
-      const duplicate = controller.items.find(item => item.equals(incoming));
-      const replaceDuplicate = duplicate?.remote && duplicate.id !== incoming.id
-        && duplicate.representations.some(value => !value.bytes && !value.path);
-      received.add(controller.add(incoming, 'remote', {replaceDuplicate}));
-      changed = true;
-    }
-    // Persist once per page, not once per entry. Only durable metadata is
-    // acknowledged; waiting for offline originals here would block polling.
-    if (changed)
-      await controller.persist();
-    if (!isCurrent())
-      return;
-    const retained = item => isCurrent() && controller.items.includes(item);
-    const finish = async item => {
-      if (!retained(item))
-        return;
-      const activate = settings.get_string('sync-receive-mode') === 'activate';
-      await sync.materialize(item, {withinThreshold: !activate});
-      if (!retained(item))
-        return;
-      controller.update(item);
-      if (settings.get_string('sync-receive-mode') === 'activate'
-          && item.availability === 'ready')
-        await controller.activate(item, {guard: () => retained(item)});
-    };
-    for (const item of received) {
-      finish(item).catch(error => {
-        if (retained(item)) {
-          controller.update(item);
-          this._reportError(error);
-        }
-      });
-    }
   }
 
   _editorCommand() {

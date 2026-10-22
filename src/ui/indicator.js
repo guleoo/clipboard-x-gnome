@@ -284,7 +284,7 @@ class Indicator extends PanelMenu.Button {
     try {
       if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
         throw new Error(_('This text is too large for interactive processing'));
-      await this._actions.materializeItem(item);
+      await this._actions.readItem(item);
       if (!current())
         return;
       const source = item.text;

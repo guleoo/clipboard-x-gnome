@@ -746,7 +746,8 @@ async function images(indicator, extensionObject) {
   const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
   const deviceId = indicator._settings.get_string('device-id');
   const png = imageBytes();
-  const ensureMaterialized = extensionObject._ensureMaterialized;
+  const content = extensionObject._content;
+  const prepareFile = content.file;
   const publish = extensionObject._publish;
   const closeMenu = history._closeMenu;
   try {
@@ -760,11 +761,11 @@ async function images(indicator, extensionObject) {
     assert(imageItem,
       'Clipboard X Gnome did not asynchronously create an image thumbnail');
     indicator._settings.set_string('editor-command', '');
-    extensionObject._ensureMaterialized = () => {
+    content.file = () => {
       throw new Error('Unconfigured editor should not materialize the image');
     };
     await extensionObject._editItem(imageItem);
-    extensionObject._ensureMaterialized = ensureMaterialized;
+    content.file = prepareFile;
     assert(await extensionObject._launchEditor('file:///tmp/unused-image.png') === null,
       'Unconfigured screenshot editor should not attempt to launch');
     indicator._settings.set_string('editor-command', '/usr/bin/true %f');
@@ -778,14 +779,14 @@ async function images(indicator, extensionObject) {
     imageItem.primary.path = null;
     imageItem.primary.bytes = null;
     let materializationAttempted = false;
-    extensionObject._ensureMaterialized = () => materializationAttempted = true;
+    content.file = () => materializationAttempted = true;
     let editingError;
     try {
       await extensionObject._editItem(imageItem);
     } catch (error) {
       editingError = error;
     } finally {
-      extensionObject._ensureMaterialized = ensureMaterialized;
+      content.file = prepareFile;
       imageItem.primary.path = originalPath;
       imageItem.primary.bytes = originalBytes;
     }
@@ -795,7 +796,7 @@ async function images(indicator, extensionObject) {
     indicator._settings.set_boolean('sync-enabled', originalSyncEnabled);
     imageItem.remote = true;
     imageItem.primary.bytes = null;
-    await extensionObject._ensureMaterialized(imageItem);
+    await content.read(imageItem);
     assert(imageItem.primary.bytes,
       'Previously downloaded remote content was not restored from local cache while offline');
     imageItem.remote = false;
@@ -901,7 +902,7 @@ async function images(indicator, extensionObject) {
 
     indicator._controller.remove(imageItem.id);
   } finally {
-    extensionObject._ensureMaterialized = ensureMaterialized;
+    content.file = prepareFile;
     extensionObject._publish = publish;
     history._closeMenu = closeMenu;
     indicator.menu.close();
@@ -910,125 +911,55 @@ async function images(indicator, extensionObject) {
 
 async function receiving(indicator, extensionObject) {
   const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
-  const controller = indicator._controller;
+  const history = indicator._controller;
   const sync = extensionObject._sync;
-  const originals = {getItem: sync.getItem, materialize: sync.materialize,
-    persist: controller.persist, activate: controller.activate,
-    read: controller._store.materialize, clipboard: controller._clipboard};
-  const incoming = new Map();
-  const preview = text => {
-    const item = ClipboardItem.fromText(text, {originDeviceId: GLib.uuid_string_random(), remote: true});
-    item.primary.bytes = null;
-    item.availability = 'preview';
-    incoming.set(item.id, item);
-    return item;
-  };
-  const apply = changes => extensionObject._applyRemoteChanges(changes, {isCurrent: () => true});
-  const upsert = item => ({kind: 'upsert', itemId: item.id});
-  let writes = 0;
-  let releaseDownload = () => {};
+  const getItem = sync.getItem;
+  const materialize = sync.materialize;
+  const item = ClipboardItem.fromText('received content reaches the real history panel', {
+    originDeviceId: GLib.uuid_string_random(), remote: true, availability: 'preview',
+  });
+  item.primary.bytes = null;
   try {
     indicator._settings.set_string('sync-receive-mode', 'history');
-    sync.getItem = async id => incoming.get(id);
-    controller.persist = async () => {
-      writes++;
-      await originals.persist.call(controller);
+    sync.getItem = async () => item;
+    sync.materialize = async value => {
+      value.primary.bytes = new GLib.Bytes(new TextEncoder().encode(value.preview.text));
+      value.availability = 'ready';
     };
-    const batch = [preview('incoming threshold one'), preview('incoming threshold two')];
-    sync.materialize = async (item, options) => {
-      assert(controller.items.includes(item) && options.withinThreshold && writes === 1,
-        'Automatic originals must start only after their page metadata is durable');
-      item.primary.bytes = new GLib.Bytes(new TextEncoder().encode(item.preview.text));
-      item.availability = 'ready';
-    };
-    await apply(batch.map(upsert));
-    assert(writes === 1 && batch.every(item => controller.items.includes(item)),
-      'A received page must persist once, not once per item');
-    await originals.persist.call(controller);
-    assert(batch.every(item => item.primary.path), 'Received originals must be persisted by normal history saving');
+    await extensionObject._sync._applyChanges(
+      [{kind: 'upsert', itemId: item.id}], {isCurrent: () => true},
+    );
+    assert(await waitUntil(() => item.availability === 'ready' && history.items.includes(item)),
+      'The synchronization receiver was not wired to the real history');
+    assert(history.search(item.text).some(value => value === item),
+      'Received content must be exposed through the same searchable history as local content');
+    indicator.menu.open();
+    indicator._historyPanel.searchEntry.set_text(item.text);
+    const displays = actor => actor instanceof St.Label && actor.text === item.text
+      || actor.get_children().some(displays);
+    assert(await waitUntil(() => displays(indicator._historyPanel._section.actor)),
+      'The history panel did not display received content');
 
-    const previous = preview('same content on two servers');
-    previous.favorite = true;
-    controller.add(previous, 'remote');
-    const replacement = preview('same content on two servers');
-    let requested;
-    sync.materialize = async item => { requested = item.id; };
-    await apply([upsert(replacement)]);
-    assert(requested === replacement.id && controller.items.includes(replacement)
-        && replacement.favorite && !controller.items.includes(previous),
-      'An incomplete duplicate must use the new server item ID while preserving its pin');
-
-    const removed = preview('deleted while its original is being downloaded');
-    const gate = new Promise(resolve => { releaseDownload = resolve; });
-    let finished = false;
-    let activations = 0;
-    indicator._settings.set_string('sync-receive-mode', 'activate');
-    controller.activate = async () => { activations++; };
-    sync.materialize = async item => {
-      await gate;
-      item.availability = 'ready';
-      finished = true;
-    };
-    await apply([upsert(removed)]);
-    await apply([{kind: 'remove', itemId: removed.id}]);
-    releaseDownload();
-    assert(await waitUntil(() => finished), 'The delayed original did not complete');
-    assert(!controller.items.includes(removed) && activations === 0,
-      'A removed item must never reactivate after its background download finishes');
-
-    const reading = preview('deleted during the final local activation read');
-    let enteredRead = false;
-    finished = false;
-    const readGate = new Promise(resolve => { releaseDownload = resolve; });
-    controller._store.materialize = async () => {
-      enteredRead = true;
-      await readGate;
-      reading.primary.bytes = new GLib.Bytes(new TextEncoder().encode(reading.preview.text));
-    };
-    controller._clipboard = {set_content: () => { activations++; }};
-    controller.activate = async (item, options) => {
-      await originals.activate.call(controller, item, options);
-      finished = true;
-    };
-    sync.materialize = async item => { item.availability = 'ready'; };
-    await apply([upsert(reading)]);
-    assert(await waitUntil(() => enteredRead), 'Automatic activation did not start its local read');
-    await apply([{kind: 'remove', itemId: reading.id}]);
-    releaseDownload();
-    assert(await waitUntil(() => finished), 'The local activation read did not complete');
-    assert(activations === 0, 'Deletion during local reading must prevent the final clipboard write');
-    controller._store.materialize = originals.read;
-    controller._clipboard = originals.clipboard;
-
-    const retried = preview('removal must remain durable after a failed save');
-    controller.add(retried, 'remote');
-    await originals.persist.call(controller);
-    let failedSave = true;
-    controller.persist = async () => {
-      if (failedSave) {
-        failedSave = false;
-        throw new Error('Temporary history write failure');
-      }
-      await originals.persist.call(controller);
-    };
-    let rejected = false;
-    const removal = [{kind: 'remove', itemId: retried.id}];
-    try { await apply(removal); } catch { rejected = true; }
-    assert(rejected, 'Failed deletion persistence must reject acceptance');
-    await apply(removal);
-    const reloaded = await controller._store.load();
-    assert(!reloaded.some(item => item.id === retried.id),
-      'Replaying an already-removed item must still persist the deletion');
+    // Only this narrow check needs the actual Controller. The async receiver
+    // and storage cases live in the isolated content integration test.
+    indicator._settings.set_int('cache-size-mib', 16);
+    const oversized = ClipboardItem.fromText('lazy original exceeds local capacity', {
+      originDeviceId: GLib.uuid_string_random(), remote: true, availability: 'preview',
+    });
+    oversized.primary.bytes = null;
+    oversized.primary.size = 17 * 1024 * 1024;
+    history.add(oversized, 'remote');
+    assert(history.items.includes(oversized), 'A lightweight snapshot should fit before download');
+    oversized.primary.bytes = new GLib.Bytes(new Uint8Array([1]));
+    oversized.availability = 'ready';
+    assert(!history.commitContent(oversized) && !history.items.includes(oversized),
+      'Committing downloaded originals must immediately reapply the storage budget');
   } finally {
-    releaseDownload();
-    sync.getItem = originals.getItem;
-    sync.materialize = originals.materialize;
-    controller.persist = originals.persist;
-    controller.activate = originals.activate;
-    controller._store.materialize = originals.read;
-    controller._clipboard = originals.clipboard;
-    for (const item of incoming.values())
-      controller.remove(item.id);
+    sync.getItem = getItem;
+    sync.materialize = materialize;
+    history.remove(item.id);
+    indicator._historyPanel.searchEntry.set_text('');
+    indicator.menu.close();
   }
 }
 
@@ -1150,8 +1081,7 @@ async function colorsAndLifecycle(indicator, extensionObject) {
   assert(oldController._destroyed && oldController._selectionSignal === 0
       && oldController._settingsSignals.length === 0,
   'Disabling Clipboard X Gnome did not release clipboard and settings subscriptions');
-  assert(oldSync._destroyed && oldSync._pollSource === 0
-      && oldSync._activeCancellables.size === 0 && oldSync._transferWaiters.size === 0,
+  assert(oldSync._destroyed && oldSync._pollSource === 0 && !oldSync._transfers.current,
   'Disabling Clipboard X Gnome did not release synchronization polling, requests or transfer waiters');
   assert(!extensionObject._shortcutBound, 'Disabling Clipboard X Gnome did not remove its shortcut');
 

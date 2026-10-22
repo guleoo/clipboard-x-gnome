@@ -93,6 +93,9 @@ test('sync-progress-store', test_runner, args: ['-m', meson.current_source_dir()
 test('sync-connection-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection.test.js'])
 test('sync-connection-http', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection-http.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
+test('clipboard-content', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/clipboard/content.test.js'],
+  env: {'GIO_USE_VFS': 'local'})
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
 test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])
 test('clipboard-history-order', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/order.test.js'])

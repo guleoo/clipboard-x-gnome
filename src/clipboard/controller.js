@@ -279,6 +279,17 @@ export class ClipboardController extends EventEmitter {
     this.emit('changed');
   }
 
+  commitContent(item) {
+    if (!this._items.includes(item) || this._destroyed)
+      return false;
+    // Lazy snapshots start out small. Reapply the same history limits when
+    // their originals become local, not only on the next clipboard capture.
+    this._trim();
+    this._scheduleSave();
+    this.emit('changed');
+    return this._items.includes(item);
+  }
+
   clear() {
     this._items = this._items.filter(item => item.favorite);
     this._scheduleSave();
