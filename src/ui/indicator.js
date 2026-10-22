@@ -80,7 +80,6 @@ class Indicator extends PanelMenu.Button {
     this._applyTextVerticalOffset();
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
-      clearPanelTooltips: () => this._tooltip.clear('panel'),
       hideTooltip: () => this._tooltip.hide(),
       onGeometry: geometry => this._setMenuGeometry(geometry),
     });
@@ -90,6 +89,7 @@ class Indicator extends PanelMenu.Button {
       restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
       leave: () => this._historyPanel.leave(),
+      destroy: () => this._historyPanel.destroy(),
       setGeometry: geometry => this._historyPanel.setGeometry(geometry),
       render: () => {
         this._historyPanel.render();
@@ -102,6 +102,7 @@ class Indicator extends PanelMenu.Button {
         this._showPanelChrome('tokenizer');
       },
       leave: () => this._tokenizer.leave(),
+      destroy: () => this._tokenizer.destroy(),
       setGeometry: geometry => this._tokenizer.setGeometry(geometry),
       render: state => {
         this._tokenizer.render(state);
@@ -112,6 +113,7 @@ class Indicator extends PanelMenu.Button {
       focusGrid: this._quickPhrases.focusGrid,
       enter: () => this._showPanelChrome('phrases'),
       leave: () => this._quickPhrases.leave(),
+      destroy: () => this._quickPhrases.destroy(),
       setGeometry: geometry => this._quickPhrases.setGeometry(geometry),
       render: () => {
         this._quickPhrases.render();
@@ -206,7 +208,7 @@ class Indicator extends PanelMenu.Button {
       closeMenu: () => this.menu.close(),
       openTokenizer: item => this._openTokenizer(item),
       openPhrases: () => this._openPhrases(),
-      requestRefresh: () => this._refresh(),
+      requestRefresh: () => this._panelManager?.refresh('history'),
       isActive: () => this._panelManager?.is('history') ?? false,
       isMenuOpen: () => this.menu.isOpen,
     });
@@ -234,7 +236,8 @@ class Indicator extends PanelMenu.Button {
       onCopy: phrase => this._copyPhrase(phrase),
       onPaste: phrase => this._runAndClose(() => this._actions.pasteText(phrase)),
       onType: phrase => this._runAndClose(() => this._actions.typeText(phrase)),
-      refresh: () => this._panelManager?.refresh(),
+      refresh: () => this._panelManager?.refresh('phrases'),
+      isActive: () => (this._panelManager?.is('phrases') ?? false) && this.menu.isOpen,
       reportError: error => this._actions.reportError(error),
     });
     this.menu.addMenuItem(this._quickPhrases.item);
@@ -417,7 +420,6 @@ class Indicator extends PanelMenu.Button {
     const {
       showTooltip = true,
       iconSize = ICON_SIZE,
-      tooltipScope = 'global',
       stateful = false,
     } = options;
     const button = new IconButton({
@@ -425,6 +427,8 @@ class Indicator extends PanelMenu.Button {
       label: hintText,
       iconSize,
       selectable: stateful,
+      tooltip: this._tooltip,
+      showTooltip,
       onKeyPress: event => this._handleMenuKey(event),
       onError: error => this._actions.reportError(error),
       onActivate: () => {
@@ -439,9 +443,6 @@ class Indicator extends PanelMenu.Button {
     });
     if (stateful && this._stateHoverTransfer)
       this._skipStateHoverTransition(button);
-    button._clipboardXGnomeShowTooltip = showTooltip;
-    button._clipboardXGnomeTooltipScope = tooltipScope;
-    this._setHint(button, hintText);
     return button;
   }
 
@@ -455,17 +456,6 @@ class Indicator extends PanelMenu.Button {
       }
       return GLib.SOURCE_REMOVE;
     });
-  }
-
-  _setHint(actor, text) {
-    if (actor.setHint)
-      actor.setHint(text);
-    else {
-      actor.accessible_name = text;
-      actor._hintText = text;
-    }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _handleMenuKey(event) {
@@ -502,9 +492,6 @@ class Indicator extends PanelMenu.Button {
   destroy() {
     this._tokenizerRequest++;
     this._panelManager?.destroy();
-    this._historyPanel.destroy();
-    this._tokenizer.destroy();
-    this._tooltip.clear();
     for (const signal of [
       this._themeColorSignal,
       this._panelWidthSignal,

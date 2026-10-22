@@ -16,7 +16,7 @@ import {matches as matchesShortcut} from '../../shortcut.js';
 const OPTICAL_BASELINE_OFFSET = -1;
 
 export class QuickPhrasesPanel {
-  constructor({settings, createIconButton, handleKey, onBack, onCopy, onPaste, onType, refresh, reportError}) {
+  constructor({settings, createIconButton, handleKey, onBack, onCopy, onPaste, onType, refresh, isActive, reportError}) {
     this._settings = settings;
     this._store = new PhraseStore(settings);
     this._createIconButton = createIconButton;
@@ -24,8 +24,16 @@ export class QuickPhrasesPanel {
     this._onCopy = onCopy;
     this._onPaste = onPaste;
     this._onType = onType;
-    this._refresh = refresh;
-    this._reportError = reportError;
+    this._destroyed = false;
+    this._isActive = isActive;
+    this._refresh = () => {
+      if (!this._destroyed)
+        refresh();
+    };
+    this._reportError = error => {
+      if (!this._destroyed)
+        reportError(error);
+    };
     this._formVisible = false;
     this._buttons = [];
     this._rows = [];
@@ -52,7 +60,6 @@ export class QuickPhrasesPanel {
       'list-add-symbolic',
       _('Add custom phrase'),
       () => this.toggleForm(),
-      {tooltipScope: 'panel'},
     );
     this.header = new PanelHeader({
       title: _('Quick phrases'),
@@ -185,6 +192,8 @@ export class QuickPhrasesPanel {
   }
 
   focus() {
+    if (this._destroyed || !this._isActive())
+      return;
     const target = this._formVisible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
   }
@@ -217,6 +226,14 @@ export class QuickPhrasesPanel {
 
   leave() {
     this.focusAnchor.cancel();
+  }
+
+  destroy() {
+    this._destroyed = true;
+    this.leave();
+    this.focusGrid.clear();
+    this._buttons = [];
+    this._rows = [];
   }
 
   _focusFirstPhrase() {
@@ -255,6 +272,8 @@ export class QuickPhrasesPanel {
     if (!this.entry.get_text().trim())
       return false;
     await this._store.add(this.entry.get_text());
+    if (this._destroyed)
+      return true;
     this._setFormVisible(false);
     this._refresh();
     this.focus();

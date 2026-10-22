@@ -127,7 +127,6 @@ export class HistoryPanel {
     this._sync = new SyncAction({
       settings,
       actions,
-      tooltip,
       createIconButton,
       closeMenu,
     });
@@ -421,8 +420,8 @@ export class HistoryPanel {
 
   _updatePrivateButton() {
     const paused = this._settings.get_boolean('private-mode');
-    this._setButtonIcon(this.privateButton, 'security-high-symbolic');
-    this._setHint(this.privateButton, _('Privacy mode'));
+    this.privateButton.setIcon('security-high-symbolic');
+    this.privateButton.setHint(_('Privacy mode'));
     this.privateButton.selected = paused;
     this.privateButton.remove_style_class_name(
       paused ? 'cbx-private-inactive' : 'cbx-private-active',
@@ -452,30 +451,8 @@ export class HistoryPanel {
       style_class: 'cbx-device-icon',
       track_hover: true,
     });
-    this._tooltip.attach(icon, tag, {scope: 'panel'});
+    this._tooltip.attach(icon, tag);
     return icon;
-  }
-
-  _setButtonIcon(button, iconName) {
-    if (button.setIcon) {
-      button.setIcon(iconName);
-      return;
-    }
-    button.set_child(new St.Icon({
-      icon_name: iconName,
-      icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
-    }));
-  }
-
-  _setHint(actor, text) {
-    if (actor.setHint)
-      actor.setHint(text);
-    else {
-      actor.accessible_name = text;
-      actor._hintText = text;
-    }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _activate(item) {

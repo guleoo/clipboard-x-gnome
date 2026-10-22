@@ -12,6 +12,8 @@ class IconButton extends St.Button {
     label = '',
     iconSize = DEFAULT_ICON_SIZE,
     selectable = false,
+    tooltip = null,
+    showTooltip = true,
     onActivate = null,
     onKeyPress = null,
     onError = error => logger.error('icon-activate', error),
@@ -23,7 +25,8 @@ class IconButton extends St.Button {
       accessible_name: label,
     });
     this._clipboardXGnomeControlType = 'icon-button';
-    this._clipboardXGnomeIconSize = iconSize;
+    this._iconSize = iconSize;
+    this._tooltip = showTooltip ? tooltip : null;
     this._selectable = selectable;
     if (selectable)
       this.add_style_class_name('cbx-state-icon');
@@ -50,19 +53,23 @@ class IconButton extends St.Button {
     return this.checked;
   }
 
+  get hint() {
+    return this.accessible_name;
+  }
+
   set selected(value) {
     this.checked = Boolean(value);
   }
 
-  setIcon(iconName) {
+  setIcon(icon) {
     this.set_child(new St.Icon({
-      icon_name: iconName,
-      icon_size: this._clipboardXGnomeIconSize,
+      ...(typeof icon === 'string' ? {icon_name: icon} : {gicon: icon}),
+      icon_size: this._iconSize,
     }));
   }
 
   setHint(text) {
     this.accessible_name = text;
-    this._hintText = text;
+    this._tooltip?.attach(this, text);
   }
 });

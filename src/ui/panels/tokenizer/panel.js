@@ -95,7 +95,6 @@ export class TokenizerPanel {
       'edit-copy-symbolic',
       _('Copy selected words'),
       () => this.run('copyText'),
-      {tooltipScope: 'panel'},
     );
     this.copyButton.reactive = false;
     this.copyButton.opacity = 128;

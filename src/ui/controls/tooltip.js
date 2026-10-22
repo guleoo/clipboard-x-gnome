@@ -23,12 +23,11 @@ export class Tooltip {
     Main.uiGroup.add_child(this.actor);
   }
 
-  attach(actor, text, {scope = 'global'} = {}) {
-    actor._hintText = text;
+  attach(actor, text) {
     actor.accessible_name = text;
     const existing = this._connections.get(actor);
     if (existing) {
-      existing.scope = scope;
+      existing.text = text;
       if (this._source === actor && this.actor.visible)
         this.actor.text = text;
       return;
@@ -52,7 +51,7 @@ export class Tooltip {
         this._connections.delete(actor);
       }),
     ];
-    this._connections.set(actor, {scope, signals});
+    this._connections.set(actor, {text, signals});
   }
 
   show(actor, {immediate = false} = {}) {
@@ -63,7 +62,7 @@ export class Tooltip {
         return GLib.SOURCE_REMOVE;
       this._source = actor;
       this._fromKeyboard = immediate;
-      this.actor.text = actor._hintText;
+      this.actor.text = this._connections.get(actor)?.text ?? '';
       this.actor.show();
       Main.uiGroup.set_child_above_sibling(this.actor, null);
       this._place(actor);
@@ -89,11 +88,9 @@ export class Tooltip {
     this.actor.hide();
   }
 
-  clear(scope = null) {
+  clear() {
     this.hide();
     for (const [actor, connection] of this._connections) {
-      if (scope && connection.scope !== scope)
-        continue;
       for (const signal of connection.signals) {
         try {
           actor.disconnect(signal);
