@@ -8,16 +8,21 @@ export function buildEditorArgv(template, uri, localPath = null) {
 export async function launchEditor({command, uri, bytes = null}) {
   const file = Gio.File.new_for_uri(uri);
   const parsed = parseEditorCommand(command, uri, file.get_path());
-  if (parsed.standardInput && !bytes)
-    throw new Error('The editor command requires image data for standard input');
+  const input = parsed.standardInput ? await openStandardInput(file, bytes) : null;
   const flags = parsed.standardInput
     ? Gio.SubprocessFlags.STDIN_PIPE
     : Gio.SubprocessFlags.NONE;
   const launcher = new Gio.SubprocessLauncher({flags});
-  const process = launcher.spawnv(parsed.argv);
-  if (parsed.standardInput)
-    await writeStandardInput(process, bytes);
-  return process;
+  try {
+    const process = launcher.spawnv(parsed.argv);
+    if (input)
+      await writeStandardInput(process, input);
+    return process;
+  } finally {
+    // Also release the input if spawning fails before splice takes ownership.
+    if (input && !input.is_closed())
+      input.close(null);
+  }
 }
 
 function parseEditorCommand(template, uri, localPath) {
@@ -84,9 +89,20 @@ function hasPlaceholder(argument, expected) {
   return false;
 }
 
-function writeStandardInput(process, bytes) {
+async function openStandardInput(file, bytes) {
+  if (bytes)
+    return Gio.MemoryInputStream.new_from_bytes(bytes);
+  if (!file.get_path())
+    throw new Error('The editor command requires image data or a local file for standard input');
+  return new Promise((resolve, reject) => file.read_async(
+    GLib.PRIORITY_DEFAULT, null, (source, result) => {
+      try { resolve(source.read_finish(result)); } catch (error) { reject(error); }
+    },
+  ));
+}
+
+function writeStandardInput(process, source) {
   return new Promise((resolve, reject) => {
-    const source = Gio.MemoryInputStream.new_from_bytes(bytes);
     const target = process.get_stdin_pipe();
     target.splice_async(
       source,

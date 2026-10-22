@@ -5,6 +5,7 @@ import {Content} from '../../src/clipboard/content.js';
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {HistoryStore} from '../../src/clipboard/history/store.js';
 import {bytesFromString} from '../../src/common/bytes.js';
+import {launchEditor} from '../../src/screenshot/editor-launcher.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -142,6 +143,24 @@ try {
   assert(path === edited.primary.path && history.writes === beforeEdit + 1 && localReads === 0,
     'Preparing an editor file must flush once without rereading the full original');
   history.materialize = read;
+
+  const image = ClipboardItem.fromBytes('image/png', new GLib.Bytes(new Uint8Array([137, 80, 78, 71])));
+  history.add(image);
+  await history.persist();
+  const cachedImage = (await store.load()).find(item => item.id === image.id);
+  assert(cachedImage.primary.path && !cachedImage.primary.bytes,
+    'A reloaded image must start with a file path and no in-memory original');
+  const imagePath = await content.file(cachedImage);
+  const editor = await launchEditor({
+    command: `/usr/bin/cmp - %i '${imagePath}'`,
+    uri: Gio.File.new_for_path(imagePath).get_uri(),
+    bytes: cachedImage.primary.bytes,
+  });
+  await new Promise((resolve, reject) => editor.wait_check_async(null, (process, result) => {
+    try { process.wait_check_finish(result); resolve(); } catch (error) { reject(error); }
+  }));
+  assert(!cachedImage.primary.bytes,
+    'A standard-input editor must receive the exact cached file without loading it into the item');
 
   const previous = preview('duplicate across destinations');
   previous.favorite = true;
