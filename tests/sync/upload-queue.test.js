@@ -115,6 +115,57 @@ try {
   {
     const f = fixture();
     f.values.set('sync-text', true);
+    f.values.set('sync-images', true);
+    f.values.set('text-full-threshold', 0);
+    f.values.set('image-full-threshold', 0);
+    f.values.set('text-preview-limit', 100);
+    const item = ClipboardItem.fromRepresentations([
+      {mimeType: 'image/png', bytes: bytesFromString('image-content-exceeding-the-limit')},
+      {mimeType: 'text/plain', bytes: bytesFromString('private-clipboard-text')},
+    ], {originDeviceId: f.values.get('device-id')});
+    for (const representation of item.representations)
+      representation.path = payloadPath;
+    f.items.set(item.id, item);
+    let posts = 0;
+    let sent;
+    const client = new SyncClient(f.settings, {configurationStore: {}, progressStore: {},
+      logger: {run: async (_name, action) => action(), error() {}}});
+    client._connected = true;
+    client._transport = {
+      async createItem(_channelId, manifest) {
+        posts++;
+        sent = manifest;
+        const stored = await f.document();
+        assert(JSON.stringify(stored.publications[0]?.manifest) === JSON.stringify(manifest),
+          'A locally valid publication must be durable before POST');
+        return wirePublication(manifest, {deviceId: f.values.get('device-id'),
+          uploadId: item.id, transferId: item.id, state: 'completed'});
+      },
+      abort() {},
+    };
+    client._storedConfiguration = f.config;
+    client._capabilities = {supportedMimeTypes: [], maxItemBytes: 32, maxPreviewBytes: 100};
+    f.publish = (source, options) => client.publish(source, options);
+    const queue = f.create();
+    await queue.enqueue(item);
+    await queue.flush();
+    const rejected = await f.document();
+    assert(posts === 0 && rejected.publications.length === 0
+        && rejected.entries[0]?.blocked,
+      'A locally oversized mixed publication must fail without POST or freezing its manifest');
+    f.values.set('sync-images', false);
+    await queue.enqueue(item);
+    await queue.flush();
+    const completed = await f.document();
+    assert(posts === 1 && completed.entries.length === 0 && completed.publications.length === 1
+        && sent.contents.length === 1 && sent.contents[0].mimeType.startsWith('text/'),
+      'A manual retry after disabling images must publish the newly eligible text-only manifest');
+    client.destroy();
+  }
+
+  {
+    const f = fixture();
+    f.values.set('sync-text', true);
     f.values.set('text-full-threshold', 4096);
     f.values.set('text-preview-limit', 4);
     const item = ClipboardItem.fromText('private-clipboard-text', {originDeviceId: f.values.get('device-id')});

@@ -294,6 +294,50 @@ try {
     'completed server progress must replace local streaming progress');
   assert(client._transfers._remoteIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
+  const missingSource = ClipboardItem.fromText('not persisted', {originDeviceId: deviceId});
+  let freezes = 0;
+  let missingSourceError = null;
+  const previousManifest = transport.manifest;
+  try {
+    await client.publish(missingSource, {saveManifest: async manifest => { freezes++; return manifest; }});
+  } catch (error) {
+    missingSourceError = error;
+  }
+  assert(missingSourceError && freezes === 0 && transport.manifest === previousManifest,
+    'Source preflight failure must not freeze a manifest or send POST');
+
+  const frozenItem = ClipboardItem.fromText('frozen', {originDeviceId: deviceId});
+  frozenItem.primary.path = path;
+  settings._values.set('text-full-threshold', 0);
+  const beforeFrozenPublication = transport.uploadedBytes;
+  await client.publish(frozenItem, {saveManifest: async manifest => ({...manifest,
+    contents: manifest.contents.map(content => ({...content, delivery: 'eager'})),
+  })});
+  assert(transport.manifest.contents[0].delivery === 'eager'
+      && frozenItem.primary.delivery === 'eager'
+      && transport.uploadedBytes - beforeFrozenPublication
+        === frozenItem.primary.size + frozenItem.preview.text.length,
+    'An existing frozen manifest returned by persistence must determine upload sources and confirmed delivery');
+  settings._values.set('text-full-threshold', 64 * 1024);
+
+  for (const failure of ['size', 'source']) {
+    const rejectedItem = ClipboardItem.fromText('rejected', {originDeviceId: deviceId});
+    rejectedItem.primary.path = path;
+    const beforeRejectedPublication = transport.manifest;
+    let rejection = null;
+    try {
+      await client.publish(rejectedItem, {saveManifest: async manifest => ({...manifest,
+        contents: manifest.contents.map(content => ({...content,
+          ...(failure === 'size' ? {size: client.capabilities.maxItemBytes + 1} : {sha256: '0'.repeat(64)}),
+        })),
+      })});
+    } catch (error) {
+      rejection = error;
+    }
+    assert(rejection && transport.manifest === beforeRejectedPublication,
+      `An existing frozen manifest must pass ${failure} preflight again before POST`);
+  }
+
   const confirmedDeliveries = [];
   const lazyItem = ClipboardItem.fromText('lazy', {originDeviceId: deviceId});
   lazyItem.primary.path = path;

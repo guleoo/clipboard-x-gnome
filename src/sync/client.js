@@ -434,15 +434,21 @@ export class SyncClient extends EventEmitter {
     const {deviceId} = ensureDeviceIdentity(this._settings);
     manifest = manifest ? publicationPlan.validate(manifest, {itemId: item.id, deviceId})
       : publicationPlan.create(item, {settings: this._settings, capabilities: this._capabilities, deviceId});
+    const preflight = value => {
+      const declaredBytes = value.contents.reduce((sum, content) => sum + content.size, 0);
+      const itemLimit = effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
+      if (declaredBytes > itemLimit)
+        throw new Error(`Synchronization item exceeds the effective limit of ${itemLimit} bytes`);
+      return publicationPlan.sources(item, value);
+    };
+    // Local rejection must not freeze a manifest that has never reached the server.
+    preflight(manifest);
     // Freeze before POST: a response can disappear after the server commits it.
     manifest = publicationPlan.validate(await saveManifest(manifest), {itemId: item.id, deviceId});
     this._requireOperation(generation, guard);
+    // Persistence may return an existing frozen contract instead of the candidate.
+    const sources = preflight(manifest);
     const representations = manifest.contents;
-    const declaredBytes = representations.reduce((sum, representation) => sum + representation.size, 0);
-    const itemLimit = effectiveLimit(this._capabilities.maxItemBytes, ABSOLUTE_ITEM_LIMIT_BYTES);
-    if (declaredBytes > itemLimit)
-      throw new Error(`Synchronization item exceeds the effective limit of ${itemLimit} bytes`);
-    const sources = publicationPlan.sources(item, manifest);
 
     let completedBytes = 0;
     return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
