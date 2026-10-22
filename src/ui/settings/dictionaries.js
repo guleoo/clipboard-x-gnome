@@ -5,6 +5,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
+import * as Selection from '../../clipboard/tokenizer/dictionary/selection.js';
 
 import {
   DICTIONARY_LOCALES,
@@ -141,25 +142,7 @@ export function create({settings, store, window}) {
       showError(window, error, heading);
   };
   const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
-  const enabledDictionaries = dictionaries => {
-    const configured = new Set(settings.get_strv('tokenizer-dictionary-files'));
-    if (configured.size === 0)
-      return new Set([
-        SYSTEM_DICTIONARY_ID,
-        ...dictionaries.map(dictionary => dictionary.fileName),
-      ]);
-    const matching = dictionaries.filter(dictionary => configured.has(dictionary.fileName));
-    return new Set([
-      ...(configured.has(SYSTEM_DICTIONARY_ID) ? [SYSTEM_DICTIONARY_ID] : []),
-      ...matching.map(dictionary => dictionary.fileName),
-    ]);
-  };
-  const setEnabledDictionaries = (dictionaries, enabled) => {
-    const allEnabled = enabled.has(SYSTEM_DICTIONARY_ID)
-      && dictionaries.every(dictionary => enabled.has(dictionary.fileName));
-    const next = allEnabled
-      ? []
-      : [...enabled].sort((left, right) => left.localeCompare(right));
+  const setEnabledDictionaries = next => {
     if (JSON.stringify(settings.get_strv('tokenizer-dictionary-files')) === JSON.stringify(next))
       return;
     changingSelection = true;
@@ -178,9 +161,9 @@ export function create({settings, store, window}) {
   const refresh = async () => {
     const request = ++refreshRequest;
     const locales = new Set(localeCandidates([selectedLocale()]));
-    let dictionaries;
+    let allDictionaries;
     try {
-      dictionaries = (await store.list(cancellable)).filter(dictionary => locales.has(dictionary.locale));
+      allDictionaries = await store.list(cancellable);
     } catch (error) {
       if (request === refreshRequest)
         report(error);
@@ -188,10 +171,11 @@ export function create({settings, store, window}) {
     }
     if (!active || request !== refreshRequest)
       return;
+    const dictionaries = allDictionaries.filter(dictionary => locales.has(dictionary.locale));
     refreshing = true;
     for (const row of dictionaryRows)
       group.remove(row);
-    const enabled = enabledDictionaries(dictionaries);
+    const enabled = Selection.enabled(settings.get_strv('tokenizer-dictionary-files'), allDictionaries);
     const entries = [
       {
         fileName: SYSTEM_DICTIONARY_ID,
@@ -215,18 +199,19 @@ export function create({settings, store, window}) {
       toggle.connect('notify::active', () => {
         if (refreshing)
           return;
-        const next = enabledDictionaries(dictionaries);
-        if (!toggle.active && next.size === 1) {
+        const configured = settings.get_strv('tokenizer-dictionary-files');
+        const current = Selection.enabled(configured, allDictionaries);
+        const enabledInView = [SYSTEM_DICTIONARY_ID, ...dictionaries.map(value => value.fileName)]
+          .filter(fileName => current.has(fileName));
+        if (!toggle.active && enabledInView.length === 1) {
           refreshing = true;
           toggle.active = true;
           refreshing = false;
           return;
         }
-        if (toggle.active)
-          next.add(dictionary.fileName);
-        else
-          next.delete(dictionary.fileName);
-        setEnabledDictionaries(dictionaries, next);
+        setEnabledDictionaries(Selection.withEnabled(
+          configured, allDictionaries, dictionary.fileName, toggle.active,
+        ));
       });
       row.add_suffix(toggle);
       row.activatable_widget = toggle;

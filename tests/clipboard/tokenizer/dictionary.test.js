@@ -100,15 +100,29 @@ const testRoot = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-gnome-dict
 const storeRoot = testRoot.get_child('store');
 const importSource = testRoot.get_child('custom-ja.txt');
 const plainImportSource = testRoot.get_child('plain-words.txt');
-const seed = testRoot.get_child('zh--test.dict');
-GLib.file_set_contents(seed.get_path(), '# locale: zh\n# name: Test dictionary\n注销 80\n密钥 63\n');
-const seedPath = seed.get_path();
+const chineseSource = testRoot.get_child('zh--test.dict');
+GLib.file_set_contents(chineseSource.get_path(), '# locale: zh\n# name: Test dictionary\n注销 80\n密钥 63\n');
 
 try {
-  const store = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
+  const store = new DictionaryStore({rootPath: storeRoot.get_path()});
+  assert((await store.list()).length === 0,
+    'a new dictionary store must remain empty until a user imports a dictionary');
+  const emptyLoad = await store.load(['zh']);
+  assert(emptyLoad.systemEnabled && emptyLoad.lexicon.size === 0,
+    'a fresh store should use system segmentation without installing dictionaries');
+  const emptyDirectory = storeRoot.enumerate_children(
+    Gio.FILE_ATTRIBUTE_STANDARD_NAME, Gio.FileQueryInfoFlags.NONE, null,
+  );
+  try {
+    assert(emptyDirectory.next_file(null) === null,
+      'listing and loading an empty store must not create bookkeeping files');
+  } finally {
+    emptyDirectory.close(null);
+  }
+  await store.importFile(chineseSource, 'zh');
   const initial = await store.list();
   assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount > 0,
-    'pre-imported dictionary should use the regular user dictionary store');
+    'explicit import should add the dictionary to the user dictionary store');
   assert(store.getFile(initial[0].fileName).query_exists(null),
     'stored dictionaries should expose their editable file');
 
@@ -119,7 +133,7 @@ try {
   assertEqual(
     (await chineseTokenizer.tokenize('注销 密钥')).map(token => token.text),
     ['注销', '密钥'],
-    'display locale should activate the matching pre-imported dictionary',
+    'display locale should activate the matching imported dictionary',
   );
   const defaultLoad = await store.load(['zh_CN.UTF-8', 'zh', 'C']);
   assert(defaultLoad.systemEnabled && defaultLoad.lexicon.size > 0,
@@ -189,12 +203,13 @@ try {
   await store.remove(imported.fileName);
   await store.remove(plainImported.fileName);
   assert((await store.list()).length === 1, 'imported dictionary removal');
-  const seed = (await store.list())[0];
-  await store.remove(seed.fileName);
-  const reopened = new DictionaryStore({rootPath: storeRoot.get_path(), seedPaths: [seedPath]});
-  assert((await reopened.list()).length === 0, 'a removed pre-imported dictionary should not be restored');
+  await store.remove(initial[0].fileName);
+  const reopened = new DictionaryStore({rootPath: storeRoot.get_path()});
+  assert((await reopened.list()).length === 0, 'a removed dictionary should not be restored on reopening');
 
-  GLib.file_set_contents(storeRoot.get_child('zh--large.dict').get_path(), largeDictionary);
+  const largeSource = testRoot.get_child('large-zh.txt');
+  GLib.file_set_contents(largeSource.get_path(), largeDictionary);
+  await store.importFile(largeSource, 'zh');
   const cancellable = new Gio.Cancellable();
   const add = Lexicon.prototype.add;
   let batches = 0;

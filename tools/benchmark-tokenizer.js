@@ -22,12 +22,10 @@ function usage() {
   gjs -m tools/benchmark-tokenizer.js <完整词库路径> [迭代次数]
 
 示例：
-  curl --fail --location \\
-    https://raw.githubusercontent.com/yanyiwu/cppjieba/master/dict/jieba.dict.utf8 \\
-    --output /tmp/jieba.dict.utf8
-  gjs -m tools/benchmark-tokenizer.js /tmp/jieba.dict.utf8 2000
+  gjs -m tools/benchmark-tokenizer.js /path/to/custom-zh.dict 2000
 
-完整词库必须是 UTF-8 文本，每行包含“词语 可选词频”。`);
+完整词库必须是 UTF-8 文本，每行包含“词语 可选词频”。
+导入遵循插件的相同限制：最多 8 MB、150000 个有效词条。`);
 }
 
 function now() {
@@ -88,22 +86,13 @@ async function runCase(mode, fullPath, iterations) {
     throw new Error(`找不到完整词库：${fullPath}`);
 
   try {
-    const store = new DictionaryStore({
-      rootPath: storeRoot.get_path(),
-      seedPaths: mode === 'compact' ? [seedPath] : [],
-    });
-    let dictionaryFile;
-    if (mode === 'full') {
-      await store.ensureSeeds();
-      dictionaryFile = storeRoot.get_child('zh--full.dict');
-      source.copy(dictionaryFile, Gio.FileCopyFlags.NONE, null, null);
-    }
-
+    const store = new DictionaryStore({rootPath: storeRoot.get_path()});
     const dictionary = mode === 'compact'
       ? Gio.File.new_for_path(seedPath)
-      : dictionaryFile;
-    const entries = (await store.list())[0]?.entryCount ?? 0;
-    const bytes = fileSize(dictionary);
+      : source;
+    const imported = await store.importFile(dictionary, 'zh');
+    const entries = imported.entryCount;
+    const bytes = fileSize(store.getFile(imported.fileName));
     const tokenizer = new Tokenizer({store, languageNames: () => LANGUAGE_NAMES});
     const firstText = SENTENCES[0];
     const rssBefore = readRssKiB();

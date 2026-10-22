@@ -141,6 +141,7 @@ test(
 )
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/dictionary.test.js'])
+test('tokenizer-dictionary-selection', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/selection.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
 test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/terminal/sequence.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])

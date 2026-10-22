@@ -93,16 +93,13 @@ function validateNetworkLocation(uri) {
 }
 
 export class DictionaryStore {
-  constructor({rootPath = '', seedPaths = []} = {}) {
+  constructor({rootPath = ''} = {}) {
     const path = rootPath || GLib.build_filenamev([
       GLib.get_user_data_dir(),
       'clipboard-x-gnome',
       'dictionaries',
     ]);
     this._root = Gio.File.new_for_path(path);
-    this._seedPaths = seedPaths;
-    this._seedsReady = false;
-    this._seedsPending = null;
   }
 
   get path() {
@@ -115,68 +112,8 @@ export class DictionaryStore {
     return this._root.get_child(fileName);
   }
 
-  async ensureSeeds(cancellable = null) {
-    if (this._seedsReady)
-      return;
-    if (!this._seedsPending) {
-      const pending = this._importSeeds(cancellable);
-      this._seedsPending = pending;
-      pending.finally(() => {
-        if (this._seedsPending === pending)
-          this._seedsPending = null;
-      }).catch(() => {});
-    }
-    await this._seedsPending;
-    cancellable?.set_error_if_cancelled();
-  }
-
-  async _importSeeds(cancellable) {
-    await ensureDirectory(this._root, cancellable);
-    const stateFile = this._root.get_child('.seed-state.json');
-    let state = {imported: []};
-    let changed = false;
-    try {
-      const parsed = JSON.parse(await loadText(stateFile, cancellable));
-      if (Array.isArray(parsed.imported))
-        state = {imported: parsed.imported.filter(value => typeof value === 'string')};
-    } catch (error) {
-      if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-        throw error;
-      changed = true;
-      if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
-        logger.error('load-seed-state', error);
-    }
-    for (const seedPath of this._seedPaths) {
-      const source = Gio.File.new_for_path(seedPath);
-      const fileName = source.get_basename();
-      if (!FILE_PATTERN.test(fileName))
-        throw new Error(`Invalid seed dictionary filename: ${fileName}`);
-      if (!state.imported.includes(fileName)) {
-        const target = this._root.get_child(fileName);
-        try {
-          await new Promise((resolve, reject) => source.copy_async(
-            target, Gio.FileCopyFlags.NONE, GLib.PRIORITY_DEFAULT, cancellable, null,
-            (file, result) => {
-              try { resolve(file.copy_finish(result)); } catch (error) { reject(error); }
-            },
-          ));
-        } catch (error) {
-          if (!error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS))
-            throw error;
-        }
-        state.imported.push(fileName);
-        changed = true;
-      }
-    }
-    if (changed) {
-      await writeFile(stateFile,
-        new GLib.Bytes(new TextEncoder().encode(`${JSON.stringify(state)}\n`)), cancellable);
-    }
-    this._seedsReady = true;
-  }
-
   async list(cancellable = null) {
-    await this.ensureSeeds(cancellable);
+    await ensureDirectory(this._root, cancellable);
     const dictionaries = [];
     for (const file of await this._dictionaryFiles(cancellable)) {
       try {
@@ -204,7 +141,7 @@ export class DictionaryStore {
   }
 
   async load(languageNames, selectedFiles = [], cancellable = null) {
-    await this.ensureSeeds(cancellable);
+    await ensureDirectory(this._root, cancellable);
     const locales = new Set(localeCandidates(languageNames));
     if (locales.size === 0)
       return {lexicon: new Lexicon(), systemEnabled: true};
@@ -240,7 +177,7 @@ export class DictionaryStore {
   }
 
   async importFile(file, defaultLocale) {
-    await this.ensureSeeds();
+    await ensureDirectory(this._root);
     const bytes = await loadFile(file);
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
@@ -267,7 +204,7 @@ export class DictionaryStore {
 
   async refreshSource(uri, defaultLocale) {
     const source = validateNetworkLocation(uri);
-    await this.ensureSeeds();
+    await ensureDirectory(this._root);
     const bytes = await loadFile(Gio.File.new_for_uri(source));
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
