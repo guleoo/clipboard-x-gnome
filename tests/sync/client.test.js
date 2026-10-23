@@ -454,6 +454,40 @@ try {
   channelRequiredClient.destroy();
 }
 
+for (const active of [false, true]) {
+  const transport = new TestTransport();
+  const itemId = GLib.uuid_string_random();
+  const newestId = GLib.uuid_string_random();
+  const oldestId = GLib.uuid_string_random();
+  transport.itemId = itemId;
+  transport.totalBytes = 10;
+  transport.transfers = async () => ({transfers: [
+    {...transport._transfer(active ? 'transferring' : 'completed', active ? 5 : 10),
+      id: newestId, createdAt: 100, updatedAt: 200},
+    {...transport._transfer(active ? 'queued' : 'failed', 0),
+      id: oldestId, createdAt: 1, updatedAt: 2},
+  ]});
+  transport.transfer = async id => (await transport.transfers()).transfers.find(value => value.id === id);
+  let cancelled = null;
+  transport.cancel = async id => { cancelled = id; };
+  const client = new SyncClient(new TestSettings(), {
+    configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+    transportFactory: () => transport,
+  });
+  try {
+    await client.start();
+    const selected = client.getTransferForItem(itemId);
+    assert(selected.transferId === newestId && selected.state === (active ? 'transferring' : 'completed'),
+      'restoring a newest-first server list must not select an older transfer for the same item');
+    if (active) {
+      await client.cancelTransfer(selected.transferId);
+      assert(cancelled === newestId, 'the displayed active transfer must cancel the newest remote operation');
+    }
+  } finally {
+    client.destroy();
+  }
+}
+
 const retentionTransport = new TestTransport();
 retentionTransport.itemId = GLib.uuid_string_random();
 retentionTransport.totalBytes = 10;

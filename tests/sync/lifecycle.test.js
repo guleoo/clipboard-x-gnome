@@ -709,6 +709,125 @@ await test('source work requires a completed acknowledgement before advancing it
   }
 });
 
+for (const phase of ['acceptWork', 'uploadContent', 'completeUpload']) {
+  for (const restart of [false, true]) {
+    await test(`accepted source work resumes after ${phase} failure${restart ? ' across restart' : ''}`, async () => {
+      const transport = new Transport('source');
+      const f = fixture([transport], {sourceItem});
+      let replacement;
+      try {
+        await bounded(f.client.start());
+        let state = 'queued';
+        let failed = false;
+        let completed = 0;
+        let uploaded = 0;
+        const networkFailure = () => {
+          failed = true;
+          throw Object.assign(new Error('Synthetic temporary network failure'), {code: 'network_error'});
+        };
+        transport.work = () => Promise.resolve({cursor: 'source-page', hasMore: false,
+          work: state === 'queued' ? [sourceWork] : []});
+        transport.acceptWork = async () => {
+          assert(f.progressStore.saves.at(-1).progress.pendingWork?.id === sourceWork.id,
+            'The source work reference must be durable before any accept request');
+          state = state === 'queued' ? 'accepted' : state;
+          if (phase === 'acceptWork' && !failed)
+            networkFailure();
+          return {uploadId: itemId, transfer: sourceTransfer(state === 'completed' ? 'completed' : 'queued')};
+        };
+        transport.uploadContent = async () => {
+          if (phase === 'uploadContent' && !failed)
+            networkFailure();
+          uploaded++;
+        };
+        transport.completeUpload = async () => {
+          state = 'completed';
+          completed++;
+          if (phase === 'completeUpload' && !failed)
+            networkFailure();
+          return {transfer: sourceTransfer('completed')};
+        };
+        const cursor = f.client._progress.workCursor;
+        const result = await bounded(observe(f.client._syncWork()));
+        assert(result.error?.code === 'network_error' && f.client._progress.pendingWork?.id === sourceWork.id
+            && f.client._progress.workCursor === cursor,
+          'A lost response must retain source work without advancing its page cursor');
+        let active = f.client;
+        if (restart) {
+          f.client.destroy();
+          replacement = new SyncClient(f.settings, {
+            configurationStore: f.store, progressStore: f.progressStore,
+            transportFactory: () => transport, sourceItem, logger,
+          });
+          active = replacement;
+          await bounded(active.start());
+        } else {
+          await bounded(active._poll());
+        }
+        assert(state === 'completed' && uploaded === 1 && completed === 1
+            && active._progress.pendingWork === null && active._progress.workCursor === 'source-page',
+          'A queued-only feed must not lose accepted work, duplicate acknowledged uploads, or strand its cursor');
+      } finally {
+        f.client.destroy();
+        replacement?.destroy();
+      }
+    });
+  }
+}
+
+for (const [status, code] of [[404, 'not_found'], [409, 'invalid_request']]) {
+  await test(`unavailable pending work (${status}) does not block later source jobs`, async () => {
+    const transport = new Transport('source');
+    const f = fixture([transport], {sourceItem});
+    try {
+      await bounded(f.client.start());
+      await f.client._saveProgress({...f.client._progress, pendingWork: sourceWork});
+      transport.acceptWork = async () => {
+        throw Object.assign(new Error('Queued work is no longer available'), {status, code});
+      };
+      transport.work = () => transport.reply('work', {cursor: 'after-expired-work', hasMore: false, work: []});
+      const before = transport.calls.filter(method => method === 'work').length;
+      await bounded(f.client._syncWork());
+      assert(f.client._progress.pendingWork === null && f.client._progress.workCursor === 'after-expired-work'
+          && transport.calls.filter(method => method === 'work').length === before + 1,
+        'Only a confirmed unavailable acceptance may retire stale work and resume the queued-only feed');
+    } finally {
+      f.client.destroy();
+    }
+  });
+}
+
+await test('completed source work resumes after its local original was removed', async () => {
+  const transport = new Transport('source');
+  const f = fixture([transport]);
+  try {
+    await bounded(f.client.start());
+    await f.client._saveProgress({...f.client._progress, pendingWork: sourceWork});
+    transport.acceptWork = () => Promise.resolve({uploadId: itemId, transfer: sourceTransfer('completed')});
+    await bounded(f.client._syncWork());
+    assert(f.client._progress.pendingWork === null && !transport.calls.includes('rejectWork')
+        && !transport.calls.includes('uploadContent'),
+      'Replaying a server-completed job must neither revoke it nor require its removed local bytes');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('pending source work is never accepted after a failed journal write', async () => {
+  const transport = new Transport('source');
+  const f = fixture([transport], {sourceItem});
+  try {
+    await bounded(f.client.start());
+    transport.work = () => Promise.resolve({cursor: 'source-page', hasMore: false, work: [sourceWork]});
+    f.progressStore.save = async () => { throw new Error('Synthetic journal write failure'); };
+    const result = await bounded(observe(f.client._syncWork()));
+    assert(result.error && !transport.calls.includes('acceptWork'),
+      'The server must not accept a task whose recovery reference could not be saved');
+  } finally {
+    f.client.destroy();
+  }
+});
+
 for (const method of ['item', 'requestContent', 'downloadContent']) {
   for (const action of ['restart', 'destroy']) {
     for (const lateFailure of [false, true]) {

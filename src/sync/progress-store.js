@@ -4,6 +4,7 @@ import {bytesFromString, sha256} from '../common/bytes.js';
 import {dataPath, readJson, writeJson} from '../common/data-store.js';
 import {isUuid} from '../common/uuid.js';
 import {normalize as normalizeServerAddress} from './server-address.js';
+import {work as validateWork} from './protocol.js';
 
 const VERSION = 1;
 const MAX_FILE_BYTES = 64 * 1024;
@@ -28,6 +29,7 @@ export class SyncProgressStore {
       const previous = await this._load(destination);
       const entries = Object.entries(progress.cursors);
       if (progress.workCursor !== previous.workCursor
+          || JSON.stringify(progress.pendingWork) !== JSON.stringify(previous.pendingWork)
           || entries.length !== Object.keys(previous.cursors).length
           || entries.some(([channel, cursor]) => previous.cursors[channel] !== cursor)) {
         await writeJson(destination.path, {version: VERSION, ...destination.identity, ...progress});
@@ -64,7 +66,7 @@ export class SyncProgressStore {
 }
 
 function copy(value) {
-  return {...value, cursors: {...value.cursors}};
+  return {...value, cursors: {...value.cursors}, pendingWork: value.pendingWork ? {...value.pendingWork} : null};
 }
 
 function validate(value) {
@@ -78,7 +80,11 @@ function validate(value) {
       throw new Error('Synchronization cursor has an invalid channel ID');
     result[channelId] = validateCursor(cursor);
   }
-  return {cursors: result, workCursor: validateCursor(value.workCursor ?? '')};
+  return {
+    cursors: result,
+    workCursor: validateCursor(value.workCursor ?? ''),
+    pendingWork: value.pendingWork == null ? null : validateWork(value.pendingWork),
+  };
 }
 
 function validateCursor(value) {

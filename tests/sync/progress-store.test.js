@@ -63,6 +63,34 @@ try {
   assert((await store.load(scope)).workCursor === 'work-10',
     'returning to the original destination must restore its own progress');
 
+  const pendingWork = {
+    id: '55555555-5555-4555-8555-555555555555',
+    type: 'materialize-content', itemId: channel, contentId: 'original',
+  };
+  await store.save(scope, {...progress, pendingWork});
+  const pending = await new SyncProgressStore({directory}).load(scope);
+  assert(pending.pendingWork.id === pendingWork.id && pending.pendingWork.contentId === 'original',
+    'pending source work must survive a new store instance without storing content or credentials');
+  pending.pendingWork.contentId = 'mutated-copy';
+  assert((await store.load(scope)).pendingWork.contentId === 'original',
+    'callers must not mutate the cached pending work reference');
+  const pendingFile = files().find(candidate => {
+    const document = JSON.parse(new TextDecoder().decode(candidate.load_contents(null)[1]));
+    return document.serverAddress === 'http://memory.invalid:8765' && document.deviceId === deviceId;
+  });
+  previous = inode(pendingFile);
+  await store.save(scope, {...progress, pendingWork});
+  assert(inode(pendingFile) === previous, 'unchanged pending work must not rewrite progress');
+  for (const invalid of [{...pendingWork, id: '../invalid'}, {...pendingWork, type: 'unknown'}]) {
+    let rejected = false;
+    try { await store.save(scope, {...progress, pendingWork: invalid}); } catch (_error) { rejected = true; }
+    assert(rejected && (await store.load(scope)).pendingWork.id === pendingWork.id,
+      'invalid pending work must not replace the durable retry reference');
+  }
+  assert((await store.load({...scope, serverAddress: 'other.invalid:8765'})).pendingWork === null,
+    'pending source work must remain bound to its original server and device');
+  await store.save(scope, {cursors: {[channel]: 'change-18'}, workCursor: 'work-10'});
+
   // Failed atomic writes must not update the cache or poison the write chain.
   file.delete(null);
   file.make_directory(null);

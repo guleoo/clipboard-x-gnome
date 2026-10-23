@@ -53,7 +53,7 @@ export class SyncClient extends EventEmitter {
     this._configurationStore = configurationStore;
     this._progressStore = progressStore;
     this._progressScope = null;
-    this._progress = {cursors: {}, workCursor: ''};
+    this._progress = {cursors: {}, workCursor: '', pendingWork: null};
     this._transportFactory = transportFactory;
     this._sourceItem = sourceItem;
     this._applyChanges = applyChanges;
@@ -260,6 +260,10 @@ export class SyncClient extends EventEmitter {
     const values = validateTransfers(await transport.transfers(), deviceId);
     if (!this._isCurrent(generation))
       return;
+    // The server lists newest updates first. Restore old operations first so
+    // insertion order retains the latest remote task without comparing clocks
+    // against local downloads created later in this session.
+    values.sort((left, right) => left.updatedAt - right.updatedAt || left.createdAt - right.createdAt);
     for (const transfer of values) {
       this._transfers.receive(transfer);
       if (!this._isCurrent(generation))
@@ -669,6 +673,15 @@ export class SyncClient extends EventEmitter {
   async _syncWork() {
     const generation = this._generation;
     const transport = this._transport;
+    const pendingWork = this._progress.pendingWork;
+    if (pendingWork) {
+      await this._transfers.enqueue(() => this._performWork(pendingWork, {resume: true}));
+      if (!this._isCurrent(generation))
+        return;
+      await this._saveProgress({...this._progress, pendingWork: null});
+      if (!this._isCurrent(generation))
+        return;
+    }
     let cursor = this._progress.workCursor;
     let hasMore;
     do {
@@ -676,7 +689,15 @@ export class SyncClient extends EventEmitter {
       if (!this._isCurrent(generation))
         return;
       for (const work of page.work) {
+        // Once accepted, work disappears from the server's queued-only feed.
+        // Save its reference before acceptance, including a possibly lost ACK.
+        await this._saveProgress({...this._progress, pendingWork: work});
+        if (!this._isCurrent(generation))
+          return;
         await this._transfers.enqueue(() => this._performWork(work));
+        if (!this._isCurrent(generation))
+          return;
+        await this._saveProgress({...this._progress, pendingWork: null});
         if (!this._isCurrent(generation))
           return;
       }
@@ -690,7 +711,7 @@ export class SyncClient extends EventEmitter {
     } while (hasMore);
   }
 
-  async _performWork(work) {
+  async _performWork(work, {resume = false} = {}) {
     const generation = this._generation;
     const transport = this._transport;
     const item = this._sourceItem(work.itemId);
@@ -701,19 +722,41 @@ export class SyncClient extends EventEmitter {
     let accepted = null;
     try {
       return await this._transfers.run(async ({transport, cancellable, check, track, update}) => {
-        const response = await transport.acceptWork(work.id);
+        let response;
+        try {
+          response = await transport.acceptWork(work.id);
+        } catch (error) {
+          this._requireCurrent(generation);
+          // A saved intent can outlive a queued job without ever reaching the
+          // server. Only acceptance's confirmed missing/unavailable responses
+          // retire it; errors in uploading/completing must remain retryable.
+          if (resume && ((error.status === 404 && error.code === 'not_found')
+              || (error.status === 409 && error.code === 'invalid_request')))
+            return;
+          throw error;
+        }
         this._requireCurrent(generation);
         const result = validateAcceptedWork(response, work.itemId, deviceId);
         if (result.transfer.kind !== 'content' || result.transfer.direction !== 'upload'
-            || result.transfer.totalBytes !== representation.size)
+            || (representation && result.transfer.totalBytes !== representation.size))
           throw new Error('Synchronization server returned an inconsistent source upload size');
         accepted = result.transfer;
+        // Replaying an acknowledged completion must not require an original
+        // that may already have been removed from local history.
+        if (accepted.state === 'completed') {
+          track(accepted);
+          return;
+        }
         check();
         track(accepted);
-        if (accepted.state === 'completed')
-          return;
-        if (TERMINAL_TRANSFER_STATES.has(accepted.state))
+        if (TERMINAL_TRANSFER_STATES.has(accepted.state)) {
+          if (resume) {
+            await transport.rejectWork(work.id, 'upload_failed');
+            check();
+            return;
+          }
           throw new Error(accepted.errorMessage || `Transfer ${accepted.state}`);
+        }
         const source = {
           ...(representation.path ? {path: representation.path} : {bytes: representation.bytes}),
           size: representation.size,
@@ -738,7 +781,8 @@ export class SyncClient extends EventEmitter {
         if (completed.state !== 'completed')
           throw new SyncError('source_upload_failed', 'Source upload was not confirmed complete by the server');
         track({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)});
-      }, {errorCode: 'source_upload_failed', guard: available});
+      }, {errorCode: 'source_upload_failed',
+        guard: () => available() || (resume && (!accepted || accepted.state === 'completed'))});
     } catch (error) {
       this._requireCurrent(generation);
       if (available())

@@ -7,14 +7,18 @@ export class MemoryProgressStore {
   }
 
   async load(scope) {
-    const value = this.values.get(JSON.stringify(scope)) ?? {cursors: {}, workCursor: ''};
-    return {...value, cursors: {...value.cursors}};
+    const value = this.values.get(JSON.stringify(scope)) ?? {cursors: {}, workCursor: '', pendingWork: null};
+    return copy(value);
   }
 
   async save(scope, value) {
-    const progress = {...value, cursors: {...value.cursors}};
+    const progress = copy(value);
     this.values.set(JSON.stringify(scope), progress);
     this.saves.push({scope: {...scope}, progress});
-    return {...progress, cursors: {...progress.cursors}};
+    return copy(progress);
   }
+}
+
+function copy(value) {
+  return {...value, cursors: {...value.cursors}, pendingWork: value.pendingWork ? {...value.pendingWork} : null};
 }
