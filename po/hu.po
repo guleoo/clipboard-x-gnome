@@ -422,13 +422,12 @@ msgid ""
 msgstr "Az aktuális megjelenítési nyelvhez illő engedélyezett szótárak automatikusan betöltődnek."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Importálási nyelv"
+msgid "Dictionary language"
+msgstr "Szótár nyelve"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Akkor használatos, ha a szótár nem ad meg „# locale: language-code” sort."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "A szótárnak érvényes „# locale: language-code” fejlécet kell tartalmaznia."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

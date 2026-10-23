@@ -427,12 +427,12 @@ msgstr ""
 "automatycznie."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Język importu"
+msgid "Dictionary language"
+msgstr "Język słownika"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Używany, gdy słownik nie deklaruje „# locale: language-code”."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Słownik musi zawierać prawidłowy nagłówek „# locale: language-code”."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

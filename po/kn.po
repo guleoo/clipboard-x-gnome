@@ -418,12 +418,12 @@ msgid ""
 msgstr "ಪ್ರಸ್ತುತ ಪ್ರದರ್ಶನ ಭಾಷೆಗೆ ಹೊಂದುವ ಸಕ್ರಿಯಗೊಳಿಸಿದ ನಿಘಂಟುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "ಆಮದು ಭಾಷೆ"
+msgid "Dictionary language"
+msgstr "ನಿಘಂಟಿನ ಭಾಷೆ"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "ನಿಘಂಟು “# locale: language-code” ಅನ್ನು ಘೋಷಿಸದಿದ್ದಾಗ ಬಳಸಲಾಗುತ್ತದೆ."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "ನಿಘಂಟು ಮಾನ್ಯವಾದ “# locale: language-code” ಶೀರ್ಷಿಕೆಯನ್ನು ಹೊಂದಿರಬೇಕು."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

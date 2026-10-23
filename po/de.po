@@ -430,14 +430,12 @@ msgid ""
 msgstr "Aktivierte Wörterbücher für die aktuelle Anzeigesprache werden automatisch geladen."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Sprache für den Import"
+msgid "Dictionary language"
+msgstr "Wörterbuchsprache"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Wird verwendet, wenn das Wörterbuch keinen „# locale: language-code“-Eintrag "
-"enthält."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Das Wörterbuch muss eine gültige Kopfzeile „# locale: language-code“ enthalten."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

@@ -424,13 +424,12 @@ msgid ""
 msgstr "Ingeschakelde woordenboeken die overeenkomen met de huidige weergavetaal worden automatisch geladen."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Taal voor import"
+msgid "Dictionary language"
+msgstr "Woordenboektaal"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Wordt gebruikt als het woordenboek geen „# locale: language-code” opgeeft."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Het woordenboek moet een geldige kopregel „# locale: language-code” bevatten."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

@@ -425,12 +425,12 @@ msgstr ""
 "automaticky."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Jazyk pre import"
+msgid "Dictionary language"
+msgstr "Jazyk slovníka"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Použije sa, keď slovník neobsahuje „# locale: language-code“."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Slovník musí obsahovať platnú hlavičku „# locale: language-code“."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

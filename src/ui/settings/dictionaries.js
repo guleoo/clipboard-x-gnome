@@ -27,7 +27,9 @@ function bumpRevision(settings) {
 function showError(window, error, heading = _('Dictionary operation failed')) {
   const dialog = new Adw.AlertDialog({
     heading,
-    body: error.message,
+    body: error.code === 'invalid_dictionary_locale'
+      ? _('The dictionary must declare a valid “# locale: language-code” header.')
+      : error.message,
   });
   dialog.add_response('close', _('Close'));
   dialog.present(window);
@@ -106,11 +108,11 @@ export function create({settings, store, window}) {
   const languages = languageChoices(languageNames);
   const currentLocale = selectLocale(languageNames);
   const localeRow = new Adw.ComboRow({
-    title: _('Language for import'),
+    title: _('Dictionary language'),
     model: Gtk.StringList.new(languages.map(language => language.label)),
     selected: Math.max(0, languages.findIndex(language => language.locale === currentLocale)),
   });
-  localeRow.set_tooltip_text(_('Used when the dictionary does not declare “# locale: language-code”.'));
+  localeRow.set_tooltip_text(_('The dictionary must declare a valid “# locale: language-code” header.'));
   group.add(localeRow);
 
   const importRow = new Adw.ActionRow({
@@ -241,7 +243,7 @@ export function create({settings, store, window}) {
           });
           refreshButton.connect('clicked', () => {
             refreshButton.sensitive = false;
-            store.refreshSource(dictionary.source, dictionary.locale)
+            store.refreshSource(dictionary.source)
               .then(dictionary => {
                 enableDictionaryFile(dictionary.fileName);
                 bumpRevision(settings);
@@ -302,7 +304,7 @@ export function create({settings, store, window}) {
       return;
     addNetworkButton.sensitive = false;
     try {
-      const dictionary = await store.refreshSource(source, selectedLocale());
+      const dictionary = await store.refreshSource(source);
       enableDictionaryFile(dictionary.fileName);
       bumpRevision(settings);
       if (active)
@@ -316,7 +318,6 @@ export function create({settings, store, window}) {
   });
 
   importButton.connect('clicked', () => {
-    const locale = languages[localeRow.selected]?.locale ?? currentLocale;
     const dialog = new Gtk.FileDialog({
       title: _('Import dictionary'),
     });
@@ -330,7 +331,7 @@ export function create({settings, store, window}) {
         return;
       }
       importButton.sensitive = false;
-      store.importFile(file, locale)
+      store.importFile(file)
         .then(() => {
           bumpRevision(settings);
           if (active)

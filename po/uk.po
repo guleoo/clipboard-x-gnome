@@ -425,13 +425,12 @@ msgstr ""
 "автоматично."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Мова імпорту"
+msgid "Dictionary language"
+msgstr "Мова словника"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Використовується, якщо у словнику не вказано «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Словник має містити коректний заголовок «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

@@ -194,14 +194,13 @@ export class DictionaryStore {
     return {lexicon, systemEnabled};
   }
 
-  async importFile(file, defaultLocale) {
+  async importFile(file) {
     await ensureDirectory(this._root);
     const bytes = await loadFile(file);
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
     const basename = file.get_basename();
     const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
-      locale: defaultLocale,
       name: basename.replace(/\.[^.]+$/u, ''),
     }, {checkpoint: () => checkpoint()});
     if (parsed.entries.length > MAXIMUM_IMPORT_ENTRIES)
@@ -220,14 +219,13 @@ export class DictionaryStore {
     };
   }
 
-  async refreshSource(uri, defaultLocale) {
+  async refreshSource(uri) {
     const source = validateNetworkLocation(uri);
     await ensureDirectory(this._root);
     const bytes = await loadFile(Gio.File.new_for_uri(source));
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
     const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
-      locale: defaultLocale,
       name: source.split('/').pop()?.replace(/\.[^.]+$/u, '') || source,
       source,
     }, {checkpoint: () => checkpoint()});

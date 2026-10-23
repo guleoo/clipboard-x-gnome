@@ -133,7 +133,7 @@ try {
   } finally {
     emptyDirectory.close(null);
   }
-  await store.importFile(chineseSource, 'zh');
+  await store.importFile(chineseSource);
   const initial = await store.list();
   assert(initial.length === 1 && initial[0].locale === 'zh' && initial[0].entryCount > 0,
     'explicit import should add the dictionary to the user dictionary store');
@@ -172,7 +172,7 @@ try {
     '# name: User Chinese dictionary',
     '注销 100',
   ].join('\n'));
-  const secondChinese = await store.importFile(importSource, 'zh');
+  const secondChinese = await store.importFile(importSource);
   const selectedTokenizer = createTokenizer({
     store,
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
@@ -207,9 +207,9 @@ try {
     '秘密鍵 90',
     '画像編集 80',
   ].join('\n'));
-  const imported = await store.importFile(importSource, 'en');
+  const imported = await store.importFile(importSource);
   assert(imported.locale === 'ja' && (await store.list()).length === 3,
-    'import should preserve the dictionary-declared locale');
+    'import should use the dictionary-declared locale');
   const japaneseTokenizer = createTokenizer({
     store,
     languageNames: () => ['ja_JP.UTF-8', 'ja', 'C'],
@@ -220,19 +220,25 @@ try {
     'an imported dictionary should be selected by the display locale',
   );
 
-  GLib.file_set_contents(plainImportSource.get_path(), '비밀키 70\n이미지편집 60\n');
-  const plainImported = await store.importFile(plainImportSource, 'ko');
+  GLib.file_set_contents(plainImportSource.get_path(), '# locale: ko\n비밀키 70\n이미지편집 60\n');
+  const plainImported = await store.importFile(plainImportSource);
   assert(plainImported.locale === 'ko',
-    'an imported dictionary without metadata should use the selected language code');
+    'a dictionary only needs a locale header; its name may come from the filename');
 
-  const languageStore = new DictionaryStore({rootPath: testRoot.get_child('selected-language').get_path()});
+  const languageStore = new DictionaryStore({rootPath: testRoot.get_child('declared-language').get_path()});
   for (const name of ['foo.txt', 'my-words.txt', 'ja.dict']) {
     const file = testRoot.get_child(name);
-    GLib.file_set_contents(file.get_path(), '注销密钥 90\n');
-    const selected = await languageStore.importFile(file, 'zh_CN.UTF-8');
-    assert(selected.locale === 'zh_cn' && selected.fileName.startsWith('zh_cn--')
-        && (await languageStore.load(['zh_CN.UTF-8'], [selected.fileName])).lexicon.size === 1,
-      `A headerless ${name} must use the selected language, not guess one from the filename`);
+    for (const header of ['', '# locale: \n', '# locale: invalid-language-code!\n']) {
+      GLib.file_set_contents(file.get_path(), `${header}注销密钥 90\n`);
+      let rejected = false;
+      try {
+        await languageStore.importFile(file);
+      } catch (error) {
+        rejected = error.code === 'invalid_dictionary_locale';
+      }
+      assert(rejected && (await languageStore.list()).length === 0,
+        `${name} without a valid locale header must fail without creating a dictionary`);
+    }
   }
 
   // Replace only remote byte acquisition with an isolated local file. Exercise
@@ -246,18 +252,40 @@ try {
   };
   try {
     GLib.file_set_contents(networkSource.get_path(), '注销密钥 90\n');
-    const network = await languageStore.refreshSource(networkUri, 'ja');
+    let rejected = false;
+    try {
+      await languageStore.refreshSource(networkUri);
+    } catch (error) {
+      rejected = error.code === 'invalid_dictionary_locale';
+    }
+    assert(rejected && (await languageStore.list()).length === 0,
+      'A headerless network dictionary must fail without creating a dictionary');
+    GLib.file_set_contents(networkSource.get_path(), '# locale: ja\n秘密鍵 90\n');
+    const network = await languageStore.refreshSource(networkUri);
     assert(network.locale === 'ja' && network.fileName.startsWith('ja--')
         && network.source === networkUri
         && (await languageStore.load(['ja'], [network.fileName])).lexicon.size === 1,
-      'A headerless network dictionary must use the selection, not URL scheme, domain, or path fragments');
+      'A network dictionary must use its declared language');
+    for (const header of ['', '# locale: \n', '# locale: invalid-language-code!\n']) {
+      GLib.file_set_contents(networkSource.get_path(), `${header}注销密钥 90\n`);
+      rejected = false;
+      try {
+        await languageStore.refreshSource(networkUri);
+      } catch (error) {
+        rejected = error.code === 'invalid_dictionary_locale';
+      }
+      const kept = await languageStore.list();
+      assert(rejected && kept.length === 1 && kept[0].fileName === network.fileName
+          && (await languageStore.load(['ja'], [network.fileName])).lexicon.segment('秘密鍵').join('|') === '秘密鍵',
+        'A failed refresh must preserve the previously imported dictionary and its content');
+    }
     GLib.file_set_contents(networkSource.get_path(), '# locale: zh\n注销密钥 90\n');
-    const declared = await languageStore.refreshSource(networkUri, 'ja');
+    const declared = await languageStore.refreshSource(networkUri);
     const listed = await languageStore.list();
     assert(declared.locale === 'zh' && declared.fileName.startsWith('zh--')
         && !languageStore.getFile(network.fileName).query_exists(null)
         && listed.filter(dictionary => dictionary.source === networkUri).length === 1,
-      'An explicit network locale header must still override the selection without retaining the old-language file');
+      'A changed network locale header must replace the old-language file');
   } finally {
     Gio.File.new_for_uri = fromUri;
   }
@@ -272,7 +300,7 @@ try {
 
   const largeSource = testRoot.get_child('large-zh.txt');
   GLib.file_set_contents(largeSource.get_path(), largeDictionary);
-  await store.importFile(largeSource, 'zh');
+  await store.importFile(largeSource);
   const cancellable = new Gio.Cancellable();
   const add = Lexicon.prototype.add;
   let batches = 0;

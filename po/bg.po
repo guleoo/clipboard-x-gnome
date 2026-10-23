@@ -427,12 +427,12 @@ msgid ""
 msgstr "Активираните речници, съответстващи на текущия език на интерфейса, се зареждат автоматично."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Език за импортиране"
+msgid "Dictionary language"
+msgstr "Език на речника"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Използва се, когато речникът не съдържа „# locale: language-code“."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Речникът трябва да съдържа валиден заглавен ред „# locale: language-code“."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

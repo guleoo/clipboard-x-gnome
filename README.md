@@ -150,7 +150,8 @@ them, and use `Shift` + arrow keys for keyboard range selection. The default act
 
 For Chinese or Japanese, open **Preferences → Clipboard → Dictionaries** to enable the system segmenter,
 import UTF-8 dictionaries, or add an HTTP/HTTPS dictionary location. A dictionary may contain one word
-per line with an optional frequency:
+per line with an optional frequency. A valid `# locale: language-code` header is required;
+files without it are not imported, including network dictionaries:
 
 ```text
 # locale: zh

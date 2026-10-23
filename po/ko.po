@@ -419,12 +419,12 @@ msgid ""
 msgstr "현재 표시 언어와 일치하는 활성화된 사전을 자동으로 불러옵니다."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "가져올 언어"
+msgid "Dictionary language"
+msgstr "사전 언어"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "사전에 “# locale: language-code” 선언이 없을 때 사용합니다."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "사전 파일 상단에 유효한 언어 코드가 포함된 “# locale: language-code”를 선언해야 합니다."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

@@ -419,12 +419,12 @@ msgid ""
 msgstr "واژه‌نامه‌های فعال که با زبان نمایش فعلی مطابقت دارند، به‌طور خودکار بارگذاری می‌شوند."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "زبان برای درون‌ریزی"
+msgid "Dictionary language"
+msgstr "زبان واژه‌نامه"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "وقتی واژه‌نامه «# locale: language-code» را اعلام نکند استفاده می‌شود."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "واژه‌نامه باید دارای سرآیند معتبر «# locale: language-code» باشد."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

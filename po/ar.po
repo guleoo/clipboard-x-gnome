@@ -417,12 +417,12 @@ msgid ""
 msgstr "تُحمَّل القواميس المفعّلة المطابقة للغة العرض الحالية تلقائيًا."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "لغة الاستيراد"
+msgid "Dictionary language"
+msgstr "لغة القاموس"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "يُستخدم عندما لا يعلن القاموس “# locale: language-code”."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "يجب أن يحتوي القاموس على ترويسة صالحة بصيغة «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

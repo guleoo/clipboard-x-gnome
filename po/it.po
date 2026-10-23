@@ -428,12 +428,12 @@ msgid ""
 msgstr "I dizionari abilitati corrispondenti alla lingua di visualizzazione corrente vengono caricati automaticamente."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Lingua di importazione"
+msgid "Dictionary language"
+msgstr "Lingua del dizionario"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Usato quando il dizionario non dichiara «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Il dizionario deve dichiarare un’intestazione valida «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

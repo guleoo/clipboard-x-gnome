@@ -428,12 +428,12 @@ msgstr ""
 "cargats automaticament."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Lenga d’importacion"
+msgid "Dictionary language"
+msgstr "Lenga del diccionari"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Utilizat quand lo diccionari declara pas « # locale: language-code »."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Lo diccionari deu declarar una entèsta valida « # locale: language-code »."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

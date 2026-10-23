@@ -423,12 +423,12 @@ msgid ""
 msgstr "有効化された辞書のうち、現在の表示言語に一致するものを自動的に読み込みます。"
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "インポート時の言語"
+msgid "Dictionary language"
+msgstr "辞書の言語"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "辞書に「# locale: language-code」の宣言がない場合に使用します。"
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "辞書ファイルの先頭に、有効な言語コードを含む「# locale: language-code」を指定してください。"
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

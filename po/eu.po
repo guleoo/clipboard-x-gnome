@@ -422,13 +422,12 @@ msgid ""
 msgstr "Uneko bistaratze-hizkuntzarekin bat datozen gaitutako hiztegiak automatikoki kargatzen dira."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Inportatzeko hizkuntza"
+msgid "Dictionary language"
+msgstr "Hiztegiaren hizkuntza"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Hiztegiak «# locale: language-code» adierazten ez duenean erabiltzen da."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Hiztegiak baliozko «# locale: language-code» goiburua izan behar du."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"

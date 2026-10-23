@@ -428,12 +428,12 @@ msgid ""
 msgstr "Τα ενεργοποιημένα λεξικά που αντιστοιχούν στην τρέχουσα γλώσσα εμφάνισης φορτώνονται αυτόματα."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Γλώσσα εισαγωγής"
+msgid "Dictionary language"
+msgstr "Γλώσσα λεξικού"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Χρησιμοποιείται όταν το λεξικό δεν δηλώνει «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Το λεξικό πρέπει να περιέχει έγκυρη κεφαλίδα «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
