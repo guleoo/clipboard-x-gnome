@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../../src/clipboard/item.js';
 import {HistoryStore} from '../../../src/clipboard/history/store.js';
 import {createThumbnail} from '../../../src/clipboard/thumbnail.js';
-import {bytesFromString, sha256} from '../../../src/common/bytes.js';
+import {bytesFromString, sha256, stringFromBytes} from '../../../src/common/bytes.js';
 import {writeFile} from '../../../src/common/files.js';
 
 function assert(condition, message) {
@@ -53,6 +53,28 @@ try {
   await writeFile(Gio.File.new_for_path(loaded[0].primary.path), bytesFromString('tampered clipboard content!'));
   loaded[0].primary.bytes = null;
   await assertRejects(store.materialize(loaded[0]), /integrity|size/u, 'tampered object verification');
+
+  const dual = ClipboardItem.fromRepresentations([
+    {mimeType: 'text/plain;charset=utf-8', bytes: bytesFromString('Identical plain and HTML')},
+    {mimeType: 'text/html', bytes: bytesFromString('Identical plain and HTML')},
+  ]);
+  const dualIds = dual.representations.map(value => value.id);
+  await store.save([dual]);
+  const restoredDual = (await store.load()).find(value => value.id === dual.id);
+  assert(restoredDual?.representations.length === 2
+      && new Set(restoredDual.representations.map(value => value.id)).size === 2
+      && restoredDual.representations.every((value, index) => value.id === dualIds[index]),
+    'same-byte plain and HTML must survive persistence with distinct stable representation IDs');
+  assert(restoredDual.representations.every(value => value.path === dual.primary.path
+      && value.sha256 === dual.primary.sha256)
+      && GLib.path_get_basename(dual.primary.path) === dual.primary.sha256,
+    'same-byte representations must continue sharing the unchanged SHA-named object');
+  assert(restoredDual.preview.derivedFrom === restoredDual.primary.id
+      && restoredDual.preview.text === 'Identical plain and HTML' && !restoredDual.preview.truncated,
+    'the full preview must retain its plain-text representation association after reload');
+  await store.materialize(restoredDual);
+  assert(restoredDual.representations.every(value => stringFromBytes(value.bytes) === 'Identical plain and HTML'),
+    'both persisted MIME representations must materialize their exact original bytes');
 
   const second = ClipboardItem.fromText('second serialized save');
   const third = ClipboardItem.fromText('third serialized save');

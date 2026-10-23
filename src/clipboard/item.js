@@ -44,7 +44,8 @@ export class ClipboardItem {
         continue;
       seen.add(key);
       representations.push({
-        id: digest,
+        // MIME identifies the representation; the payload SHA still identifies its shared object.
+        id: sha256(bytesFromString(key)),
         mimeType: normalizedMimeType,
         size: bytes.get_size(),
         sha256: digest,
