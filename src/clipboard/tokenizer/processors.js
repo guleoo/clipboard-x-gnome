@@ -45,12 +45,15 @@ export function tokenizeText(text, localeOrOptions = undefined) {
     || right.end - left.end
     || left.priority - right.priority);
   const specials = [];
+  let previousEnd = 0;
   for (const candidate of candidates) {
-    if (specials.some(value => candidate.start < value.end && candidate.end > value.start))
+    // Candidates are ordered by start; accepted intervals never overlap. Only
+    // the last accepted end can intersect this candidate, not earlier tokens.
+    if (candidate.start < previousEnd)
       continue;
     specials.push(candidate);
+    previousEnd = candidate.end;
   }
-  specials.sort((left, right) => left.start - right.start);
 
   const wordSegmenter = new Intl.Segmenter(locale, {granularity: 'word'});
   const graphemeSegmenter = new Intl.Segmenter(locale, {granularity: 'grapheme'});

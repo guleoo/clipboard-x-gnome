@@ -26,3 +26,22 @@ const url = tokens.find(token => token.type === 'url');
 const number = tokens.find(token => token.type === 'number');
 assertEqual(composeTokens(source, tokens, [url.index, number.index]),
   'https://example.com/a 123-456', 'non-adjacent selected tokens should compose predictably');
+
+const overlapping = 'https://example.com/123/user@example.com 42 user7@example.com 43';
+const specialTokens = tokenizeText(overlapping);
+assertEqual(specialTokens.map(token => [token.type, token.text]), [
+  ['url', 'https://example.com/123/user@example.com'],
+  ['number', '42'],
+  ['email', 'user7@example.com'],
+  ['number', '43'],
+], 'Nested URL, email and number candidates must retain the same longest-interval selection');
+assert(specialTokens.every((token, index) => overlapping.slice(token.start, token.end) === token.text
+    && (index === 0 || specialTokens[index - 1].end <= token.start)),
+  'Accepted special tokens must retain exact offsets and never overlap');
+
+const numericList = Array.from({length: 4096}, (_value, index) => String(index)).join(' ');
+const numericTokens = tokenizeText(numericList);
+assert(numericTokens.length === 4096 && numericTokens.every((token, index) =>
+  token.type === 'number' && token.text === String(index)
+    && numericList.slice(token.start, token.end) === token.text),
+'Dense numeric lists must retain every token, in order, with exact source offsets');
