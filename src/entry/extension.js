@@ -68,7 +68,17 @@ export default class ClipboardXGnomeExtension extends Extension {
       source: itemId => controller.items.find(item => item.id === itemId) ?? null,
       sourceReady: () => !controller.loading && !controller.error,
       prepare: () => controller.persist(),
-      publish: (item, options) => sync.publish(item, options),
+      publish: async (item, options) => {
+        const result = await sync.publish(item, options);
+        // Only a newly confirmed publication changes the item's delivery plan.
+        // Replaying server transfer history must not save or rebuild history.
+        if (this._controller === controller && controller.items.includes(item)) {
+          // Keep disable()'s shutdown snapshot aware of an in-flight save.
+          controller.update(item, {notify: false});
+          await controller.persist();
+        }
+        return result;
+      },
       onError: error => {
         if (this._controller === controller)
           this._reportError(error);
@@ -163,11 +173,6 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._transferSignal = this._sync.connect(
       'transfer-changed',
       (_sync, transfer) => {
-        if (transfer.kind === 'publish' && transfer.state === 'completed') {
-          const item = controller.items.find(value => value.id === transfer.itemId);
-          if (item)
-            controller.update(item);
-        }
         this._indicator?.refreshTransfer(transfer.itemId);
       },
     );

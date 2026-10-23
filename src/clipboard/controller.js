@@ -313,11 +313,12 @@ export class ClipboardController extends EventEmitter {
     this.emit('changed');
   }
 
-  update(item) {
+  update(item, {notify = true} = {}) {
     if (!this._items.includes(item) || this._destroyed)
       return;
     this._scheduleSave();
-    this.emit('changed');
+    if (notify)
+      this.emit('changed');
   }
 
   commitContent(item) {
