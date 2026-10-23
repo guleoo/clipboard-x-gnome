@@ -39,6 +39,7 @@ const path = GLib.build_filenamev([directory, 'quick-phrases.json']);
 const invalidPath = GLib.build_filenamev([directory, 'invalid-quick-phrases.json']);
 const recoveryPath = GLib.build_filenamev([directory, 'recovery-quick-phrases.json']);
 const backupPath = GLib.build_filenamev([directory, 'preserved-quick-phrases.json']);
+const capacityPath = GLib.build_filenamev([directory, 'capacity-quick-phrases.json']);
 const store = new PhraseStore(settings, {path});
 
 try {
@@ -123,8 +124,35 @@ try {
   await recovered.ready;
   assert(recovered.all.join(',') === 'recovered,preserved',
     'recovered mutations must persist only successfully committed phrases');
+
+  // One full-capacity round trip, not repeated appends: controls exercise JSON's
+  // six-byte escaping while the prefix also checks non-BMP code-point counting.
+  limit = 1000;
+  const phrases = Array.from({length: limit}, (_value, index) => {
+    const prefix = `${index}字🧩`;
+    return prefix + '\u0000'.repeat(MAX_PHRASE_LENGTH - [...prefix].length);
+  });
+  const capacity = new PhraseStore(settings, {path: capacityPath});
+  await capacity.ready;
+  await capacity.replace(phrases);
+  assert(capacity.all.length === limit && capacity.all.every(value => [...value].length === MAX_PHRASE_LENGTH),
+    'the full configured phrase count and per-phrase code-point capacity must remain available');
+  assert(Gio.File.new_for_path(capacityPath).query_info(Gio.FILE_ATTRIBUTE_STANDARD_SIZE,
+    Gio.FileQueryInfoFlags.NONE, null).get_size() > 8 * 1024 * 1024,
+    'the capacity fixture must exceed the previous JSON file limit');
+  const reopenedCapacity = new PhraseStore(settings, {path: capacityPath});
+  await reopenedCapacity.ready;
+  assert(reopenedCapacity.all.every((value, index) => value === phrases[index])
+      && reopenedCapacity.all.length === phrases.length,
+    'all maximum-length escaped and Unicode phrases must survive a real file reload');
+  assert(await reopenedCapacity.remove(phrases[0]), 'a large reloaded phrase collection must remain editable');
+  const afterRemoval = new PhraseStore(settings, {path: capacityPath});
+  await afterRemoval.ready;
+  assert(afterRemoval.all.length === phrases.length - 1
+      && afterRemoval.all.every((value, index) => value === phrases[index + 1]),
+    'deleting from a collection above 8 MiB must persist without losing the remaining phrases');
 } finally {
-  for (const target of [path, invalidPath, recoveryPath, backupPath]) {
+  for (const target of [path, invalidPath, recoveryPath, backupPath, capacityPath]) {
     try {
       Gio.File.new_for_path(target).delete(null);
     } catch (_error) {

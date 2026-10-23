@@ -2,7 +2,9 @@ import {dataPath, readJson, writeJson} from '../../common/data-store.js';
 
 export const MAX_PHRASE_LENGTH = 4096;
 const MAX_PHRASES = 1000;
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
+// JSON can encode a code point as six ASCII bytes (controls or lone surrogates).
+// Include each quoted/indented entry and the pretty-printed document envelope.
+const MAX_FILE_BYTES = MAX_PHRASES * (MAX_PHRASE_LENGTH * 6 + 8) + 128;
 const FILE_VERSION = 1;
 
 export function quickPhrasesPath() {
