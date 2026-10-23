@@ -280,6 +280,19 @@ try {
         'A failed refresh must preserve the previously imported dictionary and its content');
     }
     GLib.file_set_contents(networkSource.get_path(), '# locale: zh\n注销密钥 90\n');
+    const blockedTarget = languageStore.getFile(network.fileName.replace(/^ja--/u, 'zh--'));
+    blockedTarget.make_directory(null);
+    let writeError;
+    try {
+      await languageStore.refreshSource(networkUri);
+    } catch (error) {
+      writeError = error;
+    }
+    assert(writeError?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.IS_DIRECTORY)
+        && languageStore.getFile(network.fileName).query_exists(null)
+        && (await languageStore.load(['ja'], [network.fileName])).lexicon.segment('秘密鍵').join('|') === '秘密鍵',
+      'A failed replacement write must preserve the old-language dictionary and its original words');
+    blockedTarget.delete(null);
     const declared = await languageStore.refreshSource(networkUri);
     const listed = await languageStore.list();
     assert(declared.locale === 'zh' && declared.fileName.startsWith('zh--')

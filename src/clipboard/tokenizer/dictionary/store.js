@@ -234,8 +234,6 @@ export class DictionaryStore {
     const previous = (await this.list()).find(dictionary => dictionary.source === source);
     const fileName = previous?.fileName
       ?? `${parsed.locale}--${checksum(source)}.dict`;
-    if (previous && !fileName.startsWith(`${parsed.locale}--`))
-      await this.remove(previous.fileName);
     const targetName = previous && fileName.startsWith(`${parsed.locale}--`)
       ? fileName
       : `${parsed.locale}--${checksum(source)}.dict`;
@@ -243,6 +241,8 @@ export class DictionaryStore {
       this._root.get_child(targetName),
       new GLib.Bytes(new TextEncoder().encode(serializeDictionary({...parsed, source}))),
     );
+    if (previous && previous.fileName !== targetName)
+      await this.remove(previous.fileName);
     return {
       fileName: targetName,
       locale: parsed.locale,
