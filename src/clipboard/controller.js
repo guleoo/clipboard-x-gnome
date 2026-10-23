@@ -30,6 +30,7 @@ export class ClipboardController extends EventEmitter {
     this._items = [];
     this._selection = null;
     this._selectionSignal = 0;
+    this._selectionRevision = 0;
     this._settingsSignals = [];
     this._saveTimeout = 0;
     this._savePending = false;
@@ -57,6 +58,10 @@ export class ClipboardController extends EventEmitter {
 
   get error() {
     return this._error;
+  }
+
+  get selectionRevision() {
+    return this._selectionRevision;
   }
 
   start({afterShutdown = null} = {}) {
@@ -125,6 +130,9 @@ export class ClipboardController extends EventEmitter {
   }
 
   _requestCapture() {
+    // Owner changes matter even when recording is paused, excluded or deduped.
+    // Advance before any asynchronous capture can finish.
+    this._selectionRevision++;
     this._captureCancellable?.cancel();
     if (this._captureInProgress) {
       this._captureQueued = true;

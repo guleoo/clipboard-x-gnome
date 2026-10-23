@@ -92,7 +92,10 @@ async function captureScopes(extensionObject, defaults) {
     const obsolete = controller.capture();
     await firstRead.promise;
     controller._selection.get_mimetypes = () => ['application/x-keepass2', 'text/plain;charset=utf-8', 'text/html'];
+    const previousSelection = controller.selectionRevision;
     controller._requestCapture();
+    assert(controller.selectionRevision === previousSelection + 1,
+      'Clipboard owner changes must invalidate automatic writing before capture or privacy filtering');
     assert(scope.is_cancelled(), 'Owner changes must cancel the current MIME transfer scope immediately');
     releaseFirst.resolve();
     assert(await obsolete === null, 'An owner change must discard the entire previous capture');

@@ -11,6 +11,8 @@ export class Content {
     this._deviceId = deviceId;
     this._onError = onError;
     this._destroyed = false;
+    this._receiveRevision = 0;
+    this._interactionRevision = 0;
   }
 
   async ensure(item, {withinThreshold = false, guard = () => true, flush = true} = {}) {
@@ -59,6 +61,8 @@ export class Content {
   }
 
   async activate(item, {guard = () => true} = {}) {
+    // An explicit choice wins immediately, not only once its download finishes.
+    this._interactionRevision++;
     await this.ensure(item, {guard});
     await this._activate(item, guard);
     return item;
@@ -73,7 +77,9 @@ export class Content {
 
   async receive(changes, {isCurrent}) {
     const current = () => !this._destroyed && isCurrent();
-    const received = new Set();
+    const selectionRevision = this._history.selectionRevision;
+    const interactionRevision = this._interactionRevision;
+    const received = new Map();
     let changed = false;
     for (const change of changes) {
       if (!current())
@@ -87,6 +93,9 @@ export class Content {
       }
       if (this._receiveMode() === 'disabled')
         continue;
+      // Reserve the candidate before fetching metadata: a slow new page must
+      // already prevent a previous page from writing an obsolete clipboard.
+      const receiveRevision = ++this._receiveRevision;
       let incoming;
       try {
         incoming = await this._remote.getItem(change.itemId);
@@ -111,7 +120,7 @@ export class Content {
       const replaceDuplicate = duplicate?.remote && duplicate.id !== incoming.id
         && duplicate.representations.some(value => !value.bytes && !value.path);
       const retained = this._history.add(incoming, 'remote', {replaceDuplicate});
-      received.add(retained);
+      received.set(retained, receiveRevision);
       if (retained !== incoming)
         await this._history.discardContent([incoming]);
       changed = true;
@@ -120,25 +129,33 @@ export class Content {
       await this._history.persist();
     if (!current())
       return;
-    for (const item of received) {
+    for (const [item, receiveRevision] of received) {
       const retained = () => current() && this._history.items.includes(item);
+      const activate = () => receiveRevision === this._receiveRevision
+        && selectionRevision === this._history.selectionRevision
+        && interactionRevision === this._interactionRevision
+        && this._receiveMode() === 'activate';
       // A durable snapshot is sufficient to accept this page. Offline originals
       // must not block polling; explicit use can request them again later.
-      this._finishReceived(item, retained).catch(error => {
+      this._finishReceived(item, retained, activate).catch(error => {
         if (retained())
           this._onError(error);
       });
     }
   }
 
-  async _finishReceived(item, guard) {
+  async _finishReceived(item, guard, activate) {
     if (!this._current(item, guard))
       return;
     await this.ensure(item, {
       withinThreshold: this._receiveMode() !== 'activate', guard, flush: false,
     });
-    if (this._receiveMode() === 'activate' && item.availability === 'ready')
-      await this._activate(item, () => guard() && this._receiveMode() === 'activate');
+    if (activate() && item.availability === 'ready') {
+      // Recheck after the final local read. Supersession is a silent no-op, and
+      // our own clipboard write may advance selectionRevision, so do not apply
+      // the explicit activation helper's post-write check to this guard.
+      await this._history.activate(item, {guard: () => this._current(item, guard) && activate()});
+    }
   }
 
   _current(item, guard) {

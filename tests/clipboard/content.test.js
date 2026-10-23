@@ -32,6 +32,8 @@ class History {
     this.writes = 0;
     this.commits = 0;
     this.activations = 0;
+    this.activated = [];
+    this.selectionRevision = 0;
     this.commit = () => {};
   }
 
@@ -61,8 +63,11 @@ class History {
   discardContent(items) { return this.store.discard(items); }
   async activate(item, {guard}) {
     await this.materialize(item);
-    if (guard())
+    if (guard()) {
       this.activations++;
+      this.activated.push(item.id);
+      this.selectionRevision++;
+    }
   }
 }
 
@@ -265,6 +270,118 @@ try {
   const unretained = ClipboardItem.fromText('local content outside history');
   await rejects(content.activate(unretained), 'History actions must reject unretained local content');
   assert(history.activations === 0, 'An unretained local item must not be copied');
+
+  const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+  const complete = item => {
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+  };
+  const slow = preview('older automatic original');
+  const latest = preview('latest automatic original');
+  const slowDownload = deferred();
+  remote.materialize = async item => {
+    if (item === slow)
+      await slowDownload.promise;
+    complete(item);
+  };
+  await receive([upsert(slow), upsert(latest)]);
+  await tick();
+  assert(history.activated.join() === latest.id, 'Only the latest item on a page may auto-activate');
+  slowDownload.resolve();
+  await tick();
+  assert(history.activated.join() === latest.id && slow.primary.bytes && history.items.includes(slow),
+    'A slower old original must stay in history without overwriting the newer clipboard');
+
+  const previousPage = preview('previous page original');
+  const nextPage = preview('new page with slow metadata');
+  const previousDownload = deferred();
+  const nextManifest = deferred();
+  remote.materialize = async item => {
+    if (item === previousPage)
+      await previousDownload.promise;
+    complete(item);
+  };
+  await receive([upsert(previousPage)]);
+  remote.getItem = id => id === nextPage.id ? nextManifest.promise : getItem(id);
+  const receivingNext = receive([upsert(nextPage)]);
+  previousDownload.resolve();
+  await tick();
+  assert(!history.activated.includes(previousPage.id),
+    'A newly received page must supersede old activation before its metadata arrives');
+  nextManifest.resolve(nextPage);
+  await receivingNext;
+  await tick();
+  assert(history.activated.at(-1) === nextPage.id,
+    'A later page must activate normally after the previous automatic clipboard write');
+  remote.getItem = getItem;
+
+  for (const stage of ['manifest', 'download', 'final-read']) {
+    const interrupted = preview(`user copies during automatic ${stage}`);
+    const entered = deferred();
+    const release = deferred();
+    remote.getItem = async id => {
+      if (id === interrupted.id && stage === 'manifest') {
+        entered.resolve();
+        await release.promise;
+      }
+      return getItem(id);
+    };
+    remote.materialize = async item => {
+      if (item === interrupted && stage === 'download') {
+        entered.resolve();
+        await release.promise;
+      }
+      complete(item);
+    };
+    history.materialize = async item => {
+      if (item === interrupted && stage === 'final-read') {
+        entered.resolve();
+        await release.promise;
+      }
+      return read.call(history, item);
+    };
+    const receivingInterrupted = receive([upsert(interrupted)]);
+    await entered.promise;
+    // An owner change matters even if private/excluded/duplicate content never
+    // creates a new history item, or its capture has not completed yet.
+    history.selectionRevision++;
+    release.resolve();
+    await receivingInterrupted;
+    await tick();
+    assert(!history.activated.includes(interrupted.id) && interrupted.primary.bytes,
+      `A user copy during ${stage} must suppress automatic writing, not original caching`);
+    remote.getItem = getItem;
+    history.materialize = read;
+  }
+
+  const automatic = preview('old automatic download during explicit selection');
+  const chosen = preview('explicit selection with its own slow original');
+  history.add(chosen);
+  const automaticGate = deferred();
+  const chosenGate = deferred();
+  remote.materialize = async item => {
+    await (item === automatic ? automaticGate.promise : chosenGate.promise);
+    complete(item);
+  };
+  await receive([upsert(automatic)]);
+  const choosing = content.activate(chosen);
+  automaticGate.resolve();
+  await tick();
+  assert(!history.activated.includes(automatic.id),
+    'Explicit selection must invalidate old automatic writing before its own download finishes');
+  chosenGate.resolve();
+  await choosing;
+  assert(history.activated.at(-1) === chosen.id, 'Explicit selection must still copy its complete original');
+
+  const repeated = preview('repeated latest candidate');
+  const middle = preview('middle candidate');
+  remote.materialize = async item => complete(item);
+  const beforeRepeated = history.activated.length;
+  await receive([upsert(repeated), upsert(middle), upsert(repeated)]);
+  await tick();
+  assert(history.activated.slice(beforeRepeated).join() === repeated.id,
+    'The last occurrence must win even when a page repeats an item after another candidate');
+  assert(errors.length === 0, 'Supersession and successful automatic owner changes must not report errors');
 
   const stopped = preview('disabled during local read');
   history.add(stopped);
