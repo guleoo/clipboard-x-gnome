@@ -972,9 +972,17 @@ msgid ""
 msgstr ""
 "قرار دادن در تخته‌گیره، محتوای کنونی آن را با محتوای دریافتی جایگزین می‌کند."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "اچ‌تی‌ام‌ال"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "محتوای ارسالی"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "قالب‌بندی متن غنی"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "ارسال متن کپی‌شده با قالب‌بندی اصلی آن (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

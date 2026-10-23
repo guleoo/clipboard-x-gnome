@@ -979,9 +979,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "Tento režim nahradí aktuálny obsah schránky prijatým obsahom."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Obsah na odoslanie"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formátovanie textu"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Odosielať skopírovaný text s pôvodným formátovaním (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

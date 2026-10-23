@@ -989,9 +989,17 @@ msgstr ""
 "Η τοποθέτηση στο πρόχειρο αντικαθιστά το τρέχον περιεχόμενό του με το "
 "εισερχόμενο."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Περιεχόμενο προς αποστολή"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Μορφοποίηση εμπλουτισμένου κειμένου"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Αποστολή του αντιγραμμένου κειμένου με την αρχική του μορφοποίηση (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

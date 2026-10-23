@@ -988,9 +988,17 @@ msgstr ""
 "En activar al porta-retalls, el contingut rebut substitueix el contingut "
 "actual."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Contingut per enviar"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Format de text enriquit"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Envia el text copiat amb el format original (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

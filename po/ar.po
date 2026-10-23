@@ -962,9 +962,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "يستبدل وضع المحتوى في الحافظة محتواها الحالي بالمحتوى الوارد."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "المحتوى المُرسل"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "تنسيق النص الغني"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "إرسال النص المنسوخ بتنسيقه الأصلي (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

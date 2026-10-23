@@ -296,7 +296,7 @@
     </key>
     <key name="sync-html" type="b">
       <default>false</default>
-      <summary>Synchronize HTML content</summary>
+      <summary>Send copied text with its original formatting (HTML)</summary>
     </key>
     <key name="sync-images" type="b">
       <default>true</default>

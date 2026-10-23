@@ -306,6 +306,15 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
 
     page.add(createSyncGroup(settings, deviceId, this._rows));
 
+    const content = new Adw.PreferencesGroup({title: _('Content to send')});
+    page.add(content);
+    content.add(this._rows.switch('sync-text', _('Text')));
+    content.add(this._rows.switch(
+      'sync-html', _('Rich text formatting'),
+      _('Send copied text with its original formatting (HTML).'),
+    ));
+    content.add(this._rows.switch('sync-images', _('Images')));
+
     const policy = new Adw.PreferencesGroup({
       title: _('Transfer policy'),
       description: _('Previews reduce initial transfer size; originals are fetched when needed.'),
@@ -325,9 +334,6 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     ]);
     receiveMode.subtitle = _('Activate clipboard replaces the current clipboard with incoming content.');
     policy.add(receiveMode);
-    policy.add(this._rows.switch('sync-text', _('Text')));
-    policy.add(this._rows.switch('sync-html', _('HTML')));
-    policy.add(this._rows.switch('sync-images', _('Images')));
     policy.add(this._rows.switch(
       'sync-favorites-only',
       _('Pinned entries only'),
