@@ -38,13 +38,14 @@ run_shell_check tests/ui/shell.smoke.js
 run_shell_check tests/ui/preferences.smoke.js
 ```
 
-For privacy boundaries, search cursor navigation / color-picker movement, screenshot cancellation,
+For privacy boundaries, entry keyboard navigation / submission, color-picker movement, sync toggles, screenshot cancellation,
 or press-and-drag word selection,
 run the corresponding focused check using the same helper:
 
 ```sh
 run_shell_check tests/ui/privacy.smoke.js
 run_shell_check tests/ui/search-picker.smoke.js
+run_shell_check tests/ui/sync-toggle.smoke.js
 run_shell_check tests/ui/screenshot-cancel.smoke.js
 run_shell_check tests/ui/word-selection.smoke.js
 ```

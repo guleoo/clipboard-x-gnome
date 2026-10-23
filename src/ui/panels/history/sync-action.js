@@ -57,8 +57,10 @@ export class SyncAction {
     this._status = status;
     this._capabilities = capabilities;
     this._updateStatus();
-    for (const button of this._buttons.values())
-      this._update(button._clipboardItem, button);
+    for (const button of this._buttons.values()) {
+      if (button.visible)
+        this._update(button._clipboardItem, button);
+    }
   }
 
   setAccent(color) {

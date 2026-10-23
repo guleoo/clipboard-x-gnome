@@ -36,11 +36,12 @@ run_shell_check tests/ui/shell.smoke.js
 run_shell_check tests/ui/preferences.smoke.js
 ```
 
-隐私边界、搜索光标导航/取色器移动、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
+隐私边界、输入框键盘导航/提交、取色器移动、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
 
 ```sh
 run_shell_check tests/ui/privacy.smoke.js
 run_shell_check tests/ui/search-picker.smoke.js
+run_shell_check tests/ui/sync-toggle.smoke.js
 run_shell_check tests/ui/screenshot-cancel.smoke.js
 run_shell_check tests/ui/word-selection.smoke.js
 ```

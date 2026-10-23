@@ -11,6 +11,7 @@ import {MAX_PHRASE_LENGTH, PhraseStore} from '../../../clipboard/phrases/store.j
 import {ContentItem} from '../../controls/content-item.js';
 import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelHeader} from '../../controls/panel-header.js';
+import {SearchEntry} from '../../controls/search-entry.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 
@@ -78,27 +79,23 @@ export class QuickPhrasesPanel {
       x_expand: true,
       visible: false,
     });
-    this.entry = new St.Entry({
-      style_class: 'cbx-search cbx-phrase-entry',
-      hint_text: _('Enter a custom phrase…'),
-      can_focus: true,
-      x_expand: true,
+    this.entry = new SearchEntry({
+      styleClass: 'cbx-phrase-entry',
+      placeholder: _('Enter a custom phrase…'),
+      iconName: null,
+      placeholderOffset: OPTICAL_BASELINE_OFFSET,
+      placeholderMargin: 0,
+      onChanged: () => this._formRevision++,
+      onActivate: () => this.save().catch(error => this._reportError(error)),
+      onKeyPress: event => {
+        if (event.get_key_symbol() === Clutter.KEY_Escape) {
+          this.hideForm();
+          return Clutter.EVENT_STOP;
+        }
+        return this._handleKey(event);
+      },
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
-    this.entry.get_hint_actor()._clipboardXGnomeTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
-    this.entry.clutter_text.connect('text-changed', () => this._formRevision++);
-    this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
-      const key = event.get_key_symbol();
-      if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
-        this.save().catch(error => this._reportError(error));
-        return Clutter.EVENT_STOP;
-      }
-      if (key === Clutter.KEY_Escape) {
-        this.hideForm();
-        return Clutter.EVENT_STOP;
-      }
-      return this._handleKey(event);
-    });
     this.form.add_child(this.entry);
     this.actor.add_child(this.form);
 

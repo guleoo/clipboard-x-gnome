@@ -175,7 +175,7 @@ export class HistoryPanel {
     this._settingsSignals = [
       settings.connect('changed::private-mode', () => this._updatePrivateButton()),
       settings.connect('changed::panel-visible-item-limit', () => this._requestRefresh()),
-      settings.connect('changed::sync-enabled', () => this._requestRefresh()),
+      settings.connect('changed::sync-enabled', () => this._updateSyncVisibility()),
       settings.connect('changed::device-tag', () => this._requestRefresh()),
       settings.connect('changed::device-icon-kind', () => this._requestRefresh()),
       settings.connect('changed::panel-toolbar-actions', () => this._updateActions()),
@@ -235,12 +235,14 @@ export class HistoryPanel {
       item,
       leading: identity ? this._deviceIcon(identity.iconKind, identity.tag) : null,
       accentColor: this._accentColor,
+      syncEnabled: this._settings.get_boolean('sync-enabled'),
       actionOrder: visibleEntryActions(
         this._settings.get_strv('entry-actions'),
         this._settings.get_strv('entry-hidden-actions'),
         {
           isText: item.isText,
-          syncEnabled: this._settings.get_boolean('sync-enabled'),
+          // Keep the action actor for toggles; only its visibility changes.
+          syncEnabled: true,
           sensitive: item.sensitive,
         },
       ),
@@ -439,6 +441,30 @@ export class HistoryPanel {
       ...rows,
       this.footer.contentActors.filter(actor => actor !== this.footerSpacer),
     ]);
+  }
+
+  _updateSyncVisibility() {
+    const enabled = this._settings.get_boolean('sync-enabled');
+    const focus = global.stage.get_key_focus();
+    let fallback = null;
+    const focusRows = [];
+    for (const [itemId, row] of this._itemRows) {
+      const button = row.focusActors.find(actor => actor._clipboardXGnomeEntryAction === 'sync');
+      if (button) {
+        button.visible = enabled;
+        if (enabled)
+          this._sync.refresh(itemId);
+        else if (focus === button)
+          fallback = row.focusActors[0];
+      }
+      row._clipboardXGnomeFocusRow = row.focusActors.filter(actor => actor.visible);
+      focusRows.push(row._clipboardXGnomeFocusRow);
+    }
+    if (this._isActive()) {
+      this._setFocusRows(focusRows);
+      if (fallback)
+        this.focusGrid.focusAt(this.focusGrid.location(fallback));
+    }
   }
 
   _updateSearchStyle() {

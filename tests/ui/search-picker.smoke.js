@@ -95,6 +95,29 @@ export async function run() {
     entry.set_text('');
   }
 
+  const phrases = indicator._quickPhrases;
+  await phrases.ready;
+  const savedPhrases = [...phrases.phrases];
+  try {
+    indicator.menu.open();
+    indicator._openPhrases();
+    await Scripting.sleep(150);
+    for (const key of [Clutter.KEY_Return, Clutter.KEY_KP_Enter]) {
+      phrases.addButton.emit('clicked', Clutter.BUTTON_PRIMARY);
+      await Scripting.sleep(150);
+      assert(global.stage.get_key_focus() === phrases.entry.clutter_text,
+        'Opening the quick phrase form must focus its input');
+      const phrase = `Entered using key ${key}`;
+      phrases.entry.set_text(phrase);
+      await press(key);
+      await waitUntil(() => phrases.phrases.includes(phrase) && !phrases.formVisible);
+      assert(phrases.entry.get_text() === '', 'Saving a quick phrase must clear the input');
+    }
+  } finally {
+    await phrases.replace(savedPhrases);
+    indicator.menu.close();
+  }
+
   const extensionObject = extension.stateObj;
   extensionObject._pickColor();
   await waitUntil(() => extensionObject._colorPicker?._rgb?.length === 3);

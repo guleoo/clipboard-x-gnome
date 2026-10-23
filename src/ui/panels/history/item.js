@@ -16,6 +16,7 @@ export function create({
   leading = null,
   accentColor = null,
   actionOrder,
+  syncEnabled = true,
   createSyncButton,
   createIconButton,
   actions,
@@ -102,10 +103,12 @@ export function create({
   for (const action of actionOrder) {
     const button = buttons[action]();
     button._clipboardXGnomeEntryAction = action;
+    if (action === 'sync')
+      button.visible = syncEnabled;
     row.addAction(button);
   }
-  row._clipboardXGnomeFocusRow = row.focusActors;
-  for (const actor of row._clipboardXGnomeFocusRow)
+  row._clipboardXGnomeFocusRow = row.focusActors.filter(actor => actor.visible);
+  for (const actor of row.focusActors)
     actor._clipboardXGnomeHistoryRow = row;
   row.connect('key-press-event', (_row, event) => actions.handleKey(event));
   return row;
