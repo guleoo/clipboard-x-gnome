@@ -225,6 +225,43 @@ try {
   assert(plainImported.locale === 'ko',
     'an imported dictionary without metadata should use the selected language code');
 
+  const languageStore = new DictionaryStore({rootPath: testRoot.get_child('selected-language').get_path()});
+  for (const name of ['foo.txt', 'my-words.txt', 'ja.dict']) {
+    const file = testRoot.get_child(name);
+    GLib.file_set_contents(file.get_path(), '注销密钥 90\n');
+    const selected = await languageStore.importFile(file, 'zh_CN.UTF-8');
+    assert(selected.locale === 'zh_cn' && selected.fileName.startsWith('zh_cn--')
+        && (await languageStore.load(['zh_CN.UTF-8'], [selected.fileName])).lexicon.size === 1,
+      `A headerless ${name} must use the selected language, not guess one from the filename`);
+  }
+
+  // Replace only remote byte acquisition with an isolated local file. Exercise
+  // refreshSource's real URL metadata, naming, persistence, and language rules.
+  const networkSource = testRoot.get_child('network-response.txt');
+  const networkUri = 'https://example.com/my-words.txt';
+  const fromUri = Gio.File.new_for_uri;
+  Gio.File.new_for_uri = uri => {
+    assert(uri === networkUri, 'Only the controlled dictionary URL may be requested');
+    return networkSource;
+  };
+  try {
+    GLib.file_set_contents(networkSource.get_path(), '注销密钥 90\n');
+    const network = await languageStore.refreshSource(networkUri, 'ja');
+    assert(network.locale === 'ja' && network.fileName.startsWith('ja--')
+        && network.source === networkUri
+        && (await languageStore.load(['ja'], [network.fileName])).lexicon.size === 1,
+      'A headerless network dictionary must use the selection, not URL scheme, domain, or path fragments');
+    GLib.file_set_contents(networkSource.get_path(), '# locale: zh\n注销密钥 90\n');
+    const declared = await languageStore.refreshSource(networkUri, 'ja');
+    const listed = await languageStore.list();
+    assert(declared.locale === 'zh' && declared.fileName.startsWith('zh--')
+        && !languageStore.getFile(network.fileName).query_exists(null)
+        && listed.filter(dictionary => dictionary.source === networkUri).length === 1,
+      'An explicit network locale header must still override the selection without retaining the old-language file');
+  } finally {
+    Gio.File.new_for_uri = fromUri;
+  }
+
   await store.remove(secondChinese.fileName);
   await store.remove(imported.fileName);
   await store.remove(plainImported.fileName);

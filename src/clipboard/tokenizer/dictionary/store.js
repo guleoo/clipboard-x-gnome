@@ -4,7 +4,7 @@ import GLib from 'gi://GLib';
 import {loadFile, writeFile} from '../../../common/files.js';
 import {createLogger} from '../../../common/logger.js';
 import {parseDictionaryAsync, serializeDictionary} from './format.js';
-import {inferLocale, localeCandidates, SYSTEM_DICTIONARY_ID} from './locale.js';
+import {localeCandidates, SYSTEM_DICTIONARY_ID} from './locale.js';
 import {Lexicon} from './lexicon.js';
 
 const FILE_PATTERN = /^([a-z]{2,3}(?:_[a-z0-9]{2,8})*)--[a-z0-9-]+\.dict$/u;
@@ -201,7 +201,7 @@ export class DictionaryStore {
       throw new Error('Dictionary exceeds the 8 MB import limit');
     const basename = file.get_basename();
     const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
-      locale: inferLocale(basename, defaultLocale),
+      locale: defaultLocale,
       name: basename.replace(/\.[^.]+$/u, ''),
     }, {checkpoint: () => checkpoint()});
     if (parsed.entries.length > MAXIMUM_IMPORT_ENTRIES)
@@ -227,7 +227,7 @@ export class DictionaryStore {
     if (bytes.get_size() > MAXIMUM_IMPORT_BYTES)
       throw new Error('Dictionary exceeds the 8 MB import limit');
     const parsed = await parseDictionaryAsync(decode(bytes.get_data()), {
-      locale: inferLocale(source, defaultLocale),
+      locale: defaultLocale,
       name: source.split('/').pop()?.replace(/\.[^.]+$/u, '') || source,
       source,
     }, {checkpoint: () => checkpoint()});
