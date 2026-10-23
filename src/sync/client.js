@@ -724,6 +724,7 @@ export class SyncClient extends EventEmitter {
       && item.representations.includes(representation) && (representation?.path || representation?.bytes));
     const {deviceId} = ensureDeviceIdentity(this._settings);
     let accepted = null;
+    let sourceUnavailable = false;
     try {
       return await this._transfers.run(async ({transport, cancellable, check, track, update}) => {
         let response;
@@ -766,13 +767,23 @@ export class SyncClient extends EventEmitter {
           size: representation.size,
           mimeType: representation.mimeType,
         };
-        await transport.uploadContent(
-          result.uploadId,
-          representation.id,
-          source,
-          completedBytes => update({state: 'transferring', completedBytes}),
-          cancellable,
-        );
+        try {
+          await transport.uploadContent(
+            result.uploadId,
+            representation.id,
+            source,
+            completedBytes => update({state: 'transferring', completedBytes}),
+            cancellable,
+          );
+        } catch (error) {
+          // Opening the local source may fail despite its retained descriptor.
+          // HTTP errors and cancellation must keep their normal retry semantics.
+          sourceUnavailable = Boolean(source.path && [
+            Gio.IOErrorEnum.NOT_FOUND, Gio.IOErrorEnum.NOT_DIRECTORY,
+            Gio.IOErrorEnum.IS_DIRECTORY, Gio.IOErrorEnum.PERMISSION_DENIED,
+          ].some(code => error.matches?.(Gio.IOErrorEnum, code)));
+          throw error;
+        }
         check();
         const responseCompleted = await transport.completeUpload(result.uploadId);
         this._requireCurrent(generation);
@@ -789,7 +800,7 @@ export class SyncClient extends EventEmitter {
         guard: () => available() || (resume && (!accepted || accepted.state === 'completed'))});
     } catch (error) {
       this._requireCurrent(generation);
-      if (available())
+      if (available() && !sourceUnavailable)
         throw error;
       // A previously completed upload needs no new local bytes or revocation.
       if (accepted?.state === 'completed') {
@@ -801,7 +812,7 @@ export class SyncClient extends EventEmitter {
       await transport.rejectWork(work.id, 'source_content_missing');
       this._requireCurrent(generation);
       if (accepted && !TERMINAL_TRANSFER_STATES.has(accepted.state)) {
-        this._transfers.receive(accepted);
+        this._transfers.receive({...accepted, updatedAt: Math.max(Date.now(), accepted.updatedAt)});
         await this._transfers.cancel(accepted.transferId);
         this._requireCurrent(generation);
       }

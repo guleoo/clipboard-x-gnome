@@ -560,6 +560,98 @@ for (const change of ['missing', 'sensitive']) {
   });
 }
 
+for (const unavailable of ['missing-file', 'directory']) {
+  await test(`source work retires an unreadable ${unavailable} and continues polling`, async () => {
+    const directory = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-source-work-XXXXXX'));
+    const file = unavailable === 'directory' ? directory : directory.get_child('missing-original');
+    const broken = {representations: [{id: 'content', mimeType: 'text/plain', size: 4, path: file.get_path()}]};
+    const nextItemId = '55555555-5555-4555-8555-555555555555';
+    const nextWorkId = '66666666-6666-4666-8666-666666666666';
+    const waitingId = '77777777-7777-4777-8777-777777777777';
+    const transport = new Transport('current');
+    const nextItem = copy(localSource);
+    const f = fixture([transport], {sourceItem: id => id === itemId ? broken
+      : id === nextItemId ? nextItem : null});
+    f.settings.values.set('sync-transfer-timeout-seconds', 30);
+    let fileError;
+    try {
+      await bounded(f.client.start());
+      const waiting = {...sourceTransfer('waiting-for-peer'), id: waitingId, direction: 'download'};
+      f.client._transfers.receive({...waiting, transferId: waitingId});
+      const waiter = observe(f.client._transfers.wait(waitingId));
+      transport.work = () => Promise.resolve({cursor: 'after-unreadable-source', hasMore: false,
+        work: [sourceWork, {...sourceWork, id: nextWorkId, itemId: nextItemId}]});
+      transport.acceptWork = id => transport.reply('acceptWork', {uploadId: id,
+        transfer: id === sourceWork.id ? sourceTransfer()
+          : {...sourceTransfer(), id: nextWorkId, itemId: nextItemId}});
+      transport.uploadContent = async (uploadId, _contentId, source) => {
+        transport.calls.push('uploadContent');
+        if (uploadId === sourceWork.id) {
+          try {
+            const stream = Gio.File.new_for_path(source.path).read(null);
+            stream.close(null);
+          } catch (error) {
+            fileError = error;
+            throw error;
+          }
+        }
+      };
+      transport.completeUpload = () => transport.reply('completeUpload', {
+        transfer: {...sourceTransfer('completed'), id: nextWorkId, itemId: nextItemId},
+      });
+      transport.transfer = () => transport.reply('transfer', {
+        ...waiting, state: 'completed', completedBytes: waiting.totalBytes,
+      });
+      await bounded(f.client._poll());
+      assert(fileError?.matches?.(Gio.IOErrorEnum, unavailable === 'missing-file'
+        ? Gio.IOErrorEnum.NOT_FOUND : Gio.IOErrorEnum.IS_DIRECTORY),
+        'The regression must exercise a real local file open failure, not an empty source path');
+      assert(transport.rejection?.workId === sourceWork.id
+          && transport.rejection.code === 'source_content_missing' && transport.calls.includes('cancel')
+          && f.client._transfers.get(transferId)?.state === 'cancelled',
+        'An unreadable accepted original must reject its source work and cancel the source upload');
+      assert(f.client.getTransferForItem(nextItemId)?.state === 'completed'
+          && f.client._progress.pendingWork === null
+          && f.client._progress.workCursor === 'after-unreadable-source',
+        'An unreadable original must not strand the journal, cursor, or later jobs on its work page');
+      assert(!(await bounded(waiter)).error && transport.calls.includes('transfer'),
+        'The same poll must still refresh and settle independent incoming transfers');
+    } finally {
+      f.client.destroy();
+      directory.delete(null);
+    }
+  });
+}
+
+for (const failure of ['network', 'server-not-found', 'cancelled', 'bytes-source']) {
+  await test(`source work preserves ${failure} upload errors`, async () => {
+    const directory = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-source-work-XXXXXX'));
+    const item = failure === 'bytes-source' ? copy(localSource)
+      : {representations: [{id: 'content', mimeType: 'text/plain', size: 4,
+        path: directory.get_child('missing-original').get_path()}]};
+    const transport = new Transport('current');
+    const f = fixture([transport], {sourceItem: () => item});
+    try {
+      await bounded(f.client.start());
+      const cursor = f.client._progress.workCursor;
+      const error = failure === 'cancelled' ? cancelled() : failure === 'bytes-source'
+        ? new Gio.IOErrorEnum({code: Gio.IOErrorEnum.NOT_FOUND, message: 'Synthetic non-file upload error'})
+        : Object.assign(new Error('Synthetic upload request failure'), failure === 'server-not-found'
+          ? {status: 404, code: 'not_found'} : {code: 'network_error'});
+      transport.work = () => Promise.resolve({cursor: 'unconfirmed-source', hasMore: false, work: [sourceWork]});
+      transport.uploadContent = () => Promise.reject(error);
+      const result = await bounded(observe(f.client._syncWork()));
+      assert(result.error === error && f.client._progress.pendingWork?.id === sourceWork.id
+          && f.client._progress.workCursor === cursor && !transport.calls.includes('rejectWork')
+          && !transport.calls.includes('cancel'),
+        'Only actual local file read failures may retire source work; transport and cancellation errors remain intact');
+    } finally {
+      f.client.destroy();
+      directory.delete(null);
+    }
+  });
+}
+
 for (const method of ['acceptWork', 'completeUpload']) {
   await test(`source removal during ${method} does not revoke an acknowledged completion`, async () => {
     const transport = new Transport('current');
