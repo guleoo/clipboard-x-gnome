@@ -138,6 +138,8 @@ Both environments also run an isolated headless extension lifecycle check. One Z
 after validation. CI only validates and retains artifacts; it never publishes a release.
 The separate [Release workflow](.github/workflows/release.yml) runs only when a `v*` tag is pushed.
 It repeats the same checks at the tagged commit and publishes only after both jobs succeed.
+Both entry points use the shared [verification workflow](.github/workflows/verify.yml); update that
+definition when changing the build, test matrix, or package checks.
 Ordinary branch pushes and pull requests cannot publish a release.
 Stress tests remain available locally and are not run by GitHub CI.
 
