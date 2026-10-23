@@ -36,3 +36,22 @@ assert(capture(Gdk.KEY_BackSpace, 22, control).action === 'save',
   'Ctrl+Backspace must be recorded instead of disabling the shortcut');
 assert(Gtk.accelerator_parse(capture(Gdk.KEY_F, 41, control | shift).accelerator)[0],
   'recorded global shortcut must be parseable by GTK');
+
+for (const [keypad, regular] of [
+  [Gdk.KEY_KP_Enter, Gdk.KEY_Return],
+  [Gdk.KEY_KP_Delete, Gdk.KEY_Delete],
+  [Gdk.KEY_KP_Left, Gdk.KEY_Left],
+  [Gdk.KEY_KP_Right, Gdk.KEY_Right],
+  [Gdk.KEY_KP_Up, Gdk.KEY_Up],
+  [Gdk.KEY_KP_Down, Gdk.KEY_Down],
+]) {
+  for (const modifiers of [0, control | shift]) {
+    const recorded = capture(keypad, 0, modifiers, true);
+    assert(recorded.action === 'save'
+        && recorded.accelerator === Gtk.accelerator_name(regular, modifiers),
+      `${Gdk.keyval_name(keypad)} must record the ordinary contextual key with all modifiers`);
+  }
+  assert(capture(keypad, 104, control).accelerator
+      === Gtk.accelerator_name_with_keycode(null, keypad, 104, control),
+    `${Gdk.keyval_name(keypad)} global capture must retain GTK's original keycode path`);
+}
