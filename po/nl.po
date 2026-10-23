@@ -424,13 +424,12 @@ msgid ""
 msgstr "Ingeschakelde woordenboeken die overeenkomen met de huidige weergavetaal worden automatisch geladen."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Taal voor import"
+msgid "Dictionary language"
+msgstr "Woordenboektaal"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Wordt gebruikt als het woordenboek geen „# locale: language-code” opgeeft."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Het woordenboek moet een geldige kopregel „# locale: language-code” bevatten."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -840,6 +839,15 @@ msgid "Slow"
 msgstr "Langzaam"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximaal aantal woorden"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Teksten die deze limiet overschrijden, worden niet geopend in de woordselectiemodus."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Te veel woorden. Gebruik minder tekst of verhoog de limiet in de voorkeuren."
+
 msgid "Show source text preview"
 msgstr "Voorbeeld van oorspronkelijke tekst tonen"
 
@@ -984,9 +992,17 @@ msgstr ""
 "Bij plaatsing op het klembord vervangt ontvangen inhoud de huidige "
 "klembordinhoud."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Te verzenden inhoud"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Tekstopmaak"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Gekopieerde tekst met de oorspronkelijke opmaak (HTML) verzenden."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

@@ -49,6 +49,7 @@ export class HistoryPanel {
     this._accentColor = null;
     this._focusIdleId = 0;
     this._pendingViewState = null;
+    this._itemRows = new Map();
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -113,6 +114,10 @@ export class HistoryPanel {
       x_expand: true,
       y_expand: true,
     });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
+    });
     this.scroll.add_child(this._section.actor);
     this.scrollItem = new PopupMenu.PopupMenuSection();
     this.scrollItem.actor.x_expand = true;
@@ -127,7 +132,6 @@ export class HistoryPanel {
     this._sync = new SyncAction({
       settings,
       actions,
-      tooltip,
       createIconButton,
       closeMenu,
     });
@@ -188,6 +192,7 @@ export class HistoryPanel {
 
   render() {
     this._section.removeAll();
+    this._itemRows.clear();
     this._sync.clearButtons();
     const focusRows = [];
     if (this._controller.loading) {
@@ -217,6 +222,7 @@ export class HistoryPanel {
     }
     for (const item of items.slice(0, limit)) {
       const row = this.entry(item);
+      this._itemRows.set(item.id, row);
       this._section.addMenuItem(row);
       focusRows.push(row._clipboardXGnomeFocusRow);
     }
@@ -225,7 +231,7 @@ export class HistoryPanel {
 
   entry(item) {
     const identity = this._multipleDevices ? this._displayIdentity(item) : null;
-    return createItem({
+    const row = createItem({
       item,
       leading: identity ? this._deviceIcon(identity.iconKind, identity.tag) : null,
       accentColor: this._accentColor,
@@ -251,6 +257,8 @@ export class HistoryPanel {
         handlePanelKey: event => this._handlePanelKey(event),
       },
     });
+    row._clipboardXGnomeHistoryItem = item;
+    return row;
   }
 
   handleEntryKey(item, event) {
@@ -269,10 +277,16 @@ export class HistoryPanel {
   }
 
   captureView() {
-    if (this._pendingViewState)
+    const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
       return this._pendingViewState;
+    const item = focus?._clipboardXGnomeHistoryRow?._clipboardXGnomeHistoryItem;
     return {
-      focusLocation: this.focusGrid.location(global.stage.get_key_focus()),
+      itemId: item?.id ?? null,
+      action: focus?._clipboardXGnomeEntryAction ?? null,
+      focusActor: !item && this.focusGrid.contains(focus) ? focus : null,
+      focusLocation: this.focusGrid.location(focus),
       scrollValue: this.scroll.get_vadjustment().value,
     };
   }
@@ -287,8 +301,24 @@ export class HistoryPanel {
       this._pendingViewState = null;
       if (!this._isMenuOpen() || !this._isActive())
         return GLib.SOURCE_REMOVE;
-      this.focusGrid.focusAt(viewState.focusLocation);
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
+        return GLib.SOURCE_REMOVE;
+      if (viewState.itemId) {
+        let row = this._itemRows.get(viewState.itemId);
+        if (!row && !this._controller.items.some(item => item.id === viewState.itemId)) {
+          const rows = [...this._itemRows.values()];
+          row = rows[Math.min(Math.max(0, (viewState.focusLocation?.row ?? 1) - 1), rows.length - 1)];
+        }
+        const target = row?.focusActors.find(actor =>
+          (actor._clipboardXGnomeEntryAction ?? null) === viewState.action) ?? row?.focusActors[0];
+        this.focusGrid.focusAt(this.focusGrid.location(target ?? this.searchEntry.clutter_text));
+      } else {
+        this.focusGrid.focusAt(this.focusGrid.location(viewState.focusActor));
+      }
       const adjustment = this.scroll.get_vadjustment();
+      adjustment.remove_transition('value');
       adjustment.value = Math.max(
         adjustment.lower,
         Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size),
@@ -342,14 +372,18 @@ export class HistoryPanel {
     this._updateSearchStyle();
     this._updatePrivateButton();
     this._sync.setAccent(color);
+    for (const row of this._itemRows.values()) {
+      const pin = row.focusActors.find(actor => actor._clipboardXGnomeEntryAction === 'pin');
+      pin?.set_style(row._clipboardXGnomeHistoryItem.favorite && color ? `color: ${color};` : '');
+    }
   }
 
   setSyncStatus(status, capabilities = null) {
     this._sync.setStatus(status, capabilities);
   }
 
-  setTransfer(transfer) {
-    this._sync.setTransfer(transfer);
+  refreshTransfer(itemId) {
+    this._sync.refresh(itemId);
   }
 
   destroy() {
@@ -363,6 +397,7 @@ export class HistoryPanel {
     }
     this._settingsSignals = [];
     this.focusGrid.clear();
+    this._itemRows.clear();
     this._sync.destroy();
   }
 
@@ -421,8 +456,8 @@ export class HistoryPanel {
 
   _updatePrivateButton() {
     const paused = this._settings.get_boolean('private-mode');
-    this._setButtonIcon(this.privateButton, 'security-high-symbolic');
-    this._setHint(this.privateButton, _('Privacy mode'));
+    this.privateButton.setIcon('security-high-symbolic');
+    this.privateButton.setHint(_('Privacy mode'));
     this.privateButton.selected = paused;
     this.privateButton.remove_style_class_name(
       paused ? 'cbx-private-inactive' : 'cbx-private-active',
@@ -452,30 +487,8 @@ export class HistoryPanel {
       style_class: 'cbx-device-icon',
       track_hover: true,
     });
-    this._tooltip.attach(icon, tag, {scope: 'panel'});
+    this._tooltip.attach(icon, tag);
     return icon;
-  }
-
-  _setButtonIcon(button, iconName) {
-    if (button.setIcon) {
-      button.setIcon(iconName);
-      return;
-    }
-    button.set_child(new St.Icon({
-      icon_name: iconName,
-      icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
-    }));
-  }
-
-  _setHint(actor, text) {
-    if (actor.setHint)
-      actor.setHint(text);
-    else {
-      actor.accessible_name = text;
-      actor._hintText = text;
-    }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _activate(item) {

@@ -423,12 +423,12 @@ msgid ""
 msgstr "Povolené slovníky odpovídající aktuálnímu jazyku zobrazení se načítají automaticky."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Jazyk pro import"
+msgid "Dictionary language"
+msgstr "Jazyk slovníku"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Použije se, pokud slovník neobsahuje „# locale: language-code“."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Slovník musí obsahovat platnou hlavičku „# locale: language-code“."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -834,6 +834,15 @@ msgid "Slow"
 msgstr "Pomalá"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximální počet slov"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Texty překračující tento limit se v režimu výběru slov neotevřou."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Příliš mnoho slov. Použijte kratší text nebo zvyšte limit v předvolbách."
+
 msgid "Show source text preview"
 msgstr "Zobrazit náhled původního textu"
 
@@ -976,9 +985,17 @@ msgstr ""
 "Při nastavení jako aktuální obsah schránky příchozí obsah nahradí stávající "
 "obsah schránky."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Obsah k odeslání"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formátování textu"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Odesílat zkopírovaný text s původním formátováním (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

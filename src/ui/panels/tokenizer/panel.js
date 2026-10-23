@@ -22,17 +22,20 @@ const SELECTION_SHORTCUTS = Object.freeze([
 ]);
 
 export class TokenizerPanel {
-  constructor({settings, createIconButton, handlePanelKey, onBack, runAction, tokenize}) {
+  constructor({settings, createIconButton, handlePanelKey, onBack, runAction, tokenize, isActive}) {
     this._settings = settings;
     this._handlePanelKey = handlePanelKey;
     this._run = runAction;
     this._tokenize = tokenize;
+    this._isActive = isActive;
     this._buttons = [];
     this._state = null;
     this._contentWidth = 260;
     this._accentColor = null;
     this._selectionDrag = null;
     this._dragSourceId = 0;
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -79,6 +82,10 @@ export class TokenizerPanel {
       x_expand: true,
       y_expand: true,
     });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
+    });
     this.scroll.add_child(this._section.actor);
     this.actor.add_child(this.scroll);
 
@@ -95,7 +102,6 @@ export class TokenizerPanel {
       'edit-copy-symbolic',
       _('Copy selected words'),
       () => this.run('copyText'),
-      {tooltipScope: 'panel'},
     );
     this.copyButton.reactive = false;
     this.copyButton.opacity = 128;
@@ -231,12 +237,64 @@ export class TokenizerPanel {
   }
 
   leave() {
+    this._cancelFocus();
     this.focusAnchor.cancel();
     this.endSelectionDrag();
   }
 
   focusStart() {
+    this._cancelFocus();
     this.focusAnchor.focus();
+  }
+
+  captureView() {
+    const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
+      return this._pendingViewState;
+    const tokenIndex = focus?._clipboardXGnomeToken?.index ?? null;
+    return {
+      state: this._state,
+      tokenIndex,
+      focusActor: tokenIndex === null && (focus === this.focusAnchor || this.focusGrid.contains(focus))
+        ? focus : null,
+      scrollValue: this.scroll.get_vadjustment().value,
+    };
+  }
+
+  restoreView(viewState) {
+    if (!viewState || viewState.state !== this._state)
+      return;
+    this._cancelFocus();
+    this._pendingViewState = viewState;
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      this._pendingViewState = null;
+      if (!this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
+        return GLib.SOURCE_REMOVE;
+      const target = viewState.tokenIndex === null ? viewState.focusActor
+        : this._buttons.find(button => button._clipboardXGnomeToken.index === viewState.tokenIndex);
+      if (target === this.focusAnchor)
+        target.grab_key_focus();
+      else
+        this.focusGrid.focusAt(this.focusGrid.location(target));
+      const adjustment = this.scroll.get_vadjustment();
+      adjustment.remove_transition('value');
+      adjustment.value = Math.max(adjustment.lower,
+        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size));
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _cancelFocus() {
+    if (this._focusIdleId)
+      GLib.Source.remove(this._focusIdleId);
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
   }
 
   _focusFirstToken() {
@@ -341,17 +399,14 @@ export class TokenizerPanel {
   applySelectionAt(x, y) {
     if (!this._selectionDrag)
       return;
-    for (const button of this._buttons) {
-      if (!button.mapped)
-        continue;
-      const [buttonX, buttonY] = button.get_transformed_position();
-      const [buttonWidth, buttonHeight] = button.get_transformed_size();
-      if (x >= buttonX && x <= buttonX + buttonWidth
-          && y >= buttonY && y <= buttonY + buttonHeight) {
-        this._applySelectionDrag(button);
-        return;
-      }
-    }
+    // Native picking respects viewport clipping and overlay scrollbars, unlike
+    // the allocation rectangles of mapped-but-clipped word buttons.
+    const picked = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+    if (!picked || !this.scroll.contains(picked))
+      return;
+    const button = this._buttons.find(value => value === picked || value.contains(picked));
+    if (button)
+      this._applySelectionDrag(button);
   }
 
   endSelectionDrag() {

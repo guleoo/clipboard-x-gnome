@@ -430,14 +430,12 @@ msgid ""
 msgstr "Aktivierte Wörterbücher für die aktuelle Anzeigesprache werden automatisch geladen."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Sprache für den Import"
+msgid "Dictionary language"
+msgstr "Wörterbuchsprache"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Wird verwendet, wenn das Wörterbuch keinen „# locale: language-code“-Eintrag "
-"enthält."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Das Wörterbuch muss eine gültige Kopfzeile „# locale: language-code“ enthalten."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -849,6 +847,15 @@ msgid "Slow"
 msgstr "Langsam"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximale Wortanzahl"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Texte, die diesen Grenzwert überschreiten, werden nicht im Wortauswahlmodus geöffnet."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Zu viele Wörter. Verwenden Sie weniger Text oder erhöhen Sie den Grenzwert in den Einstellungen."
+
 msgid "Show source text preview"
 msgstr "Vorschau des Originaltexts anzeigen"
 
@@ -993,9 +1000,17 @@ msgstr ""
 "Beim Übernehmen in die Zwischenablage ersetzt der empfangene Inhalt den "
 "aktuellen Zwischenablageinhalt."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Zu sendende Inhalte"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Textformatierung"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Kopierten Text mit seiner ursprünglichen Formatierung (HTML) senden."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

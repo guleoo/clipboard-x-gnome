@@ -428,12 +428,12 @@ msgid ""
 msgstr "I dizionari abilitati corrispondenti alla lingua di visualizzazione corrente vengono caricati automaticamente."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Lingua di importazione"
+msgid "Dictionary language"
+msgstr "Lingua del dizionario"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Usato quando il dizionario non dichiara «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Il dizionario deve dichiarare un’intestazione valida «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -844,6 +844,15 @@ msgid "Slow"
 msgstr "Lenta"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Numero massimo di parole"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "I testi che superano questo limite non vengono aperti in modalità selezione parole."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Troppe parole. Usa meno testo o aumenta il limite nelle preferenze."
+
 msgid "Show source text preview"
 msgstr "Mostra anteprima del testo originale"
 
@@ -988,9 +997,17 @@ msgstr ""
 "L’attivazione negli appunti sostituisce il contenuto attuale con quello in "
 "arrivo."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Contenuti da inviare"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formattazione del testo"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Invia il testo copiato con la formattazione originale (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

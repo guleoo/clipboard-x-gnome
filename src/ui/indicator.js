@@ -80,7 +80,6 @@ class Indicator extends PanelMenu.Button {
     this._applyTextVerticalOffset();
     this._panelManager = new PanelManager({
       defaultPanel: 'history',
-      clearPanelTooltips: () => this._tooltip.clear('panel'),
       hideTooltip: () => this._tooltip.hide(),
       onGeometry: geometry => this._setMenuGeometry(geometry),
     });
@@ -90,6 +89,7 @@ class Indicator extends PanelMenu.Button {
       restoreView: viewState => this._historyPanel.restoreView(viewState),
       enter: () => this._showPanelChrome('history'),
       leave: () => this._historyPanel.leave(),
+      destroy: () => this._historyPanel.destroy(),
       setGeometry: geometry => this._historyPanel.setGeometry(geometry),
       render: () => {
         this._historyPanel.render();
@@ -98,10 +98,16 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('tokenizer', {
       focusGrid: this._tokenizer.focusGrid,
+      captureView: () => this._tokenizer.captureView(),
+      restoreView: (viewState, _state, previous) => {
+        if (previous === 'tokenizer')
+          this._tokenizer.restoreView(viewState);
+      },
       enter: () => {
         this._showPanelChrome('tokenizer');
       },
       leave: () => this._tokenizer.leave(),
+      destroy: () => this._tokenizer.destroy(),
       setGeometry: geometry => this._tokenizer.setGeometry(geometry),
       render: state => {
         this._tokenizer.render(state);
@@ -110,8 +116,14 @@ class Indicator extends PanelMenu.Button {
     });
     this._panelManager.register('phrases', {
       focusGrid: this._quickPhrases.focusGrid,
+      captureView: () => this._quickPhrases.captureView(),
+      restoreView: (viewState, _state, previous) => {
+        if (previous === 'phrases')
+          this._quickPhrases.restoreView(viewState);
+      },
       enter: () => this._showPanelChrome('phrases'),
       leave: () => this._quickPhrases.leave(),
+      destroy: () => this._quickPhrases.destroy(),
       setGeometry: geometry => this._quickPhrases.setGeometry(geometry),
       render: () => {
         this._quickPhrases.render();
@@ -145,6 +157,12 @@ class Indicator extends PanelMenu.Button {
     );
     this._phraseLimitSignal = settings.connect('changed::saved-phrase-limit', () => {
       this._quickPhrases.trim().catch(error => this._actions.reportError(error));
+    });
+    this._wordLimitSignal = settings.connect('changed::tokenizer-word-limit', () => {
+      this._tokenizerRequest++;
+      if (this._panelManager.is('tokenizer')
+          && this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit'))
+        this._panelManager.reset();
     });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
       if (!this.menu.actor.visible)
@@ -206,7 +224,7 @@ class Indicator extends PanelMenu.Button {
       closeMenu: () => this.menu.close(),
       openTokenizer: item => this._openTokenizer(item),
       openPhrases: () => this._openPhrases(),
-      requestRefresh: () => this._refresh(),
+      requestRefresh: () => this._panelManager?.refresh('history'),
       isActive: () => this._panelManager?.is('history') ?? false,
       isMenuOpen: () => this.menu.isOpen,
     });
@@ -223,6 +241,7 @@ class Indicator extends PanelMenu.Button {
           .catch(error => this._actions.reportError(error));
       },
       tokenize: text => this._actions.tokenizeText(text),
+      isActive: () => (this._panelManager?.is('tokenizer') ?? false) && this.menu.isOpen,
     });
     this.menu.addMenuItem(this._tokenizer.item);
 
@@ -234,7 +253,8 @@ class Indicator extends PanelMenu.Button {
       onCopy: phrase => this._copyPhrase(phrase),
       onPaste: phrase => this._runAndClose(() => this._actions.pasteText(phrase)),
       onType: phrase => this._runAndClose(() => this._actions.typeText(phrase)),
-      refresh: () => this._panelManager?.refresh(),
+      refresh: () => this._panelManager?.refresh('phrases'),
+      isActive: () => (this._panelManager?.is('phrases') ?? false) && this.menu.isOpen,
       reportError: error => this._actions.reportError(error),
     });
     this.menu.addMenuItem(this._quickPhrases.item);
@@ -267,8 +287,8 @@ class Indicator extends PanelMenu.Button {
     this._historyPanel.setSyncStatus(status, capabilities);
   }
 
-  setTransfer(transfer) {
-    this._historyPanel.setTransfer(transfer);
+  refreshTransfer(itemId) {
+    this._historyPanel.refreshTransfer(itemId);
   }
 
   _refresh() {
@@ -281,7 +301,7 @@ class Indicator extends PanelMenu.Button {
     try {
       if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
         throw new Error(_('This text is too large for interactive processing'));
-      await this._actions.materializeItem(item);
+      await this._actions.readItem(item);
       if (!current())
         return;
       const source = item.text;
@@ -291,8 +311,11 @@ class Indicator extends PanelMenu.Button {
       this._panelManager.show('tokenizer', state);
       this._tokenizer.focusStart();
     } catch (error) {
-      if (current())
-        this._actions.reportError(error);
+      if (current()) {
+        this._actions.reportError(error.code === 'word_limit_exceeded'
+          ? new Error(_('Too many words. Use less text or increase the limit in Preferences.'))
+          : error);
+      }
     }
   }
 
@@ -394,7 +417,6 @@ class Indicator extends PanelMenu.Button {
     this._customAccentColor = HEX_COLOR_PATTERN.test(selected) ? selected.toLowerCase() : null;
     this._historyPanel.setAccent(this._customAccentColor);
     this._tokenizer.setAccent(this._customAccentColor);
-    this._refresh();
   }
 
   _updatePanelStateRetention() {
@@ -417,7 +439,6 @@ class Indicator extends PanelMenu.Button {
     const {
       showTooltip = true,
       iconSize = ICON_SIZE,
-      tooltipScope = 'global',
       stateful = false,
     } = options;
     const button = new IconButton({
@@ -425,6 +446,8 @@ class Indicator extends PanelMenu.Button {
       label: hintText,
       iconSize,
       selectable: stateful,
+      tooltip: this._tooltip,
+      showTooltip,
       onKeyPress: event => this._handleMenuKey(event),
       onError: error => this._actions.reportError(error),
       onActivate: () => {
@@ -439,9 +462,6 @@ class Indicator extends PanelMenu.Button {
     });
     if (stateful && this._stateHoverTransfer)
       this._skipStateHoverTransition(button);
-    button._clipboardXGnomeShowTooltip = showTooltip;
-    button._clipboardXGnomeTooltipScope = tooltipScope;
-    this._setHint(button, hintText);
     return button;
   }
 
@@ -455,17 +475,6 @@ class Indicator extends PanelMenu.Button {
       }
       return GLib.SOURCE_REMOVE;
     });
-  }
-
-  _setHint(actor, text) {
-    if (actor.setHint)
-      actor.setHint(text);
-    else {
-      actor.accessible_name = text;
-      actor._hintText = text;
-    }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _handleMenuKey(event) {
@@ -502,9 +511,6 @@ class Indicator extends PanelMenu.Button {
   destroy() {
     this._tokenizerRequest++;
     this._panelManager?.destroy();
-    this._historyPanel.destroy();
-    this._tokenizer.destroy();
-    this._tooltip.clear();
     for (const signal of [
       this._themeColorSignal,
       this._panelWidthSignal,
@@ -515,6 +521,7 @@ class Indicator extends PanelMenu.Button {
       this._textVerticalOffsetSignal,
       this._preservePanelStateSignal,
       this._phraseLimitSignal,
+      this._wordLimitSignal,
     ]) {
       if (signal)
         this._settings.disconnect(signal);
@@ -528,6 +535,7 @@ class Indicator extends PanelMenu.Button {
     this._textVerticalOffsetSignal = 0;
     this._preservePanelStateSignal = 0;
     this._phraseLimitSignal = 0;
+    this._wordLimitSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;

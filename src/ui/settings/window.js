@@ -232,6 +232,8 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Word Selection')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
+    tokenizer.add(this._rows.spin('tokenizer-word-limit', _('Maximum words'), 1, 10000, 100,
+      _('Texts exceeding this limit are not opened in word selection mode.')));
 
     const privacy = new Adw.PreferencesGroup({
       title: _('Privacy'),
@@ -306,6 +308,15 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
 
     page.add(createSyncGroup(settings, deviceId, this._rows));
 
+    const content = new Adw.PreferencesGroup({title: _('Content to send')});
+    page.add(content);
+    content.add(this._rows.switch('sync-text', _('Text')));
+    content.add(this._rows.switch(
+      'sync-html', _('Rich text formatting'),
+      _('Send copied text with its original formatting (HTML).'),
+    ));
+    content.add(this._rows.switch('sync-images', _('Images')));
+
     const policy = new Adw.PreferencesGroup({
       title: _('Transfer policy'),
       description: _('Previews reduce initial transfer size; originals are fetched when needed.'),
@@ -325,23 +336,28 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     ]);
     receiveMode.subtitle = _('Activate clipboard replaces the current clipboard with incoming content.');
     policy.add(receiveMode);
-    policy.add(this._rows.switch('sync-text', _('Text')));
-    policy.add(this._rows.switch('sync-html', _('HTML')));
-    policy.add(this._rows.switch('sync-images', _('Images')));
     policy.add(this._rows.switch(
       'sync-favorites-only',
       _('Pinned entries only'),
       _('Only applies to automatic sending'),
     ));
-    const textThreshold = this._rows.sizeSpin('text-full-threshold', _('Text full-transfer threshold'), 1, 16384, 1, 1024, _('KB'));
+    const textThreshold = this._rows.sizeSpin('text-full-threshold', _('Text full-transfer threshold'), {
+      lower: 1, upper: 16384, step: 1, factor: 1024, unit: _('KB'),
+    });
     textThreshold.subtitle = _('Applies to sending and receiving. Larger content is downloaded only when needed.');
     policy.add(textThreshold);
-    policy.add(this._rows.sizeSpin('text-preview-limit', _('Large text preview'), 0.25, 64, 0.25, 1024, _('KB'), 2));
-    const imageThreshold = this._rows.sizeSpin('image-full-threshold', _('Image full-transfer threshold'), 0.25, 128, 0.25, 1024 * 1024, _('MB'), 2);
+    policy.add(this._rows.sizeSpin('text-preview-limit', _('Large text preview'), {
+      lower: 0.25, upper: 64, step: 0.25, factor: 1024, unit: _('KB'), digits: 2,
+    }));
+    const imageThreshold = this._rows.sizeSpin('image-full-threshold', _('Image full-transfer threshold'), {
+      lower: 0.25, upper: 128, step: 0.25, factor: 1024 * 1024, unit: _('MB'), digits: 2,
+    });
     imageThreshold.subtitle = _('Applies to sending and receiving. Larger content is downloaded only when needed.');
     policy.add(imageThreshold);
     policy.add(this._rows.spin('thumbnail-size', _('Thumbnail dimension'), 64, 1024, 16, _('px')));
-    policy.add(this._rows.sizeSpin('thumbnail-byte-limit', _('Thumbnail size limit'), 16, 4096, 16, 1024, _('KB')));
+    policy.add(this._rows.sizeSpin('thumbnail-byte-limit', _('Thumbnail size limit'), {
+      lower: 16, upper: 4096, step: 16, factor: 1024, unit: _('KB'),
+    }));
     policy.add(this._rows.spin('sync-transfer-timeout-seconds', _('On-demand timeout'), 5, 3600, 5, _('seconds')));
     const pollInterval = this._rows.spin('sync-poll-interval-seconds', _('Polling interval'), 2, 60, 1, _('seconds'));
     pollInterval.subtitle = _('Seconds between checks; longer intervals reduce requests but delay updates.');

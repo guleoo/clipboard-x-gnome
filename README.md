@@ -148,9 +148,14 @@ Press the word selection button on a text entry. Move with the arrow keys, click
 them, and use `Shift` + arrow keys for keyboard range selection. The default actions are `c` to copy,
 `v` to paste, and `'` to simulate typing the selected result.
 
+**Preferences → Clipboard → Word Selection → Maximum words** limits selectable items to 2,000 by
+default. Longer results are rejected with a notification, not silently truncated. Links, numbers,
+punctuation and symbols each count as selectable items.
+
 For Chinese or Japanese, open **Preferences → Clipboard → Dictionaries** to enable the system segmenter,
 import UTF-8 dictionaries, or add an HTTP/HTTPS dictionary location. A dictionary may contain one word
-per line with an optional frequency:
+per line with an optional frequency. A valid `# locale: language-code` header is required;
+files without it are not imported, including network dictionaries:
 
 ```text
 # locale: zh
@@ -158,6 +163,9 @@ per line with an optional frequency:
 注销密钥 90
 图片编辑 80
 ```
+
+The language is fixed when a dictionary is imported. Editing its `locale` header afterward does not
+change its language; reimport it to assign a different language.
 
 Release archives do not bundle third-party dictionaries, and the extension does not silently download
 them when installed, started, or opened.
@@ -230,8 +238,9 @@ Addresses may use HTTP or HTTPS; a missing scheme defaults to HTTP. HTTP sends b
 without transport encryption, so use HTTPS or a trusted private network when confidentiality matters.
 
 The server address, API key, and active Channel are stored in
-`$XDG_DATA_HOME/clipboard-x-gnome/sync.json`. Per-Channel change cursors are stored separately in
-`sync-state.json`. A newly joined device starts from the retained Channel change history and downloads
+`$XDG_DATA_HOME/clipboard-x-gnome/sync.json`. Change and work cursors are stored separately for each
+server and DeviceId in `sync-progress/`, together with a reference to any unfinished source-upload task
+so it can resume after a network interruption or restart. A newly joined device starts from the retained Channel change history and downloads
 metadata and previews first; complete large objects remain lazy.
 
 Pending uploads are saved in a separate queue for each server, bound to the original Channel and
@@ -240,6 +249,11 @@ checks the local entry and asks the server to reuse or acknowledge the same publ
 another content upload when it is already complete. Missing local entries and sensitive content are
 not uploaded. Disabling synchronization pauses existing tasks; entries copied while it is disabled
 are not queued or automatically backfilled when it is re-enabled.
+
+Before the first publication request, its manifest is saved locally without clipboard bodies or API
+keys. Retries reuse this manifest, including after a restart or threshold change. Updated transfer
+settings apply to entries whose publication has not started; retained manifests are removed when
+their local entries are deleted or become private.
 
 > [!NOTE]
 > Deleting an entry in the extension currently deletes only that device's local history copy. It does not
@@ -256,7 +270,7 @@ See the [protocol maintained by clipboard-x-server](https://github.com/guleoo/cl
 | Quick phrases | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
 | Dictionaries | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
 | Sync connection | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| Sync cursors | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
+| Sync progress and pending source work | `$XDG_DATA_HOME/clipboard-x-gnome/sync-progress/` (one file per server and DeviceId) |
 | Pending uploads, per server | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<server-address-hash>.json` |
 
 Local history is not encrypted at rest and is not a password vault. Review [Security and privacy](SECURITY.md)

@@ -74,9 +74,3 @@ export function selectLocale(languageNames, locales = DICTIONARY_LOCALES) {
   const related = available.find(locale => locale.split('_')[0] === language);
   return related ?? (available.includes('en') ? 'en' : available[0] ?? '');
 }
-
-export function inferLocale(name, fallback = '') {
-  const stem = String(name ?? '').replace(/\.[^.]+$/u, '');
-  const header = stem.match(/(?:^|[^a-z])([a-z]{2,3}(?:[_-][a-z0-9]{2,8})*)(?:[^a-z0-9]|$)/iu);
-  return normalizeLocale(header?.[1]) || normalizeLocale(fallback);
-}

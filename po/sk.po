@@ -425,12 +425,12 @@ msgstr ""
 "automaticky."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Jazyk pre import"
+msgid "Dictionary language"
+msgstr "Jazyk slovníka"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Použije sa, keď slovník neobsahuje „# locale: language-code“."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Slovník musí obsahovať platnú hlavičku „# locale: language-code“."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -839,6 +839,15 @@ msgid "Slow"
 msgstr "Pomalá"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximálny počet slov"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Texty prekračujúce tento limit sa v režime výberu slov neotvoria."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Príliš veľa slov. Použite kratší text alebo zvýšte limit v nastaveniach."
+
 msgid "Show source text preview"
 msgstr "Zobraziť náhľad pôvodného textu"
 
@@ -979,9 +988,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "Tento režim nahradí aktuálny obsah schránky prijatým obsahom."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Obsah na odoslanie"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formátovanie textu"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Odosielať skopírovaný text s pôvodným formátovaním (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

@@ -1,15 +1,13 @@
 export class PanelManager {
   constructor({
     defaultPanel,
-    clearPanelTooltips = () => {},
-    hideTooltip = clearPanelTooltips,
+    hideTooltip = () => {},
     onGeometry = () => {},
   }) {
     if (!defaultPanel)
       throw new Error('A default panel is required');
 
     this._defaultPanel = defaultPanel;
-    this._clearPanelTooltips = clearPanelTooltips;
     this._hideTooltip = hideTooltip;
     this._onGeometry = onGeometry;
     this._panels = new Map();
@@ -60,7 +58,7 @@ export class PanelManager {
     if (!next)
       throw new Error(`Unknown panel: ${name}`);
 
-    this._clearPanelTooltips();
+    this._hideTooltip();
     const previous = this._current;
     if (previous) {
       const previousPanel = this._panels.get(previous.name);
@@ -77,10 +75,12 @@ export class PanelManager {
     next.restoreView?.(this._viewStates.get(name), state, previous?.name ?? null);
   }
 
-  refresh() {
-    if (!this._current)
+  refresh(name = this.currentName) {
+    // Inactive panels render on their next show; their changes must not rebuild
+    // the controls currently being used in another panel.
+    if (!this._current || !this.is(name))
       return;
-    this._clearPanelTooltips();
+    this._hideTooltip();
     const panel = this._panels.get(this._current.name);
     this._captureView(this._current.name, panel, this._current.state);
     panel?.render?.(this._current.state);
@@ -119,11 +119,13 @@ export class PanelManager {
   }
 
   destroy() {
-    this._clearPanelTooltips();
+    this._hideTooltip();
     if (this._current)
       this._panels.get(this._current.name)?.leave?.(this._current.state, null);
-    for (const panel of this._panels.values())
+    for (const panel of this._panels.values()) {
       panel.focusGrid?.clear();
+      panel.destroy?.();
+    }
     this._current = null;
     this._panels.clear();
     this._viewStates.clear();

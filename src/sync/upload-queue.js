@@ -6,7 +6,8 @@ import {dataPath, readJson, writeJson} from '../common/data-store.js';
 import {createLogger} from '../common/logger.js';
 import {isUuid} from '../common/uuid.js';
 import {SyncError} from './errors.js';
-import {normalizeServerAddress} from './http/client.js';
+import {normalize as normalizeServerAddress} from './server-address.js';
+import {validate as validateManifest} from './publication.js';
 
 const VERSION = 1;
 const MAX_ENTRIES = 10_000;
@@ -48,7 +49,7 @@ export class UploadQueue {
   }
 
   enqueue(item, {automatic = false} = {}) {
-    if (this._destroyed || !this._settings.get_boolean('sync-enabled'))
+    if (this._destroyed || !this._settings.get_boolean('sync-enabled') || item?.remote)
       return Promise.resolve(false);
     const itemId = item?.id;
     const deviceId = this._settings.get_string('device-id');
@@ -62,6 +63,8 @@ export class UploadQueue {
         throw new Error('Synchronization outbox requires UUID item and device IDs');
       if (item.sensitive)
         throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
+      if (item.remote)
+        return false;
       const raw = established ?? await this._configuration();
       if (!established && (revision !== this._settings.get_uint('sync-configuration-revision')
           || deviceId !== this._settings.get_string('device-id'))) {
@@ -166,7 +169,7 @@ export class UploadQueue {
     if (document !== null && (document.version !== VERSION || !Array.isArray(document.entries)
         || document.entries.length > MAX_ENTRIES))
       throw new Error('Synchronization outbox file has an invalid structure');
-    const queue = {path, entries: new Map()};
+    const queue = {path, entries: new Map(), publications: new Map()};
     for (const value of document?.entries ?? []) {
       const entry = validateEntry(value, serverAddress);
       const key = entryKey(entry);
@@ -174,12 +177,25 @@ export class UploadQueue {
         throw new Error('Synchronization outbox contains duplicate entries');
       queue.entries.set(key, entry);
     }
+    if (!Array.isArray(document?.publications ?? []) || (document?.publications?.length ?? 0) > MAX_ENTRIES)
+      throw new Error('Synchronization publication list is invalid');
+    for (const value of document?.publications ?? []) {
+      if (!isUuid(value.channelId) || !isUuid(value.deviceId) || !isUuid(value.itemId))
+        throw new Error('Synchronization publication has an invalid destination');
+      const publication = {channelId: value.channelId, deviceId: value.deviceId, itemId: value.itemId,
+        manifest: validateManifest(value.manifest, {itemId: value.itemId, deviceId: value.deviceId})};
+      const key = entryKey(publication);
+      if (queue.publications.has(key))
+        throw new Error('Synchronization publication list contains duplicates');
+      queue.publications.set(key, publication);
+    }
     this._queues.set(serverAddress, queue);
     return queue;
   }
 
   _save(queue) {
-    const document = {version: VERSION, entries: [...queue.entries.values()]};
+    const document = {version: VERSION, entries: [...queue.entries.values()],
+      publications: [...queue.publications.values()]};
     if (bytesFromString(`${JSON.stringify(document, null, 2)}\n`).get_size() > MAX_FILE_BYTES)
       throw new Error('Synchronization outbox exceeds its storage size limit');
     return writeJson(queue.path, document);
@@ -205,10 +221,27 @@ export class UploadQueue {
         return;
       const obsolete = [...queue.entries.values()].filter(entry => {
         const item = this._source(entry.itemId);
-        return !item || item.sensitive;
+        return !item || item.sensitive || item.remote;
       });
       if (obsolete.length)
         await this._removeEntries(queue, obsolete);
+      if (this._destroyed || !this._sourceReady())
+        return;
+      const obsoletePublications = [...queue.publications.entries()].filter(([_key, publication]) => {
+        const item = this._source(publication.itemId);
+        return !item || item.sensitive || item.remote;
+      });
+      if (obsoletePublications.length) {
+        for (const [key] of obsoletePublications)
+          queue.publications.delete(key);
+        try {
+          await this._save(queue);
+        } catch (error) {
+          for (const [key, publication] of obsoletePublications)
+            queue.publications.set(key, publication);
+          throw error;
+        }
+      }
     }
   }
 
@@ -260,7 +293,7 @@ export class UploadQueue {
     const valid = () => {
       const item = this._source(entry.itemId);
       return queue.entries.get(key) === entry && this._sourceReady()
-        && item && !item.sensitive && this._eligible(entry, item);
+        && item && !item.sensitive && !item.remote && this._eligible(entry, item);
     };
     if (!valid())
       return;
@@ -270,7 +303,7 @@ export class UploadQueue {
         if (this._destroyed || queue.entries.get(key) !== entry || !this._sourceReady())
           return null;
         const source = this._source(entry.itemId);
-        if (!source || source.sensitive) {
+        if (!source || source.sensitive || source.remote) {
           await this._removeEntries(queue, [entry]);
           return null;
         }
@@ -283,6 +316,27 @@ export class UploadQueue {
         return;
       await this._publish(item, {
         guard: () => valid() && this._source(entry.itemId) === item,
+        manifest: queue.publications.get(key)?.manifest,
+        saveManifest: manifest => this._serialize(async () => {
+          if (!valid() || this._source(entry.itemId) !== item)
+            throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED,
+              message: 'Publication is no longer eligible'});
+          const frozen = queue.publications.get(key);
+          if (frozen)
+            return frozen.manifest;
+          if (queue.publications.size >= MAX_ENTRIES)
+            throw new Error('Synchronization publication list is full');
+          const publication = {channelId: entry.channelId, deviceId: entry.deviceId, itemId: entry.itemId,
+            manifest: validateManifest(manifest, {itemId: entry.itemId, deviceId: entry.deviceId})};
+          queue.publications.set(key, publication);
+          try {
+            await this._save(queue);
+          } catch (error) {
+            queue.publications.delete(key);
+            throw error;
+          }
+          return publication.manifest;
+        }),
       });
       await this._serialize(async () => {
         if (queue.entries.get(key) === entry && this._matches(entry))

@@ -419,12 +419,12 @@ msgid ""
 msgstr "واژه‌نامه‌های فعال که با زبان نمایش فعلی مطابقت دارند، به‌طور خودکار بارگذاری می‌شوند."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "زبان برای درون‌ریزی"
+msgid "Dictionary language"
+msgstr "زبان واژه‌نامه"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "وقتی واژه‌نامه «# locale: language-code» را اعلام نکند استفاده می‌شود."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "واژه‌نامه باید دارای سرآیند معتبر «# locale: language-code» باشد."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -831,6 +831,15 @@ msgid "Slow"
 msgstr "آهسته"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "حداکثر تعداد واژه‌ها"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "متن‌هایی که از این حد بگذرند در حالت انتخاب واژه باز نمی‌شوند."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "تعداد واژه‌ها بیش از حد است. متن کوتاه‌تری انتخاب کنید یا حد را در ترجیحات افزایش دهید."
+
 msgid "Show source text preview"
 msgstr "نمایش پیش‌نمایش متن اصلی"
 
@@ -972,9 +981,17 @@ msgid ""
 msgstr ""
 "قرار دادن در تخته‌گیره، محتوای کنونی آن را با محتوای دریافتی جایگزین می‌کند."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "اچ‌تی‌ام‌ال"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "محتوای ارسالی"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "قالب‌بندی متن غنی"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "ارسال متن کپی‌شده با قالب‌بندی اصلی آن (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

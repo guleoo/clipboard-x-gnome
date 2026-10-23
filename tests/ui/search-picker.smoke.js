@@ -95,7 +95,7 @@ export async function run() {
     entry.set_text('');
   }
 
-  const extensionObject = indicator._actions.extensionObject;
+  const extensionObject = extension.stateObj;
   extensionObject._pickColor();
   await waitUntil(() => extensionObject._colorPicker?._rgb?.length === 3);
   const picker = extensionObject._colorPicker;

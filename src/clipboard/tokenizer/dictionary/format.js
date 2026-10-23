@@ -33,8 +33,11 @@ function dictionaryMetadata(text, defaults) {
   const locale = normalizeLocale(metadata.get('locale') ?? defaults.locale);
   const name = (metadata.get('name') ?? defaults.name ?? '').trim();
   const source = (metadata.get('source') ?? defaults.source ?? '').trim();
-  if (!locale)
-    throw new Error('Dictionary locale is missing or invalid');
+  if (!locale) {
+    const error = new Error('Dictionary locale is missing or invalid');
+    error.code = 'invalid_dictionary_locale';
+    throw error;
+  }
   if (!name)
     throw new Error('Dictionary name is missing');
   return {locale, name, source};

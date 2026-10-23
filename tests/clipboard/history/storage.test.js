@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../../src/clipboard/item.js';
 import {HistoryStore} from '../../../src/clipboard/history/store.js';
 import {createThumbnail} from '../../../src/clipboard/thumbnail.js';
-import {bytesFromString, sha256} from '../../../src/common/bytes.js';
+import {bytesFromString, sha256, stringFromBytes} from '../../../src/common/bytes.js';
 import {writeFile} from '../../../src/common/files.js';
 
 function assert(condition, message) {
@@ -53,6 +53,28 @@ try {
   await writeFile(Gio.File.new_for_path(loaded[0].primary.path), bytesFromString('tampered clipboard content!'));
   loaded[0].primary.bytes = null;
   await assertRejects(store.materialize(loaded[0]), /integrity|size/u, 'tampered object verification');
+
+  const dual = ClipboardItem.fromRepresentations([
+    {mimeType: 'text/plain;charset=utf-8', bytes: bytesFromString('Identical plain and HTML')},
+    {mimeType: 'text/html', bytes: bytesFromString('Identical plain and HTML')},
+  ]);
+  const dualIds = dual.representations.map(value => value.id);
+  await store.save([dual]);
+  const restoredDual = (await store.load()).find(value => value.id === dual.id);
+  assert(restoredDual?.representations.length === 2
+      && new Set(restoredDual.representations.map(value => value.id)).size === 2
+      && restoredDual.representations.every((value, index) => value.id === dualIds[index]),
+    'same-byte plain and HTML must survive persistence with distinct stable representation IDs');
+  assert(restoredDual.representations.every(value => value.path === dual.primary.path
+      && value.sha256 === dual.primary.sha256)
+      && GLib.path_get_basename(dual.primary.path) === dual.primary.sha256,
+    'same-byte representations must continue sharing the unchanged SHA-named object');
+  assert(restoredDual.preview.derivedFrom === restoredDual.primary.id
+      && restoredDual.preview.text === 'Identical plain and HTML' && !restoredDual.preview.truncated,
+    'the full preview must retain its plain-text representation association after reload');
+  await store.materialize(restoredDual);
+  assert(restoredDual.representations.every(value => stringFromBytes(value.bytes) === 'Identical plain and HTML'),
+    'both persisted MIME representations must materialize their exact original bytes');
 
   const second = ClipboardItem.fromText('second serialized save');
   const third = ClipboardItem.fromText('third serialized save');
@@ -190,7 +212,213 @@ try {
   assert((await migrationStore.load()).length === 1,
     'the migration marker must prevent duplicate legacy imports');
 
+  const concurrent = new HistoryStore({rootPath: `${rootPath}/concurrent-test`, deviceId: localDeviceId});
+  const downloading = ClipboardItem.fromText('download finishes during index persistence', {
+    originDeviceId: remoteDeviceId, remote: true, availability: 'preview',
+  });
+  const originalBytes = downloading.primary.bytes;
+  downloading.primary.bytes = null;
+  let enterSave;
+  let releaseSave;
+  let publishQueued;
+  const saveEntered = new Promise(resolve => { enterSave = resolve; });
+  const saveRelease = new Promise(resolve => { releaseSave = resolve; });
+  const publicationQueued = new Promise(resolve => { publishQueued = resolve; });
+  const persistPreview = concurrent._persistPreview;
+  const enqueue = concurrent._enqueue;
+  concurrent._persistPreview = async function (...args) {
+    enterSave();
+    await saveRelease;
+    return persistPreview.apply(this, args);
+  };
+  const metadataSave = concurrent.save([downloading]);
+  let downloaded;
+  try {
+    await saveEntered;
+    concurrent._enqueue = function (action) {
+      const result = enqueue.call(this, action);
+      publishQueued();
+      return result;
+    };
+    downloaded = concurrent.stage(downloading.primary,
+      path => writeFile(Gio.File.new_for_path(path), originalBytes));
+    await publicationQueued;
+    assert(!downloading.primary.path,
+      'a verified download must not publish its staged path during an active index save');
+    releaseSave();
+    await Promise.all([metadataSave, downloaded]);
+    concurrent._enqueue = enqueue;
+    concurrent._persistPreview = persistPreview;
+    const [, indexContents] = Gio.File.new_for_path(concurrent.directory(remoteDeviceId).index).load_contents(null);
+    const metadata = JSON.parse(new TextDecoder().decode(indexContents));
+    assert(!metadata.items[0].representations[0].path
+        && metadata.items[0].availability === 'preview'
+        && (await concurrent.load()).some(value => value.id === downloading.id),
+      'the completed metadata save must remain reloadable without a follow-up save repairing the index');
+    downloading.availability = 'ready';
+    await concurrent.save([downloading]);
+    const original = (await concurrent.load()).find(value => value.id === downloading.id);
+    await concurrent.materialize(original);
+    assert(original.text === 'download finishes during index persistence'
+        && original.primary.path.startsWith(concurrent.directory(remoteDeviceId).objects),
+      'the subsequent content save must adopt and reload the exact verified original');
+  } finally {
+    releaseSave();
+    await Promise.allSettled([metadataSave, downloaded]);
+    await concurrent.close();
+  }
+
+  const retained = [];
+  const staging = new HistoryStore({rootPath: `${rootPath}/staging-test`, deviceId: localDeviceId,
+    items: () => retained});
+  try {
+    const item = ClipboardItem.fromText('verified staged content', {originDeviceId: localDeviceId});
+    const bytes = item.primary.bytes;
+    item.primary.bytes = null;
+    let enterCleanup;
+    let releaseCleanup;
+    const cleanupEntered = new Promise(resolve => { enterCleanup = resolve; });
+    const cleanupRelease = new Promise(resolve => { releaseCleanup = resolve; });
+    const prune = staging._pruneDirectory;
+    staging._pruneDirectory = async function (...args) {
+      enterCleanup();
+      await cleanupRelease;
+      return prune.apply(this, args);
+    };
+    const loading = staging.load();
+    await cleanupEntered;
+    let path;
+    try {
+      path = await staging.stage(item.primary, path => writeFile(Gio.File.new_for_path(path), bytes));
+    } finally {
+      releaseCleanup();
+      await loading;
+      staging._pruneDirectory = prune;
+    }
+    assert(path.includes('/.staging/') && !path.startsWith(staging.directory().objects),
+      'writers must receive a private staging path, not a permanent history object');
+    assert(Gio.File.new_for_path(path).query_exists(null),
+      'startup cleanup must preserve a file staged after its asynchronous scan began');
+    const sharing = new ClipboardItem({representations: [item.primary]});
+    retained.push(sharing);
+    await staging.discard([item]);
+    assert(Gio.File.new_for_path(path).query_exists(null), 'discard must preserve a retained shared descriptor');
+    const read = staging._materialize;
+    const save = staging._save;
+    let enterRead;
+    let releaseRead;
+    const readEntered = new Promise(resolve => { enterRead = resolve; });
+    const readRelease = new Promise(resolve => { releaseRead = resolve; });
+    let savingStarted = false;
+    staging._materialize = async function (...args) {
+      enterRead();
+      await readRelease;
+      return read.apply(this, args);
+    };
+    staging._save = function (...args) {
+      savingStarted = true;
+      return save.apply(this, args);
+    };
+    const reading = staging.materialize(item);
+    await readEntered;
+    const saving = staging.save([item]);
+    try {
+      await Promise.resolve();
+      assert(!savingStarted, 'adoption and GC must wait for an active staged-file read');
+    } finally {
+      releaseRead();
+      await Promise.all([reading, saving]);
+      staging._materialize = read;
+      staging._save = save;
+    }
+    assert(item.text === 'verified staged content', 'a read concurrent with adoption must return the exact original');
+    assert(!Gio.File.new_for_path(path).query_exists(null)
+        && item.primary.path.startsWith(staging.directory().objects)
+        && sharing.primary.path === item.primary.path,
+      'adoption must move the staged file and update all consumers of the shared descriptor');
+
+    const held = ClipboardItem.fromText('active consumer of a permanent original');
+    await staging.save([held]);
+    let releaseHeld;
+    const heldRelease = new Promise(resolve => { releaseHeld = resolve; });
+    const heldUse = staging.use(held, () => heldRelease);
+    try {
+      await staging.save([]);
+      assert(Gio.File.new_for_path(held.primary.path).query_exists(null),
+        'a permanent original must remain available to an active consumer outside the latest snapshot');
+    } finally {
+      releaseHeld();
+      await heldUse;
+    }
+    await staging.save([]);
+    assert(!Gio.File.new_for_path(held.primary.path).query_exists(null),
+      'a permanent original must be reclaimed once both active and live owners are gone');
+
+    const discarded = ClipboardItem.fromText('discarded staged content');
+    const discardedPath = await staging.stage(discarded.primary,
+      path => writeFile(Gio.File.new_for_path(path), discarded.primary.bytes));
+    await staging.discard([discarded]);
+    assert(!Gio.File.new_for_path(discardedPath).query_exists(null),
+      'discarded content must not leave a staging file behind');
+
+    const abandoned = ClipboardItem.fromText('abandoned shared content');
+    let releaseUse;
+    let acquired;
+    const useRelease = new Promise(resolve => { releaseUse = resolve; });
+    const useEntered = new Promise(resolve => { acquired = resolve; });
+    const failure = new Error('Consumer stopped');
+    const using = staging.use(abandoned, async () => {
+      await staging.stage(abandoned.primary,
+        path => writeFile(Gio.File.new_for_path(path), abandoned.primary.bytes));
+      acquired();
+      await useRelease;
+      throw failure;
+    });
+    const stopped = assertRejects(using, /Consumer stopped/u, 'an interrupted content consumer');
+    await useEntered;
+    try {
+      await staging.discard([abandoned]);
+      assert(Gio.File.new_for_path(abandoned.primary.path).query_exists(null),
+        'staged content must remain available until its last active consumer finishes');
+    } finally {
+      releaseUse();
+      await stopped;
+    }
+    assert(!Gio.File.new_for_path(abandoned.primary.path).query_exists(null)
+        && staging._uses.size === 0 && staging._discarded.size === 0,
+      'a failed last consumer must release deferred content and its ownership bookkeeping');
+
+    const wrong = ClipboardItem.fromText('expected content');
+    let failedPath;
+    await assertRejects(staging.stage(wrong.primary, path => {
+      failedPath = path;
+      return writeFile(Gio.File.new_for_path(path), bytesFromString('wrong'));
+    }), /metadata/u, 'staging size validation');
+    assert(!wrong.primary.path && !Gio.File.new_for_path(failedPath).query_exists(null),
+      'a failed writer must not publish a path or retain a partial staging file');
+
+    const pending = ClipboardItem.fromText('cancelled writer');
+    const cancellable = new Gio.Cancellable();
+    let finishWriter;
+    let pendingPath;
+    const writing = staging.stage(pending.primary, async path => {
+      pendingPath = path;
+      await new Promise(resolve => { finishWriter = resolve; });
+      await writeFile(Gio.File.new_for_path(path), pending.primary.bytes);
+    }, cancellable);
+    const rejected = assertRejects(writing, /cancelled|canceled/iu, 'closing an active writer');
+    const closing = staging.close();
+    assert(cancellable.is_cancelled(), 'closing storage must cancel active staging writes');
+    finishWriter();
+    await Promise.all([rejected, closing]);
+    assert(!pending.primary.path && !Gio.File.new_for_path(pendingPath).query_exists(null),
+      'late writer completion after close must be cleaned without exposing an original');
+  } finally {
+    await staging.close();
+  }
+
 } finally {
+  await store.close();
   deleteTree(Gio.File.new_for_path(rootPath));
 }
 

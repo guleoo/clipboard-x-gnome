@@ -19,10 +19,20 @@ export class TransferTracker {
   }
 
   forItem(itemId) {
-    const values = [...this._states.values()]
-      .filter(transfer => transfer.itemId === itemId)
-      .sort((left, right) => right.updatedAt - left.updatedAt);
-    return values[0] ? {...values[0]} : null;
+    let latest = null;
+    let active = null;
+    // Map insertion order is the session's first-observed operation order.
+    // Updating an older operation must not reorder it, and server timestamps
+    // cannot rank it against a local download running on a different clock.
+    for (const transfer of this._states.values()) {
+      if (transfer.itemId !== itemId)
+        continue;
+      latest = transfer;
+      if (!TERMINAL_STATES.has(transfer.state))
+        active = transfer;
+    }
+    const value = active ?? latest;
+    return value ? {...value} : null;
   }
 
   values() {

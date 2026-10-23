@@ -418,12 +418,12 @@ msgid ""
 msgstr "ಪ್ರಸ್ತುತ ಪ್ರದರ್ಶನ ಭಾಷೆಗೆ ಹೊಂದುವ ಸಕ್ರಿಯಗೊಳಿಸಿದ ನಿಘಂಟುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತದೆ."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "ಆಮದು ಭಾಷೆ"
+msgid "Dictionary language"
+msgstr "ನಿಘಂಟಿನ ಭಾಷೆ"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "ನಿಘಂಟು “# locale: language-code” ಅನ್ನು ಘೋಷಿಸದಿದ್ದಾಗ ಬಳಸಲಾಗುತ್ತದೆ."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "ನಿಘಂಟು ಮಾನ್ಯವಾದ “# locale: language-code” ಶೀರ್ಷಿಕೆಯನ್ನು ಹೊಂದಿರಬೇಕು."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -826,6 +826,15 @@ msgid "Slow"
 msgstr "ನಿಧಾನ"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "ಗರಿಷ್ಠ ಪದಗಳ ಸಂಖ್ಯೆ"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "ಈ ಮಿತಿಯನ್ನು ಮೀರಿದ ಪಠ್ಯಗಳನ್ನು ಪದ ಆಯ್ಕೆ ಮೋಡ್‌ನಲ್ಲಿ ತೆರೆಯಲಾಗುವುದಿಲ್ಲ."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "ಪದಗಳು ತುಂಬಾ ಹೆಚ್ಚಾಗಿವೆ. ಕಡಿಮೆ ಪಠ್ಯವನ್ನು ಬಳಸಿ ಅಥವಾ ಆದ್ಯತೆಗಳಲ್ಲಿ ಮಿತಿಯನ್ನು ಹೆಚ್ಚಿಸಿ."
+
 msgid "Show source text preview"
 msgstr "ಮೂಲ ಪಠ್ಯದ ಮುನ್ನೋಟ ತೋರಿಸಿ"
 
@@ -968,9 +977,17 @@ msgid ""
 msgstr ""
 "ಪ್ರಸ್ತುತ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ಹೊಂದಿಸಿದರೆ ಬರುವ ವಿಷಯವು ಈಗಿನ ಕ್ಲಿಪ್‌ಬೋರ್ಡ್ ವಿಷಯವನ್ನು ಬದಲಿಸುತ್ತದೆ."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "ಕಳುಹಿಸಬೇಕಾದ ವಿಷಯ"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "ಸಮೃದ್ಧ ಪಠ್ಯ ಸ್ವರೂಪ"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "ನಕಲಿಸಿದ ಪಠ್ಯವನ್ನು ಅದರ ಮೂಲ ಸ್ವರೂಪದೊಂದಿಗೆ (HTML) ಕಳುಹಿಸಿ."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

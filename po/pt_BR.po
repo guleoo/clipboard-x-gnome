@@ -431,12 +431,12 @@ msgstr ""
 "carregados automaticamente."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Idioma para importação"
+msgid "Dictionary language"
+msgstr "Idioma do dicionário"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Usado quando o dicionário não declara “# locale: language-code”."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "O dicionário deve declarar um cabeçalho válido “# locale: language-code”."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -843,6 +843,15 @@ msgid "Slow"
 msgstr "Lenta"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Número máximo de palavras"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Textos que excedem este limite não são abertos no modo de seleção de palavras."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Palavras demais. Use menos texto ou aumente o limite nas preferências."
+
 msgid "Show source text preview"
 msgstr "Mostrar prévia do texto original"
 
@@ -986,9 +995,17 @@ msgstr ""
 "Ativar área de transferência substitui seu conteúdo atual pelo conteúdo "
 "recebido."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Conteúdo a enviar"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formatação de texto"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Enviar o texto copiado com a formatação original (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

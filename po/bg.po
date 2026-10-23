@@ -427,12 +427,12 @@ msgid ""
 msgstr "Активираните речници, съответстващи на текущия език на интерфейса, се зареждат автоматично."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Език за импортиране"
+msgid "Dictionary language"
+msgstr "Език на речника"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Използва се, когато речникът не съдържа „# locale: language-code“."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Речникът трябва да съдържа валиден заглавен ред „# locale: language-code“."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -843,6 +843,15 @@ msgid "Slow"
 msgstr "Бавна"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Максимален брой думи"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Текстове, надвишаващи този лимит, не се отварят в режим за избор на думи."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Твърде много думи. Използвайте по-кратък текст или увеличете лимита в настройките."
+
 msgid "Show source text preview"
 msgstr "Показване на преглед на оригиналния текст"
 
@@ -986,9 +995,17 @@ msgid ""
 msgstr ""
 "Прилагането в буфера за обмен заменя текущото му съдържание с полученото."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Съдържание за изпращане"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Форматиране на текст"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Изпращане на копирания текст с оригиналното му форматиране (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

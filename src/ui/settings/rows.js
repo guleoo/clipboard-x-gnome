@@ -56,7 +56,7 @@ export class PreferenceRows {
     return row;
   }
 
-  sizeSpin(key, title, lower, upper, step, factor, unit, digits = 0) {
+  sizeSpin(key, title, {lower, upper, step, factor, unit, digits = 0}) {
     const row = new Adw.SpinRow({
       title,
       subtitle: unit,

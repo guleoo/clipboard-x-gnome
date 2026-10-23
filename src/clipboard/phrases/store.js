@@ -2,7 +2,9 @@ import {dataPath, readJson, writeJson} from '../../common/data-store.js';
 
 export const MAX_PHRASE_LENGTH = 4096;
 const MAX_PHRASES = 1000;
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
+// JSON can encode a code point as six ASCII bytes (controls or lone surrogates).
+// Include each quoted/indented entry and the pretty-printed document envelope.
+const MAX_FILE_BYTES = MAX_PHRASES * (MAX_PHRASE_LENGTH * 6 + 8) + 128;
 const FILE_VERSION = 1;
 
 export function quickPhrasesPath() {
@@ -14,8 +16,8 @@ export class PhraseStore {
     this._settings = settings;
     this.path = path;
     this._phrases = [];
-    this._operation = this._load();
-    this.ready = this._operation;
+    this.ready = this._load();
+    this._operation = Promise.resolve();
   }
 
   get all() {
@@ -54,6 +56,7 @@ export class PhraseStore {
 
   _mutate(createNext) {
     const run = this._operation.then(async () => {
+      await this.ready;
       const next = createNext(this.all);
       if (same(this._phrases, next))
         return false;

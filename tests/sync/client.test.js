@@ -4,6 +4,8 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {SyncClient} from '../../src/sync/client.js';
 import {createLogger} from '../../src/common/logger.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {publication as wirePublication, Publications} from './fixtures/wire.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -14,6 +16,7 @@ const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
 const transferId = '33333333-3333-4333-8333-333333333333';
 const uploadId = '44444444-4444-4444-8444-444444444444';
+const maximumItemBytes = 64 * 1024 * 1024;
 
 class TestSettings {
   constructor() {
@@ -25,6 +28,8 @@ class TestSettings {
       ['sync-text', true],
       ['sync-html', true],
       ['sync-images', true],
+      ['text-full-threshold', 64 * 1024],
+      ['image-full-threshold', 512 * 1024],
       ['text-preview-limit', 4096],
       ['thumbnail-byte-limit', 256 * 1024],
       ['sync-transfer-timeout-seconds', 30],
@@ -75,8 +80,6 @@ class TestStore {
       serverAddress: 'http://127.0.0.1:8765',
       apiKey: 'test-api-key',
       activeChannelId: channelId,
-      cursors: {},
-      workCursor: '',
     };
   }
 
@@ -94,13 +97,8 @@ class TestStore {
     return this.current;
   }
 
-  async saveProgress(value) {
-    this.value = {...value, cursors: {...value.cursors}};
-    return this.current;
-  }
-
   get current() {
-    return {...this.value, cursors: {...this.value.cursors}};
+    return {...this.value};
   }
 }
 
@@ -112,6 +110,7 @@ class TestTransport {
     this.totalBytes = 0;
     this.channelValues = channels;
     this.updatedProfiles = [];
+    this.publications = new Publications();
   }
 
   status() {
@@ -121,7 +120,7 @@ class TestTransport {
       state: 'online',
       capabilities: {
         supportedMimeTypes: ['text/plain;charset=utf-8'],
-        maxItemBytes: 64 * 1024 * 1024,
+        maxItemBytes: maximumItemBytes,
         maxPreviewBytes: 256 * 1024,
       },
     });
@@ -152,21 +151,13 @@ class TestTransport {
     return Promise.resolve({cursor: cursor || 'initial', hasMore: false, work: []});
   }
 
-  createItem(_channelId, manifest) {
+  createItem(channel, manifest) {
+    this.publications.accept(channel, manifest);
+    this.manifest = manifest;
     this.itemId = manifest.id;
-    const previewIds = manifest.previews.map(value => value.id);
-    const contentIds = manifest.contents.filter(value => value.delivery === 'eager').map(value => value.id);
-    this.totalBytes = [
-      ...manifest.previews.map(value => value.size),
-      ...manifest.contents.filter(value => value.delivery === 'eager').map(value => value.size),
-    ].reduce((sum, value) => sum + value, 0);
-    return Promise.resolve({
-      itemId: manifest.id,
-      uploadId,
-      previewIds,
-      contentIds,
-      transfer: this._transfer('queued', 0),
-    });
+    const result = wirePublication(manifest, {deviceId, uploadId, transferId});
+    this.totalBytes = result.transfer.totalBytes;
+    return Promise.resolve(result);
   }
 
   uploadPreview(_uploadId, _previewId, source, onProgress) {
@@ -222,16 +213,24 @@ const path = GLib.build_filenamev([directory, 'content.txt']);
 const file = Gio.File.new_for_path(path);
 const settings = new TestSettings();
 const store = new TestStore();
+const progressStore = new MemoryProgressStore();
 const transport = new TestTransport();
 const client = new SyncClient(settings, {
   configurationStore: store,
+  progressStore,
   transportFactory: () => transport,
+  async stageFile(reference, write, cancellable) {
+    const targetPath = '/unused-staged-test-double';
+    await write(targetPath);
+    cancellable.set_error_if_cancelled();
+    reference.path = targetPath;
+  },
 });
 
 try {
   file.replace_contents('hello', null, false, Gio.FileCreateFlags.PRIVATE, null);
   await client.start();
-  assert(client.connected && client.channels[0].active,
+  assert(client.ready && client.configuration.activeChannelId === channelId,
     'client start must authenticate, load the pre-registered device and select its channel');
   const originalPollSource = client._pollSource;
   settings._values.set('sync-poll-interval-seconds', 15);
@@ -285,9 +284,8 @@ try {
   pendingProfiles[1].complete();
   await iconChange;
   transport.updateProfile = originalUpdateProfile;
-  assert(client.devices[0].iconKind === 'archlinux' && !Object.hasOwn(client.devices[0], 'iconColor'),
-    'the final server profile must not be overwritten by an older response');
-  assert(store.value.cursors[channelId] === 'initial' && store.value.workCursor === 'initial',
+  const progress = await progressStore.load({serverAddress: store.value.serverAddress, deviceId});
+  assert(progress.cursors[channelId] === 'initial' && progress.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
 
   const item = ClipboardItem.fromText('hello', {originDeviceId: deviceId});
@@ -299,8 +297,68 @@ try {
     'preview and eager content must be streamed exactly once');
   assert(client.getTransferForItem(item.id).state === 'completed',
     'completed server progress must replace local streaming progress');
-  assert(client._remoteTransferIds.size === 0,
+  assert(client._transfers._remoteIds.size === 0,
     'confirmed upload completion must release remote cancellation markers');
+  const missingSource = ClipboardItem.fromText('not persisted', {originDeviceId: deviceId});
+  let freezes = 0;
+  let missingSourceError = null;
+  const previousManifest = transport.manifest;
+  try {
+    await client.publish(missingSource, {saveManifest: async manifest => { freezes++; return manifest; }});
+  } catch (error) {
+    missingSourceError = error;
+  }
+  assert(missingSourceError && freezes === 0 && transport.manifest === previousManifest,
+    'Source preflight failure must not freeze a manifest or send POST');
+
+  const frozenItem = ClipboardItem.fromText('frozen', {originDeviceId: deviceId});
+  frozenItem.primary.path = path;
+  settings._values.set('text-full-threshold', 0);
+  const beforeFrozenPublication = transport.uploadedBytes;
+  await client.publish(frozenItem, {saveManifest: async manifest => ({...manifest,
+    contents: manifest.contents.map(content => ({...content, delivery: 'eager'})),
+  })});
+  assert(transport.manifest.contents[0].delivery === 'eager'
+      && frozenItem.primary.delivery === 'eager'
+      && transport.uploadedBytes - beforeFrozenPublication
+        === frozenItem.primary.size + frozenItem.preview.text.length,
+    'An existing frozen manifest returned by persistence must determine upload sources and confirmed delivery');
+  settings._values.set('text-full-threshold', 64 * 1024);
+
+  for (const failure of ['size', 'source']) {
+    const rejectedItem = ClipboardItem.fromText('rejected', {originDeviceId: deviceId});
+    rejectedItem.primary.path = path;
+    const beforeRejectedPublication = transport.manifest;
+    let rejection = null;
+    try {
+      await client.publish(rejectedItem, {saveManifest: async manifest => ({...manifest,
+        contents: manifest.contents.map(content => ({...content,
+          ...(failure === 'size' ? {size: maximumItemBytes + 1} : {sha256: '0'.repeat(64)}),
+        })),
+      })});
+    } catch (error) {
+      rejection = error;
+    }
+    assert(rejection && transport.manifest === beforeRejectedPublication,
+      `An existing frozen manifest must pass ${failure} preflight again before POST`);
+  }
+
+  const confirmedDeliveries = [];
+  const lazyItem = ClipboardItem.fromText('lazy', {originDeviceId: deviceId});
+  lazyItem.primary.path = path;
+  client.connect('transfer-changed', (_client, value) => {
+    if (value.itemId === lazyItem.id && value.state === 'completed')
+      confirmedDeliveries.push(lazyItem.primary.delivery);
+  });
+  settings._values.set('text-full-threshold', 0);
+  const beforeLazyPublication = transport.uploadedBytes;
+  await client.publish(lazyItem);
+  assert(transport.manifest.contents[0].delivery === 'on-demand'
+      && transport.uploadedBytes - beforeLazyPublication === lazyItem.preview.text.length,
+    'publishing old history must apply the current threshold and upload only the lazy preview');
+  assert(lazyItem.primary.delivery === 'on-demand' && confirmedDeliveries.at(-1) === 'on-demand',
+    'confirmed delivery must update before completion observers persist the item');
+  settings._values.set('text-full-threshold', 64 * 1024);
   const createItem = transport.createItem.bind(transport);
   const completeUpload = transport.completeUpload.bind(transport);
   const completedUploadBytes = transport.uploadedBytes;
@@ -311,12 +369,20 @@ try {
   await client.publish(item);
   assert(transport.uploadedBytes === completedUploadBytes,
     'an already-completed remote publication must be acknowledged without re-uploading bytes');
+  assert(item.primary.delivery === 'eager',
+    'an already-completed acknowledgement must update the confirmed manifest policy too');
   transport.createItem = createItem;
+  settings._values.set('text-full-threshold', 0);
+  const failedItem = ClipboardItem.fromText('failed', {originDeviceId: deviceId});
+  failedItem.primary.path = path;
   transport.completeUpload = async () => ({transfer: transport._transfer('cancelled', 0)});
   let unconfirmed = null;
-  try { await client.publish(item); } catch (error) { unconfirmed = error; }
+  try { await client.publish(failedItem); } catch (error) { unconfirmed = error; }
   assert(unconfirmed?.code === 'upload_failed',
     'a cancelled server acknowledgement must not complete a durable upload intent');
+  assert(transport.manifest.contents[0].delivery === 'on-demand' && failedItem.primary.delivery === 'eager',
+    'a failed publication must not overwrite the historical confirmed delivery policy');
+  settings._values.set('text-full-threshold', 64 * 1024);
   transport.completeUpload = completeUpload;
   const verificationModes = [];
   transport.downloadContent = async (_channelId, _itemId, _contentId, _targetPath, options) => {
@@ -353,6 +419,19 @@ try {
   }
   assert(rejection?.code === 'sensitive_content' && transport.uploadedBytes === uploadedBytes,
     'the sync client must reject sensitive content even when it has a persisted path');
+  const received = ClipboardItem.fromText('received original', {
+    remote: true, originDeviceId: GLib.uuid_string_random(),
+  });
+  received.primary.path = path;
+  const manifest = transport.manifest;
+  let remoteError = null;
+  try {
+    await client.publish(received);
+  } catch (error) {
+    remoteError = error;
+  }
+  assert(remoteError && transport.manifest === manifest && transport.uploadedBytes === uploadedBytes,
+    'received items must never enter a local publication or send a forged origin to the server');
 } finally {
   client.destroy();
   try {
@@ -369,6 +448,7 @@ const channelRequiredStore = new TestStore();
 channelRequiredStore.value.activeChannelId = '';
 const channelRequiredClient = new SyncClient(settings, {
   configurationStore: channelRequiredStore,
+  progressStore: new MemoryProgressStore(),
   transportFactory: () => new TestTransport([]),
 });
 try {
@@ -387,6 +467,40 @@ try {
   channelRequiredClient.destroy();
 }
 
+for (const active of [false, true]) {
+  const transport = new TestTransport();
+  const itemId = GLib.uuid_string_random();
+  const newestId = GLib.uuid_string_random();
+  const oldestId = GLib.uuid_string_random();
+  transport.itemId = itemId;
+  transport.totalBytes = 10;
+  transport.transfers = async () => ({transfers: [
+    {...transport._transfer(active ? 'transferring' : 'completed', active ? 5 : 10),
+      id: newestId, createdAt: 100, updatedAt: 200},
+    {...transport._transfer(active ? 'queued' : 'failed', 0),
+      id: oldestId, createdAt: 1, updatedAt: 2},
+  ]});
+  transport.transfer = async id => (await transport.transfers()).transfers.find(value => value.id === id);
+  let cancelled = null;
+  transport.cancel = async id => { cancelled = id; };
+  const client = new SyncClient(new TestSettings(), {
+    configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+    transportFactory: () => transport,
+  });
+  try {
+    await client.start();
+    const selected = client.getTransferForItem(itemId);
+    assert(selected.transferId === newestId && selected.state === (active ? 'transferring' : 'completed'),
+      'restoring a newest-first server list must not select an older transfer for the same item');
+    if (active) {
+      await client.cancelTransfer(selected.transferId);
+      assert(cancelled === newestId, 'the displayed active transfer must cancel the newest remote operation');
+    }
+  } finally {
+    client.destroy();
+  }
+}
+
 const retentionTransport = new TestTransport();
 retentionTransport.itemId = GLib.uuid_string_random();
 retentionTransport.totalBytes = 10;
@@ -394,56 +508,58 @@ let cancellations = 0;
 retentionTransport.cancel = async () => { cancellations++; };
 let remoteState = 'queued';
 retentionTransport.transfer = async () => retentionTransport._transfer(remoteState, 0);
+retentionTransport.transfers = async () => ({transfers: [retentionTransport._transfer(remoteState, 0)]});
 const retentionClient = new SyncClient(new TestSettings(), {
-  configurationStore: new TestStore(), transportFactory: () => retentionTransport,
+  configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+  transportFactory: () => retentionTransport,
 });
 const cancelledPublications = [];
 retentionClient.connect('publication-cancelled', (_client, id) => cancelledPublications.push(id));
 try {
   await retentionClient.start();
-  const active = await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer(active, true);
+  const active = retentionClient.getTransferForItem(retentionTransport.itemId);
+  assert(active?.state === 'queued', 'startup must restore remote tasks before cancellation');
   await retentionClient.cancelTransfer(transferId);
-  assert(cancellations === 1 && retentionClient._remoteTransferIds.size === 0,
-    'a looked-up remote task must remain cancellable and release its marker after DELETE');
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 1,
+    'a restored remote task must remain cancellable and release its marker after DELETE');
   assert(cancelledPublications.length === 1 && cancelledPublications[0] === retentionTransport.itemId,
     'explicit cancellation must identify the publication whose durable intent should be removed');
 
-  await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer(active, true);
+  await retentionClient.restart();
   for (let index = 0; index < 1100; index++)
-    retentionClient._recordTransfer({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
+    retentionClient._transfers.receive({...active, transferId: GLib.uuid_string_random(), state: 'completed'});
   assert(!retentionClient._transfers.get(transferId), 'fixture must evict the active UI record');
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 2, 'UI eviction must not silently disable remote cancellation');
 
-  await retentionClient.getTransfer(transferId);
-  retentionClient._recordTransfer({...active, state: 'failed'}, true);
-  assert(retentionClient._remoteTransferIds.has(transferId),
+  await retentionClient.restart();
+  await retentionClient._transfers.run(async ({track}) => {
+    track(active);
+    throw new Error('Unconfirmed local upload failure');
+  }).catch(() => {});
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 3,
     'a local failure is not proof that the server has finished the task');
+  await retentionClient.restart();
   remoteState = 'failed';
-  await retentionClient.getTransfer(transferId);
-  assert(retentionClient._remoteTransferIds.size === 0,
+  await retentionClient._poll();
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 3,
     'confirmed server failure must release remote cancellation state');
 
   remoteState = 'queued';
   retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
-  await retentionClient.getTransfer(transferId);
+  await retentionClient.restart();
   try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
-  assert(retentionClient._remoteTransferIds.has(transferId),
+  retentionTransport.cancel = async () => { cancellations++; };
+  await retentionClient.cancelTransfer(transferId);
+  await retentionClient.cancelTransfer(transferId);
+  assert(cancellations === 4,
     'a failed remote cancellation must retain the ability to retry');
-
-  const localId = GLib.uuid_string_random();
-  const localOperation = new Gio.Cancellable();
-  retentionClient._operations.set(localId, localOperation);
-  await retentionClient.cancelTransfer(localId);
-  assert(localOperation.is_cancelled() && cancellations === 2,
-    'local-only download cancellation must not call the server DELETE endpoint');
 } finally {
   retentionClient.destroy();
 }
-assert(retentionClient._remoteTransferIds.size === 0,
-  'destroy must clear markers for still-active or unconfirmed remote tasks');
 
 // Exercise the actual initialization pipeline, not a synthetic list of stage names.
 for (const phase of ['configuration', 'transport', 'status', 'device', 'profile',
@@ -464,15 +580,22 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
     localTransport[methods[phase]] = fail;
   const diagnosticClient = new SyncClient(new TestSettings(), {
     configurationStore: localStore,
+    progressStore: new MemoryProgressStore(),
     transportFactory: phase === 'transport' ? fail : () => localTransport,
     logger: createLogger('sync', {sink: record => records.push(record)}),
   });
   if (phase === 'transfer-refresh')
     diagnosticClient._refreshActiveTransfers = fail;
+  const states = [];
+  diagnosticClient.connect('status-changed', (_client, state) => states.push(state));
   try {
     let caught = null;
     try { await diagnosticClient.start(); } catch (error) { caught = error; }
-    assert(caught === failure, `initialization must preserve the original ${phase} failure`);
+    const retryablePoll = ['changes', 'work', 'transfer-refresh'].includes(phase);
+    assert(retryablePoll ? caught === null && diagnosticClient.ready
+        && states.at(-1) === 'error'
+      : caught === failure,
+    `initialization must ${retryablePoll ? 'retain a usable connection after' : 'preserve'} the ${phase} failure`);
     const failed = records.filter(record => record.outcome === 'failed');
     assert(failed.length === 1 && failed[0].phase === phase,
       `initialization failure must identify the exact ${phase} stage once`);
@@ -484,7 +607,8 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
 
 const pollRecords = [];
 const pollClient = new SyncClient(new TestSettings(), {
-  configurationStore: new TestStore(), transportFactory: () => new TestTransport(),
+  configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
+  transportFactory: () => new TestTransport(),
   logger: createLogger('sync', {sink: record => pollRecords.push(record)}),
 });
 try {

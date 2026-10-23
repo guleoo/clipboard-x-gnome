@@ -142,8 +142,12 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 点击文本条目的分词按钮。方向键用于移动焦点，点击或拖动可以连续选择词，
 `Shift` + 方向键用于键盘连选。默认按 `c` 复制、`v` 粘贴、`'` 模拟输入选择结果。
 
+**设置 → 剪切板 → 分词 → 最大分词数量**默认限制为 2,000 项。超出时会提示，不会静默截断。
+链接、数字、标点和符号均按一个可选项计数。
+
 中文或日文环境可以打开**设置 → 剪切板 → 词库**，启用系统分词器、导入 UTF-8 词库，
-或添加 HTTP/HTTPS 网络词库位置。词库每行写一个词，后面可以跟词频：
+或添加 HTTP/HTTPS 网络词库位置。词库每行写一个词，后面可以跟词频。
+文件必须包含有效的 `# locale: 语言代码` 声明，否则不予导入；网络词库也遵循此要求：
 
 ```text
 # locale: zh
@@ -151,6 +155,8 @@ Wayland 下的 GNOME Shell 无法完整热重载扩展代码。
 注销密钥 90
 图片编辑 80
 ```
+
+词库语言在导入时确定。之后编辑文件头的 `locale` 不会改变所属语言；如需更换语言，请重新导入。
 
 插件不会捆绑第三方词库，安装、启动或打开面板时也不会静默下载词库。
 
@@ -209,13 +215,18 @@ flatpak run be.alexandervanhee.gradia %u
 不会跳过完整性检查。关闭时仍使用现有 GLib 校验，无需额外命令，但大文件内存峰值可能较高。
 
 服务器地址、API Key 和活动 Channel 保存在 `$XDG_DATA_HOME/clipboard-x-gnome/sync.json`；
-各 Channel 的增量 cursor 单独保存在 `sync-state.json`。中途加入 Channel 的新设备会从
+增量 cursor、work cursor 和未完成的来源上传任务引用，按服务器和 DeviceId 分别保存在 `sync-progress/` 中，
+以便在网络中断或重启后恢复任务。中途加入 Channel 的新设备会从
 服务器保留的 Channel 变化历史开始获取元数据与预览，大体积原文仍按需加载。
 
 待上传任务按服务器分别持久化，并绑定提交时的 Channel 和 DeviceId。上传中断或切换服务器
 不会丢弃任务；重试前会检查本地条目，并请求服务器复用或确认同一发布，已经完成的内容不再
 重复上传。已删除的本地条目和隐私内容不会上传。关闭同步只暂停已有任务；关闭期间复制的
 条目不加入队列，重新开启后也不会自动补传。
+
+第一次发布请求前，会在本地保存清单元数据，不复制剪切板正文或 API Key。即使重启或修改
+传输阈值，重试仍复用原清单；新的传输设置用于尚未开始发布的条目。本地条目被删除或变为
+隐私内容后，对应的清单也会清理。
 
 > [!NOTE]
 > 当前在扩展中删除条目，只会删除本设备的本地历史副本，不会请求从整个 Channel 删除。
@@ -230,7 +241,7 @@ flatpak run be.alexandervanhee.gradia %u
 | 快捷语句 | `$XDG_DATA_HOME/clipboard-x-gnome/quick-phrases.json` |
 | 词库 | `$XDG_DATA_HOME/clipboard-x-gnome/dictionaries` |
 | 同步连接信息 | `$XDG_DATA_HOME/clipboard-x-gnome/sync.json` |
-| 同步 cursor | `$XDG_DATA_HOME/clipboard-x-gnome/sync-state.json` |
+| 同步进度与待完成的来源任务 | `$XDG_DATA_HOME/clipboard-x-gnome/sync-progress/`（每个服务器与 DeviceId 一个文件） |
 | 按服务器划分的待上传队列 | `$XDG_DATA_HOME/clipboard-x-gnome/sync-queues/<服务器地址哈希>.json` |
 
 本地历史没有静态加密，也不是密码保险库。启用同步或处理敏感内容前，请阅读

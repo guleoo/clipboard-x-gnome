@@ -23,7 +23,7 @@ export async function run() {
   await waitUntil(() => Boolean(Main.panel.statusArea['clipboard-x-gnome']),
     'Extension did not initialize');
   const indicator = Main.panel.statusArea['clipboard-x-gnome'];
-  await indicator._actions.extensionObject._startup;
+  await Main.extensionManager.lookup('clipboard-x-gnome@guleoo.github.io').stateObj._startup;
   const panel = indicator._tokenizer;
   const seat = global.stage.context.get_backend().get_default_seat();
   const pointer = seat.create_virtual_device(Clutter.InputDeviceType.POINTER_DEVICE);

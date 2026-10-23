@@ -8,6 +8,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
+import {Content} from '../clipboard/content.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
@@ -44,8 +45,20 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._portal = new ScreenshotPortal();
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
+      applyChanges: (changes, scope) => content.receive(changes, scope),
+      stageFile: (value, write, cancellable) => controller.stageContent(value, write, cancellable),
+      discardContent: items => controller.discardContent(items),
+      useContent: (item, load) => controller.useContent(item, load),
     });
     const sync = this._sync;
+    const content = new Content({
+      history: controller,
+      remote: sync,
+      receiveMode: () => settings.get_string('sync-receive-mode'),
+      deviceId: () => ensureDeviceIdentity(settings).deviceId,
+      onError: error => this._reportError(error),
+    });
+    this._content = content;
     const configurationStore = new SyncConfigurationStore();
     const uploadQueue = new UploadQueue(settings, {
       afterShutdown: this._shutdown,
@@ -78,21 +91,23 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._boundShortcuts = [];
 
     const actions = {
-      extensionObject: this,
       ensureIdentity: () => ensureDeviceIdentity(this._settings),
       screenshot: () => this._takeScreenshot(),
       pickColor: () => this._pickColor(),
       editItem: item => this._editItem(item),
-      activateItem: item => this._activateItem(item),
+      activateItem: item => content.activate(item),
       pasteItem: item => this._pasteItem(item),
       typeItem: item => this._typeItem(item),
-      materializeItem: item => this._ensureMaterialized(item),
+      materializeItem: item => content.ensure(item),
+      readItem: item => content.read(item),
       publish: item => this._publish(item),
       cancelTransfer: transferId => this._sync.cancelTransfer(transferId),
+      transferForItem: itemId => sync.getTransferForItem(itemId),
       copyText: text => St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text),
       pasteText: text => this._pasteText(text),
       typeText: text => this._terminalInput.type(text),
       tokenizeText: text => this._textTokenizer.tokenize(text, {
+        maximumTokens: this._settings.get_uint('tokenizer-word-limit'),
         revision: this._settings.get_uint('tokenizer-dictionary-revision'),
         dictionaryFiles: this._settings.get_strv('tokenizer-dictionary-files'),
       }),
@@ -136,12 +151,6 @@ export default class ClipboardXGnomeExtension extends Extension {
       uploadQueue.prune().catch(error => logger.error('prune-uploads', error));
     });
 
-    this._syncItemSignal = this._sync.connect('item-available', (_sync, itemId) => {
-      this._receiveRemoteItem(itemId).catch(error => this._reportError(error));
-    });
-    this._syncRemovedSignal = this._sync.connect('item-removed', (_sync, itemId) => {
-      this._controller.remove(itemId);
-    });
     this._syncStatusSignal = this._sync.connect('status-changed', (_sync, status, capabilities) => {
       this._indicator?.setSyncStatus(status, capabilities);
       this._drainUploads(uploadQueue);
@@ -154,7 +163,12 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._transferSignal = this._sync.connect(
       'transfer-changed',
       (_sync, transfer) => {
-        this._indicator?.setTransfer(transfer);
+        if (transfer.kind === 'publish' && transfer.state === 'completed') {
+          const item = controller.items.find(value => value.id === transfer.itemId);
+          if (item)
+            controller.update(item);
+        }
+        this._indicator?.refreshTransfer(transfer.itemId);
       },
     );
 
@@ -186,12 +200,8 @@ export default class ClipboardXGnomeExtension extends Extension {
 
     if (this._itemAddedSignal)
       this._controller.disconnect(this._itemAddedSignal);
-    if (this._syncItemSignal)
-      this._sync.disconnect(this._syncItemSignal);
     if (this._favoriteSignal)
       this._controller.disconnect(this._favoriteSignal);
-    if (this._syncRemovedSignal)
-      this._sync.disconnect(this._syncRemovedSignal);
     if (this._syncStatusSignal)
       this._sync.disconnect(this._syncStatusSignal);
     if (this._transferSignal)
@@ -203,9 +213,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     if (this._queueCancelSignal)
       this._sync.disconnect(this._queueCancelSignal);
     this._itemAddedSignal = 0;
-    this._syncItemSignal = 0;
     this._favoriteSignal = 0;
-    this._syncRemovedSignal = 0;
     this._syncStatusSignal = 0;
     this._transferSignal = 0;
     this._queuePruneSignal = 0;
@@ -217,6 +225,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._settingsSignals = [];
 
     this._indicator?.destroy();
+    this._content?.destroy();
     this._terminalInput?.destroy();
     this._textTokenizer?.destroy();
     const queueShutdown = this._uploadQueue?.destroy();
@@ -229,6 +238,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._sync = null;
     this._uploadQueue = null;
     this._controller = null;
+    this._content = null;
     this._portal = null;
     this._terminalInput = null;
     this._textTokenizer = null;
@@ -254,6 +264,7 @@ export default class ClipboardXGnomeExtension extends Extension {
   _publishAutomatically(item) {
     if (!this._settings.get_boolean('sync-enabled')
         || this._settings.get_string('sync-send-mode') !== 'automatic'
+        || item.remote
         || item.sensitive
         || (this._settings.get_boolean('sync-favorites-only') && !item.favorite))
       return;
@@ -270,17 +281,30 @@ export default class ClipboardXGnomeExtension extends Extension {
   }
 
   async _takeScreenshot() {
-    const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
+    const controller = this._controller;
+    const settings = this._settings;
+    const portal = this._portal;
+    const check = () => {
+      if (!controller || this._controller !== controller)
+        throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Screenshot operation was stopped'});
+    };
+    check();
+    const uri = await portal.capture(settings.get_string('screenshot-target'));
+    check();
     if (uri === null)
       return;
-    const addToHistory = this._settings.get_boolean('screenshot-add-history');
+    const addToHistory = settings.get_boolean('screenshot-add-history');
     const item = addToHistory
-      ? await this._controller.addFromUri(uri, 'screenshot')
-      : await this._controller.createFromUri(uri);
-    if (this._settings.get_boolean('screenshot-write-clipboard'))
-      await this._controller.writeScreenshot(item);
-    if (this._settings.get_boolean('screenshot-open-editor')) {
+      ? await controller.addFromUri(uri, 'screenshot')
+      : await controller.createFromUri(uri);
+    check();
+    if (settings.get_boolean('screenshot-write-clipboard')) {
+      await controller.writeScreenshot(item);
+      check();
+    }
+    if (settings.get_boolean('screenshot-open-editor')) {
       await this._launchEditor(uri, item.primary?.bytes);
+      check();
     }
   }
 
@@ -306,66 +330,25 @@ export default class ClipboardXGnomeExtension extends Extension {
       throw new SyncError('original_image_requires_sync',
         'The original image has not been downloaded and synchronization is disabled');
     }
-    await this._ensureMaterialized(item);
-    await this._controller.persist();
-    const path = item.primary?.path;
-    if (!path)
-      throw new Error('The original image is not available locally');
+    const path = await this._content.file(item);
     await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes, command);
   }
 
-  async _activateItem(item) {
-    await this._ensureMaterialized(item);
-    await this._controller.activate(item);
-  }
-
   async _pasteItem(item) {
-    await this._activateItem(item);
+    await this._content.activate(item);
     await this._terminalInput.paste();
   }
 
   async _typeItem(item) {
-    await this._ensureMaterialized(item);
     if (!item.isText)
       throw new Error('Only text clipboard entries can be typed');
+    await this._content.read(item);
     await this._terminalInput.type(item.text);
   }
 
   async _pasteText(text) {
     St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, text);
     await this._terminalInput.paste();
-  }
-
-  async _ensureMaterialized(item, options = {}) {
-    const requiresRemoteContent = item.remote
-      && item.representations.some(representation => !representation.bytes && !representation.path);
-    if (requiresRemoteContent) {
-      try {
-        await this._sync.materialize(item, options);
-        this._controller.update(item);
-        // Incoming batches use the controller's debounced save; explicit use flushes immediately.
-        if (!options.withinThreshold)
-          await this._controller.persist();
-      } catch (error) {
-        this._controller.update(item);
-        throw error;
-      }
-    } else {
-      await this._controller.materialize(item);
-    }
-    return item;
-  }
-
-  async _receiveRemoteItem(itemId) {
-    if (this._settings.get_string('sync-receive-mode') === 'disabled')
-      return;
-    const item = await this._sync.getItem(itemId);
-    if (item.originDeviceId === ensureDeviceIdentity(this._settings).deviceId)
-      return;
-    this._controller.add(item, 'remote');
-    await this._ensureMaterialized(item, {withinThreshold: true});
-    if (this._settings.get_string('sync-receive-mode') === 'activate')
-      await this._activateItem(item);
   }
 
   _editorCommand() {

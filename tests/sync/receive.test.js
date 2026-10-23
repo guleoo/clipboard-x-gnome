@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import {HistoryStore} from '../../src/clipboard/history/store.js';
+import {ClipboardItem} from '../../src/clipboard/item.js';
 import {bytesFromString, sha256} from '../../src/common/bytes.js';
 import {writeFile} from '../../src/common/files.js';
 import {createLogger} from '../../src/common/logger.js';
@@ -29,6 +30,9 @@ const settings = {
   get_string: key => key === 'device-id' ? deviceId : 'Test',
   get_boolean: () => false,
 };
+const retained = [];
+const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId,
+  items: () => retained});
 const manifests = new Map();
 const objects = new Map();
 const requests = [];
@@ -75,6 +79,9 @@ const transport = {
 };
 const client = new SyncClient(settings, {
   configurationStore: {},
+  stageFile: (content, write, cancellable) => store.stage(content, write, cancellable),
+  discardContent: items => store.discard(items),
+  useContent: (item, load) => store.use(item, load),
   logger: createLogger('sync', {sink: () => {}}),
 });
 client._transport = transport;
@@ -113,13 +120,74 @@ try {
   assert(events.some(value => value.state === 'verifying') && events.at(-1).state === 'completed',
     'Automatic receiving must emit verifying and completed progress states');
 
-  const store = new HistoryStore({rootPath: `${directory}/clipboard-x-gnome/history`, deviceId});
   await store.save([received]);
   const restored = (await store.load())[0];
   assert(restored && !restored.primary.bytes && isComplete(restored),
     'Received completion must survive storage reload without transfer records or eager memory reads');
   await store.materialize(restored);
   assert(restored.text === '几个字', 'Stored automatic downloads must restore the exact original text');
+
+  // Pause an older snapshot immediately before GC, then receive both an image
+  // preview and its original through the real client/store integration.
+  const prior = ClipboardItem.fromText('previous remote snapshot', {originDeviceId: sourceDeviceId});
+  await store.save([prior]);
+  let enterCleanup;
+  let releaseCleanup;
+  const cleanupEntered = new Promise(resolve => { enterCleanup = resolve; });
+  const cleanupRelease = new Promise(resolve => { releaseCleanup = resolve; });
+  const cleanup = store._removeUnreferencedFiles;
+  const enqueue = store._enqueue;
+  store._removeUnreferencedFiles = async function (items, paths, cancellable) {
+    if (paths.directory === this.directory(sourceDeviceId).directory) {
+      enterCleanup();
+      await cleanupRelease;
+    }
+    return cleanup.call(this, items, paths, cancellable);
+  };
+  let previousSave;
+  try {
+    previousSave = store.save([prior]);
+    await cleanupEntered;
+    const imageManifest = manifest([['image/png', new Uint8Array(8)]]);
+    const thumbnail = bytesFromString('preview');
+    const thumbnailId = sha256(thumbnail);
+    objects.set(thumbnailId, thumbnail);
+    imageManifest.previews = [{id: thumbnailId, sha256: thumbnailId, size: thumbnail.get_size(),
+      contentId: imageManifest.contents[0].id, mimeType: 'image/png', truncated: true}];
+    let publishQueued;
+    const publicationQueued = new Promise(resolve => { publishQueued = resolve; });
+    store._enqueue = function (action) {
+      const result = enqueue.call(this, action);
+      publishQueued();
+      return result;
+    };
+    const receiving = client.getItem(imageManifest.id);
+    await publicationQueued;
+    assert([...store._staged.keys()].some(path => Gio.File.new_for_path(path).query_exists(null)),
+      'Preview I/O may finish concurrently with GC, before its descriptor is published');
+    releaseCleanup();
+    await previousSave;
+    const image = await receiving;
+    store._enqueue = enqueue;
+    await client.materialize(image);
+    const temporaryPaths = [image.preview.path, image.primary.path];
+    assert(temporaryPaths.every(path => Gio.File.new_for_path(path).query_exists(null)),
+      'An older snapshot GC must not delete newly received previews or originals');
+    store._removeUnreferencedFiles = cleanup;
+    await store.save([prior, image]);
+    assert(image.preview.path.startsWith(store.directory(sourceDeviceId).previews)
+        && image.primary.path.startsWith(store.directory(sourceDeviceId).objects)
+        && temporaryPaths.every(path => !Gio.File.new_for_path(path).query_exists(null)),
+      'History persistence must adopt both staged files and release their temporary locations');
+    const savedImage = (await store.load()).find(value => value.id === image.id);
+    assert(savedImage && isComplete(savedImage) && savedImage.preview.path === image.preview.path,
+      'A received image must reload with its durable preview and original after concurrent GC');
+  } finally {
+    releaseCleanup();
+    await previousSave;
+    store._removeUnreferencedFiles = cleanup;
+    store._enqueue = enqueue;
+  }
 
   const large = await client.getItem(manifest([['text/plain;charset=utf-8', '0123456789']]).id);
   const beforeLarge = requests.length;
@@ -163,11 +231,11 @@ try {
     'Automatic and manual use must share one source request while waiting');
   assert(downloads.length === beforeDownloads && !isComplete(lazySource, {state: 'completed'}),
     'Source readiness must precede local original download');
-  client._recordTransfer({...pendingTransfer, transferId: pendingTransfer.id,
-    state: 'completed', completedBytes: pendingTransfer.totalBytes, updatedAt: 2}, true);
+  client._transfers.receive({...pendingTransfer, transferId: pendingTransfer.id,
+    state: 'completed', completedBytes: pendingTransfer.totalBytes, updatedAt: 2});
   await Promise.all([automatic, manual]);
   assert(isComplete(lazySource) && downloads.length === beforeDownloads + 1
-      && client._materializations.size === 0,
+      && client._transfers._materializations.size === 0,
     'Shared materialization must download once and release its operation state');
   waitForSource = false;
 
@@ -181,11 +249,114 @@ try {
   }
   assert(error?.code === 'hash_mismatch' && failed.availability === 'failed'
       && failed.preview.text === 'failed' && !failed.primary.path && !isComplete(failed)
-      && client._materializations.size === 0,
+      && client._transfers._materializations.size === 0,
     'Failed verification must retain the preview without declaring completion or retaining operations');
   failDownload = false;
   await client.materialize(failed);
   assert(isComplete(failed), 'A failed automatic download must remain manually retryable');
+
+  // The replacement joins before it has the first consumer's descriptor.
+  // Cleanup must defer to the whole acquisition, then inspect live references.
+  for (const adoptBeforeCleanup of [false, true]) {
+    const removed = await client.getItem(manifest([['text/plain;charset=utf-8', 'shared original after rejoining']]).id);
+    const replacement = ClipboardItem.fromJSON(JSON.parse(JSON.stringify(removed.toJSON())));
+    retained.push(removed);
+    let enterOldSave;
+    let releaseOldSave;
+    let publishShared;
+    const oldSaveEntered = new Promise(resolve => { enterOldSave = resolve; });
+    const oldSaveRelease = new Promise(resolve => { releaseOldSave = resolve; });
+    const sharedPublication = new Promise(resolve => { publishShared = resolve; });
+    store._removeUnreferencedFiles = async function (...args) {
+      enterOldSave();
+      await oldSaveRelease;
+      return cleanup.apply(this, args);
+    };
+    const oldSave = store.save(retained);
+    let firstUse;
+    let secondUse;
+    let discard;
+    let adopting;
+    let emptySave;
+    const sharedRequests = requests.length;
+    try {
+      await oldSaveEntered;
+      store._enqueue = function (action) {
+        const result = enqueue.call(this, action);
+        publishShared();
+        return result;
+      };
+      firstUse = client.materialize(removed);
+      await sharedPublication;
+      if (adoptBeforeCleanup)
+        adopting = store.save([removed]);
+      retained.splice(retained.indexOf(removed), 1);
+      discard = store.discard([removed]);
+      if (adoptBeforeCleanup)
+        emptySave = store.save([]);
+      retained.push(replacement);
+      secondUse = client.materialize(replacement);
+      releaseOldSave();
+      await Promise.all([oldSave, firstUse, secondUse, discard, adopting, emptySave]);
+      assert(removed.primary === replacement.primary && requests.length === sharedRequests + 1
+          && Gio.File.new_for_path(replacement.primary.path).query_exists(null),
+        'removing the first consumer must not delete a shared original retained by its replacement');
+      store._enqueue = enqueue;
+      store._removeUnreferencedFiles = cleanup;
+      await store.save(retained);
+      await store.materialize(replacement);
+      assert(replacement.text === 'shared original after rejoining',
+        'the replacement must remain readable and durable after queued cleanup');
+      retained.splice(retained.indexOf(replacement), 1);
+      await store.save(retained);
+      assert(!Gio.File.new_for_path(replacement.primary.path).query_exists(null),
+        'an adopted shared original must be reclaimed after its final live owner is removed');
+    } finally {
+      releaseOldSave();
+      await Promise.allSettled([oldSave, firstUse, secondUse, discard, adopting, emptySave]);
+      store._enqueue = enqueue;
+      store._removeUnreferencedFiles = cleanup;
+    }
+  }
+
+  // A session can expire after the preview was published into staging but
+  // before getItem's final check hands ownership to its caller.
+  const interruptedImage = manifest([['image/png', new Uint8Array([5, 4, 3])]]);
+  const previewBytes = bytesFromString('interrupted image preview');
+  const previewHash = sha256(previewBytes);
+  objects.set(previewHash, previewBytes);
+  interruptedImage.previews = [{id: previewHash, sha256: previewHash, size: previewBytes.get_size(),
+    contentId: interruptedImage.contents[0].id, mimeType: 'image/png', truncated: true}];
+  let interruptedPath;
+  const stagedBeforeInterrupt = store._staged.size;
+  const interruptedClient = new SyncClient(settings, {
+    configurationStore: {},
+    discardContent: items => store.discard(items),
+    stageFile: async (content, write, cancellable) => {
+      interruptedPath = await store.stage(content, write, cancellable);
+      await interruptedClient.restart();
+      return interruptedPath;
+    },
+  });
+  interruptedClient._transport = transport;
+  interruptedClient._connected = true;
+  interruptedClient._storedConfiguration = {activeChannelId: channelId};
+  interruptedClient._capabilities = client._capabilities;
+  try {
+    let cancelled = false;
+    try {
+      await interruptedClient.getItem(interruptedImage.id);
+    } catch (error) {
+      cancelled = error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+    }
+    assert(cancelled && interruptedPath, 'the session must reject after a successful staged preview write');
+    await store.save(retained);
+    assert(!Gio.File.new_for_path(interruptedPath).query_exists(null)
+        && store._staged.size === stagedBeforeInterrupt,
+      'a preview not handed to its receiver must release its file and staging registration immediately');
+  } finally {
+    interruptedClient.destroy();
+  }
 
   if (ARGV.includes('--stress')) {
     const beforeBurst = downloads.length;
@@ -202,11 +373,12 @@ try {
       'A 10x daily incoming burst must complete every below-threshold original');
     print(`Receiving stress: ${receivedBurst.length} items completed.`);
   }
-  assert(peakDownloads === 1 && client._materializations.size === 0
-      && client._transferWaiters.size === 0 && client._transfers.values().length <= MAX_TRANSFER_STATES,
+  assert(peakDownloads === 1 && client._transfers._materializations.size === 0
+      && client._transfers._waiters.size === 0 && client._transfers.values().length <= MAX_TRANSFER_STATES,
     'Automatic receiving must serialize file movement and release bounded operation state');
 } finally {
   client.destroy();
+  await store.close();
   deleteTree(Gio.File.new_for_path(directory));
 }
 

@@ -264,10 +264,10 @@ standardInputFile.delete(null);
 await assertRejects(
   launchEditor({
     command: 'gradia %i',
-    uri: 'file:///tmp/image.png',
+    uri: 'https://example.test/image.png',
   }),
   /requires image data/u,
-  'standard-input command without image bytes',
+  'standard-input command without image bytes or a local file',
 );
 
 let missingEditorRejected = false;

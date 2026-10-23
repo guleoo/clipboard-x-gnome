@@ -416,12 +416,12 @@ msgid ""
 msgstr "与当前界面语言匹配且已启用的词库会自动加载。"
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "导入语言"
+msgid "Dictionary language"
+msgstr "词库语言"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "当词库未声明“# locale: 语言代码”时使用。"
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "词库文件头必须声明有效的“# locale: 语言代码”。"
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -824,6 +824,15 @@ msgid "Slow"
 msgstr "慢速"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "最大分词数量"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "分词结果超过此数量时，不打开分词面板。"
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "分词数量过多。请缩小文本范围，或在设置中提高上限。"
+
 msgid "Show source text preview"
 msgstr "显示原文预览"
 
@@ -960,9 +969,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "“激活剪切板”会用收到的内容替换当前剪切板内容。"
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "发送内容"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "富文本格式"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "发送复制文本时保留原始格式（HTML）。"
 
 #: src/ui/settings/window.js:291
 msgid "Images"

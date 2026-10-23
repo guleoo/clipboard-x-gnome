@@ -419,12 +419,12 @@ msgid ""
 msgstr "현재 표시 언어와 일치하는 활성화된 사전을 자동으로 불러옵니다."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "가져올 언어"
+msgid "Dictionary language"
+msgstr "사전 언어"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "사전에 “# locale: language-code” 선언이 없을 때 사용합니다."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "사전 파일 상단에 유효한 언어 코드가 포함된 “# locale: language-code”를 선언해야 합니다."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -828,6 +828,15 @@ msgid "Slow"
 msgstr "느림"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "최대 단어 수"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "이 제한을 초과하는 텍스트는 단어 선택 모드에서 열리지 않습니다."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "단어가 너무 많습니다. 텍스트 범위를 줄이거나 설정에서 제한을 늘리세요."
+
 msgid "Show source text preview"
 msgstr "원본 텍스트 미리 보기 표시"
 
@@ -965,9 +974,17 @@ msgid ""
 msgstr ""
 "현재 클립보드로 설정하면 수신한 내용이 기존 클립보드 내용을 대체합니다."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "보낼 콘텐츠"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "서식 있는 텍스트"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "복사한 텍스트를 원래 서식(HTML)과 함께 보냅니다."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

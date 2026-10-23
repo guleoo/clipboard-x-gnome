@@ -176,17 +176,19 @@ export function workPage(rawValue) {
   return {
     cursor: value.cursor,
     hasMore: value.hasMore,
-    work: array(value.work, 1000, 'work items').map(rawWork => {
-      const work = object(rawWork, 'work item');
-      if (!isUuid(work.id) || !isUuid(work.itemId) || !contentId(work.contentId))
-        throw new Error('Synchronization server returned invalid source work');
-      return {
-        id: work.id,
-        type: choice(work.type, ['materialize-content'], 'work type'),
-        itemId: work.itemId,
-        contentId: work.contentId,
-      };
-    }),
+    work: array(value.work, 1000, 'work items').map(work),
+  };
+}
+
+export function work(rawValue) {
+  const value = object(rawValue, 'work item');
+  if (!isUuid(value.id) || !isUuid(value.itemId) || !contentId(value.contentId))
+    throw new Error('Synchronization server returned invalid source work');
+  return {
+    id: value.id,
+    type: choice(value.type, ['materialize-content'], 'work type'),
+    itemId: value.itemId,
+    contentId: value.contentId,
   };
 }
 
@@ -217,10 +219,6 @@ export function representation(rawValue) {
       'content availability',
     ),
   };
-}
-
-export function validateLocalRepresentation(value) {
-  representation({...value, availability: value.availability ?? 'available'});
 }
 
 export function contentId(value) {

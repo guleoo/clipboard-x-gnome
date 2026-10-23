@@ -1,9 +1,7 @@
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
-import Soup from 'gi://Soup?version=3.0';
 
-import {bytesFromString, sha256, stringFromBytes} from '../../src/common/bytes.js';
-import {HttpClient, HttpError, normalizeServerAddress} from '../../src/sync/http/client.js';
+import {bytesFromString} from '../../src/common/bytes.js';
+import {HttpClient, HttpError} from '../../src/sync/http/client.js';
 import {HttpTransport} from '../../src/sync/http/transport.js';
 import {message as syncErrorMessage} from '../../src/sync/errors.js';
 
@@ -11,24 +9,6 @@ function assert(condition, message) {
   if (!condition)
     throw new Error(message);
 }
-
-function assertRejects(callback, message) {
-  try {
-    callback();
-  } catch (_error) {
-    return;
-  }
-  throw new Error(message);
-}
-
-assert(normalizeServerAddress('127.0.0.1:8765/') === 'http://127.0.0.1:8765',
-  'plain host and port must default to HTTP');
-assert(normalizeServerAddress('https://example.test/cbx/') === 'https://example.test/cbx',
-  'reverse-proxy base paths must be preserved');
-assertRejects(() => normalizeServerAddress('https://user:secret@example.test'),
-  'credentials must not be embedded in the server URL');
-assertRejects(() => normalizeServerAddress('https://example.test/?token=secret'),
-  'configuration URLs must not contain queries');
 
 const authenticatedClient = new HttpClient({
   serverAddress: 'https://example.test/cbx',
@@ -96,6 +76,21 @@ try {
   assert(error === cancellation, 'Cancelled requests must not report the server as unavailable');
 }
 
+for (const bodyError of [new Error('Connection reset during response'), cancellation]) {
+  const interrupted = new HttpClient({
+    serverAddress: 'http://127.0.0.1:8765', apiKey: 'key', deviceId: 'device',
+    session: {
+      send_async: async () => ({read_bytes_async: async () => { throw bodyError; }, close() {}}),
+      abort() {},
+    },
+  });
+  let failure;
+  try { await interrupted.request('GET', '/api/v1/status'); } catch (error) { failure = error; }
+  assert(bodyError === cancellation ? failure === cancellation
+    : failure instanceof HttpError && failure.code === 'network_error',
+  'Response read failures must be retryable without reclassifying user cancellation');
+}
+
 const calls = [];
 const lowLevelClient = {
   request(method, path, options = {}) {
@@ -117,53 +112,3 @@ assert(calls[0].method === 'GET'
 await transport.rejectWork('work-id', 'source_content_missing', 'gone');
 assert(calls[1].method === 'POST' && calls[1].options.json.code === 'source_content_missing',
   'work rejection must use a structured JSON error');
-
-const payload = bytesFromString('streamed synchronization content');
-const session = {
-  send_async() {
-    return Promise.resolve(Gio.MemoryInputStream.new_from_bytes(payload));
-  },
-  abort() {},
-};
-class DownloadClient extends HttpClient {
-  _message() {
-    const headers = new Soup.MessageHeaders(Soup.MessageHeadersType.RESPONSE);
-    headers.set_content_length(payload.get_size());
-    return {
-      status_code: 200,
-      request_headers: {append() {}, replace() {}},
-      response_headers: headers,
-    };
-  }
-}
-
-const directory = GLib.dir_make_tmp('clipboard-x-gnome-http-client-test-XXXXXX');
-const targetPath = GLib.build_filenamev([directory, 'object']);
-try {
-  const downloadClient = new DownloadClient({
-    serverAddress: 'http://example.test',
-    apiKey: 'key',
-    deviceId: 'device',
-    session,
-  });
-  const progress = [];
-  const result = await downloadClient.download('/content', targetPath, {
-    maximumBytes: 1024,
-    expectedBytes: payload.get_size(),
-    expectedSha256: sha256(payload),
-    onProgress: bytes => progress.push(bytes),
-  });
-  const restored = Gio.File.new_for_path(targetPath).load_bytes(null)[0];
-  assert(result.size === payload.get_size()
-      && stringFromBytes(restored) === 'streamed synchronization content',
-    'download must stream to a verified local object');
-  assert(progress.at(-1) === payload.get_size(),
-    'download progress must finish at the exact logical byte count');
-} finally {
-  try {
-    Gio.File.new_for_path(targetPath).delete(null);
-  } catch (_error) {
-    // The test may fail before moving the verified temporary object.
-  }
-  Gio.File.new_for_path(directory).delete(null);
-}

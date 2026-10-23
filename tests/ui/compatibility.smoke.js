@@ -83,6 +83,13 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+function waitForTokenizer(name, started, operation) {
+  return wait(name, Promise.race([
+    started,
+    operation.then(() => { throw new Error(`Word selection ended before ${name} was reached`); }),
+  ]));
+}
+
 async function indicator(previous = null) {
   stage('waiting-for-indicator');
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -126,7 +133,7 @@ function deferred() {
 }
 
 async function verifyHistoryLifecycle(actor) {
-  const extensionObject = actor._actions.extensionObject;
+  const extensionObject = Main.extensionManager.lookup(UUID).stateObj;
   await wait('clipboard-startup', extensionObject._startup);
   const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
   const {SyncConfigurationStore} = await import(`${extensionObject.dir.get_uri()}/sync/configuration-store.js`);
@@ -243,7 +250,7 @@ async function verifyHistoryLifecycle(actor) {
     assert((await wait('superseded-publication', oldPublication)).error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
       'A publication waiting on a superseded startup must be cancelled');
     actor = await indicator();
-    await wait('replacement-startup', actor._actions.extensionObject._startup);
+    await wait('replacement-startup', Main.extensionManager.lookup(UUID).stateObj._startup);
     assert(syncStarts === expectedStarts + 1,
       'A disabled startup continued and started synchronization on the old instance');
     const reloaded = actor._controller.items.find(item => item.id === latest.id);
@@ -265,7 +272,7 @@ export async function run() {
     await wait('extension-manager-initialization', Main.extensionManager._initializationPromise);
   Main.overview.hide();
   let actor = await indicator();
-  assert(actor._actions.extensionObject._terminalInput._device,
+  assert(Main.extensionManager.lookup(UUID).stateObj._terminalInput._device,
     'Shared backend/seat API did not create the virtual keyboard');
   assert(global.stage.context.get_backend().get_default_seat(),
     'Shared backend/seat API is unavailable');
@@ -289,10 +296,12 @@ export async function run() {
   const tokenize = actions.tokenizeText;
   const release = deferred();
   const resume = deferred();
+  let source = null;
   try {
     stage('delayed-tokenizer-navigation');
-    const {ClipboardItem} = await import(`${actions.extensionObject.dir.get_uri()}/clipboard/item.js`);
-    const source = ClipboardItem.fromText('Hello, world!');
+    const {ClipboardItem} = await import(`${Main.extensionManager.lookup(UUID).stateObj.dir.get_uri()}/clipboard/item.js`);
+    // Use the retained history object, just as an actual entry action does.
+    source = actor._controller.add(ClipboardItem.fromText('Delayed word selection fixture'), 'local');
     const delayed = deferred();
     actions.tokenizeText = async text => {
       delayed.resolve();
@@ -300,7 +309,7 @@ export async function run() {
       return tokenize(text);
     };
     const pending = actor._openTokenizer(source);
-    await wait('dictionary-loading', delayed.promise);
+    await waitForTokenizer('dictionary-loading', delayed.promise, pending);
     actor._openPhrases();
     actor._closePhrases();
     release.resolve();
@@ -314,7 +323,7 @@ export async function run() {
       return tokenize(text);
     };
     const closed = actor._openTokenizer(source);
-    await wait('dictionary-loading-before-close', closing.promise);
+    await waitForTokenizer('dictionary-loading-before-close', closing.promise, closed);
     actor.menu.close();
     actor.menu.open();
     resume.resolve();
@@ -324,6 +333,8 @@ export async function run() {
     release.resolve();
     resume.resolve();
     actions.tokenizeText = tokenize;
+    if (source)
+      actor._controller.remove(source.id);
   }
   stage('quick-phrases-panel');
   actor._openPhrases();

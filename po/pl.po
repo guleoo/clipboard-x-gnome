@@ -427,12 +427,12 @@ msgstr ""
 "automatycznie."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Język importu"
+msgid "Dictionary language"
+msgstr "Język słownika"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Używany, gdy słownik nie deklaruje „# locale: language-code”."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Słownik musi zawierać prawidłowy nagłówek „# locale: language-code”."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -840,6 +840,15 @@ msgid "Slow"
 msgstr "Wolna"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maksymalna liczba słów"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Teksty przekraczające ten limit nie są otwierane w trybie wyboru słów."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Zbyt wiele słów. Użyj krótszego tekstu lub zwiększ limit w preferencjach."
+
 msgid "Show source text preview"
 msgstr "Pokaż podgląd tekstu źródłowego"
 
@@ -983,9 +992,17 @@ msgid ""
 msgstr ""
 "Ustawienie w schowku zastępuje jego bieżącą zawartość zawartością odebraną."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Treść do wysłania"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Formatowanie tekstu"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Wysyłaj skopiowany tekst z oryginalnym formatowaniem (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

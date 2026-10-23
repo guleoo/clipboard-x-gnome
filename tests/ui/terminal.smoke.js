@@ -37,7 +37,7 @@ export async function run() {
   const extension = Main.extensionManager.lookup(UUID);
   assert(extension?.enabled, `Clipboard X Gnome was not enabled (${extension?.error ?? 'unknown error'})`);
   await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]));
-  const terminalInput = Main.panel.statusArea[STATUS_AREA_NAME]?._actions?.extensionObject?._terminalInput;
+  const terminalInput = extension.stateObj._terminalInput;
   assert(terminalInput, 'Clipboard X Gnome terminal input is unavailable');
   const originalModifierState = terminalInput._modifierState.bind(terminalInput);
 

@@ -422,13 +422,12 @@ msgid ""
 msgstr "Az aktuális megjelenítési nyelvhez illő engedélyezett szótárak automatikusan betöltődnek."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Importálási nyelv"
+msgid "Dictionary language"
+msgstr "Szótár nyelve"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Akkor használatos, ha a szótár nem ad meg „# locale: language-code” sort."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "A szótárnak érvényes „# locale: language-code” fejlécet kell tartalmaznia."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -838,6 +837,15 @@ msgid "Slow"
 msgstr "Lassú"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Szavak maximális száma"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "A korlátot meghaladó szövegek nem nyílnak meg szóválasztási módban."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Túl sok szó. Használjon rövidebb szöveget, vagy növelje a korlátot a beállításokban."
+
 msgid "Show source text preview"
 msgstr "Eredeti szöveg előnézetének megjelenítése"
 
@@ -982,9 +990,17 @@ msgstr ""
 "A vágólapra helyezés a jelenlegi vágólaptartalmat a beérkező tartalomra "
 "cseréli."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Küldendő tartalom"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Szövegformázás"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "A másolt szöveg küldése az eredeti formázással (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

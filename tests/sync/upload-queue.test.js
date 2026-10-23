@@ -5,8 +5,11 @@ import {bytesFromString, sha256, stringFromBytes} from '../../src/common/bytes.j
 import {readJson, writeJson} from '../../src/common/data-store.js';
 import {writeFile} from '../../src/common/files.js';
 import {SyncError} from '../../src/sync/errors.js';
-import {normalizeServerAddress} from '../../src/sync/http/client.js';
+import {normalize as normalizeServerAddress} from '../../src/sync/server-address.js';
 import {UploadQueue} from '../../src/sync/upload-queue.js';
+import {SyncClient} from '../../src/sync/client.js';
+import {ClipboardItem} from '../../src/clipboard/item.js';
+import {Publications, publication as wirePublication} from './fixtures/wire.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -29,6 +32,7 @@ function fixture() {
     ['sync-enabled', true], ['device-id', GLib.uuid_string_random()],
     ['sync-send-mode', 'automatic'], ['sync-favorites-only', false],
     ['sync-poll-interval-seconds', 1], ['sync-configuration-revision', 0],
+    ['device-tag', 'Queue test'], ['device-icon-kind', 'laptop'],
   ]);
   const f = {
     directory: GLib.build_filenamev([directory, `case-${++caseNumber}`]),
@@ -107,6 +111,176 @@ function removeTree(path) {
 
 try {
   await writeFile(Gio.File.new_for_path(payloadPath), bytesFromString('private-clipboard-text'));
+
+  {
+    const f = fixture();
+    f.values.set('sync-favorites-only', true);
+    const received = f.item({remote: true, favorite: true});
+    const queue = f.create();
+    assert(await queue.enqueue(received, {automatic: true}) === false,
+      'a pinned received item must not acquire a new local publication intent');
+    assert(await queue.enqueue(received) === false,
+      'manual callers must not bypass the local-only publication boundary');
+    await queue.flush();
+    assert(f.publications.length === 0 && await f.document() === null && f.errors.length === 0,
+      'received items must not create outbox files, blocked entries, or publication errors');
+
+    const local = f.item({favorite: true});
+    await queue.enqueue(local, {automatic: true});
+    local.remote = true;
+    await queue.flush();
+    assert(f.publications.length === 0 && (await f.document()).entries.length === 0,
+      'an intent whose retained source becomes remote must be pruned rather than published');
+  }
+
+  {
+    const f = fixture();
+    f.values.set('sync-text', true);
+    f.values.set('sync-images', true);
+    f.values.set('text-full-threshold', 0);
+    f.values.set('image-full-threshold', 0);
+    f.values.set('text-preview-limit', 100);
+    const item = ClipboardItem.fromRepresentations([
+      {mimeType: 'image/png', bytes: bytesFromString('image-content-exceeding-the-limit')},
+      {mimeType: 'text/plain', bytes: bytesFromString('private-clipboard-text')},
+    ], {originDeviceId: f.values.get('device-id')});
+    for (const representation of item.representations)
+      representation.path = payloadPath;
+    f.items.set(item.id, item);
+    let posts = 0;
+    let sent;
+    const client = new SyncClient(f.settings, {configurationStore: {}, progressStore: {},
+      logger: {run: async (_name, action) => action(), error() {}}});
+    client._connected = true;
+    client._transport = {
+      async createItem(_channelId, manifest) {
+        posts++;
+        sent = manifest;
+        const stored = await f.document();
+        assert(JSON.stringify(stored.publications[0]?.manifest) === JSON.stringify(manifest),
+          'A locally valid publication must be durable before POST');
+        return wirePublication(manifest, {deviceId: f.values.get('device-id'),
+          uploadId: item.id, transferId: item.id, state: 'completed'});
+      },
+      abort() {},
+    };
+    client._storedConfiguration = f.config;
+    client._capabilities = {supportedMimeTypes: [], maxItemBytes: 32, maxPreviewBytes: 100};
+    f.publish = (source, options) => client.publish(source, options);
+    const queue = f.create();
+    await queue.enqueue(item);
+    await queue.flush();
+    const rejected = await f.document();
+    assert(posts === 0 && rejected.publications.length === 0
+        && rejected.entries[0]?.blocked,
+      'A locally oversized mixed publication must fail without POST or freezing its manifest');
+    f.values.set('sync-images', false);
+    await queue.enqueue(item);
+    await queue.flush();
+    const completed = await f.document();
+    assert(posts === 1 && completed.entries.length === 0 && completed.publications.length === 1
+        && sent.contents.length === 1 && sent.contents[0].mimeType.startsWith('text/'),
+      'A manual retry after disabling images must publish the newly eligible text-only manifest');
+    client.destroy();
+  }
+
+  {
+    const f = fixture();
+    f.values.set('sync-text', true);
+    f.values.set('text-full-threshold', 4096);
+    f.values.set('text-preview-limit', 4);
+    const item = ClipboardItem.fromText('private-clipboard-text', {originDeviceId: f.values.get('device-id')});
+    item.primary.path = payloadPath;
+    f.items.set(item.id, item);
+    const immutable = new Publications();
+    let loseResponse = true;
+    let posts = 0;
+    let sent;
+    const transport = {
+      async createItem(channelId, manifest) {
+        posts++;
+        const stored = await f.document();
+        assert(stored.publications.length === 1
+            && JSON.stringify(stored.publications[0].manifest) === JSON.stringify(manifest),
+          'The frozen manifest must be durable before any publication POST');
+        immutable.accept(channelId, manifest);
+        sent = manifest;
+        if (loseResponse) {
+          loseResponse = false;
+          throw new SyncError('network_error', 'Response lost after the server committed the manifest');
+        }
+        return wirePublication(manifest, {deviceId: f.values.get('device-id'),
+          uploadId: item.id, transferId: item.id, state: 'completed'});
+      },
+      abort() {},
+    };
+    const client = new SyncClient(f.settings, {configurationStore: {}, progressStore: {},
+      logger: {run: async (_name, action) => action(), error() {}}});
+    client._connected = true;
+    client._transport = transport;
+    client._storedConfiguration = f.config;
+    client._capabilities = {supportedMimeTypes: [], maxItemBytes: 1024, maxPreviewBytes: 1024};
+    f.publish = (source, options) => client.publish(source, options);
+    const queue = f.create();
+    await queue.enqueue(item);
+    await queue.flush();
+    const frozen = JSON.stringify(sent);
+    const storedText = JSON.stringify(await f.document());
+    assert(!storedText.includes('private-clipboard-text') && !storedText.includes(payloadPath)
+        && !storedText.includes('private-key'),
+      'Frozen publications must contain no body, filesystem path or credential');
+    f.values.set('text-full-threshold', 0);
+    f.values.set('text-preview-limit', 1);
+    await queue.destroy();
+    const restored = f.create();
+    f.now += 60_000;
+    await restored.flush();
+    assert(posts === 2 && JSON.stringify(sent) === frozen && (await f.document()).entries.length === 0,
+      'A restart and policy change must replay the identical committed manifest');
+    await restored.enqueue(item);
+    await restored.flush();
+    assert(posts === 3 && JSON.stringify(sent) === frozen && (await f.document()).publications.length === 1,
+      'A successful manual re-enqueue must preserve the previously frozen contract');
+    f.items.delete(item.id);
+    f.historyReady = false;
+    await restored.prune();
+    assert((await f.document()).publications.length === 1,
+      'A temporarily unavailable history must not erase frozen publication contracts');
+    f.historyReady = true;
+    f.items.set(item.id, item);
+    item.sensitive = true;
+    await restored.prune();
+    assert((await f.document()).publications.length === 0,
+      'Sensitive history must remove frozen contracts as well as pending entries');
+    client.destroy();
+  }
+
+  {
+    const f = fixture();
+    f.values.set('sync-text', true);
+    f.values.set('text-full-threshold', 100);
+    f.values.set('text-preview-limit', 100);
+    const item = ClipboardItem.fromText('private-clipboard-text', {originDeviceId: f.values.get('device-id')});
+    item.primary.path = payloadPath;
+    f.items.set(item.id, item);
+    let posts = 0;
+    const client = new SyncClient(f.settings, {configurationStore: {}, progressStore: {},
+      logger: {run: async (_name, action) => action(), error() {}}});
+    client._connected = true;
+    client._transport = {createItem() { posts++; }, abort() {}};
+    client._storedConfiguration = f.config;
+    client._capabilities = {supportedMimeTypes: [], maxItemBytes: 1024, maxPreviewBytes: 1024};
+    f.publish = (source, options) => client.publish(source, options);
+    const queue = f.create();
+    await queue.enqueue(item);
+    const file = Gio.File.new_for_path(f.path());
+    file.delete(null);
+    file.make_directory(null);
+    try { await queue.flush(); } catch (_error) { /* Both the freeze and failure-status writes fail. */ }
+    assert(posts === 0 && [...queue._queues.values()][0].publications.size === 0,
+      'A failed manifest persistence must never send POST or retain an uncommitted cache entry');
+    client.destroy();
+  }
 
   {
     const f = fixture();

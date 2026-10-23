@@ -86,6 +86,8 @@ export function create(settings, deviceId, rows) {
   const persistInputs = () => connection.save(readInputs());
   const loadChannels = async configuration => {
     const result = await connection.channels(configuration);
+    if (result.configuration.activeChannelId !== configuration.activeChannelId)
+      result.configuration = await connection.save(result.configuration);
     renderChannels(result.channels, result.configuration.activeChannelId);
     return result;
   };

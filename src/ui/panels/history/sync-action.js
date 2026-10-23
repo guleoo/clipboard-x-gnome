@@ -1,5 +1,4 @@
 import Gio from 'gi://Gio';
-import St from 'gi://St';
 
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -7,21 +6,18 @@ import {message as syncErrorMessage} from '../../../sync/errors.js';
 import {ProgressRing} from './progress-ring.js';
 import {isComplete, isPreviewPublished} from './sync-state.js';
 
-const ICON_SIZE = 16;
 const TERMINAL_TRANSFER_STATES = new Set(['completed', 'failed', 'cancelled', 'expired']);
 
 export class SyncAction {
-  constructor({settings, actions, tooltip, createIconButton, closeMenu}) {
+  constructor({settings, actions, createIconButton, closeMenu}) {
     this._previewIcon = new Gio.FileIcon({
       file: Gio.File.new_for_uri(import.meta.url).get_parent()
         .resolve_relative_path('../../icons/sync/preview-synced-symbolic.svg'),
     });
     this._settings = settings;
     this._actions = actions;
-    this._tooltip = tooltip;
     this._createIconButton = createIconButton;
     this._closeMenu = closeMenu;
-    this._transfers = new Map();
     this._buttons = new Map();
     this._status = 'offline';
     this._capabilities = null;
@@ -45,6 +41,10 @@ export class SyncAction {
     );
     button._clipboardItem = item;
     this._buttons.set(item.id, button);
+    button.connect('destroy', () => {
+      if (this._buttons.get(item.id) === button)
+        this._buttons.delete(item.id);
+    });
     this._update(item, button);
     return button;
   }
@@ -57,6 +57,8 @@ export class SyncAction {
     this._status = status;
     this._capabilities = capabilities;
     this._updateStatus();
+    for (const button of this._buttons.values())
+      this._update(button._clipboardItem, button);
   }
 
   setAccent(color) {
@@ -96,14 +98,13 @@ export class SyncAction {
         : _('Synchronization server online');
       text = implementation ? `${implementation} · ${state}` : state;
     }
-    this._setIcon(this.statusButton, iconName);
-    this._setHint(this.statusButton, text);
+    this.statusButton.setIcon(iconName);
+    this.statusButton.setHint(text);
     this._updateSelected();
   }
 
-  setTransfer(transfer) {
-    this._transfers.set(transfer.itemId, {...transfer});
-    const button = this._buttons.get(transfer.itemId);
+  refresh(itemId) {
+    const button = this._buttons.get(itemId);
     if (button)
       this._update(button._clipboardItem, button);
   }
@@ -111,22 +112,18 @@ export class SyncAction {
   destroy() {
     this._settings.disconnect(this._enabledSignal);
     this._buttons.clear();
-    this._transfers.clear();
     this._previewIcon = null;
   }
 
   _update(item, button) {
-    const transfer = this._transfers.get(item.id);
+    const transfer = this._actions.transferForItem(item.id);
     if (isComplete(item, transfer)) {
       if (isPreviewPublished(item, transfer)) {
-        button.set_child(new St.Icon({
-          gicon: this._previewIcon,
-          icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
-        }));
+        button.setIcon(this._previewIcon);
       } else {
-        this._setIcon(button, 'object-select-symbolic');
+        button.setIcon('object-select-symbolic');
       }
-      this._setHint(button, item.remote
+      button.setHint(item.remote
         ? _('Original is available locally')
         : transfer.direction === 'upload' ? _('Upload completed') : _('Original downloaded'));
       return;
@@ -134,43 +131,42 @@ export class SyncAction {
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       if (transfer.totalBytes > 0) {
         button.set_child(new ProgressRing(transfer.completedBytes / transfer.totalBytes));
-        this._setHint(button, `${transfer.direction === 'upload' ? _('Uploading') : _('Downloading')} · ${Math.round(transfer.completedBytes / transfer.totalBytes * 100)}%`);
+        button.setHint(`${transfer.direction === 'upload' ? _('Uploading') : _('Downloading')} · ${Math.round(transfer.completedBytes / transfer.totalBytes * 100)}%`);
       } else {
-        this._setIcon(button, 'content-loading-symbolic');
-        this._setHint(button, transfer.state === 'waiting-for-peer'
+        button.setIcon('content-loading-symbolic');
+        button.setHint(transfer.state === 'waiting-for-peer'
           ? _('Waiting for peer device')
           : _('Preparing transfer'));
       }
       return;
     }
     if (transfer?.state === 'failed' || transfer?.state === 'expired') {
-      this._setIcon(button, 'view-refresh-symbolic');
-      this._setHint(
-        button,
+      button.setIcon('view-refresh-symbolic');
+      button.setHint(
         syncErrorMessage({code: transfer.errorCode, message: transfer.errorMessage}, _)
           || _('Transfer failed; activate to retry'),
       );
       return;
     }
     if (!this._settings.get_boolean('sync-enabled')) {
-      this._setIcon(button, 'network-offline-symbolic');
-      this._setHint(button, _('Synchronization is disabled'));
+      button.setIcon('network-offline-symbolic');
+      button.setHint(_('Synchronization is disabled'));
       return;
     }
     if (item.remote) {
       const failed = item.availability === 'failed';
-      this._setIcon(button, failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
-      this._setHint(button, failed ? _('Retry original download') : _('Download original'));
+      button.setIcon(failed ? 'view-refresh-symbolic' : 'folder-download-symbolic');
+      button.setHint(failed ? _('Retry original download') : _('Download original'));
       return;
     }
-    this._setIcon(button, 'network-transmit-receive-symbolic');
-    this._setHint(button, item.remote
+    button.setIcon('network-transmit-receive-symbolic');
+    button.setHint(item.remote
       ? _('Original is available locally')
       : _('Send to synchronization server'));
   }
 
   async _activate(item) {
-    const transfer = this._transfers.get(item.id);
+    const transfer = this._actions.transferForItem(item.id);
     if (transfer && !TERMINAL_TRANSFER_STATES.has(transfer.state)) {
       await this._actions.cancelTransfer(transfer.transferId);
       return;
@@ -183,28 +179,6 @@ export class SyncAction {
       await this._actions.materializeItem(item);
     else if (!item.remote)
       await this._actions.publish(item);
-  }
-
-  _setIcon(button, iconName) {
-    if (button.setIcon) {
-      button.setIcon(iconName);
-      return;
-    }
-    button.set_child(new St.Icon({
-      icon_name: iconName,
-      icon_size: button._clipboardXGnomeIconSize ?? ICON_SIZE,
-    }));
-  }
-
-  _setHint(actor, text) {
-    if (actor.setHint)
-      actor.setHint(text);
-    else {
-      actor.accessible_name = text;
-      actor._hintText = text;
-    }
-    if (actor._clipboardXGnomeShowTooltip)
-      this._tooltip.attach(actor, text, {scope: actor._clipboardXGnomeTooltipScope});
   }
 
   _runAndClose(callback) {

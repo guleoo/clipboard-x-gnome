@@ -427,13 +427,12 @@ msgid ""
 msgstr "Les dictionnaires activés correspondant à la langue d’affichage actuelle sont chargés automatiquement."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Langue d’importation"
+msgid "Dictionary language"
+msgstr "Langue du dictionnaire"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Utilisé lorsque le dictionnaire ne déclare pas « # locale: language-code »."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Le dictionnaire doit déclarer un en-tête valide « # locale: language-code »."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -847,6 +846,15 @@ msgid "Slow"
 msgstr "Lente"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Nombre maximal de mots"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Les textes dépassant cette limite ne sont pas ouverts en mode de sélection de mots."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Trop de mots. Utilisez un texte plus court ou augmentez la limite dans les préférences."
+
 msgid "Show source text preview"
 msgstr "Afficher un aperçu du texte source"
 
@@ -991,9 +999,17 @@ msgstr ""
 "L’activation du presse-papiers remplace son contenu actuel par le contenu "
 "reçu."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Contenu à envoyer"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Mise en forme du texte"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Envoyer le texte copié avec sa mise en forme d’origine (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

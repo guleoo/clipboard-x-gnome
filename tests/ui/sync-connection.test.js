@@ -45,20 +45,20 @@ async function fixture({status = online, channels = available, fail = '',
   const path = GLib.build_filenamev([directory, `${files.length}-connection.json`]);
   const progressPath = GLib.build_filenamev([directory, `${files.length}-progress.json`]);
   files.push(path, progressPath);
-  const store = new SyncConfigurationStore({path, progressPath});
+  const store = new SyncConfigurationStore({path});
   await store.saveConnection({
     serverAddress: 'saved.invalid:8765',
     apiKey: 'saved-test-key',
     activeChannelId: savedChannel,
   });
-  await store.saveProgress({cursors: {[savedChannel]: 'cursor-7'}, workCursor: 'work-4'});
+  GLib.file_set_contents(progressPath, 'unrelated progress data');
   const snapshot = JSON.stringify(store.current);
   const connectionDocument = contents(path);
   const progressDocument = contents(progressPath);
   const state = {saves: 0, revision: 17, reconnects: 0, transports: [], requests: [],
     profiles: [], events: []};
-  const save = store.save.bind(store);
-  store.save = value => {
+  const save = store.saveConnection.bind(store);
+  store.saveConnection = value => {
     state.saves++;
     state.events.push('save');
     if (fail === 'save')
@@ -139,6 +139,45 @@ async function fixture({status = online, channels = available, fail = '',
 }
 
 try {
+  for (const {channels, selected} of [
+    {channels: available, selected: draftChannel},
+    {channels: [{id: fallbackChannel, name: 'Fallback channel'}, ...available], selected: draftChannel},
+    {channels: [{id: fallbackChannel, name: 'Fallback channel'}], selected: fallbackChannel},
+    {channels: [], selected: draftChannel},
+  ]) {
+    const reading = await fixture({channels});
+    const current = {...draft, serverAddress: draft.serverAddress.trim(), apiKey: draft.apiKey.trim()};
+    const snapshot = JSON.stringify(current);
+    const result = await reading.actions.channels(current);
+    assert(result.configuration.activeChannelId === selected && result.channels.length === channels.length
+        && result.channels.every(value => value.active === (value.id === selected)),
+      'Channel reads must retain an available selection, otherwise select the first channel or keep an empty list unchanged');
+    assert(JSON.stringify(current) === snapshot && reading.state.requests.join() === 'channels',
+      'Channel reads must not mutate their input or send write requests');
+    reading.assertReadOnly();
+    const probed = await reading.actions.test(draft);
+    assert(probed.configuration.activeChannelId === selected,
+      'Connection tests must use the same channel selection as direct reads');
+    reading.assertReadOnly();
+    const applied = await reading.actions.apply(draft);
+    assert(!applied.error && applied.configuration.activeChannelId === selected
+        && reading.store.current.activeChannelId === selected && reading.state.reconnects === 1
+        && reading.state.saves === (selected === draftChannel ? 1 : 2),
+      'Apply must persist the same channel selection and notify only once');
+  }
+  for (const options of [{fail: 'channels'}, {channels: [{id: 'invalid', name: 'Invalid channel'}]}]) {
+    const reading = await fixture(options);
+    let rejected = false;
+    try {
+      await reading.actions.channels({...draft,
+        serverAddress: draft.serverAddress.trim(), apiKey: draft.apiKey.trim()});
+    } catch (_error) {
+      rejected = true;
+    }
+    assert(rejected, 'Failed channel reads or invalid channel lists must reject');
+    reading.assertReadOnly();
+  }
+
   const success = await fixture();
   const result = await success.actions.test(draft);
   assert(result.status.status === 'online' && result.status.implementationVersion === 'test-version'
@@ -189,12 +228,17 @@ try {
   assert(apply.state.saves === 1 && apply.state.revision === 18 && apply.state.reconnects === 1,
     'Explicit saving must persist inputs and notify synchronization');
   assert(saved.serverAddress === 'draft.invalid:8765' && saved.apiKey === 'draft-test-key'
-      && saved.activeChannelId === draftChannel && saved.cursors[savedChannel] === 'cursor-7',
-    'Explicit saving must normalize inputs without losing progress');
-  await apply.actions.channels(saved);
+      && saved.activeChannelId === draftChannel && !Object.hasOwn(saved, 'cursors'),
+    'Explicit saving must normalize connection inputs without exposing progress');
+  const loaded = await apply.actions.channels(saved);
+  assert(apply.state.saves === 1 && apply.state.revision === 18
+      && apply.store.current.activeChannelId === draftChannel
+      && loaded.configuration.activeChannelId === fallbackChannel && loaded.channels[0].active,
+    'Loading channels must return a fallback selection without persisting or notifying');
+  await apply.actions.save(loaded.configuration);
   assert(apply.state.saves === 2 && apply.state.revision === 19
       && apply.store.current.activeChannelId === fallbackChannel,
-    'normal channel loading must retain its existing persisted fallback behavior');
+    'Channel-loading callers must explicitly save a fallback selection when persistence is intended');
   assert(apply.state.transports.every(transport => transport.aborted === 1),
     'normal channel loading must also release its temporary transport');
 

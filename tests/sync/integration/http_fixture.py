@@ -49,13 +49,15 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
-    def json(self, status, value):
+    def json(self, status, value, *, truncate=False):
         body = json.dumps(value).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self.wfile.write(body[:len(body) // 2] if truncate else body)
+        if truncate:
+            self.close_connection = True
 
     def do_POST(self):
         if self.path == "/metrics/start":
@@ -96,7 +98,8 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/reject":
                 self.json(503, {"error": {"code": "temporarily_unavailable"}})
             else:
-                self.json(200, {"size": received, "sha256": checksum.hexdigest()})
+                self.json(200, {"size": received, "sha256": checksum.hexdigest()},
+                          truncate=self.path == "/drop-response")
         except (BrokenPipeError, ConnectionResetError):
             pass
 

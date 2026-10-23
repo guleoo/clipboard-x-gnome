@@ -1,4 +1,5 @@
 import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
@@ -16,7 +17,7 @@ import {matches as matchesShortcut} from '../../shortcut.js';
 const OPTICAL_BASELINE_OFFSET = -1;
 
 export class QuickPhrasesPanel {
-  constructor({settings, createIconButton, handleKey, onBack, onCopy, onPaste, onType, refresh, reportError}) {
+  constructor({settings, createIconButton, handleKey, onBack, onCopy, onPaste, onType, refresh, isActive, reportError}) {
     this._settings = settings;
     this._store = new PhraseStore(settings);
     this._createIconButton = createIconButton;
@@ -24,11 +25,23 @@ export class QuickPhrasesPanel {
     this._onCopy = onCopy;
     this._onPaste = onPaste;
     this._onType = onType;
-    this._refresh = refresh;
-    this._reportError = reportError;
+    this._destroyed = false;
+    this._isActive = isActive;
+    this._refresh = () => {
+      if (!this._destroyed)
+        refresh();
+    };
+    this._reportError = error => {
+      if (!this._destroyed)
+        reportError(error);
+    };
     this._formVisible = false;
+    this._formRevision = 0;
+    this._saveRequest = 0;
     this._buttons = [];
     this._rows = [];
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -52,7 +65,6 @@ export class QuickPhrasesPanel {
       'list-add-symbolic',
       _('Add custom phrase'),
       () => this.toggleForm(),
-      {tooltipScope: 'panel'},
     );
     this.header = new PanelHeader({
       title: _('Quick phrases'),
@@ -74,6 +86,7 @@ export class QuickPhrasesPanel {
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
     this.entry.get_hint_actor()._clipboardXGnomeTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    this.entry.clutter_text.connect('text-changed', () => this._formRevision++);
     this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
       const key = event.get_key_symbol();
       if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
@@ -95,6 +108,10 @@ export class QuickPhrasesPanel {
       style_class: 'cbx-phrase-scroll',
       x_expand: true,
       y_expand: true,
+    });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
     });
     this.scroll.add_child(this._section.actor);
     this.actor.add_child(this.scroll);
@@ -185,6 +202,9 @@ export class QuickPhrasesPanel {
   }
 
   focus() {
+    this._cancelFocus();
+    if (this._destroyed || !this._isActive())
+      return;
     const target = this._formVisible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
   }
@@ -212,11 +232,71 @@ export class QuickPhrasesPanel {
   }
 
   focusStart() {
+    this._cancelFocus();
     this.focusAnchor.focus();
   }
 
   leave() {
+    this._cancelFocus();
     this.focusAnchor.cancel();
+  }
+
+  captureView() {
+    const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
+      return this._pendingViewState;
+    const row = focus?._clipboardXGnomePhraseRow;
+    return {
+      phrase: row?._clipboardXGnomePhrase ?? null,
+      action: row?.focusActors.indexOf(focus) ?? 0,
+      focusActor: !row && (focus === this.focusAnchor || this.focusGrid.contains(focus)) ? focus : null,
+      scrollValue: this.scroll.get_vadjustment().value,
+    };
+  }
+
+  restoreView(viewState) {
+    if (!viewState)
+      return;
+    this._cancelFocus();
+    this._pendingViewState = viewState;
+    this._focusIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._focusIdleId = 0;
+      this._pendingViewState = null;
+      if (this._destroyed || !this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
+        return GLib.SOURCE_REMOVE;
+      const row = this._rows.find(value => value._clipboardXGnomePhrase === viewState.phrase);
+      const target = viewState.phrase === null ? viewState.focusActor
+        : row?.focusActors[viewState.action] ?? this.addButton;
+      if (target === this.focusAnchor)
+        target.grab_key_focus();
+      else
+        this.focusGrid.focusAt(this.focusGrid.location(target));
+      const adjustment = this.scroll.get_vadjustment();
+      adjustment.remove_transition('value');
+      adjustment.value = Math.max(adjustment.lower,
+        Math.min(viewState.scrollValue, adjustment.upper - adjustment.page_size));
+      return GLib.SOURCE_REMOVE;
+    });
+  }
+
+  _cancelFocus() {
+    if (this._focusIdleId)
+      GLib.Source.remove(this._focusIdleId);
+    this._focusIdleId = 0;
+    this._pendingViewState = null;
+  }
+
+  destroy() {
+    this._destroyed = true;
+    this.leave();
+    this.focusGrid.clear();
+    this._buttons = [];
+    this._rows = [];
   }
 
   _focusFirstPhrase() {
@@ -252,12 +332,20 @@ export class QuickPhrasesPanel {
   }
 
   async save() {
-    if (!this.entry.get_text().trim())
+    const text = this.entry.get_text();
+    if (!text.trim())
       return false;
-    await this._store.add(this.entry.get_text());
-    this._setFormVisible(false);
+    const revision = this._formRevision;
+    const request = ++this._saveRequest;
+    await this._store.add(text);
+    if (this._destroyed)
+      return true;
+    const current = this._formVisible && revision === this._formRevision && request === this._saveRequest;
+    if (current)
+      this._setFormVisible(false);
     this._refresh();
-    this.focus();
+    if (current)
+      this.focus();
     return true;
   }
 
@@ -284,6 +372,7 @@ export class QuickPhrasesPanel {
   }
 
   _setFormVisible(visible) {
+    this._formRevision++;
     this._formVisible = visible;
     this.entry.set_text('');
   }

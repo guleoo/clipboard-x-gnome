@@ -1,6 +1,8 @@
 import Gdk from 'gi://Gdk';
 import Gtk from 'gi://Gtk';
 
+import {normalize as normalizeKey} from '../../common/keysyms.js';
+
 const MODIFIER_KEYS = new Set([
   Gdk.KEY_Shift_L,
   Gdk.KEY_Shift_R,
@@ -37,7 +39,7 @@ export function capture(keyval, keycode, state, contextual = false) {
   return {
     action: 'save',
     accelerator: contextual
-      ? Gtk.accelerator_name(keyval, modifiers)
+      ? Gtk.accelerator_name(normalizeKey(keyval), modifiers)
       : Gtk.accelerator_name_with_keycode(null, keyval, keycode, modifiers),
   };
 }

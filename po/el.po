@@ -428,12 +428,12 @@ msgid ""
 msgstr "Τα ενεργοποιημένα λεξικά που αντιστοιχούν στην τρέχουσα γλώσσα εμφάνισης φορτώνονται αυτόματα."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Γλώσσα εισαγωγής"
+msgid "Dictionary language"
+msgstr "Γλώσσα λεξικού"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Χρησιμοποιείται όταν το λεξικό δεν δηλώνει «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Το λεξικό πρέπει να περιέχει έγκυρη κεφαλίδα «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -845,6 +845,15 @@ msgid "Slow"
 msgstr "Αργή"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Μέγιστος αριθμός λέξεων"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Τα κείμενα που υπερβαίνουν αυτό το όριο δεν ανοίγουν στη λειτουργία επιλογής λέξεων."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Πάρα πολλές λέξεις. Χρησιμοποιήστε μικρότερο κείμενο ή αυξήστε το όριο στις προτιμήσεις."
+
 msgid "Show source text preview"
 msgstr "Εμφάνιση προεπισκόπησης αρχικού κειμένου"
 
@@ -989,9 +998,17 @@ msgstr ""
 "Η τοποθέτηση στο πρόχειρο αντικαθιστά το τρέχον περιεχόμενό του με το "
 "εισερχόμενο."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Περιεχόμενο προς αποστολή"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Μορφοποίηση εμπλουτισμένου κειμένου"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Αποστολή του αντιγραμμένου κειμένου με την αρχική του μορφοποίηση (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

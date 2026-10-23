@@ -5,6 +5,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {disconnectWhenUnrooted} from './lifecycle.js';
+import * as Selection from '../../clipboard/tokenizer/dictionary/selection.js';
 
 import {
   DICTIONARY_LOCALES,
@@ -26,7 +27,9 @@ function bumpRevision(settings) {
 function showError(window, error, heading = _('Dictionary operation failed')) {
   const dialog = new Adw.AlertDialog({
     heading,
-    body: error.message,
+    body: error.code === 'invalid_dictionary_locale'
+      ? _('The dictionary must declare a valid “# locale: language-code” header.')
+      : error.message,
   });
   dialog.add_response('close', _('Close'));
   dialog.present(window);
@@ -46,12 +49,11 @@ function languageChoices(languageNames) {
   }).sort((left, right) => left.label.localeCompare(right.label));
 }
 
-function editDictionary(window, file, onLaunched) {
+function editDictionary(window, file) {
   const launcher = new Gtk.FileLauncher({file, writable: true});
   launcher.launch(window, null, (source, result) => {
     try {
       source.launch_finish(result);
-      onLaunched();
     } catch (error) {
       showError(window, error);
     }
@@ -106,11 +108,11 @@ export function create({settings, store, window}) {
   const languages = languageChoices(languageNames);
   const currentLocale = selectLocale(languageNames);
   const localeRow = new Adw.ComboRow({
-    title: _('Language for import'),
+    title: _('Dictionary language'),
     model: Gtk.StringList.new(languages.map(language => language.label)),
     selected: Math.max(0, languages.findIndex(language => language.locale === currentLocale)),
   });
-  localeRow.set_tooltip_text(_('Used when the dictionary does not declare “# locale: language-code”.'));
+  localeRow.set_tooltip_text(_('The dictionary must declare a valid “# locale: language-code” header.'));
   group.add(localeRow);
 
   const importRow = new Adw.ActionRow({
@@ -141,25 +143,7 @@ export function create({settings, store, window}) {
       showError(window, error, heading);
   };
   const selectedLocale = () => languages[localeRow.selected]?.locale ?? currentLocale;
-  const enabledDictionaries = dictionaries => {
-    const configured = new Set(settings.get_strv('tokenizer-dictionary-files'));
-    if (configured.size === 0)
-      return new Set([
-        SYSTEM_DICTIONARY_ID,
-        ...dictionaries.map(dictionary => dictionary.fileName),
-      ]);
-    const matching = dictionaries.filter(dictionary => configured.has(dictionary.fileName));
-    return new Set([
-      ...(configured.has(SYSTEM_DICTIONARY_ID) ? [SYSTEM_DICTIONARY_ID] : []),
-      ...matching.map(dictionary => dictionary.fileName),
-    ]);
-  };
-  const setEnabledDictionaries = (dictionaries, enabled) => {
-    const allEnabled = enabled.has(SYSTEM_DICTIONARY_ID)
-      && dictionaries.every(dictionary => enabled.has(dictionary.fileName));
-    const next = allEnabled
-      ? []
-      : [...enabled].sort((left, right) => left.localeCompare(right));
+  const setEnabledDictionaries = next => {
     if (JSON.stringify(settings.get_strv('tokenizer-dictionary-files')) === JSON.stringify(next))
       return;
     changingSelection = true;
@@ -178,9 +162,9 @@ export function create({settings, store, window}) {
   const refresh = async () => {
     const request = ++refreshRequest;
     const locales = new Set(localeCandidates([selectedLocale()]));
-    let dictionaries;
+    let allDictionaries;
     try {
-      dictionaries = (await store.list(cancellable)).filter(dictionary => locales.has(dictionary.locale));
+      allDictionaries = await store.list(cancellable);
     } catch (error) {
       if (request === refreshRequest)
         report(error);
@@ -188,10 +172,11 @@ export function create({settings, store, window}) {
     }
     if (!active || request !== refreshRequest)
       return;
+    const dictionaries = allDictionaries.filter(dictionary => locales.has(dictionary.locale));
     refreshing = true;
     for (const row of dictionaryRows)
       group.remove(row);
-    const enabled = enabledDictionaries(dictionaries);
+    const enabled = Selection.enabled(settings.get_strv('tokenizer-dictionary-files'), allDictionaries);
     const entries = [
       {
         fileName: SYSTEM_DICTIONARY_ID,
@@ -215,18 +200,19 @@ export function create({settings, store, window}) {
       toggle.connect('notify::active', () => {
         if (refreshing)
           return;
-        const next = enabledDictionaries(dictionaries);
-        if (!toggle.active && next.size === 1) {
+        const configured = settings.get_strv('tokenizer-dictionary-files');
+        const current = Selection.enabled(configured, allDictionaries);
+        const enabledInView = [SYSTEM_DICTIONARY_ID, ...dictionaries.map(value => value.fileName)]
+          .filter(fileName => current.has(fileName));
+        if (!toggle.active && enabledInView.length === 1) {
           refreshing = true;
           toggle.active = true;
           refreshing = false;
           return;
         }
-        if (toggle.active)
-          next.add(dictionary.fileName);
-        else
-          next.delete(dictionary.fileName);
-        setEnabledDictionaries(dictionaries, next);
+        setEnabledDictionaries(Selection.withEnabled(
+          configured, allDictionaries, dictionary.fileName, toggle.active,
+        ));
       });
       row.add_suffix(toggle);
       row.activatable_widget = toggle;
@@ -238,7 +224,7 @@ export function create({settings, store, window}) {
           valign: Gtk.Align.CENTER,
           css_classes: ['flat'],
         });
-        edit.connect('clicked', () => editDictionary(window, file, () => bumpRevision(settings)));
+        edit.connect('clicked', () => editDictionary(window, file));
         row.add_suffix(edit);
         const show = new Gtk.Button({
           icon_name: 'folder-open-symbolic',
@@ -257,7 +243,7 @@ export function create({settings, store, window}) {
           });
           refreshButton.connect('clicked', () => {
             refreshButton.sensitive = false;
-            store.refreshSource(dictionary.source, dictionary.locale)
+            store.refreshSource(dictionary.source)
               .then(dictionary => {
                 enableDictionaryFile(dictionary.fileName);
                 bumpRevision(settings);
@@ -318,7 +304,7 @@ export function create({settings, store, window}) {
       return;
     addNetworkButton.sensitive = false;
     try {
-      const dictionary = await store.refreshSource(source, selectedLocale());
+      const dictionary = await store.refreshSource(source);
       enableDictionaryFile(dictionary.fileName);
       bumpRevision(settings);
       if (active)
@@ -332,7 +318,6 @@ export function create({settings, store, window}) {
   });
 
   importButton.connect('clicked', () => {
-    const locale = languages[localeRow.selected]?.locale ?? currentLocale;
     const dialog = new Gtk.FileDialog({
       title: _('Import dictionary'),
     });
@@ -346,7 +331,7 @@ export function create({settings, store, window}) {
         return;
       }
       importButton.sensitive = false;
-      store.importFile(file, locale)
+      store.importFile(file)
         .then(() => {
           bumpRevision(settings);
           if (active)

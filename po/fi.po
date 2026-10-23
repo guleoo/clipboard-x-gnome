@@ -424,12 +424,12 @@ msgid ""
 msgstr "Nykyistä näyttökieltä vastaavat käytössä olevat sanastot ladataan automaattisesti."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Tuonnin kieli"
+msgid "Dictionary language"
+msgstr "Sanaston kieli"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Käytetään, kun sanasto ei määritä riviä ”# locale: language-code”."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Sanastossa on oltava kelvollinen otsakerivi ”# locale: language-code”."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -840,6 +840,15 @@ msgid "Slow"
 msgstr "Hidas"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Sanojen enimmäismäärä"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Tämän rajan ylittäviä tekstejä ei avata sanojen valintatilassa."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Liikaa sanoja. Käytä lyhyempää tekstiä tai suurenna rajaa asetuksissa."
+
 msgid "Show source text preview"
 msgstr "Näytä alkuperäisen tekstin esikatselu"
 
@@ -984,9 +993,17 @@ msgstr ""
 "Leikepöydälle asettaminen korvaa sen nykyisen sisällön vastaanotetulla "
 "sisällöllä."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Lähetettävä sisältö"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Tekstin muotoilu"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Lähetä kopioitu teksti alkuperäisessä muotoilussaan (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

@@ -25,6 +25,10 @@ const INDEX_VERSION = 1;
 const MIGRATION_MARKER = '.cache-migrated-v1';
 const logger = createLogger('history');
 
+function contentKey(content) {
+  return JSON.stringify([content.sha256, content.mimeType, content.size]);
+}
+
 function ensurePrivateDirectory(path) {
   GLib.mkdir_with_parents(path, 0o700);
   Gio.File.new_for_path(path).set_attribute_uint32(
@@ -36,16 +40,22 @@ function ensurePrivateDirectory(path) {
 }
 
 export class HistoryStore {
-  constructor({rootPath = null, deviceId, legacyPath = undefined} = {}) {
+  constructor({rootPath = null, deviceId, legacyPath = undefined, items = () => []} = {}) {
     if (!isUuid(deviceId))
       throw new Error('HistoryStore requires a local DeviceId');
-    this.rootPath = rootPath ?? defaultRootPath();
+    this.rootPath = GLib.canonicalize_filename(rootPath ?? defaultRootPath(), null);
     this.deviceId = deviceId;
     this.legacyPath = legacyPath === undefined
       ? (rootPath === null ? legacyRootPath() : null)
       : legacyPath;
-    this._saveChain = Promise.resolve();
+    this._chain = Promise.resolve();
     this._saveGeneration = 0;
+    this._stagingPath = GLib.build_filenamev([this.rootPath, '.staging']);
+    this._staged = new Map();
+    this._closed = false;
+    this._items = items;
+    this._uses = new Map();
+    this._discarded = new Set();
   }
 
   directory(deviceId = this.deviceId) {
@@ -54,6 +64,9 @@ export class HistoryStore {
 
   async load(cancellable = null) {
     ensurePrivateDirectory(this.rootPath);
+    // Early screenshots can stage files during initialization. Check the live
+    // registry at each deletion, rather than a snapshot taken before I/O.
+    await this._pruneDirectory(this._stagingPath, this._staged, cancellable);
     const items = await this._loadDevices(cancellable);
     const markerPath = GLib.build_filenamev([this.rootPath, MIGRATION_MARKER]);
     if (this.legacyPath && !await pathExists(markerPath, cancellable)) {
@@ -167,11 +180,156 @@ export class HistoryStore {
   save(items, cancellable = null) {
     const snapshot = [...items];
     const generation = ++this._saveGeneration;
-    const run = this._saveChain
-      .catch(() => {})
-      .then(() => this._save(snapshot, cancellable, generation));
-    this._saveChain = run;
+    return this._enqueue(() => this._save(snapshot, cancellable, generation));
+  }
+
+  _enqueue(action) {
+    if (this._closed)
+      return Promise.reject(new Error('Clipboard history storage is closed'));
+    const run = this._chain.catch(() => {}).then(action);
+    this._chain = run;
     return run;
+  }
+
+  // The trusted writer verifies the content hash before returning. Only this
+  // store may adopt its result into permanent history, on the save/GC chain.
+  async stage(content, write, cancellable = null) {
+    if (this._closed)
+      throw new Error('Clipboard history storage is closed');
+    cancellable ??= new Gio.Cancellable();
+    ensurePrivateDirectory(this._stagingPath);
+    const path = GLib.build_filenamev([this._stagingPath, GLib.uuid_string_random()]);
+    const entry = {content, size: content.size, sha256: content.sha256, cancellable};
+    this._staged.set(path, entry);
+    entry.pending = (async () => {
+      await write(path);
+      cancellable?.set_error_if_cancelled();
+      if (this._closed)
+        throw new Error('Clipboard history storage is closed');
+      const info = await queryInfo(Gio.File.new_for_path(path), cancellable);
+      cancellable?.set_error_if_cancelled();
+      if (info.get_file_type() !== Gio.FileType.REGULAR || info.get_is_symlink()
+          || info.get_size() !== entry.size)
+        throw new Error('Staged clipboard content does not match its metadata');
+      // Network/file I/O stays concurrent, but publishing a pathname changes the
+      // live item used by save(). Commit that mutation between store operations,
+      // never after persistence checks but before index serialization.
+      return this._enqueue(() => {
+        cancellable.set_error_if_cancelled();
+        if (this._closed)
+          throw new Error('Clipboard history storage is closed');
+        content.path = path;
+        return path;
+      });
+    })();
+    try {
+      return await entry.pending;
+    } catch (error) {
+      await this._discardStaged(path);
+      throw error;
+    }
+  }
+
+  async use(item, load) {
+    if (this._closed)
+      throw new Error('Clipboard history storage is closed');
+    // Register before the loader yields. Consumers joining a shared download
+    // may not receive its descriptor until after a queued discard has run.
+    const contents = new Map(item.representations.map(content => [contentKey(content), content]));
+    for (const [key, content] of contents) {
+      const use = this._uses.get(key) ?? {count: 0, sha256: content.sha256};
+      use.count++;
+      this._uses.set(key, use);
+    }
+    try {
+      return await load();
+    } finally {
+      for (const key of contents.keys()) {
+        const use = this._uses.get(key);
+        if (use && --use.count === 0)
+          this._uses.delete(key);
+      }
+      if (!this._closed)
+        await this._enqueue(() => this._collectStaged());
+    }
+  }
+
+  discard(items) {
+    if (this._closed)
+      return Promise.resolve();
+    return this._enqueue(async () => {
+      for (const item of items) {
+        for (const content of [...item.representations, item.preview]) {
+          if (content && this._staged.has(content.path))
+            this._discarded.add(content.path);
+        }
+      }
+      await this._collectStaged();
+    });
+  }
+
+  async _collectStaged() {
+    for (const path of this._discarded) {
+      const entry = this._staged.get(path);
+      if (!entry) {
+        this._discarded.delete(path);
+        continue;
+      }
+      if (this._uses.has(contentKey(entry.content)))
+        continue;
+      const retained = this._items().some(item => [...item.representations, item.preview]
+        .some(content => content === entry.content || content?.path === path));
+      if (retained)
+        this._discarded.delete(path);
+      else
+        await this._discardStaged(path);
+    }
+  }
+
+  async close() {
+    this._closed = true;
+    const entries = [...this._staged.values()];
+    for (const entry of entries)
+      entry.cancellable?.cancel();
+    await Promise.allSettled(entries.map(entry => entry.pending));
+    await this._chain.catch(() => {});
+    for (const path of this._staged.keys())
+      await this._discardStaged(path);
+    this._uses.clear();
+  }
+
+  async _discardStaged(path) {
+    try {
+      await deleteFile(Gio.File.new_for_path(path), null);
+    } catch (error) {
+      if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND))
+        throw error;
+    }
+    this._staged.delete(path);
+    this._discarded.delete(path);
+  }
+
+  async _adopt(content, targetPath, cancellable) {
+    const path = content.path;
+    const entry = this._staged.get(path);
+    if (!entry)
+      return false;
+    if (entry.content !== content || entry.size !== content.size || entry.sha256 !== content.sha256)
+      throw new Error('Staged clipboard content metadata changed before persistence');
+    if (await pathExists(targetPath, cancellable)) {
+      await this._discardStaged(path);
+    } else {
+      await new Promise((resolve, reject) => {
+        Gio.File.new_for_path(path).move_async(Gio.File.new_for_path(targetPath),
+          Gio.FileCopyFlags.NONE, GLib.PRIORITY_DEFAULT, cancellable, null, (file, result) => {
+            try { file.move_finish(result); resolve(); } catch (error) { reject(error); }
+          });
+      });
+      this._staged.delete(path);
+      this._discarded.delete(path);
+    }
+    content.path = targetPath;
+    return true;
   }
 
   async _save(items, cancellable, generation) {
@@ -192,12 +350,18 @@ export class HistoryStore {
       await this._saveDevice(deviceId, groups.get(deviceId) ?? [], cancellable, generation);
   }
 
-  async materialize(item, cancellable = null) {
+  materialize(item, cancellable = null) {
+    // A read must not keep a staging pathname across a concurrent adoption or
+    // GC. The same boundary protects both the descriptor and its open/read I/O.
+    return this._enqueue(() => this._materialize(item, cancellable));
+  }
+
+  async _materialize(item, cancellable) {
     const paths = this.directory(item.originDeviceId || this.deviceId);
     for (const representation of item.representations) {
       if (representation.bytes || !representation.path)
         continue;
-      if (!isPathInside(paths.objects, representation.path))
+      if (!isPathInside(paths.objects, representation.path) && !this._staged.has(representation.path))
         throw new Error('Clipboard object path is outside its device storage');
 
       const file = Gio.File.new_for_path(representation.path);
@@ -219,29 +383,39 @@ export class HistoryStore {
     const paths = this.directory(deviceId);
     ensurePrivateDirectory(paths.objects);
     ensurePrivateDirectory(paths.previews);
+    const stored = [];
     for (const item of items) {
-      for (const representation of item.representations)
+      // A second consumer can replace its descriptor array while awaiting I/O.
+      // Serialize precisely the descriptors persisted here, not that later view.
+      const representations = [...item.representations];
+      const preview = item.preview;
+      for (const representation of representations)
         await this._persistRepresentation(item, representation, paths.objects, cancellable);
-      await this._persistPreview(item.preview, paths.previews, cancellable);
+      await this._persistPreview(preview, paths.previews, cancellable);
+      stored.push({...item.toJSON(),
+        representations: representations.map(({bytes: _bytes, ...value}) => value),
+        preview: preview ? {...preview} : null});
     }
     const document = {
       version: INDEX_VERSION,
       deviceId,
       updatedAt: Date.now(),
-      items: items.map(item => item.toJSON()),
+      items: stored,
     };
     const body = JSON.stringify(document);
     if (new TextEncoder().encode(body).length > MAX_INDEX_BYTES)
       throw new Error(`Clipboard history index exceeds ${MAX_INDEX_BYTES} bytes`);
     await writeFile(Gio.File.new_for_path(paths.index), bytesFromString(body), cancellable);
     if (generation === this._saveGeneration)
-      await this._removeUnreferencedFiles(items, paths, cancellable);
+      await this._removeUnreferencedFiles(stored, paths, cancellable);
   }
 
   async _persistRepresentation(item, representation, objectsPath, cancellable) {
     if (representation.size > ABSOLUTE_ITEM_LIMIT_BYTES)
       throw new Error('Clipboard representation exceeds the local persistence limit');
     const targetPath = GLib.build_filenamev([objectsPath, representation.sha256]);
+    if (await this._adopt(representation, targetPath, cancellable))
+      return;
     if (await pathExists(targetPath, cancellable)) {
       representation.path = targetPath;
       return;
@@ -268,6 +442,8 @@ export class HistoryStore {
     if (!preview?.path)
       return;
     const targetPath = GLib.build_filenamev([previewsPath, preview.sha256]);
+    if (await this._adopt(preview, targetPath, cancellable))
+      return;
     if (!await pathExists(targetPath, cancellable)) {
       const bytes = await this._loadManagedFile(
         preview.path,
@@ -337,8 +513,21 @@ export class HistoryStore {
         referenced.add(GLib.canonicalize_filename(item.preview.path, null));
     }
 
-    await this._pruneDirectory(paths.objects, referenced, cancellable);
-    await this._pruneDirectory(paths.previews, referenced, cancellable);
+    // A queued snapshot may predate a new consumer of an adopted file. Consult
+    // live owners at each deletion, including changes during directory I/O.
+    const references = {has: path => referenced.has(path) || this._isRetained(path)};
+    await this._pruneDirectory(paths.objects, references, cancellable);
+    await this._pruneDirectory(paths.previews, references, cancellable);
+  }
+
+  _isRetained(path) {
+    const hash = GLib.path_get_basename(path);
+    for (const use of this._uses.values()) {
+      if (use.sha256 === hash)
+        return true;
+    }
+    return this._items().some(item => [...item.representations, item.preview]
+      .some(content => content?.path && GLib.canonicalize_filename(content.path, null) === path));
   }
 
   async _pruneDirectory(path, referenced, cancellable) {

@@ -142,6 +142,11 @@
       <default>false</default>
       <summary>Show the source text preview in the word selection panel</summary>
     </key>
+    <key name="tokenizer-word-limit" type="u">
+      <default>2000</default>
+      <range min="1" max="10000"/>
+      <summary>Maximum selectable items in the word selection panel</summary>
+    </key>
     <key name="tokenizer-dictionary-revision" type="u">
       <default>0</default>
       <summary>Revision used to reload imported dictionaries</summary>
@@ -296,7 +301,7 @@
     </key>
     <key name="sync-html" type="b">
       <default>false</default>
-      <summary>Synchronize HTML content</summary>
+      <summary>Send copied text with its original formatting (HTML)</summary>
     </key>
     <key name="sync-images" type="b">
       <default>true</default>

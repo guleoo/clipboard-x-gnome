@@ -4,6 +4,8 @@ import GLib from 'gi://GLib';
 import {ClipboardItem} from '../../src/clipboard/item.js';
 import {TransferTracker} from '../../src/sync/transfers.js';
 import {SyncClient} from '../../src/sync/client.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {publication as wirePublication} from './fixtures/wire.js';
 import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 import {delay} from './integration/measure.js';
 import {STRESS_SYNC_LOAD} from './load-profile.js';
@@ -22,6 +24,7 @@ class StressSettings {
       ['sync-enabled', true], ['device-id', deviceId], ['device-tag', 'Stress laptop'],
       ['device-icon-kind', 'laptop'], ['sync-text', true], ['sync-html', true],
       ['sync-images', true], ['text-preview-limit', 4096], ['thumbnail-byte-limit', 256 * 1024],
+      ['text-full-threshold', 64 * 1024],
       ['sync-transfer-timeout-seconds', 30],
     ]);
     this._nextSignal = 1;
@@ -38,22 +41,15 @@ class StressStore {
   constructor() {
     this.value = {
       serverAddress: 'http://127.0.0.1:8765', apiKey: 'stress-key', activeChannelId: channelId,
-      cursors: {}, workCursor: '',
     };
-    this.progressSaves = 0;
   }
 
   async load() { return this.current; }
   async saveConnection(value) {
-    this.value = {...this.value, ...value, cursors: {...this.value.cursors}};
+    this.value = {...this.value, ...value};
     return this.current;
   }
-  async saveProgress(value) {
-    this.progressSaves++;
-    this.value = {...value, cursors: {...value.cursors}};
-    return this.current;
-  }
-  get current() { return {...this.value, cursors: {...this.value.cursors}}; }
+  get current() { return {...this.value}; }
 }
 
 class StressTransport {
@@ -94,13 +90,10 @@ class StressTransport {
 
   createItem(_channel, manifest) {
     const uploadId = GLib.uuid_string_random();
-    const previewIds = manifest.previews.map(value => value.id);
-    const contentIds = manifest.contents.filter(value => value.delivery === 'eager').map(value => value.id);
-    const totalBytes = manifest.previews.reduce((sum, value) => sum + value.size, 0)
-      + manifest.contents.filter(value => value.delivery === 'eager').reduce((sum, value) => sum + value.size, 0);
-    this._uploads.set(uploadId, {itemId: manifest.id, transferId: GLib.uuid_string_random(), totalBytes, kind: 'publish'});
-    return Promise.resolve({itemId: manifest.id, uploadId, previewIds, contentIds,
-      transfer: this._transfer(this._uploads.get(uploadId), 'queued', 0, 'publish', 'upload')});
+    const result = wirePublication(manifest, {deviceId, uploadId, transferId: GLib.uuid_string_random()});
+    this._uploads.set(uploadId, {itemId: manifest.id, transferId: result.transfer.id,
+      totalBytes: result.transfer.totalBytes, kind: 'publish'});
+    return Promise.resolve(result);
   }
 
   uploadPreview(uploadId, _previewId, source, onProgress) { return this._upload(uploadId, source, onProgress); }
@@ -164,17 +157,22 @@ function createItem(prefix, index) {
 }
 const settings = new StressSettings();
 const store = new StressStore();
+const progressStore = new MemoryProgressStore();
 const transport = new StressTransport();
 const sources = Array.from({length: STRESS_SYNC_LOAD.publishedItems}, (_, index) => createItem('publish', index));
 const workItems = Array.from({length: STRESS_SYNC_LOAD.onDemandWork}, (_, index) => createItem('work', index));
 const sourceById = new Map(workItems.map(item => [item.id, item]));
+const available = new Set();
 const client = new SyncClient(settings, {
   configurationStore: store,
+  progressStore,
   transportFactory: () => transport,
   sourceItem: itemId => sourceById.get(itemId),
+  applyChanges: async changes => {
+    for (const change of changes)
+      available.add(change.itemId);
+  },
 });
-const available = new Set();
-client.connect('item-available', (_client, itemId) => available.add(itemId));
 
 try {
   const started = GLib.get_monotonic_time();
@@ -184,17 +182,18 @@ try {
   const elapsedSeconds = (GLib.get_monotonic_time() - started) / 1_000_000;
 
   assert(available.size === STRESS_SYNC_LOAD.incomingChanges, '10x distinct changes must all be observed');
-  assert(store.value.cursors[channelId] === String(STRESS_SYNC_LOAD.incomingChanges), 'changes cursor must reach the final page');
-  assert(store.value.workCursor === String(STRESS_SYNC_LOAD.onDemandWork), 'work cursor must reach the final page');
+  const progress = await progressStore.load({serverAddress: store.value.serverAddress, deviceId});
+  assert(progress.cursors[channelId] === String(STRESS_SYNC_LOAD.incomingChanges), 'changes cursor must reach the final page');
+  assert(progress.workCursor === String(STRESS_SYNC_LOAD.onDemandWork), 'work cursor must reach the final page');
   assert(transport.completedUploads === STRESS_SYNC_LOAD.publishedItems + STRESS_SYNC_LOAD.onDemandWork,
     'all 10x publish and on-demand uploads must complete');
   assert(transport.maxConcurrentUploads === 1, 'the transfer queue must keep network uploads serialized');
   assert(client._transfers.values().length <= MAX_TRANSFER_STATES
-      && client._transfers._lastEmittedAt.size <= MAX_TRANSFER_STATES
-      && client._transfers._pendingSources.size === 0,
+      && client._transfers._tracker._lastEmittedAt.size <= MAX_TRANSFER_STATES
+      && client._transfers._tracker._pendingSources.size === 0,
     'all local transfer metadata must remain bounded');
-  assert(client._remoteTransferIds.size === 0 && client._operations.size === 0
-      && client._activeCancellables.size === 0,
+  assert(client._transfers._remoteIds.size === 0 && client._transfers._operations.size === 0
+      && client._transfers._cancellables.size === 0,
     'completed transfers must not retain cancellation state');
   assert(new Set([...transport._uploads.values()].map(value => value.itemId)).size
       === STRESS_SYNC_LOAD.publishedItems + STRESS_SYNC_LOAD.onDemandWork,

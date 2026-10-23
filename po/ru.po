@@ -424,12 +424,12 @@ msgstr ""
 "автоматически."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Язык импорта"
+msgid "Dictionary language"
+msgstr "Язык словаря"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Используется, если в словаре не указано «# locale: language-code»."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Словарь должен содержать корректный заголовок «# locale: language-code»."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -839,6 +839,15 @@ msgid "Slow"
 msgstr "Медленная"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Максимальное количество слов"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Тексты, превышающие этот лимит, не открываются в режиме выбора слов."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Слишком много слов. Используйте более короткий текст или увеличьте лимит в настройках."
+
 msgid "Show source text preview"
 msgstr "Показывать исходный текст"
 
@@ -982,9 +991,17 @@ msgid ""
 msgstr ""
 "Этот режим заменяет текущее содержимое буфера обмена полученным содержимым."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Содержимое для отправки"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Форматирование текста"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Отправлять скопированный текст с исходным форматированием (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

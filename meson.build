@@ -1,6 +1,6 @@
 project(
   'clipboard-x-gnome',
-  version: '1.0.9',
+  version: '1.1.0',
   license: 'GPL-3.0-or-later',
   meson_version: '>=1.6.0',
 )
@@ -89,9 +89,13 @@ test('device-icons', test_runner, args: ['-m', meson.current_source_dir() / 'tes
 test('sync-errors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/errors.test.js'])
 test('sync-configuration', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration.test.js'])
 test('sync-configuration-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/configuration-store.test.js'])
+test('sync-progress-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/progress-store.test.js'])
 test('sync-connection-settings', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection.test.js'])
 test('sync-connection-http', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/sync-connection-http.test.js'])
 test('clipboard-item', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/item.test.js'])
+test('clipboard-content', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/clipboard/content.test.js'],
+  env: {'GIO_USE_VFS': 'local'})
 test('clipboard-text', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/text.test.js'])
 test('clipboard-phrase-store', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/phrases/store.test.js'])
 test('clipboard-history-order', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/history/order.test.js'])
@@ -110,6 +114,7 @@ test('sync-http-failures', test_runner,
   env: {'CBX_TEST_PYTHON': find_program('python3').full_path()},
   timeout: 30)
 test('sync-transfers', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfers.test.js'])
+test('sync-transfer-session', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/transfer-session.test.js'])
 test('sync-measurement', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/measurement.test.js'])
 test('sync-diagnostics', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/diagnostics.test.js'])
 test('sync-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/client.test.js'])
@@ -140,6 +145,7 @@ test(
 )
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/dictionary.test.js'])
+test('tokenizer-dictionary-selection', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/selection.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/tokenizer/multilingual.test.js'])
 test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() / 'tests/clipboard/terminal/sequence.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/ui/panel-manager.test.js'])

@@ -423,12 +423,12 @@ msgstr ""
 "yüklenir."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "İçe aktarma dili"
+msgid "Dictionary language"
+msgstr "Sözlük dili"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr "Sözlük “# locale: language-code” bildirmediğinde kullanılır."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Sözlük, geçerli bir “# locale: language-code” başlığı içermelidir."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -833,6 +833,15 @@ msgid "Slow"
 msgstr "Yavaş"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "En fazla sözcük sayısı"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Bu sınırı aşan metinler sözcük seçimi modunda açılmaz."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Çok fazla sözcük var. Daha kısa bir metin kullanın veya tercihlerden sınırı artırın."
+
 msgid "Show source text preview"
 msgstr "Kaynak metnin önizlemesini göster"
 
@@ -974,9 +983,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "Panoya uygulama, geçerli pano içeriğini gelen içerikle değiştirir."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Gönderilecek içerik"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Zengin metin biçimlendirmesi"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Kopyalanan metni özgün biçimlendirmesiyle (HTML) gönder."
 
 #: src/ui/settings/window.js:291
 msgid "Images"

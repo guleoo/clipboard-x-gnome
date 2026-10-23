@@ -1,6 +1,10 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import {SyncClient} from '../../src/sync/client.js';
+import {MemoryProgressStore} from './fixtures/progress-store.js';
+import {transfer as wireTransfer, publication as wirePublication} from './fixtures/wire.js';
+import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 
 const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
@@ -38,6 +42,7 @@ class Settings {
     this.values = new Map([
       ['sync-enabled', true], ['device-id', deviceId], ['device-tag', 'Current device'],
       ['device-icon-kind', 'laptop'], ['sync-poll-interval-seconds', 3600],
+      ['text-full-threshold', 4096],
     ]);
     this.signals = new Map();
     this.next = 1;
@@ -59,7 +64,7 @@ class Store {
   constructor() {
     this.value = {
       serverAddress: 'http://memory.invalid', apiKey: 'memory-key',
-      activeChannelId: channelId, cursors: {}, workCursor: '',
+      activeChannelId: channelId,
     };
     this.loads = [];
     this.saves = [];
@@ -67,7 +72,6 @@ class Store {
 
   load() { return this.loads.length ? this.loads.shift().promise : Promise.resolve(copy(this.value)); }
   saveConnection(value) { return this.save('connection', value); }
-  saveProgress(value) { return this.save('progress', value); }
   save(kind, value) {
     this.saves.push({kind, value: copy(value)});
     this.value = copy(value);
@@ -80,10 +84,7 @@ function device(tag = 'Current device') {
 }
 
 function transfer(state = 'completed') {
-  return {
-    id: transferId, itemId, deviceId, kind: 'publish', direction: 'upload', state,
-    completedBytes: 0, totalBytes: 0, peerDeviceIds: [], createdAt: 1, updatedAt: 2,
-  };
+  return wireTransfer({id: transferId, itemId, deviceId, state});
 }
 
 function sourceTransfer(state = 'queued') {
@@ -92,10 +93,11 @@ function sourceTransfer(state = 'queued') {
 }
 
 const sourceWork = {id: transferId, type: 'materialize-content', itemId, contentId: 'content'};
-const sourceItem = id => id === itemId ? {
+const localSource = {
   representations: [{id: 'content', mimeType: 'text/plain', size: 4,
     bytes: new Uint8Array([1, 2, 3, 4])}],
-} : null;
+};
+const sourceItem = id => id === itemId ? localSource : null;
 
 class Transport {
   constructor(name) {
@@ -148,6 +150,10 @@ class Transport {
   acceptWork() {
     return this.reply('acceptWork', {uploadId: itemId, transfer: sourceTransfer()});
   }
+  rejectWork(workId, code) {
+    this.rejection = {workId, code};
+    return this.reply('rejectWork', {});
+  }
   uploadContent(_upload, _content, _source, onProgress, cancellable) {
     this.upload = {onProgress, cancellable};
     return this.reply('uploadContent', {});
@@ -160,14 +166,7 @@ class Transport {
 
 class PublicationTransport extends Transport {
   createItem(_channelId, manifest) {
-    const previewIds = manifest.previews.map(value => value.id);
-    const eager = manifest.contents.filter(value => value.delivery === 'eager');
-    const totalBytes = [...manifest.previews, ...eager].reduce((sum, value) => sum + value.size, 0);
-    this.publication = {
-      itemId: manifest.id, uploadId: itemId, previewIds,
-      contentIds: eager.map(value => value.id),
-      transfer: {...transfer('queued'), totalBytes},
-    };
+    this.publication = wirePublication(manifest, {deviceId, uploadId: itemId, transferId});
     return this.reply('createItem', this.publication);
   }
 
@@ -186,12 +185,45 @@ class PublicationTransport extends Transport {
   }
 }
 
+class DownloadTransport extends Transport {
+  item() {
+    return this.reply('item', {
+      id: itemId, createdAt: 1,
+      origin: {deviceId, tag: 'Source', iconKind: 'laptop'},
+      contents: [{id: 'content', mimeType: 'text/plain', size: 4,
+        sha256: 'a'.repeat(64), delivery: 'on-demand'}],
+      previews: [],
+    });
+  }
+
+  contentResponse() {
+    return {transfer: {...sourceTransfer('completed'), direction: 'download'}};
+  }
+
+  requestContent() {
+    return this.reply('requestContent', this.contentResponse());
+  }
+
+  downloadContent(_channel, _item, _content, _path, options) {
+    this.download = options;
+    return this.reply('downloadContent', {path: '/unused-downloaded-test-double'});
+  }
+}
+
 const publicationItem = {
   id: itemId, createdAt: 1, sensitive: false,
   representations: [{id: 'content', mimeType: 'text/plain', size: 4,
     sha256: 'a'.repeat(64), delivery: 'eager', path: '/unused-publication-test-double'}],
   preview: {mimeType: 'text/plain', text: 'test', derivedFrom: 'content', truncated: false},
 };
+function remoteItem() {
+  const item = copy(publicationItem);
+  item.remote = true;
+  item.originDeviceId = deviceId;
+  item.availability = 'preview';
+  item.representations[0].path = null;
+  return item;
+}
 const cancelled = () => new Gio.IOErrorEnum({
   code: Gio.IOErrorEnum.CANCELLED, message: 'Operation was cancelled',
 });
@@ -209,10 +241,18 @@ const logger = {
 function fixture(transports = [new Transport('current')], options = {}) {
   const settings = new Settings();
   const store = new Store();
+  const progressStore = new MemoryProgressStore();
   const created = [];
   const events = [];
   const client = new SyncClient(settings, {
     configurationStore: store,
+    progressStore,
+    async stageFile(reference, write, cancellable) {
+      const targetPath = '/unused-staged-test-double';
+      await write(targetPath);
+      cancellable.set_error_if_cancelled();
+      reference.path = targetPath;
+    },
     transportFactory(configuration, options) {
       const transport = transports[created.length];
       assert(transport, 'Stale initialization must not create an additional transport');
@@ -222,21 +262,19 @@ function fixture(transports = [new Transport('current')], options = {}) {
     logger,
     ...options,
   });
-  for (const event of ['status-changed', 'status-details-changed', 'configuration-changed',
-    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed',
-    'poll-completed']) {
+  for (const event of ['status-changed', 'transfer-changed', 'publication-cancelled', 'poll-completed']) {
     client.connect(event, (_client, ...args) => events.push({event, args: copy(args)}));
   }
-  return {client, settings, store, created, events};
+  return {client, settings, store, progressStore, created, events};
 }
 
 function snapshot(f) {
   return JSON.stringify({
-    connected: f.client.connected, ready: f.client.ready, capabilities: f.client.capabilities,
-    configuration: f.client.configuration, status: f.client.status,
-    devices: f.client.devices, channels: f.client.channels,
+    connected: f.client._connected, ready: f.client.ready, capabilities: f.client._capabilities,
+    configuration: f.client.configuration, state: f.client._state, channels: f.client._channels,
     transfer: f.client.getTransferForItem(itemId), events: f.events,
     saves: f.store.saves,
+    progressSaves: f.progressStore.saves,
   });
 }
 
@@ -267,7 +305,7 @@ await test('upload replay waits for the complete initialization pipeline', async
   const pending = observe(f.client.start());
   try {
     await bounded(gate.entered.promise);
-    assert(f.client.connected && !f.client.ready,
+    assert(f.client._connected && !f.client.ready,
       'authentication alone must not expose a ready upload destination');
     assert(!f.events.some(value => value.event === 'poll-completed'),
       'an incomplete startup must not wake the durable upload queue');
@@ -300,7 +338,7 @@ for (const phase of ['transfer-chain', 'publication-manifest']) {
       f.settings.values.set('sync-text', true);
       await bounded(f.client.start());
       if (phase === 'transfer-chain') {
-        blocker = observe(f.client._enqueueTransfer(() => {
+        blocker = observe(f.client._transfers.enqueue(() => {
           entered.resolve();
           return release.promise;
         }));
@@ -424,42 +462,6 @@ await test('successive restarts isolate the cleanup of three transport generatio
   }
 });
 
-for (const [method, call] of [
-  ['channels', client => client.listChannels()],
-  ['transfers', client => client.listTransfers()],
-  ['transfer', client => client.getTransfer(transferId)],
-]) {
-  await test(`public ${method} refresh cannot commit a superseded reply`, async () => {
-    const stale = new Transport('stale');
-    const current = new Transport('current');
-    const f = fixture([stale, current]);
-    let gate;
-    let pending;
-    try {
-      await bounded(f.client.start());
-      gate = stale.hold(method);
-      pending = observe(call(f.client));
-      await bounded(gate.entered.promise);
-      await bounded(f.client.restart());
-      const expected = snapshot(f);
-      gate.resolve(method === 'transfer' ? transfer('queued') : copy(replies[method]));
-      await bounded(pending);
-      assert(snapshot(f) === expected, 'Late public refresh must not change current state or emit events');
-      if (method === 'transfer') {
-        await bounded(f.client.cancelTransfer(transferId));
-        assert(!current.calls.includes('cancel'),
-          'A stale transfer reply must not register a remote cancellation target on the new connection');
-      }
-      assert(!current.aborted, 'Late public refresh must not close the replacement connection');
-    } finally {
-      f.client.destroy();
-      gate?.resolve(copy(replies[method]));
-      if (pending)
-        await pending;
-    }
-  });
-}
-
 for (const method of ['load', ...Object.keys(replies)]) {
   await test(`destroy cancels pending ${method} initialization`, async () => {
     const transport = new Transport('destroyed');
@@ -498,6 +500,209 @@ const sourceReplies = {
   uploadContent: {},
   completeUpload: {transfer: sourceTransfer('completed')},
 };
+
+for (const change of ['deleted', 'replaced', 'sensitive', 'representation-replaced']) {
+  await test(`source work rejects a source ${change} while acceptance is pending`, async () => {
+    const transport = new Transport('current');
+    const item = copy(localSource);
+    let current = item;
+    const f = fixture([transport], {sourceItem: id => id === itemId ? current : null});
+    let pending;
+    let gate;
+    try {
+      await bounded(f.client.start());
+      gate = transport.hold('acceptWork');
+      transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+      pending = observe(f.client._syncWork());
+      await bounded(gate.entered.promise);
+      if (change === 'deleted')
+        current = null;
+      else if (change === 'replaced')
+        current = copy(item);
+      else if (change === 'sensitive')
+        item.sensitive = true;
+      else
+        item.representations = copy(item.representations);
+      gate.resolve(copy(sourceReplies.acceptWork));
+      const result = await bounded(pending);
+      assert(!result.error && !transport.calls.includes('uploadContent') && !transport.calls.includes('completeUpload'),
+        'An invalidated source must not start sending or complete an accepted upload');
+      assert(transport.rejection?.workId === sourceWork.id && transport.rejection.code === 'source_content_missing'
+          && transport.calls.includes('cancel'),
+        'Rejecting an accepted work must release peer requesters and cancel its source upload');
+      assert(f.client._progress.workCursor === 'source-rejected' && f.client._transfers.pendingIds().length === 0,
+        'A confirmed rejection must advance the work page without leaving a pending remote transfer');
+    } finally {
+      f.client.destroy();
+      gate?.resolve(copy(sourceReplies.acceptWork));
+      if (pending)
+        await pending;
+    }
+  });
+}
+
+for (const change of ['missing', 'sensitive']) {
+  await test(`source work rejects an initially ${change} source without acceptance`, async () => {
+    const transport = new Transport('current');
+    const item = change === 'missing' ? null : {...copy(localSource), sensitive: true};
+    const f = fixture([transport], {sourceItem: () => item});
+    try {
+      await bounded(f.client.start());
+      transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+      await bounded(f.client._syncWork());
+      assert(transport.rejection?.code === 'source_content_missing' && !transport.calls.includes('acceptWork')
+          && !transport.calls.includes('uploadContent') && !transport.calls.includes('cancel')
+          && f.client._progress.workCursor === 'source-rejected',
+        'An unavailable source must be rejected before acceptance and allow the work cursor to advance');
+    } finally {
+      f.client.destroy();
+    }
+  });
+}
+
+for (const unavailable of ['missing-file', 'directory']) {
+  await test(`source work retires an unreadable ${unavailable} and continues polling`, async () => {
+    const directory = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-source-work-XXXXXX'));
+    const file = unavailable === 'directory' ? directory : directory.get_child('missing-original');
+    const broken = {representations: [{id: 'content', mimeType: 'text/plain', size: 4, path: file.get_path()}]};
+    const nextItemId = '55555555-5555-4555-8555-555555555555';
+    const nextWorkId = '66666666-6666-4666-8666-666666666666';
+    const waitingId = '77777777-7777-4777-8777-777777777777';
+    const transport = new Transport('current');
+    const nextItem = copy(localSource);
+    const f = fixture([transport], {sourceItem: id => id === itemId ? broken
+      : id === nextItemId ? nextItem : null});
+    f.settings.values.set('sync-transfer-timeout-seconds', 30);
+    let fileError;
+    try {
+      await bounded(f.client.start());
+      const waiting = {...sourceTransfer('waiting-for-peer'), id: waitingId, direction: 'download'};
+      f.client._transfers.receive({...waiting, transferId: waitingId});
+      const waiter = observe(f.client._transfers.wait(waitingId));
+      transport.work = () => Promise.resolve({cursor: 'after-unreadable-source', hasMore: false,
+        work: [sourceWork, {...sourceWork, id: nextWorkId, itemId: nextItemId}]});
+      transport.acceptWork = id => transport.reply('acceptWork', {uploadId: id,
+        transfer: id === sourceWork.id ? sourceTransfer()
+          : {...sourceTransfer(), id: nextWorkId, itemId: nextItemId}});
+      transport.uploadContent = async (uploadId, _contentId, source) => {
+        transport.calls.push('uploadContent');
+        if (uploadId === sourceWork.id) {
+          try {
+            const stream = Gio.File.new_for_path(source.path).read(null);
+            stream.close(null);
+          } catch (error) {
+            fileError = error;
+            throw error;
+          }
+        }
+      };
+      transport.completeUpload = () => transport.reply('completeUpload', {
+        transfer: {...sourceTransfer('completed'), id: nextWorkId, itemId: nextItemId},
+      });
+      transport.transfer = () => transport.reply('transfer', {
+        ...waiting, state: 'completed', completedBytes: waiting.totalBytes,
+      });
+      await bounded(f.client._poll());
+      assert(fileError?.matches?.(Gio.IOErrorEnum, unavailable === 'missing-file'
+        ? Gio.IOErrorEnum.NOT_FOUND : Gio.IOErrorEnum.IS_DIRECTORY),
+        'The regression must exercise a real local file open failure, not an empty source path');
+      assert(transport.rejection?.workId === sourceWork.id
+          && transport.rejection.code === 'source_content_missing' && transport.calls.includes('cancel')
+          && f.client._transfers.get(transferId)?.state === 'cancelled',
+        'An unreadable accepted original must reject its source work and cancel the source upload');
+      assert(f.client.getTransferForItem(nextItemId)?.state === 'completed'
+          && f.client._progress.pendingWork === null
+          && f.client._progress.workCursor === 'after-unreadable-source',
+        'An unreadable original must not strand the journal, cursor, or later jobs on its work page');
+      assert(!(await bounded(waiter)).error && transport.calls.includes('transfer'),
+        'The same poll must still refresh and settle independent incoming transfers');
+    } finally {
+      f.client.destroy();
+      directory.delete(null);
+    }
+  });
+}
+
+for (const failure of ['network', 'server-not-found', 'cancelled', 'bytes-source']) {
+  await test(`source work preserves ${failure} upload errors`, async () => {
+    const directory = Gio.File.new_for_path(GLib.dir_make_tmp('clipboard-x-source-work-XXXXXX'));
+    const item = failure === 'bytes-source' ? copy(localSource)
+      : {representations: [{id: 'content', mimeType: 'text/plain', size: 4,
+        path: directory.get_child('missing-original').get_path()}]};
+    const transport = new Transport('current');
+    const f = fixture([transport], {sourceItem: () => item});
+    try {
+      await bounded(f.client.start());
+      const cursor = f.client._progress.workCursor;
+      const error = failure === 'cancelled' ? cancelled() : failure === 'bytes-source'
+        ? new Gio.IOErrorEnum({code: Gio.IOErrorEnum.NOT_FOUND, message: 'Synthetic non-file upload error'})
+        : Object.assign(new Error('Synthetic upload request failure'), failure === 'server-not-found'
+          ? {status: 404, code: 'not_found'} : {code: 'network_error'});
+      transport.work = () => Promise.resolve({cursor: 'unconfirmed-source', hasMore: false, work: [sourceWork]});
+      transport.uploadContent = () => Promise.reject(error);
+      const result = await bounded(observe(f.client._syncWork()));
+      assert(result.error === error && f.client._progress.pendingWork?.id === sourceWork.id
+          && f.client._progress.workCursor === cursor && !transport.calls.includes('rejectWork')
+          && !transport.calls.includes('cancel'),
+        'Only actual local file read failures may retire source work; transport and cancellation errors remain intact');
+    } finally {
+      f.client.destroy();
+      directory.delete(null);
+    }
+  });
+}
+
+for (const method of ['acceptWork', 'completeUpload']) {
+  await test(`source removal during ${method} does not revoke an acknowledged completion`, async () => {
+    const transport = new Transport('current');
+    let current = copy(localSource);
+    const f = fixture([transport], {sourceItem: () => current});
+    let gate;
+    let pending;
+    try {
+      await bounded(f.client.start());
+      gate = transport.hold(method);
+      transport.work = () => Promise.resolve({cursor: 'source-complete', hasMore: false, work: [sourceWork]});
+      pending = observe(f.client._syncWork());
+      await bounded(gate.entered.promise);
+      current = null;
+      gate.resolve(method === 'acceptWork'
+        ? {uploadId: itemId, transfer: sourceTransfer('completed')}
+        : {transfer: sourceTransfer('completed')});
+      const result = await bounded(pending);
+      assert(!result.error && !transport.calls.includes('rejectWork') && !transport.calls.includes('cancel')
+          && f.client.getTransferForItem(itemId).state === 'completed'
+          && f.client._progress.workCursor === 'source-complete',
+        'A server-confirmed completed upload must not be rejected or cancelled after local removal');
+    } finally {
+      f.client.destroy();
+      gate?.resolve(method === 'acceptWork'
+        ? {uploadId: itemId, transfer: sourceTransfer('completed')}
+        : {transfer: sourceTransfer('completed')});
+      if (pending)
+        await pending;
+    }
+  });
+}
+
+await test('a failed source rejection leaves its work cursor unacknowledged', async () => {
+  const transport = new Transport('current');
+  const f = fixture([transport], {sourceItem: () => null});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.workCursor;
+    transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+    transport.rejectWork = () => Promise.reject(new Error('Source rejection lost its response'));
+    const result = await bounded(observe(f.client._syncWork()));
+    assert(result.error && f.client._progress.workCursor === cursor,
+      'The work cursor must not advance before the server acknowledges source rejection');
+    transport.rejectWork = () => Promise.resolve();
+    await bounded(f.client._syncWork());
+    assert(f.client._progress.workCursor === 'source-rejected', 'A failed rejection must remain retryable');
+  } finally {
+    f.client.destroy();
+  }
+});
 
 for (const method of Object.keys(sourceReplies)) {
   for (const lateFailure of [false, true]) {
@@ -575,6 +780,326 @@ for (const lateFailure of [false, true]) {
     }
   });
 }
+
+await test('source work requires a completed acknowledgement before advancing its cursor', async () => {
+  const transport = new Transport('current');
+  const f = fixture([transport], {sourceItem});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.workCursor;
+    transport.work = () => Promise.resolve({cursor: 'unconfirmed-work', hasMore: false, work: [sourceWork]});
+    transport.completeUpload = () => Promise.resolve({transfer: sourceTransfer('cancelled')});
+    const result = await bounded(observe(f.client._poll()));
+    assert(result.error?.code === 'source_upload_failed',
+      'A non-completed acknowledgement must fail source work instead of treating it as delivered');
+    assert(f.client._progress.workCursor === cursor,
+      'Unconfirmed source work must remain replayable at its existing cursor');
+    assert(f.client.getTransferForItem(itemId).state === 'failed',
+      'The shared lifecycle must expose failure for unconfirmed source content');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+for (const phase of ['acceptWork', 'uploadContent', 'completeUpload']) {
+  for (const restart of [false, true]) {
+    await test(`accepted source work resumes after ${phase} failure${restart ? ' across restart' : ''}`, async () => {
+      const transport = new Transport('source');
+      const f = fixture([transport], {sourceItem});
+      let replacement;
+      try {
+        await bounded(f.client.start());
+        let state = 'queued';
+        let failed = false;
+        let completed = 0;
+        let uploaded = 0;
+        const networkFailure = () => {
+          failed = true;
+          throw Object.assign(new Error('Synthetic temporary network failure'), {code: 'network_error'});
+        };
+        transport.work = () => Promise.resolve({cursor: 'source-page', hasMore: false,
+          work: state === 'queued' ? [sourceWork] : []});
+        transport.acceptWork = async () => {
+          assert(f.progressStore.saves.at(-1).progress.pendingWork?.id === sourceWork.id,
+            'The source work reference must be durable before any accept request');
+          state = state === 'queued' ? 'accepted' : state;
+          if (phase === 'acceptWork' && !failed)
+            networkFailure();
+          return {uploadId: itemId, transfer: sourceTransfer(state === 'completed' ? 'completed' : 'queued')};
+        };
+        transport.uploadContent = async () => {
+          if (phase === 'uploadContent' && !failed)
+            networkFailure();
+          uploaded++;
+        };
+        transport.completeUpload = async () => {
+          state = 'completed';
+          completed++;
+          if (phase === 'completeUpload' && !failed)
+            networkFailure();
+          return {transfer: sourceTransfer('completed')};
+        };
+        const cursor = f.client._progress.workCursor;
+        const result = await bounded(observe(f.client._syncWork()));
+        assert(result.error?.code === 'network_error' && f.client._progress.pendingWork?.id === sourceWork.id
+            && f.client._progress.workCursor === cursor,
+          'A lost response must retain source work without advancing its page cursor');
+        let active = f.client;
+        if (restart) {
+          f.client.destroy();
+          replacement = new SyncClient(f.settings, {
+            configurationStore: f.store, progressStore: f.progressStore,
+            transportFactory: () => transport, sourceItem, logger,
+          });
+          active = replacement;
+          await bounded(active.start());
+        } else {
+          await bounded(active._poll());
+        }
+        assert(state === 'completed' && uploaded === 1 && completed === 1
+            && active._progress.pendingWork === null && active._progress.workCursor === 'source-page',
+          'A queued-only feed must not lose accepted work, duplicate acknowledged uploads, or strand its cursor');
+        const shown = active.getTransferForItem(itemId);
+        assert(shown?.state === 'completed' && !shown.errorCode && active._transfers.pendingIds().length === 0,
+          'A recovered server completion must replace the local failure in item queries, even with an earlier timestamp');
+      } finally {
+        f.client.destroy();
+        replacement?.destroy();
+      }
+    });
+  }
+}
+
+for (const [status, code] of [[404, 'not_found'], [409, 'invalid_request']]) {
+  await test(`unavailable pending work (${status}) does not block later source jobs`, async () => {
+    const transport = new Transport('source');
+    const f = fixture([transport], {sourceItem});
+    try {
+      await bounded(f.client.start());
+      await f.client._saveProgress({...f.client._progress, pendingWork: sourceWork});
+      transport.acceptWork = async () => {
+        throw Object.assign(new Error('Queued work is no longer available'), {status, code});
+      };
+      transport.work = () => transport.reply('work', {cursor: 'after-expired-work', hasMore: false, work: []});
+      const before = transport.calls.filter(method => method === 'work').length;
+      await bounded(f.client._syncWork());
+      assert(f.client._progress.pendingWork === null && f.client._progress.workCursor === 'after-expired-work'
+          && transport.calls.filter(method => method === 'work').length === before + 1,
+        'Only a confirmed unavailable acceptance may retire stale work and resume the queued-only feed');
+    } finally {
+      f.client.destroy();
+    }
+  });
+}
+
+await test('completed source work resumes after its local original was removed', async () => {
+  const transport = new Transport('source');
+  const f = fixture([transport]);
+  try {
+    await bounded(f.client.start());
+    await f.client._saveProgress({...f.client._progress, pendingWork: sourceWork});
+    transport.acceptWork = () => Promise.resolve({uploadId: itemId, transfer: sourceTransfer('completed')});
+    await bounded(f.client._syncWork());
+    assert(f.client._progress.pendingWork === null && !transport.calls.includes('rejectWork')
+        && !transport.calls.includes('uploadContent'),
+      'Replaying a server-completed job must neither revoke it nor require its removed local bytes');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('pending source work is never accepted after a failed journal write', async () => {
+  const transport = new Transport('source');
+  const f = fixture([transport], {sourceItem});
+  try {
+    await bounded(f.client.start());
+    transport.work = () => Promise.resolve({cursor: 'source-page', hasMore: false, work: [sourceWork]});
+    f.progressStore.save = async () => { throw new Error('Synthetic journal write failure'); };
+    const result = await bounded(observe(f.client._syncWork()));
+    assert(result.error && !transport.calls.includes('acceptWork'),
+      'The server must not accept a task whose recovery reference could not be saved');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+for (const method of ['item', 'requestContent', 'downloadContent']) {
+  for (const action of ['restart', 'destroy']) {
+    for (const lateFailure of [false, true]) {
+      await test(`remote ${method} ignores late ${lateFailure ? 'failure' : 'reply'} after ${action}`, async () => {
+        const stale = new DownloadTransport('stale');
+        const current = new DownloadTransport('current');
+        const f = fixture([stale, current]);
+        const item = remoteItem();
+        let gate;
+        let pending;
+        try {
+          await bounded(f.client.start());
+          gate = stale.hold(method);
+          pending = observe(method === 'item' ? f.client.getItem(itemId) : f.client.materialize(item));
+          await bounded(gate.entered.promise);
+          await bounded(f.client[action]());
+          const expected = snapshot(f);
+          const expectedItem = copy(item);
+          const oldCalls = stale.calls.length;
+          const currentCalls = current.calls.length;
+          if (stale.download) {
+            assert(stale.download.cancellable.is_cancelled(), 'Reset must cancel the old download');
+            stale.download.onProgress(4);
+            stale.download.onVerifying();
+          }
+          if (lateFailure)
+            gate.reject(new Error('Late remote content failure'));
+          else
+            gate.resolve(method === 'requestContent' ? stale.contentResponse()
+              : method === 'downloadContent' ? {path: '/unused-late-test-double'} : {});
+          assertCancelled(await bounded(pending));
+          assert(snapshot(f) === expected && JSON.stringify(item) === JSON.stringify(expectedItem),
+            'Old remote content must not restore transfers, set paths, or change availability');
+          assert(stale.calls.length === oldCalls && current.calls.length === currentCalls,
+            'Old remote requests must not continue on either transport generation');
+        } finally {
+          f.client.destroy();
+          gate?.resolve({});
+          if (pending)
+            await pending;
+        }
+      });
+    }
+  }
+}
+
+await test('a remote download queued behind old work cannot run on a replacement connection', async () => {
+  const stale = new DownloadTransport('stale');
+  const current = new DownloadTransport('current');
+  const f = fixture([stale, current]);
+  const entered = deferred();
+  const release = deferred();
+  const item = remoteItem();
+  let blocker;
+  let pending;
+  try {
+    await bounded(f.client.start());
+    blocker = observe(f.client._transfers.enqueue(() => {
+      entered.resolve();
+      return release.promise;
+    }));
+    await bounded(entered.promise);
+    pending = observe(f.client.materialize(item));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert(stale.calls.includes('requestContent') && !stale.calls.includes('downloadContent'),
+      'The fixture must wait after requesting content but before starting its queued download');
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    release.resolve();
+    assertCancelled(await bounded(pending));
+    assert(snapshot(f) === expected && item.representations[0].path === null,
+      'A stale queued download must not mutate the replacement state or original content');
+    assert(!stale.calls.includes('downloadContent') && !current.calls.includes('downloadContent'),
+      'Neither transport may perform the stale queued download');
+  } finally {
+    f.client.destroy();
+    release.resolve();
+    await Promise.all([...(blocker ? [blocker] : []), ...(pending ? [pending] : [])]);
+  }
+});
+
+for (const outcome of ['completed', 'cancelled']) {
+  await test(`an evicted remote transfer can still be ${outcome} while its consumer waits`, async () => {
+    const transport = new DownloadTransport('current');
+    const f = fixture([transport]);
+    const waiting = deferred();
+    let pending;
+    try {
+      await bounded(f.client.start());
+      f.settings.values.set('sync-transfer-timeout-seconds', 3);
+      transport.requestContent = () => Promise.resolve({transfer: {
+        ...sourceTransfer('waiting-for-peer'), direction: 'download',
+      }});
+      transport.transfer = () => transport.reply('transfer', {
+        ...sourceTransfer('completed'), direction: 'download',
+      });
+      f.client.connect('transfer-changed', (_client, transfer) => {
+        if (transfer.transferId === transferId && transfer.state === 'waiting-for-peer')
+          waiting.resolve();
+      });
+      const item = remoteItem();
+      pending = observe(f.client.materialize(item));
+      await bounded(waiting.promise);
+      for (let index = 0; index < MAX_TRANSFER_STATES; index++) {
+        f.client._transfers.receive({transferId: GLib.uuid_string_random(), itemId: GLib.uuid_string_random(),
+          state: 'completed', completedBytes: 1, totalBytes: 1, updatedAt: Date.now()});
+      }
+      assert(!f.client._transfers.get(transferId) && f.client._transfers.pendingIds().includes(transferId),
+        'The UI cache must remain bounded without dropping an unfinished protocol transfer');
+      if (outcome === 'completed')
+        await bounded(f.client._refreshActiveTransfers());
+      else
+        await bounded(f.client.cancelTransfer(transferId));
+      const result = await bounded(pending);
+      if (outcome === 'completed') {
+        assert(!result.error && item.representations[0].path && transport.calls.includes('transfer')
+            && transport.calls.includes('downloadContent') && !transport.calls.includes('cancel'),
+          'An evicted waiting transfer must still refresh and deliver its original when the server completes it');
+      } else {
+        assert(result.error && transport.calls.includes('cancel') && !transport.calls.includes('downloadContent'),
+          'Cancelling an evicted waiting transfer must immediately release its consumer without downloading');
+      }
+      assert(!f.client._transfers.pendingIds().includes(transferId)
+          && f.client._transfers._waiters.size === 0
+          && f.client._transfers.values().length <= MAX_TRANSFER_STATES,
+        'Completed or cancelled waiters must release protocol state and retain the UI cache limit');
+    } finally {
+      f.client.destroy();
+      if (pending)
+        await pending;
+    }
+  });
+}
+
+await test('explicit download cancellation prevents a late result from becoming usable', async () => {
+  const transport = new DownloadTransport('current');
+  const f = fixture([transport]);
+  const item = remoteItem();
+  let gate;
+  let pending;
+  try {
+    await bounded(f.client.start());
+    gate = transport.hold('downloadContent');
+    pending = observe(f.client.materialize(item));
+    await bounded(gate.entered.promise);
+    const active = f.client.getTransferForItem(item.id);
+    await f.client.cancelTransfer(active.transferId);
+    gate.resolve({path: '/unused-cancelled-test-double'});
+    assertCancelled(await bounded(pending));
+    assert(transport.download.cancellable.is_cancelled() && item.representations[0].path === null,
+      'A transport ignoring cancellation must not make the returned file usable');
+    assert(f.client.getTransferForItem(item.id).state === 'cancelled' && !transport.calls.includes('cancel'),
+      'Local-only cancellation must remain cancelled and must not delete a server task');
+  } finally {
+    f.client.destroy();
+    gate?.resolve({});
+    if (pending)
+      await pending;
+  }
+});
+
+await test('completed transfer scopes ignore any additional progress callbacks', async () => {
+  const transport = new DownloadTransport('current');
+  const f = fixture([transport]);
+  const item = remoteItem();
+  try {
+    await bounded(f.client.start());
+    await bounded(f.client.materialize(item));
+    const expected = snapshot(f);
+    transport.download.onProgress(1);
+    transport.download.onVerifying();
+    assert(snapshot(f) === expected,
+      'Progress after a completed scope must not resurrect or regress its terminal state');
+  } finally {
+    f.client.destroy();
+  }
+});
 
 await test('scheduled poll failure cannot mark the replacement connection as failed', async () => {
   const stale = new Transport('stale');
@@ -730,6 +1255,115 @@ await test('public publication superseded before its logger callback is cancelle
       'A deferred publish callback must not enter the queue after its generation is replaced');
   } finally {
     f.client.destroy();
+  }
+});
+
+await test('changes wait for durable acceptance and retry rejected entries', async () => {
+  const transport = new Transport('current');
+  const acceptance = deferred();
+  let attempts = 0;
+  let accepted = 0;
+  const f = fixture([transport], {applyChanges: async () => {
+    attempts++;
+    if (attempts === 1)
+      await acceptance.promise;
+    accepted++;
+  }});
+  try {
+    await bounded(f.client.start());
+    const before = copy(f.client._progress);
+    transport.changes = async () => ({cursor: 'accepted-changes', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    const pending = observe(f.client._poll());
+    await Promise.resolve();
+    await Promise.resolve();
+    assert(f.client._progress.cursors[channelId] === before.cursors[channelId],
+      'Pending acceptance must not advance the changes cursor');
+    acceptance.reject(new Error('Temporary history write failure'));
+    assert((await bounded(pending)).error, 'An acceptance failure must fail the poll');
+    assert(f.client._progress.cursors[channelId] === before.cursors[channelId],
+      'A rejected entry must leave the previous cursor retryable');
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.client._progress.cursors[channelId] === 'accepted-changes',
+      'The next poll must accept the failed entry before saving its cursor');
+    assert(accepted === 1, 'Only the retried page may complete durable acceptance');
+  } finally {
+    acceptance.resolve();
+    f.client.destroy();
+  }
+});
+
+await test('progress write failures do not advance in-memory cursors', async () => {
+  const transport = new Transport('current');
+  let attempts = 0;
+  const f = fixture([transport], {applyChanges: async () => { attempts++; }});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.cursors[channelId];
+    transport.changes = async () => ({cursor: 'next-changes', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    const save = f.progressStore.save.bind(f.progressStore);
+    f.progressStore.save = async () => { throw new Error('Temporary progress write failure'); };
+    assert((await observe(f.client._poll())).error, 'The poll must report persistence failure');
+    assert(f.client._progress.cursors[channelId] === cursor,
+      'Unpersisted progress must never become the next request cursor');
+    f.progressStore.save = save;
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.client._progress.cursors[channelId] === 'next-changes',
+      'Progress persistence failure must safely replay the page');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('initial receive failure leaves polling available for retry', async () => {
+  const transport = new Transport('current');
+  let attempts = 0;
+  transport.changes = async () => ({cursor: 'accepted-changes', hasMore: false,
+    changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+  const f = fixture([transport], {applyChanges: async () => {
+    if (++attempts === 1)
+      throw new Error('Temporary receive failure');
+  }});
+  try {
+    await bounded(f.client.start());
+    assert(f.client.ready && f.client._connected && f.client._pollSource > 0,
+      'A failed initial page must not strand an authenticated client without polling');
+    await bounded(f.client._poll());
+    assert(attempts === 2 && f.events.filter(value => value.event === 'status-changed').at(-1)?.args[0] === 'online',
+      'A later successful poll must recover and accept the page');
+  } finally {
+    f.client.destroy();
+  }
+});
+
+await test('superseded change acceptance cannot commit progress or notify', async () => {
+  const stale = new Transport('stale');
+  const current = new Transport('current');
+  const acceptance = deferred();
+  const entered = deferred();
+  const f = fixture([stale, current], {applyChanges: async (_changes, scope) => {
+    entered.resolve();
+    await acceptance.promise;
+    assert(!scope.isCurrent(), 'The receiver must be able to detect supersession');
+  }});
+  let pending;
+  try {
+    await bounded(f.client.start());
+    stale.changes = async () => ({cursor: 'stale-accepted', hasMore: false,
+      changes: [{itemId, sequence: 1, kind: 'upsert'}]});
+    pending = observe(f.client._poll());
+    await bounded(entered.promise);
+    await bounded(f.client.restart());
+    const expected = snapshot(f);
+    acceptance.resolve();
+    await bounded(pending);
+    assert(snapshot(f) === expected, 'Late acceptance must leave the replacement session untouched');
+  } finally {
+    acceptance.resolve();
+    f.client.destroy();
+    if (pending)
+      await pending;
   }
 });
 

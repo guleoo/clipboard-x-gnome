@@ -422,13 +422,12 @@ msgid ""
 msgstr "Uneko bistaratze-hizkuntzarekin bat datozen gaitutako hiztegiak automatikoki kargatzen dira."
 
 #: src/ui/settings/dictionaries.js:107
-msgid "Language for import"
-msgstr "Inportatzeko hizkuntza"
+msgid "Dictionary language"
+msgstr "Hiztegiaren hizkuntza"
 
 #: src/ui/settings/dictionaries.js:111
-msgid "Used when the dictionary does not declare “# locale: language-code”."
-msgstr ""
-"Hiztegiak «# locale: language-code» adierazten ez duenean erabiltzen da."
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr "Hiztegiak baliozko «# locale: language-code» goiburua izan behar du."
 
 #: src/ui/settings/dictionaries.js:115 src/ui/settings/dictionaries.js:294
 msgid "Import dictionary"
@@ -837,6 +836,15 @@ msgid "Slow"
 msgstr "Motela"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Gehieneko hitz kopurua"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Muga hau gainditzen duten testuak ez dira hitzak hautatzeko moduan irekitzen."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Hitz gehiegi daude. Erabili testu laburragoa edo handitu muga hobespenetan."
+
 msgid "Show source text preview"
 msgstr "Erakutsi jatorrizko testuaren aurrebista"
 
@@ -979,9 +987,17 @@ msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr "Arbelean jartzean, uneko edukia jasotako edukiarekin ordezten da."
 
-#: src/ui/settings/window.js:290
-msgid "HTML"
-msgstr "HTML"
+#: src/ui/settings/window.js
+msgid "Content to send"
+msgstr "Bidaltzeko edukia"
+
+#: src/ui/settings/window.js
+msgid "Rich text formatting"
+msgstr "Testu aberastuaren formatua"
+
+#: src/ui/settings/window.js
+msgid "Send copied text with its original formatting (HTML)."
+msgstr "Bidali kopiatutako testua jatorrizko formatuarekin (HTML)."
 
 #: src/ui/settings/window.js:291
 msgid "Images"
