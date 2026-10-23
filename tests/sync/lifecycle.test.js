@@ -767,6 +767,9 @@ for (const phase of ['acceptWork', 'uploadContent', 'completeUpload']) {
         assert(state === 'completed' && uploaded === 1 && completed === 1
             && active._progress.pendingWork === null && active._progress.workCursor === 'source-page',
           'A queued-only feed must not lose accepted work, duplicate acknowledged uploads, or strand its cursor');
+        const shown = active.getTransferForItem(itemId);
+        assert(shown?.state === 'completed' && !shown.errorCode && active._transfers.pendingIds().length === 0,
+          'A recovered server completion must replace the local failure in item queries, even with an earlier timestamp');
       } finally {
         f.client.destroy();
         replacement?.destroy();

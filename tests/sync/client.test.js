@@ -419,6 +419,19 @@ try {
   }
   assert(rejection?.code === 'sensitive_content' && transport.uploadedBytes === uploadedBytes,
     'the sync client must reject sensitive content even when it has a persisted path');
+  const received = ClipboardItem.fromText('received original', {
+    remote: true, originDeviceId: GLib.uuid_string_random(),
+  });
+  received.primary.path = path;
+  const manifest = transport.manifest;
+  let remoteError = null;
+  try {
+    await client.publish(received);
+  } catch (error) {
+    remoteError = error;
+  }
+  assert(remoteError && transport.manifest === manifest && transport.uploadedBytes === uploadedBytes,
+    'received items must never enter a local publication or send a forged origin to the server');
 } finally {
   client.destroy();
   try {

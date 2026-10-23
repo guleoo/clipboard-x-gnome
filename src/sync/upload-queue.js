@@ -49,7 +49,7 @@ export class UploadQueue {
   }
 
   enqueue(item, {automatic = false} = {}) {
-    if (this._destroyed || !this._settings.get_boolean('sync-enabled'))
+    if (this._destroyed || !this._settings.get_boolean('sync-enabled') || item?.remote)
       return Promise.resolve(false);
     const itemId = item?.id;
     const deviceId = this._settings.get_string('device-id');
@@ -63,6 +63,8 @@ export class UploadQueue {
         throw new Error('Synchronization outbox requires UUID item and device IDs');
       if (item.sensitive)
         throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
+      if (item.remote)
+        return false;
       const raw = established ?? await this._configuration();
       if (!established && (revision !== this._settings.get_uint('sync-configuration-revision')
           || deviceId !== this._settings.get_string('device-id'))) {
@@ -219,7 +221,7 @@ export class UploadQueue {
         return;
       const obsolete = [...queue.entries.values()].filter(entry => {
         const item = this._source(entry.itemId);
-        return !item || item.sensitive;
+        return !item || item.sensitive || item.remote;
       });
       if (obsolete.length)
         await this._removeEntries(queue, obsolete);
@@ -227,7 +229,7 @@ export class UploadQueue {
         return;
       const obsoletePublications = [...queue.publications.entries()].filter(([_key, publication]) => {
         const item = this._source(publication.itemId);
-        return !item || item.sensitive;
+        return !item || item.sensitive || item.remote;
       });
       if (obsoletePublications.length) {
         for (const [key] of obsoletePublications)
@@ -291,7 +293,7 @@ export class UploadQueue {
     const valid = () => {
       const item = this._source(entry.itemId);
       return queue.entries.get(key) === entry && this._sourceReady()
-        && item && !item.sensitive && this._eligible(entry, item);
+        && item && !item.sensitive && !item.remote && this._eligible(entry, item);
     };
     if (!valid())
       return;
@@ -301,7 +303,7 @@ export class UploadQueue {
         if (this._destroyed || queue.entries.get(key) !== entry || !this._sourceReady())
           return null;
         const source = this._source(entry.itemId);
-        if (!source || source.sensitive) {
+        if (!source || source.sensitive || source.remote) {
           await this._removeEntries(queue, [entry]);
           return null;
         }

@@ -116,6 +116,8 @@ export class SyncClient extends EventEmitter {
   publish(item, {guard = () => true, manifest = null, saveManifest = async value => value} = {}) {
     if (item.sensitive)
       return Promise.reject(new SyncError('sensitive_content', 'Sensitive content cannot be synchronized'));
+    if (item.remote)
+      return Promise.reject(new Error('Remote clipboard entries cannot be published as local content'));
     const generation = this._generation;
     return this._logger.run('publish', () => {
       this._requireCurrent(generation);
@@ -410,6 +412,8 @@ export class SyncClient extends EventEmitter {
   async _publish(item, {guard = () => true, manifest = null, saveManifest = async value => value} = {}) {
     if (item.sensitive)
       throw new SyncError('sensitive_content', 'Sensitive content cannot be synchronized');
+    if (item.remote)
+      throw new Error('Remote clipboard entries cannot be published as local content');
     this._requireConnection();
     const generation = this._generation;
     this._requireOperation(generation, guard);
@@ -744,7 +748,7 @@ export class SyncClient extends EventEmitter {
         // Replaying an acknowledged completion must not require an original
         // that may already have been removed from local history.
         if (accepted.state === 'completed') {
-          track(accepted);
+          track({...accepted, updatedAt: Math.max(Date.now(), accepted.updatedAt)});
           return;
         }
         check();

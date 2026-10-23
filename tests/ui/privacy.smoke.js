@@ -216,6 +216,10 @@ export async function run() {
   const originalReadSelectionContent = controller._readSelectionContent;
   const originalSensitiveMode = settings.get_string('sensitive-content-mode');
   const originalSyncEnabled = settings.get_boolean('sync-enabled');
+  const originalSendMode = settings.get_string('sync-send-mode');
+  const originalFavoritesOnly = settings.get_boolean('sync-favorites-only');
+  const publish = extension.stateObj._publish;
+  const pinFixtures = [];
   const text = `sensitive-capture-${GLib.uuid_string_random()}`;
   let markedItem = null;
 
@@ -261,12 +265,34 @@ export async function run() {
     settings.set_string('sensitive-content-mode', 'discard');
     assert(await controller.capture() === null,
       'Discard policy recorded marked content');
+
+    const {ClipboardItem} = await import(`${extension.stateObj.dir.get_uri()}/clipboard/item.js`);
+    let publications = 0;
+    extension.stateObj._publish = async () => publications++;
+    settings.set_string('sync-send-mode', 'automatic');
+    settings.set_boolean('sync-favorites-only', true);
+    for (const remote of [true, false]) {
+      const item = ClipboardItem.fromText(`pin-source-${remote}-${GLib.uuid_string_random()}`, {
+        originDeviceId: remote ? GLib.uuid_string_random() : settings.get_string('device-id'), remote,
+      });
+      pinFixtures.push(item);
+      controller.add(item, remote ? 'remote' : 'local');
+      controller.toggleFavorite(item.id);
+      await Scripting.sleep(10);
+      assert(publications === (remote ? 0 : 1),
+        'Pinning received content must not publish it, while eligible local pins must still publish');
+    }
   } finally {
+    extension.stateObj._publish = publish;
+    for (const item of pinFixtures)
+      controller.remove(item.id);
     if (markedItem)
       controller.remove(markedItem.id);
     controller._selection = originalSelection;
     controller._readSelectionContent = originalReadSelectionContent;
     settings.set_string('sensitive-content-mode', originalSensitiveMode);
     settings.set_boolean('sync-enabled', originalSyncEnabled);
+    settings.set_string('sync-send-mode', originalSendMode);
+    settings.set_boolean('sync-favorites-only', originalFavoritesOnly);
   }
 }

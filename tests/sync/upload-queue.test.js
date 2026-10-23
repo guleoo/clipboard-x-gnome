@@ -114,6 +114,27 @@ try {
 
   {
     const f = fixture();
+    f.values.set('sync-favorites-only', true);
+    const received = f.item({remote: true, favorite: true});
+    const queue = f.create();
+    assert(await queue.enqueue(received, {automatic: true}) === false,
+      'a pinned received item must not acquire a new local publication intent');
+    assert(await queue.enqueue(received) === false,
+      'manual callers must not bypass the local-only publication boundary');
+    await queue.flush();
+    assert(f.publications.length === 0 && await f.document() === null && f.errors.length === 0,
+      'received items must not create outbox files, blocked entries, or publication errors');
+
+    const local = f.item({favorite: true});
+    await queue.enqueue(local, {automatic: true});
+    local.remote = true;
+    await queue.flush();
+    assert(f.publications.length === 0 && (await f.document()).entries.length === 0,
+      'an intent whose retained source becomes remote must be pruned rather than published');
+  }
+
+  {
+    const f = fixture();
     f.values.set('sync-text', true);
     f.values.set('sync-images', true);
     f.values.set('text-full-threshold', 0);

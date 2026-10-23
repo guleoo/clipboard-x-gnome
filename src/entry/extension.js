@@ -263,6 +263,7 @@ export default class ClipboardXGnomeExtension extends Extension {
   _publishAutomatically(item) {
     if (!this._settings.get_boolean('sync-enabled')
         || this._settings.get_string('sync-send-mode') !== 'automatic'
+        || item.remote
         || item.sensitive
         || (this._settings.get_boolean('sync-favorites-only') && !item.favorite))
       return;
