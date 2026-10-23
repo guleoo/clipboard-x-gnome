@@ -1236,7 +1236,7 @@ async function images(indicator, extensionObject) {
       errorMessage: '',
     };
     const progressButton = history._sync.button(imageItem);
-    extensionObject._sync._transfers.record(transfer, true);
+    extensionObject._sync._transfers.receive(transfer);
     assert(progressButton.get_child() instanceof St.DrawingArea && progressButton.hint.includes('50%'),
       'Exact per-item transfer progress was not rendered as a ring');
     progressButton.destroy();

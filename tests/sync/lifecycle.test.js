@@ -262,9 +262,7 @@ function fixture(transports = [new Transport('current')], options = {}) {
     logger,
     ...options,
   });
-  for (const event of ['status-changed', 'status-details-changed', 'configuration-changed',
-    'devices-changed', 'channels-changed', 'transfer-changed', 'item-available', 'item-removed',
-    'poll-completed']) {
+  for (const event of ['status-changed', 'transfer-changed', 'publication-cancelled', 'poll-completed']) {
     client.connect(event, (_client, ...args) => events.push({event, args: copy(args)}));
   }
   return {client, settings, store, progressStore, created, events};
@@ -272,9 +270,8 @@ function fixture(transports = [new Transport('current')], options = {}) {
 
 function snapshot(f) {
   return JSON.stringify({
-    connected: f.client.connected, ready: f.client.ready, capabilities: f.client.capabilities,
-    configuration: f.client.configuration, status: f.client.status,
-    devices: f.client.devices, channels: f.client.channels,
+    connected: f.client._connected, ready: f.client.ready, capabilities: f.client._capabilities,
+    configuration: f.client.configuration, state: f.client._state, channels: f.client._channels,
     transfer: f.client.getTransferForItem(itemId), events: f.events,
     saves: f.store.saves,
     progressSaves: f.progressStore.saves,
@@ -308,7 +305,7 @@ await test('upload replay waits for the complete initialization pipeline', async
   const pending = observe(f.client.start());
   try {
     await bounded(gate.entered.promise);
-    assert(f.client.connected && !f.client.ready,
+    assert(f.client._connected && !f.client.ready,
       'authentication alone must not expose a ready upload destination');
     assert(!f.events.some(value => value.event === 'poll-completed'),
       'an incomplete startup must not wake the durable upload queue');
@@ -464,42 +461,6 @@ await test('successive restarts isolate the cleanup of three transport generatio
     await Promise.all([old, ...(middle ? [middle] : [])]);
   }
 });
-
-for (const [method, call] of [
-  ['channels', client => client.listChannels()],
-  ['transfers', client => client.listTransfers()],
-  ['transfer', client => client.getTransfer(transferId)],
-]) {
-  await test(`public ${method} refresh cannot commit a superseded reply`, async () => {
-    const stale = new Transport('stale');
-    const current = new Transport('current');
-    const f = fixture([stale, current]);
-    let gate;
-    let pending;
-    try {
-      await bounded(f.client.start());
-      gate = stale.hold(method);
-      pending = observe(call(f.client));
-      await bounded(gate.entered.promise);
-      await bounded(f.client.restart());
-      const expected = snapshot(f);
-      gate.resolve(method === 'transfer' ? transfer('queued') : copy(replies[method]));
-      await bounded(pending);
-      assert(snapshot(f) === expected, 'Late public refresh must not change current state or emit events');
-      if (method === 'transfer') {
-        await bounded(f.client.cancelTransfer(transferId));
-        assert(!current.calls.includes('cancel'),
-          'A stale transfer reply must not register a remote cancellation target on the new connection');
-      }
-      assert(!current.aborted, 'Late public refresh must not close the replacement connection');
-    } finally {
-      f.client.destroy();
-      gate?.resolve(copy(replies[method]));
-      if (pending)
-        await pending;
-    }
-  });
-}
 
 for (const method of ['load', ...Object.keys(replies)]) {
   await test(`destroy cancels pending ${method} initialization`, async () => {
@@ -852,8 +813,8 @@ for (const outcome of ['completed', 'cancelled']) {
       pending = observe(f.client.materialize(item));
       await bounded(waiting.promise);
       for (let index = 0; index < MAX_TRANSFER_STATES; index++) {
-        f.client._transfers.record({transferId: GLib.uuid_string_random(), itemId: GLib.uuid_string_random(),
-          state: 'completed', completedBytes: 1, totalBytes: 1, updatedAt: Date.now()}, true);
+        f.client._transfers.receive({transferId: GLib.uuid_string_random(), itemId: GLib.uuid_string_random(),
+          state: 'completed', completedBytes: 1, totalBytes: 1, updatedAt: Date.now()});
       }
       assert(!f.client._transfers.get(transferId) && f.client._transfers.pendingIds().includes(transferId),
         'The UI cache must remain bounded without dropping an unfinished protocol transfer');
@@ -1087,10 +1048,12 @@ await test('changes wait for durable acceptance and retry rejected entries', asy
   const transport = new Transport('current');
   const acceptance = deferred();
   let attempts = 0;
+  let accepted = 0;
   const f = fixture([transport], {applyChanges: async () => {
     attempts++;
     if (attempts === 1)
       await acceptance.promise;
+    accepted++;
   }});
   try {
     await bounded(f.client.start());
@@ -1109,8 +1072,7 @@ await test('changes wait for durable acceptance and retry rejected entries', asy
     await bounded(f.client._poll());
     assert(attempts === 2 && f.client._progress.cursors[channelId] === 'accepted-changes',
       'The next poll must accept the failed entry before saving its cursor');
-    assert(f.events.filter(value => value.event === 'item-available').length === 1,
-      'Only accepted changes may emit availability notifications');
+    assert(accepted === 1, 'Only the retried page may complete durable acceptance');
   } finally {
     acceptance.resolve();
     f.client.destroy();
@@ -1151,10 +1113,10 @@ await test('initial receive failure leaves polling available for retry', async (
   }});
   try {
     await bounded(f.client.start());
-    assert(f.client.ready && f.client.connected && f.client._pollSource > 0,
+    assert(f.client.ready && f.client._connected && f.client._pollSource > 0,
       'A failed initial page must not strand an authenticated client without polling');
     await bounded(f.client._poll());
-    assert(attempts === 2 && f.client.status.state === 'online',
+    assert(attempts === 2 && f.events.filter(value => value.event === 'status-changed').at(-1)?.args[0] === 'online',
       'A later successful poll must recover and accept the page');
   } finally {
     f.client.destroy();

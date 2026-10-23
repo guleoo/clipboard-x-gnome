@@ -162,14 +162,17 @@ const transport = new StressTransport();
 const sources = Array.from({length: STRESS_SYNC_LOAD.publishedItems}, (_, index) => createItem('publish', index));
 const workItems = Array.from({length: STRESS_SYNC_LOAD.onDemandWork}, (_, index) => createItem('work', index));
 const sourceById = new Map(workItems.map(item => [item.id, item]));
+const available = new Set();
 const client = new SyncClient(settings, {
   configurationStore: store,
   progressStore,
   transportFactory: () => transport,
   sourceItem: itemId => sourceById.get(itemId),
+  applyChanges: async changes => {
+    for (const change of changes)
+      available.add(change.itemId);
+  },
 });
-const available = new Set();
-client.connect('item-available', (_client, itemId) => available.add(itemId));
 
 try {
   const started = GLib.get_monotonic_time();

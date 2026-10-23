@@ -33,14 +33,19 @@ const session = new TransferSession({
 });
 
 try {
-  session.record(transfer, true);
+  session.receive(transfer);
+  assert(session.pendingIds().includes(transfer.transferId)
+      && session.get(transfer.transferId).state === 'queued',
+    'receiving a server task must register both polling ownership and queryable state');
   const first = session.wait(transfer.transferId);
   const second = session.wait(transfer.transferId);
   assert(first === second, 'concurrent consumers must share a single transfer waiter');
-  session.record({...transfer, state: 'completed', completedBytes: 4}, true);
+  session.receive({...transfer, state: 'completed', completedBytes: 4});
   await bounded(Promise.all([first, second]));
+  assert(!session.pendingIds().includes(transfer.transferId)
+      && session.get(transfer.transferId).state === 'completed',
+    'receiving server completion must settle consumers and release polling ownership together');
 
-  session.record(transfer, true);
   let finish;
   const gate = new Promise(resolve => { finish = resolve; });
   let localOperation;
@@ -78,14 +83,13 @@ try {
   await bounded(remoteResult);
   assert(session.get(remote.transferId).state === 'failed' && session.pendingIds().includes(remote.transferId),
     'A local failure is not a server-confirmed terminal state and must remain refreshable');
-  session.observe({...remote, state: 'completed'});
-  session.record({...remote, state: 'completed', completedBytes: 4, updatedAt: Date.now()}, true);
+  session.receive({...remote, state: 'completed', completedBytes: 4, updatedAt: Date.now()});
   assert(!session.pendingIds().includes(remote.transferId),
     'Only a confirmed server terminal state may release an unfinished remote operation');
 
   const server = {...transfer, transferId: '44444444-4444-4444-8444-444444444444',
     state: 'completed', updatedAt: Date.now() + 60_000};
-  session.record(server, true);
+  session.receive(server);
   const startDownload = transferId => {
     let finish;
     const gate = new Promise(resolve => { finish = resolve; });
@@ -105,7 +109,7 @@ try {
     const [older, newer] = downloads;
     older.progress({completedBytes: 1}, true);
     newer.progress({completedBytes: 2}, true);
-    session.record({...server, updatedAt: server.updatedAt + 1}, true);
+    session.receive({...server, updatedAt: server.updatedAt + 1});
     const current = session.forItem(transfer.itemId);
     assert(current.transferId === newer.transferId && current.completedBytes === 2,
       'item queries must expose the newest active download progress despite ahead-clock server completion');
@@ -115,7 +119,7 @@ try {
         && session.forItem(transfer.itemId).transferId === older.transferId,
       'cancelling the queried download must stop only that operation and expose the remaining active download');
     await session.cancel(session.forItem(transfer.itemId).transferId);
-    session.record({...server, updatedAt: server.updatedAt + 2}, true);
+    session.receive({...server, updatedAt: server.updatedAt + 2});
     assert(older.operation.is_cancelled() && cancellations.length === 0
         && session.forItem(transfer.itemId).transferId === newer.transferId
         && session.forItem(transfer.itemId).state === 'cancelled',
@@ -130,7 +134,7 @@ try {
   }
 
   const teardownTransfer = {...transfer, transferId: '33333333-3333-4333-8333-333333333333'};
-  session.record(teardownTransfer, true);
+  session.receive(teardownTransfer);
   const waiting = [observe(session.wait(teardownTransfer.transferId)),
     observe(session.wait(teardownTransfer.transferId))];
   const closed = new Error('Session closed');
@@ -140,6 +144,15 @@ try {
     'session teardown must reject every waiting consumer with the teardown error');
   assert(!session.current && session.values().length === 0,
     'closing the session must invalidate it and clear transfer records');
+  let lateError;
+  try {
+    session.receive(transfer);
+  } catch (error) {
+    lateError = error;
+  }
+  assert(lateError?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)
+      && session.pendingIds().length === 0 && session.values().length === 0,
+    'late server observations must not repopulate a closed session');
 } finally {
   session.close(new Error('Test cleanup'));
 }

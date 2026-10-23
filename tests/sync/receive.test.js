@@ -231,8 +231,8 @@ try {
     'Automatic and manual use must share one source request while waiting');
   assert(downloads.length === beforeDownloads && !isComplete(lazySource, {state: 'completed'}),
     'Source readiness must precede local original download');
-  client._transfers.record({...pendingTransfer, transferId: pendingTransfer.id,
-    state: 'completed', completedBytes: pendingTransfer.totalBytes, updatedAt: 2}, true);
+  client._transfers.receive({...pendingTransfer, transferId: pendingTransfer.id,
+    state: 'completed', completedBytes: pendingTransfer.totalBytes, updatedAt: 2});
   await Promise.all([automatic, manual]);
   assert(isComplete(lazySource) && downloads.length === beforeDownloads + 1
       && client._transfers._materializations.size === 0,
@@ -341,7 +341,7 @@ try {
   interruptedClient._transport = transport;
   interruptedClient._connected = true;
   interruptedClient._storedConfiguration = {activeChannelId: channelId};
-  interruptedClient._capabilities = client.capabilities;
+  interruptedClient._capabilities = client._capabilities;
   try {
     let cancelled = false;
     try {

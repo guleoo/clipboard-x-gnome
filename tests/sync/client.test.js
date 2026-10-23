@@ -16,6 +16,7 @@ const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
 const transferId = '33333333-3333-4333-8333-333333333333';
 const uploadId = '44444444-4444-4444-8444-444444444444';
+const maximumItemBytes = 64 * 1024 * 1024;
 
 class TestSettings {
   constructor() {
@@ -119,7 +120,7 @@ class TestTransport {
       state: 'online',
       capabilities: {
         supportedMimeTypes: ['text/plain;charset=utf-8'],
-        maxItemBytes: 64 * 1024 * 1024,
+        maxItemBytes: maximumItemBytes,
         maxPreviewBytes: 256 * 1024,
       },
     });
@@ -229,7 +230,7 @@ const client = new SyncClient(settings, {
 try {
   file.replace_contents('hello', null, false, Gio.FileCreateFlags.PRIVATE, null);
   await client.start();
-  assert(client.connected && client.channels[0].active,
+  assert(client.ready && client.configuration.activeChannelId === channelId,
     'client start must authenticate, load the pre-registered device and select its channel');
   const originalPollSource = client._pollSource;
   settings._values.set('sync-poll-interval-seconds', 15);
@@ -283,8 +284,6 @@ try {
   pendingProfiles[1].complete();
   await iconChange;
   transport.updateProfile = originalUpdateProfile;
-  assert(client.devices[0].iconKind === 'archlinux' && !Object.hasOwn(client.devices[0], 'iconColor'),
-    'the final server profile must not be overwritten by an older response');
   const progress = await progressStore.load({serverAddress: store.value.serverAddress, deviceId});
   assert(progress.cursors[channelId] === 'initial' && progress.workCursor === 'initial',
     'poll cursors must be persisted without a background Service');
@@ -334,7 +333,7 @@ try {
     try {
       await client.publish(rejectedItem, {saveManifest: async manifest => ({...manifest,
         contents: manifest.contents.map(content => ({...content,
-          ...(failure === 'size' ? {size: client.capabilities.maxItemBytes + 1} : {sha256: '0'.repeat(64)}),
+          ...(failure === 'size' ? {size: maximumItemBytes + 1} : {sha256: '0'.repeat(64)}),
         })),
       })});
     } catch (error) {
@@ -462,6 +461,7 @@ let cancellations = 0;
 retentionTransport.cancel = async () => { cancellations++; };
 let remoteState = 'queued';
 retentionTransport.transfer = async () => retentionTransport._transfer(remoteState, 0);
+retentionTransport.transfers = async () => ({transfers: [retentionTransport._transfer(remoteState, 0)]});
 const retentionClient = new SyncClient(new TestSettings(), {
   configurationStore: new TestStore(), progressStore: new MemoryProgressStore(),
   transportFactory: () => retentionTransport,
@@ -470,38 +470,40 @@ const cancelledPublications = [];
 retentionClient.connect('publication-cancelled', (_client, id) => cancelledPublications.push(id));
 try {
   await retentionClient.start();
-  const active = await retentionClient.getTransfer(transferId);
-  retentionClient._transfers.record(active, true);
+  const active = retentionClient.getTransferForItem(retentionTransport.itemId);
+  assert(active?.state === 'queued', 'startup must restore remote tasks before cancellation');
   await retentionClient.cancelTransfer(transferId);
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 1,
-    'a looked-up remote task must remain cancellable and release its marker after DELETE');
+    'a restored remote task must remain cancellable and release its marker after DELETE');
   assert(cancelledPublications.length === 1 && cancelledPublications[0] === retentionTransport.itemId,
     'explicit cancellation must identify the publication whose durable intent should be removed');
 
-  await retentionClient.getTransfer(transferId);
-  retentionClient._transfers.record(active, true);
+  await retentionClient.restart();
   for (let index = 0; index < 1100; index++)
-    retentionClient._transfers.record({...active, transferId: GLib.uuid_string_random(), state: 'completed'}, true);
+    retentionClient._transfers.receive({...active, transferId: GLib.uuid_string_random(), state: 'completed'});
   assert(!retentionClient._transfers.get(transferId), 'fixture must evict the active UI record');
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 2, 'UI eviction must not silently disable remote cancellation');
 
-  await retentionClient.getTransfer(transferId);
-  retentionClient._transfers.record({...active, state: 'failed'}, true);
+  await retentionClient.restart();
+  await retentionClient._transfers.run(async ({track}) => {
+    track(active);
+    throw new Error('Unconfirmed local upload failure');
+  }).catch(() => {});
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 3,
     'a local failure is not proof that the server has finished the task');
-  await retentionClient.getTransfer(transferId);
+  await retentionClient.restart();
   remoteState = 'failed';
-  await retentionClient.getTransfer(transferId);
+  await retentionClient._poll();
   await retentionClient.cancelTransfer(transferId);
   assert(cancellations === 3,
     'confirmed server failure must release remote cancellation state');
 
   remoteState = 'queued';
   retentionTransport.cancel = async () => { throw new Error('network disconnected'); };
-  await retentionClient.getTransfer(transferId);
+  await retentionClient.restart();
   try { await retentionClient.cancelTransfer(transferId); } catch (_error) {}
   retentionTransport.cancel = async () => { cancellations++; };
   await retentionClient.cancelTransfer(transferId);
@@ -537,12 +539,14 @@ for (const phase of ['configuration', 'transport', 'status', 'device', 'profile'
   });
   if (phase === 'transfer-refresh')
     diagnosticClient._refreshActiveTransfers = fail;
+  const states = [];
+  diagnosticClient.connect('status-changed', (_client, state) => states.push(state));
   try {
     let caught = null;
     try { await diagnosticClient.start(); } catch (error) { caught = error; }
     const retryablePoll = ['changes', 'work', 'transfer-refresh'].includes(phase);
     assert(retryablePoll ? caught === null && diagnosticClient.ready
-        && diagnosticClient.connected && diagnosticClient.status.state === 'error'
+        && states.at(-1) === 'error'
       : caught === failure,
     `initialization must ${retryablePoll ? 'retain a usable connection after' : 'preserve'} the ${phase} failure`);
     const failed = records.filter(record => record.outcome === 'failed');

@@ -63,14 +63,17 @@ export class TransferSession {
     }
   }
 
-  observe(transfer) {
+  receive(transfer) {
+    this.check();
+    // Only server observations may release remote polling/cancellation ownership.
     if (TERMINAL.has(transfer.state))
       this._remoteIds.delete(transfer.transferId);
     else
       this._remoteIds.add(transfer.transferId);
+    this._record(transfer, true);
   }
 
-  record(transfer, immediate = false) {
+  _record(transfer, immediate = false) {
     this.check();
     this._tracker.update(transfer, {immediate});
     const waiter = this._waiters.get(transfer.transferId);
@@ -124,7 +127,7 @@ export class TransferSession {
     this.check();
     const transfer = this.get(id);
     if (transfer && !TERMINAL.has(transfer.state))
-      this.record({...transfer, state: 'cancelled', updatedAt: Date.now()}, true);
+      this._record({...transfer, state: 'cancelled', updatedAt: Date.now()}, true);
     // UI history may have evicted the transfer without ending its consumer.
     const waiter = this._waiters.get(id);
     if (waiter) {
@@ -155,17 +158,18 @@ export class TransferSession {
       if (transfer && transfer.transferId !== value.transferId)
         throw new Error('Synchronization transfer identity changed during an operation');
       transfer = {...value};
-      if (remote)
-        this.observe(transfer);
       this._operations.set(transfer.transferId, cancellable);
-      this.record(transfer, true);
+      if (remote)
+        this.receive(transfer);
+      else
+        this._record(transfer, true);
     };
     const update = (value, immediate = false) => {
       // I/O callbacks may arrive after abort; never throw into those callbacks.
       if (finished || !transfer || !this.current || !guard() || cancellable.is_cancelled())
         return;
       transfer = {...transfer, ...value, updatedAt: Date.now()};
-      this.record(transfer, immediate);
+      this._record(transfer, immediate);
     };
     try {
       check();
@@ -175,7 +179,7 @@ export class TransferSession {
     } catch (error) {
       this.check();
       if (transfer) {
-        this.record({...transfer,
+        this._record({...transfer,
           state: error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED) ? 'cancelled' : 'failed',
           updatedAt: Date.now(), errorCode: String(error.code ?? errorCode), errorMessage: error.message}, true);
       }
