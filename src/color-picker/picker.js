@@ -95,6 +95,7 @@ class ColorPicker extends St.Widget {
     this._onPicked = onPicked;
     this._previewFormat = previewFormat;
     this._closed = false;
+    this._confirming = false;
     this._sampling = false;
     this._pendingCoords = null;
     this._coords = [0, 0];
@@ -119,7 +120,6 @@ class ColorPicker extends St.Widget {
     Main.layoutManager.addTopChrome(this);
     this._grab = Main.pushModal(this, {actionMode: Shell.ActionMode.POPUP});
     if (!this._grab) {
-      Main.layoutManager.removeChrome(this);
       this.destroy();
       throw new Error('Unable to acquire the color picker modal grab');
     }
@@ -148,23 +148,37 @@ class ColorPicker extends St.Widget {
       x, y, 0, 0, this._scale,
       this._texture.get_width(), this._texture.get_height(),
     );
-    if (this._sampling)
-      return;
+    if (!this._sampling) {
+      this._sampling = this._drainSamples().finally(() => {
+        this._sampling = false;
+      });
+    }
+    return this._sampling;
+  }
 
-    this._sampling = true;
+  async _drainSamples() {
+    while (this._pendingCoords && !this._closed) {
+      const coords = this._pendingCoords;
+      this._pendingCoords = null;
+      this._coords = coords;
+      await this._captureSample(...coords);
+    }
+  }
+
+  async _confirm(coords = this._pendingCoords ?? this._coords) {
+    if (this._closed || this._confirming || !this._texture)
+      return;
+    this._confirming = true;
     try {
-      while (this._pendingCoords && !this._closed) {
-        const coords = this._pendingCoords;
-        this._pendingCoords = null;
-        await this._captureSample(...coords);
-      }
+      await this._sample(...coords);
+      if (!this._closed && this._rgb)
+        this._onPicked?.(this._rgb);
     } finally {
-      this._sampling = false;
+      this.close();
     }
   }
 
   async _captureSample(x, y) {
-    this._coords = [x, y];
     const region = sampleRegion(
       x,
       y,
@@ -223,15 +237,16 @@ class ColorPicker extends St.Widget {
   }
 
   vfunc_motion_event(event) {
+    if (this._confirming)
+      return Clutter.EVENT_STOP;
     const [x, y] = event.get_coords();
     this._sample(x, y).catch(error => logger.error('sample', error));
     return Clutter.EVENT_STOP;
   }
 
   vfunc_button_press_event(event) {
-    if (event.get_button() === Clutter.BUTTON_PRIMARY && this._rgb) {
-      this._onPicked?.(this._rgb);
-      this.close();
+    if (event.get_button() === Clutter.BUTTON_PRIMARY) {
+      this._confirm(event.get_coords()).catch(error => logger.error('pick', error));
     } else if (event.get_button() !== Clutter.BUTTON_PRIMARY) {
       this.close();
     }
@@ -244,6 +259,8 @@ class ColorPicker extends St.Widget {
       this.close();
       return Clutter.EVENT_STOP;
     }
+    if (this._confirming)
+      return Clutter.EVENT_STOP;
 
     const directions = new Map([
       [Clutter.KEY_Left, [-1, 0]],
@@ -274,15 +291,18 @@ class ColorPicker extends St.Widget {
       return Clutter.EVENT_STOP;
     }
 
-    if ((key === Clutter.KEY_Return || key === Clutter.KEY_space) && this._rgb) {
-      this._onPicked?.(this._rgb);
-      this.close();
+    if (key === Clutter.KEY_Return || key === Clutter.KEY_space) {
+      this._confirm().catch(error => logger.error('pick', error));
       return Clutter.EVENT_STOP;
     }
     return Clutter.EVENT_PROPAGATE;
   }
 
   close() {
+    this.destroy();
+  }
+
+  destroy() {
     if (this._closed)
       return;
     this._closed = true;
@@ -291,6 +311,6 @@ class ColorPicker extends St.Widget {
       Main.popModal(this._grab);
     this._grab = null;
     Main.layoutManager.removeChrome(this);
-    this.destroy();
+    super.destroy();
   }
 });

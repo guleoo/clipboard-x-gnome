@@ -1571,7 +1571,83 @@ async function interruptedScreenshots(extensionObject, uri) {
   }
 }
 
-async function colorsAndLifecycle(indicator, extensionObject) {
+export async function colorsAndLifecycle(indicator, extensionObject) {
+  const {ColorPicker} = await import(`${extensionObject.dir.get_uri()}/color-picker/picker.js`);
+  const swatches = new St.BoxLayout({style: 'spacing: 0;'});
+  swatches.add_child(new St.Widget({width: 80, height: 80, style: 'background-color: #ff0000;'}));
+  swatches.add_child(new St.Widget({width: 80, height: 80, style: 'background-color: #0000ff;'}));
+  swatches.set_position(200, 200);
+  Main.layoutManager.addTopChrome(swatches);
+  Main.overview.hide();
+  indicator.menu.close();
+  await Scripting.sleep(100);
+  try {
+    for (const mode of ['click', 'enter', 'space', 'escape', 'close', 'destroy']) {
+      const selected = [];
+      const picker = new ColorPicker(rgb => selected.push([...rgb]));
+      let release;
+      let pending;
+      try {
+        assert(await waitUntil(() => Boolean(picker._rgb) && !picker._sampling),
+          `${mode}: color picker did not finish its initial sample`);
+        const startX = 280 - 1 / picker._scale;
+        await picker._sample(startX, 240);
+        assert(JSON.stringify(picker._rgb) === '[255,0,0]', `${mode}: initial pixel must be red`);
+        const capture = picker._captureSample.bind(picker);
+        const gate = new Promise(resolve => { release = resolve; });
+        picker._captureSample = async (...coords) => {
+          await gate;
+          return capture(...coords);
+        };
+        const key = symbol => picker.vfunc_key_press_event({
+          get_key_symbol: () => symbol, get_state: () => 0,
+        });
+        // Arrow selection starts a sample before confirmation. Click must use
+        // its own position even while that earlier sample is still pending.
+        key(Clutter.KEY_Right);
+        pending = picker._sampling;
+        if (mode === 'click') {
+          picker.vfunc_button_press_event({
+            get_button: () => Clutter.BUTTON_PRIMARY, get_coords: () => [320, 240],
+          });
+        } else {
+          key(mode === 'space' ? Clutter.KEY_space : Clutter.KEY_Return);
+        }
+        key(Clutter.KEY_Return);
+        key(Clutter.KEY_space);
+        picker.vfunc_button_press_event({
+          get_button: () => Clutter.BUTTON_PRIMARY, get_coords: () => [240, 240],
+        });
+        picker.vfunc_motion_event({get_coords: () => [240, 240]});
+        key(Clutter.KEY_Left);
+        assert(selected.length === 0 && !picker._closed,
+          `${mode}: confirmation must wait for its selected pixel`);
+        if (mode === 'escape')
+          key(Clutter.KEY_Escape);
+        else if (mode === 'close')
+          picker.close();
+        else if (mode === 'destroy')
+          picker.destroy();
+        release();
+        await pending;
+        assert(await waitUntil(() => picker._closed), `${mode}: confirmation did not close the picker`);
+        if (['escape', 'close', 'destroy'].includes(mode)) {
+          assert(selected.length === 0, `${mode}: cancelled confirmation must not submit a color`);
+        } else {
+          assert(selected.length === 1 && JSON.stringify(selected[0]) === '[0,0,255]',
+            `${mode}: confirmation must submit its blue target exactly once, not the old red pixel`);
+        }
+        assert(!picker._grab, `${mode}: picker must release its modal grab`);
+      } finally {
+        picker.close();
+        release?.();
+        await pending;
+      }
+    }
+  } finally {
+    Main.layoutManager.removeChrome(swatches);
+    swatches.destroy();
+  }
   const history = indicator._historyPanel;
   const deviceId = indicator._settings.get_string('device-id');
   assert(/^[0-9a-f-]{36}$/u.test(deviceId), 'Opening Clipboard X Gnome did not create a DeviceId');
