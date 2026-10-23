@@ -38,6 +38,7 @@ export class ClipboardController extends EventEmitter {
     this._shutdown = null;
     this._captureInProgress = false;
     this._captureQueued = false;
+    this._captureCancellable = null;
     this._destroyed = false;
     this._suppressedHash = null;
     this._searchCache = new WeakMap();
@@ -103,15 +104,17 @@ export class ClipboardController extends EventEmitter {
     this._selectionSignal = this._selection.connect(
       'owner-changed',
       (_selection, selectionType) => {
-        if (selectionType === Meta.SelectionType.SELECTION_CLIPBOARD) {
-          if (this._captureInProgress) {
-            this._captureQueued = true;
-            return;
-          }
-          this.capture().catch(error => logger.error('capture', error));
-        }
+        if (selectionType === Meta.SelectionType.SELECTION_CLIPBOARD)
+          this._requestCapture();
       },
     );
+    for (const key of ['private-mode', 'sensitive-content-mode', 'excluded-apps',
+      'trim-whitespace', 'capture-size-limit-mib', 'text-preview-limit',
+      'thumbnail-size', 'thumbnail-byte-limit']) {
+      this._settingsSignals.push(this._settings.connect(`changed::${key}`, () => {
+        this._captureCancellable?.cancel();
+      }));
+    }
     for (const key of ['history-size', 'cache-size-mib', 'history-retention-days']) {
       this._settingsSignals.push(this._settings.connect(`changed::${key}`, () => {
         this._trim();
@@ -119,6 +122,15 @@ export class ClipboardController extends EventEmitter {
         this.emit('changed');
       }));
     }
+  }
+
+  _requestCapture() {
+    this._captureCancellable?.cancel();
+    if (this._captureInProgress) {
+      this._captureQueued = true;
+      return;
+    }
+    this.capture().catch(error => logger.error('capture', error));
   }
 
   async capture() {
@@ -131,6 +143,12 @@ export class ClipboardController extends EventEmitter {
       return null;
 
     this._captureInProgress = true;
+    const cancellable = new Gio.Cancellable();
+    this._captureCancellable = cancellable;
+    const current = () => !this._destroyed && !cancellable.is_cancelled()
+      && !this._settings.get_boolean('private-mode');
+    let item = null;
+    let committed = false;
     try {
       const availableMimeTypes = this._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
       const sensitive = SensitiveClipboardMimeTypes.some(mimeType => availableMimeTypes.includes(mimeType));
@@ -151,12 +169,15 @@ export class ClipboardController extends EventEmitter {
           continue;
         let bytes;
         try {
-          bytes = await this._readSelectionContent(mimeType, this._captureLimitBytes());
+          bytes = await this._readSelectionContent(mimeType, this._captureLimitBytes(), cancellable);
         } catch (error) {
-          if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
-            logger.warn('read-representation', error);
+          if (!current() || error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+            return null;
+          logger.warn('read-representation', error);
           continue;
         }
+        if (!current())
+          return null;
         if (!bytes || bytes.get_size() === 0)
           continue;
         seenMimeTypes.add(normalizedMimeType);
@@ -171,7 +192,7 @@ export class ClipboardController extends EventEmitter {
         return null;
 
       const identity = ensureDeviceIdentity(this._settings);
-      const item = ClipboardItem.fromRepresentations(capturedValues, {
+      item = ClipboardItem.fromRepresentations(capturedValues, {
         textPreviewLimit: this._settings.get_uint('text-preview-limit'),
         originDeviceId: identity.deviceId,
         originDeviceTag: identity.deviceTag,
@@ -186,11 +207,20 @@ export class ClipboardController extends EventEmitter {
           return null;
       }
 
-      await this._prepareItem(item);
-      if (this._destroyed)
+      await this._prepareItem(item, cancellable);
+      if (!current())
         return null;
-      return this.add(item, 'local');
+      const retained = this.add(item, 'local');
+      committed = true;
+      return retained;
+    } catch (error) {
+      if (!current() || error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        return null;
+      throw error;
     } finally {
+      if (item && !committed)
+        await this._store.discard([item]).catch(error => logger.warn('discard-content', error));
+      this._captureCancellable = null;
       this._captureInProgress = false;
       if (this._captureQueued && !this._destroyed) {
         this._captureQueued = false;
@@ -351,7 +381,7 @@ export class ClipboardController extends EventEmitter {
       this._savePending = false;
   }
 
-  async _prepareItem(item) {
+  async _prepareItem(item, cancellable = this._cancellable) {
     if (!item.isImage || item.sensitive || item.primary.mimeType === 'image/svg+xml')
       return;
 
@@ -362,7 +392,7 @@ export class ClipboardController extends EventEmitter {
         representation.bytes,
         this._settings.get_uint('thumbnail-size'),
         this._settings.get_uint('thumbnail-byte-limit'),
-        this._cancellable,
+        cancellable,
       );
       const digest = sha256(thumbnail.bytes);
       const preview = {
@@ -375,8 +405,8 @@ export class ClipboardController extends EventEmitter {
         derivedFrom: representation.id,
       };
       await this._store.stage(preview,
-        path => writeFile(Gio.File.new_for_path(path), thumbnail.bytes, this._cancellable),
-        this._cancellable);
+        path => writeFile(Gio.File.new_for_path(path), thumbnail.bytes, cancellable),
+        cancellable);
       item.preview = preview;
     } catch (error) {
       if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
@@ -385,7 +415,7 @@ export class ClipboardController extends EventEmitter {
     }
   }
 
-  _readSelectionContent(mimeType, maximumBytes) {
+  _readSelectionContent(mimeType, maximumBytes, cancellable = this._cancellable) {
     return new Promise((resolve, reject) => {
       const output = Gio.MemoryOutputStream.new_resizable();
       this._selection.transfer_async(
@@ -393,7 +423,7 @@ export class ClipboardController extends EventEmitter {
         mimeType,
         maximumBytes + 1,
         output,
-        this._cancellable,
+        cancellable,
         (selection, result) => {
           try {
             if (!selection.transfer_finish(result))
@@ -501,6 +531,7 @@ export class ClipboardController extends EventEmitter {
     // Never save an incomplete startup snapshot over the existing history.
     const snapshot = !this._loading && this._savePending ? [...this._items] : null;
     this._destroyed = true;
+    this._captureCancellable?.cancel();
     if (this._saveTimeout)
       clearTimeout(this._saveTimeout);
     this._saveTimeout = 0;
