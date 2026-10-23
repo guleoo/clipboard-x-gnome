@@ -130,14 +130,16 @@ they must not include tests, protocol source, dictionaries, or the central serve
 
 ## CI and local packages
 
-The [CI workflow](.github/workflows/ci.yml) runs on every push (branches and tags) and pull request in a
+The [CI workflow](.github/workflows/ci.yml) runs on every branch push and pull request in a
 Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
 regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
 contains exactly the runtime files and compiled catalogs.
 Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
 after validation. CI only validates and retains artifacts; it never publishes a release.
 The separate [Release workflow](.github/workflows/release.yml) runs only when a `v*` tag is pushed.
-It repeats the same checks at the tagged commit and publishes only after both jobs succeed.
+It runs the same checks at the tagged commit and publishes only after both jobs succeed.
+Tag pushes do not trigger ordinary CI. Pushing to a branch with an open pull request still runs
+both push and pull request verification intentionally.
 Both entry points use the shared [verification workflow](.github/workflows/verify.yml); update that
 definition when changing the build, test matrix, or package checks.
 Ordinary branch pushes and pull requests cannot publish a release.
