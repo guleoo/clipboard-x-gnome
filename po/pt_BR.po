@@ -843,6 +843,15 @@ msgid "Slow"
 msgstr "Lenta"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Número máximo de palavras"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Textos que excedem este limite não são abertos no modo de seleção de palavras."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Palavras demais. Use menos texto ou aumente o limite nas preferências."
+
 msgid "Show source text preview"
 msgstr "Mostrar prévia do texto original"
 

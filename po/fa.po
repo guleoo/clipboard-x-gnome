@@ -831,6 +831,15 @@ msgid "Slow"
 msgstr "آهسته"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "حداکثر تعداد واژه‌ها"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "متن‌هایی که از این حد بگذرند در حالت انتخاب واژه باز نمی‌شوند."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "تعداد واژه‌ها بیش از حد است. متن کوتاه‌تری انتخاب کنید یا حد را در ترجیحات افزایش دهید."
+
 msgid "Show source text preview"
 msgstr "نمایش پیش‌نمایش متن اصلی"
 

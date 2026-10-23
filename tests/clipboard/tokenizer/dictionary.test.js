@@ -200,6 +200,9 @@ try {
     tokenizeText('注销 密钥').map(token => token.text),
     'a missing display-language dictionary should fall back to the system tokenizer',
   );
+  const systemLimit = await systemTokenizer.tokenize('one two', {maximumTokens: 1})
+    .then(() => null, error => error);
+  assert(systemLimit?.code === 'word_limit_exceeded', 'System segmentation must enforce the word limit');
 
   GLib.file_set_contents(importSource.get_path(), [
     '# locale: ja',
@@ -460,6 +463,12 @@ try {
   assertEqual((await concurrent.tokenize('注销密钥', {revision: 1})).map(token => token.text),
     ['注销', '密钥'], 'late old loads must not overwrite the current cache');
   assert(requests.length === 2, 'cached requests must not reload dictionary files');
+  const dictionaryLimit = await concurrent.tokenize('注销密钥', {revision: 1, maximumTokens: 1})
+    .then(() => null, error => error);
+  assert(dictionaryLimit?.code === 'word_limit_exceeded', 'Dictionary segmentation must enforce the word limit');
+  assertEqual((await concurrent.tokenize('注销密钥', {revision: 1, maximumTokens: 2})).map(token => token.text),
+    ['注销', '密钥'], 'Increasing the word limit must take effect without changing the dictionary');
+  assert(requests.length === 2, 'Changing only the word limit must reuse the loaded dictionary');
 
   const failed = concurrent.tokenize('注销密钥', {revision: 2}).then(() => null, error => error);
   await Promise.resolve();

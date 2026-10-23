@@ -833,6 +833,15 @@ msgid "Slow"
 msgstr "低速"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "単語数の上限"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "単語数が上限を超えるテキストは、単語選択モードで開きません。"
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "単語数が多すぎます。対象のテキストを短くするか、設定で上限を増やしてください。"
+
 msgid "Show source text preview"
 msgstr "元のテキストのプレビューを表示"
 

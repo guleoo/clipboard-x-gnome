@@ -232,6 +232,8 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     const tokenizer = new Adw.PreferencesGroup({title: _('Word Selection')});
     page.add(tokenizer);
     tokenizer.add(this._rows.switch('tokenizer-show-source-preview', _('Show source text preview')));
+    tokenizer.add(this._rows.spin('tokenizer-word-limit', _('Maximum words'), 1, 10000, 100,
+      _('Texts exceeding this limit are not opened in word selection mode.')));
 
     const privacy = new Adw.PreferencesGroup({
       title: _('Privacy'),

@@ -836,6 +836,15 @@ msgid "Slow"
 msgstr "Motela"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Gehieneko hitz kopurua"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Muga hau gainditzen duten testuak ez dira hitzak hautatzeko moduan irekitzen."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Hitz gehiegi daude. Erabili testu laburragoa edo handitu muga hobespenetan."
+
 msgid "Show source text preview"
 msgstr "Erakutsi jatorrizko testuaren aurrebista"
 

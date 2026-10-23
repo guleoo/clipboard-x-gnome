@@ -19,7 +19,7 @@ export class Tokenizer {
     this._stopWatching = null;
   }
 
-  async tokenize(text, {revision = 0, dictionaryFiles = []} = {}) {
+  async tokenize(text, {revision = 0, dictionaryFiles = [], maximumTokens = Infinity} = {}) {
     this._cancellable.set_error_if_cancelled();
     if (this._store.watch) {
       this._watching ??= this._store.watch(() => {
@@ -70,8 +70,9 @@ export class Tokenizer {
     }
     this._cancellable.set_error_if_cancelled();
     if (!loaded.lexicon || loaded.lexicon.size === 0)
-      return tokenizeText(text);
+      return tokenizeText(text, {maximumTokens});
     return tokenizeText(text, {
+      maximumTokens,
       segmentWordRun: (value, fallback) => loaded.lexicon.segment(
         value,
         loaded.systemEnabled ? fallback : [],

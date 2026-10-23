@@ -824,6 +824,15 @@ msgid "Slow"
 msgstr "慢速"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "最大分词数量"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "分词结果超过此数量时，不打开分词面板。"
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "分词数量过多。请缩小文本范围，或在设置中提高上限。"
+
 msgid "Show source text preview"
 msgstr "显示原文预览"
 

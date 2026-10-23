@@ -837,6 +837,15 @@ msgid "Slow"
 msgstr "Lassú"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Szavak maximális száma"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "A korlátot meghaladó szövegek nem nyílnak meg szóválasztási módban."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Túl sok szó. Használjon rövidebb szöveget, vagy növelje a korlátot a beállításokban."
+
 msgid "Show source text preview"
 msgstr "Eredeti szöveg előnézetének megjelenítése"
 

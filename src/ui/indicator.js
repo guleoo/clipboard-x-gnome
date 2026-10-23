@@ -158,6 +158,12 @@ class Indicator extends PanelMenu.Button {
     this._phraseLimitSignal = settings.connect('changed::saved-phrase-limit', () => {
       this._quickPhrases.trim().catch(error => this._actions.reportError(error));
     });
+    this._wordLimitSignal = settings.connect('changed::tokenizer-word-limit', () => {
+      this._tokenizerRequest++;
+      if (this._panelManager.is('tokenizer')
+          && this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit'))
+        this._panelManager.reset();
+    });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
       if (!this.menu.actor.visible)
         this._panelManager.hidden();
@@ -305,8 +311,11 @@ class Indicator extends PanelMenu.Button {
       this._panelManager.show('tokenizer', state);
       this._tokenizer.focusStart();
     } catch (error) {
-      if (current())
-        this._actions.reportError(error);
+      if (current()) {
+        this._actions.reportError(error.code === 'word_limit_exceeded'
+          ? new Error(_('Too many words. Use less text or increase the limit in Preferences.'))
+          : error);
+      }
     }
   }
 
@@ -512,6 +521,7 @@ class Indicator extends PanelMenu.Button {
       this._textVerticalOffsetSignal,
       this._preservePanelStateSignal,
       this._phraseLimitSignal,
+      this._wordLimitSignal,
     ]) {
       if (signal)
         this._settings.disconnect(signal);
@@ -525,6 +535,7 @@ class Indicator extends PanelMenu.Button {
     this._textVerticalOffsetSignal = 0;
     this._preservePanelStateSignal = 0;
     this._phraseLimitSignal = 0;
+    this._wordLimitSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;

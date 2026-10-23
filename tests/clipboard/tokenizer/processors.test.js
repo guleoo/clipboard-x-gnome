@@ -45,3 +45,30 @@ assert(numericTokens.length === 4096 && numericTokens.every((token, index) =>
   token.type === 'number' && token.text === String(index)
     && numericList.slice(token.start, token.end) === token.text),
 'Dense numeric lists must retain every token, in order, with exact source offsets');
+
+function assertWordLimit(operation) {
+  try {
+    operation();
+  } catch (error) {
+    assert(error.code === 'word_limit_exceeded', `Unexpected word limit error: ${error.message}`);
+    return;
+  }
+  throw new Error('Exceeding the word limit must fail instead of returning a partial result');
+}
+
+for (const text of ['one two three', '1 2 3', 'one, two!', '✅ 🔥 ⭐']) {
+  const complete = tokenizeText(text);
+  assertEqual(tokenizeText(text, {maximumTokens: complete.length}), complete,
+    'A result exactly at the limit must retain all words, punctuation, symbols and offsets');
+  assertWordLimit(() => tokenizeText(text, {maximumTokens: complete.length - 1}));
+}
+assertEqual(tokenizeText('', {maximumTokens: 1}), [], 'Empty text remains valid under the word limit');
+assertEqual(tokenizeText('https://example.com/123/user@example.com', {maximumTokens: 1})
+  .map(token => token.text), ['https://example.com/123/user@example.com'],
+  'Only accepted tokens count toward the limit, not nested email and number candidates');
+let segmentedRuns = 0;
+assertWordLimit(() => tokenizeText('alpha beta gamma delta epsilon', {
+  maximumTokens: 2,
+  segmentWordRun: word => { segmentedRuns++; return [word]; },
+}));
+assert(segmentedRuns === 3, 'Processing must stop at the first excess token, not segment the remaining text');

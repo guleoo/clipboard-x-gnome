@@ -23,6 +23,8 @@ const settings = new Gio.Settings({
 });
 assert(settings.get_string('sensitive-content-mode') === 'discard',
   'sensitive clipboard content must not be recorded by default');
+assert(settings.get_uint('tokenizer-word-limit') === 2000, 'Word selection must default to at most 2000 items');
+settings.set_uint('tokenizer-word-limit', 3000);
 settings.set_string('sensitive-content-mode', 'memory');
 assert(!settings.get_boolean('sync-use-sha256sum'), 'external file verification must be disabled by default');
 settings.set_boolean('sync-use-sha256sum', true);

@@ -839,6 +839,15 @@ msgid "Slow"
 msgstr "Langzaam"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximaal aantal woorden"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Teksten die deze limiet overschrijden, worden niet geopend in de woordselectiemodus."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Te veel woorden. Gebruik minder tekst of verhoog de limiet in de voorkeuren."
+
 msgid "Show source text preview"
 msgstr "Voorbeeld van oorspronkelijke tekst tonen"
 

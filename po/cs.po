@@ -834,6 +834,15 @@ msgid "Slow"
 msgstr "Pomalá"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Maximální počet slov"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Texty překračující tento limit se v režimu výběru slov neotevřou."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Příliš mnoho slov. Použijte kratší text nebo zvyšte limit v předvolbách."
+
 msgid "Show source text preview"
 msgstr "Zobrazit náhled původního textu"
 

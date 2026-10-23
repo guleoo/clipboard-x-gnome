@@ -840,6 +840,15 @@ msgid "Slow"
 msgstr "Hidas"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Sanojen enimmäismäärä"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Tämän rajan ylittäviä tekstejä ei avata sanojen valintatilassa."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Liikaa sanoja. Käytä lyhyempää tekstiä tai suurenna rajaa asetuksissa."
+
 msgid "Show source text preview"
 msgstr "Näytä alkuperäisen tekstin esikatselu"
 

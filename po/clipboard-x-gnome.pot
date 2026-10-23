@@ -854,6 +854,15 @@ msgid "Slow"
 msgstr ""
 
 #: src/ui/settings/window.js:234
+msgid "Maximum words"
+msgstr ""
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr ""
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr ""
+
 msgid "Show source text preview"
 msgstr ""
 

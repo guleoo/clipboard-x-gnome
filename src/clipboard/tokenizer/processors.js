@@ -19,46 +19,19 @@ export function tokenizeText(text, localeOrOptions = undefined) {
   const options = localeOrOptions && typeof localeOrOptions === 'object'
     ? localeOrOptions
     : {locale: localeOrOptions};
-  const {locale = undefined, segmentWordRun = null} = options;
-  const candidates = [];
-  for (const rule of SPECIAL_TOKEN_RULES) {
-    rule.pattern.lastIndex = 0;
-    for (const match of text.matchAll(rule.pattern)) {
-      let value = match[0];
-      if (rule.type === 'url')
-        value = value.replace(/[),.;:!?\]}，。；：！？]+$/gu, '');
-      if (!value)
-        continue;
-      const start = match.index;
-      const end = start + value.length;
-      if (rule.type === 'number') {
-        const previous = start > 0 ? text[start - 1] : '';
-        const next = end < text.length ? text[end] : '';
-        if (IDENTIFIER_BOUNDARY_PATTERN.test(previous) || IDENTIFIER_BOUNDARY_PATTERN.test(next))
-          continue;
-      }
-      candidates.push({text: value, start, end, type: rule.type, priority: rule.priority});
-    }
-  }
-
-  candidates.sort((left, right) => left.start - right.start
-    || right.end - left.end
-    || left.priority - right.priority);
-  const specials = [];
-  let previousEnd = 0;
-  for (const candidate of candidates) {
-    // Candidates are ordered by start; accepted intervals never overlap. Only
-    // the last accepted end can intersect this candidate, not earlier tokens.
-    if (candidate.start < previousEnd)
-      continue;
-    specials.push(candidate);
-    previousEnd = candidate.end;
-  }
+  const {locale = undefined, segmentWordRun = null, maximumTokens = Infinity} = options;
+  if (maximumTokens !== Infinity && (!Number.isSafeInteger(maximumTokens) || maximumTokens < 1))
+    throw new RangeError('The word limit must be a positive integer');
 
   const wordSegmenter = new Intl.Segmenter(locale, {granularity: 'word'});
   const graphemeSegmenter = new Intl.Segmenter(locale, {granularity: 'grapheme'});
   const tokens = [];
   const addToken = (tokenText, start, type) => {
+    if (tokens.length >= maximumTokens) {
+      const error = new RangeError('Text exceeds the word selection limit');
+      error.code = 'word_limit_exceeded';
+      throw error;
+    }
     tokens.push({text: tokenText, start, end: start + tokenText.length, type});
   };
   const addBaselineTokens = (slice, start) => {
@@ -125,15 +98,66 @@ export function tokenizeText(text, localeOrOptions = undefined) {
   };
 
   let cursor = 0;
-  for (const special of specials) {
+  for (const special of specialTokens(text)) {
     addOrdinaryTokens(cursor, special.start);
-    tokens.push({text: special.text, start: special.start, end: special.end, type: special.type});
+    addToken(special.text, special.start, special.type);
     cursor = special.end;
   }
   addOrdinaryTokens(cursor, text.length);
   return tokens
     .sort((left, right) => left.start - right.start)
     .map((token, index) => Object.freeze({...token, index}));
+}
+
+function* specialCandidates(text, rule) {
+  rule.pattern.lastIndex = 0;
+  for (const match of text.matchAll(rule.pattern)) {
+    let value = match[0];
+    if (rule.type === 'url')
+      value = value.replace(/[),.;:!?\]}，。；：！？]+$/gu, '');
+    if (!value)
+      continue;
+    const start = match.index;
+    const end = start + value.length;
+    if (rule.type === 'number') {
+      const previous = start > 0 ? text[start - 1] : '';
+      const next = end < text.length ? text[end] : '';
+      if (IDENTIFIER_BOUNDARY_PATTERN.test(previous) || IDENTIFIER_BOUNDARY_PATTERN.test(next))
+        continue;
+    }
+    yield {text: value, start, end, type: rule.type, priority: rule.priority};
+  }
+}
+
+function* specialTokens(text) {
+  // Each rule already yields in source order. Merge three lookahead values
+  // instead of collecting and sorting every match before checking the limit.
+  const streams = SPECIAL_TOKEN_RULES.map(rule => {
+    const values = specialCandidates(text, rule);
+    return {values, current: values.next()};
+  });
+  let previousEnd = 0;
+  while (true) {
+    let selected = null;
+    for (const stream of streams) {
+      if (stream.current.done)
+        continue;
+      const candidate = stream.current.value;
+      const previous = selected?.current.value;
+      if (!previous || candidate.start < previous.start
+          || (candidate.start === previous.start && (candidate.end > previous.end
+            || (candidate.end === previous.end && candidate.priority < previous.priority))))
+        selected = stream;
+    }
+    if (!selected)
+      return;
+    const candidate = selected.current.value;
+    if (candidate.start >= previousEnd) {
+      previousEnd = candidate.end;
+      yield candidate;
+    }
+    selected.current = selected.values.next();
+  }
 }
 
 export function composeTokens(source, tokens, selectedIndexes) {

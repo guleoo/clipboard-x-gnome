@@ -839,6 +839,15 @@ msgid "Slow"
 msgstr "Медленная"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "Максимальное количество слов"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Тексты, превышающие этот лимит, не открываются в режиме выбора слов."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Слишком много слов. Используйте более короткий текст или увеличьте лимит в настройках."
+
 msgid "Show source text preview"
 msgstr "Показывать исходный текст"
 

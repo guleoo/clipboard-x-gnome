@@ -833,6 +833,15 @@ msgid "Slow"
 msgstr "Yavaş"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "En fazla sözcük sayısı"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "Bu sınırı aşan metinler sözcük seçimi modunda açılmaz."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "Çok fazla sözcük var. Daha kısa bir metin kullanın veya tercihlerden sınırı artırın."
+
 msgid "Show source text preview"
 msgstr "Kaynak metnin önizlemesini göster"
 

@@ -107,6 +107,7 @@ export default class ClipboardXGnomeExtension extends Extension {
       pasteText: text => this._pasteText(text),
       typeText: text => this._terminalInput.type(text),
       tokenizeText: text => this._textTokenizer.tokenize(text, {
+        maximumTokens: this._settings.get_uint('tokenizer-word-limit'),
         revision: this._settings.get_uint('tokenizer-dictionary-revision'),
         dictionaryFiles: this._settings.get_strv('tokenizer-dictionary-files'),
       }),

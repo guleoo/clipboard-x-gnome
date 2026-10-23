@@ -826,6 +826,15 @@ msgid "Slow"
 msgstr "ನಿಧಾನ"
 
 #: src/ui/settings/window.js:194
+msgid "Maximum words"
+msgstr "ಗರಿಷ್ಠ ಪದಗಳ ಸಂಖ್ಯೆ"
+
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr "ಈ ಮಿತಿಯನ್ನು ಮೀರಿದ ಪಠ್ಯಗಳನ್ನು ಪದ ಆಯ್ಕೆ ಮೋಡ್‌ನಲ್ಲಿ ತೆರೆಯಲಾಗುವುದಿಲ್ಲ."
+
+msgid "Too many words. Use less text or increase the limit in Preferences."
+msgstr "ಪದಗಳು ತುಂಬಾ ಹೆಚ್ಚಾಗಿವೆ. ಕಡಿಮೆ ಪಠ್ಯವನ್ನು ಬಳಸಿ ಅಥವಾ ಆದ್ಯತೆಗಳಲ್ಲಿ ಮಿತಿಯನ್ನು ಹೆಚ್ಚಿಸಿ."
+
 msgid "Show source text preview"
 msgstr "ಮೂಲ ಪಠ್ಯದ ಮುನ್ನೋಟ ತೋರಿಸಿ"
 
