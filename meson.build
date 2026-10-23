@@ -103,7 +103,10 @@ test('clipboard-storage', test_runner, args: ['-m', meson.current_source_dir() /
 test('color-picker', test_runner, args: ['-m', meson.current_source_dir() / 'tests/color-picker/color.test.js'])
 test('screenshot', test_runner,
   args: ['-m', meson.current_source_dir() / 'tests/screenshot/tools.test.js'],
-  env: {'CBX_TEST_BUILD_DIR': meson.project_build_root()})
+  env: {
+    'CBX_TEST_BUILD_DIR': meson.project_build_root(),
+    'CBX_TEST_PYTHON': find_program('python3').full_path(),
+  })
 test('sync-policy', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/policy.test.js'])
 test('sync-protocol', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/protocol.test.js'])
 test('sync-http-client', test_runner, args: ['-m', meson.current_source_dir() / 'tests/sync/http-client.test.js'])

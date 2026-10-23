@@ -247,7 +247,6 @@ standardInputStream.close(null);
 const standardInputProcess = await launchEditor({
   command: `/usr/bin/cmp - %i '${standardInputFile.get_path()}'`,
   uri: standardInputFile.get_uri(),
-  bytes: standardInputBytes,
 });
 await new Promise((resolve, reject) => {
   standardInputProcess.wait_check_async(null, (process, result) => {
@@ -261,13 +260,67 @@ await new Promise((resolve, reject) => {
 });
 standardInputFile.delete(null);
 
+// More than a pipe buffer: the reader waits for a callback after launch returns.
+// Startup must not wait for the editor to consume stdin or block the main loop.
+const delayedInput = new GLib.Bytes(Uint8Array.from(
+  {length: 1024 * 1024}, (_, index) => index % 251,
+));
+const [delayedFile, delayedStream] = Gio.File.new_tmp('cbx-editor-delayed-XXXXXX');
+const releaseFile = Gio.File.new_for_path(`${delayedFile.get_path()}.release`);
+const fixture = Gio.File.new_for_uri(import.meta.url).get_parent()
+  .get_child('fixtures').get_child('editor-stdin.py').get_path();
+let releaseSource = 0;
+let delayedProcess = null;
+try {
+  delayedStream.get_output_stream().write_all(delayedInput.get_data(), null);
+  delayedStream.close(null);
+  const argv = [GLib.getenv('CBX_TEST_PYTHON'), fixture, delayedFile.get_path(), releaseFile.get_path()];
+  assert(argv[0], 'Screenshot tests require a configured Python executable');
+  delayedProcess = await launchEditor({
+    command: `${argv.map(value => GLib.shell_quote(value)).join(' ')} %i`,
+    uri: delayedFile.get_uri(),
+  });
+  releaseSource = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+    releaseSource = 0;
+    releaseFile.replace_contents('ready', null, false, Gio.FileCreateFlags.PRIVATE, null);
+    return GLib.SOURCE_REMOVE;
+  });
+  await new Promise((resolve, reject) => {
+    delayedProcess.wait_check_async(null, (process, result) => {
+      try {
+        process.wait_check_finish(result);
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+  assert(releaseFile.query_exists(null), 'Editor startup must keep the parent main loop responsive');
+} finally {
+  if (releaseSource)
+    GLib.Source.remove(releaseSource);
+  if (delayedProcess)
+    delayedProcess.force_exit();
+  if (!delayedStream.is_closed())
+    delayedStream.close(null);
+  delayedFile.delete(null);
+  if (releaseFile.query_exists(null))
+    releaseFile.delete(null);
+}
+
 await assertRejects(
   launchEditor({
     command: 'gradia %i',
     uri: 'https://example.test/image.png',
   }),
-  /requires image data/u,
-  'standard-input command without image bytes or a local file',
+  /requires a local file/u,
+  'standard-input command requires a local file',
+);
+
+await assertRejects(
+  launchEditor({command: '/usr/bin/true %i', uri: standardInputFile.get_uri()}),
+  /No such file|not found|Failed to open/iu,
+  'Missing standard-input image must be reported before starting the editor',
 );
 
 let missingEditorRejected = false;

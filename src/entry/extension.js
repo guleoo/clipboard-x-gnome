@@ -303,7 +303,7 @@ export default class ClipboardXGnomeExtension extends Extension {
       check();
     }
     if (settings.get_boolean('screenshot-open-editor')) {
-      await this._launchEditor(uri, item.primary?.bytes);
+      await this._launchEditor(uri);
       check();
     }
   }
@@ -331,7 +331,7 @@ export default class ClipboardXGnomeExtension extends Extension {
         'The original image has not been downloaded and synchronization is disabled');
     }
     const path = await this._content.file(item);
-    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes, command);
+    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), command);
   }
 
   async _pasteItem(item) {
@@ -360,13 +360,12 @@ export default class ClipboardXGnomeExtension extends Extension {
     return null;
   }
 
-  _launchEditor(uri, bytes = null, command = this._editorCommand()) {
+  _launchEditor(uri, command = this._editorCommand()) {
     if (!command)
       return null;
     return launchEditor({
       command,
       uri,
-      bytes,
     });
   }
 
