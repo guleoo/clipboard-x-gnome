@@ -36,6 +36,8 @@ export class QuickPhrasesPanel {
         reportError(error);
     };
     this._formVisible = false;
+    this._formRevision = 0;
+    this._saveRequest = 0;
     this._buttons = [];
     this._rows = [];
     this._focusIdleId = 0;
@@ -84,6 +86,7 @@ export class QuickPhrasesPanel {
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
     this.entry.get_hint_actor()._clipboardXGnomeTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
+    this.entry.clutter_text.connect('text-changed', () => this._formRevision++);
     this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
       const key = event.get_key_symbol();
       if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
@@ -329,14 +332,20 @@ export class QuickPhrasesPanel {
   }
 
   async save() {
-    if (!this.entry.get_text().trim())
+    const text = this.entry.get_text();
+    if (!text.trim())
       return false;
-    await this._store.add(this.entry.get_text());
+    const revision = this._formRevision;
+    const request = ++this._saveRequest;
+    await this._store.add(text);
     if (this._destroyed)
       return true;
-    this._setFormVisible(false);
+    const current = this._formVisible && revision === this._formRevision && request === this._saveRequest;
+    if (current)
+      this._setFormVisible(false);
     this._refresh();
-    this.focus();
+    if (current)
+      this.focus();
     return true;
   }
 
@@ -363,6 +372,7 @@ export class QuickPhrasesPanel {
   }
 
   _setFormVisible(visible) {
+    this._formRevision++;
     this._formVisible = visible;
     this.entry.set_text('');
   }

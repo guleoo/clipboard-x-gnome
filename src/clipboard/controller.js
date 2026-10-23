@@ -80,7 +80,8 @@ export class ClipboardController extends EventEmitter {
         else
           this._items.push(item);
       }
-      this._trim();
+      if (this._trim())
+        this._scheduleSave();
     } catch (error) {
       if (!error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)) {
         this._error = error;
@@ -200,6 +201,7 @@ export class ClipboardController extends EventEmitter {
 
   async addFromUri(uri, source = 'screenshot') {
     const item = await this.createFromUri(uri);
+    await this._prepareItem(item);
     return this.add(item, source);
   }
 
@@ -221,7 +223,6 @@ export class ClipboardController extends EventEmitter {
       originDeviceTag: identity.deviceTag,
       originDeviceIconKind: identity.deviceIconKind,
     });
-    await this._prepareItem(item);
     return item;
   }
 
@@ -471,7 +472,9 @@ export class ClipboardController extends EventEmitter {
       this._items.splice(index, 1);
     }
     const retained = new Set(this._items);
-    this._discardContent(previous.filter(item => !retained.has(item)));
+    const removed = previous.filter(item => !retained.has(item));
+    this._discardContent(removed);
+    return removed.length > 0;
   }
 
   _scheduleSave() {

@@ -118,6 +118,7 @@ export async function run() {
     ['clipboard sources and privacy', clipboardSources],
     ['image editing and synchronization', images],
     ['durable incoming snapshots', receiving],
+    ['startup history pruning', startupHistory],
     ['screenshot pipeline', screenshots],
     ['color picking and extension lifecycle', colorsAndLifecycle],
   ]) {
@@ -293,6 +294,7 @@ async function panels(indicator) {
       quickPhrases._store.add = addPhrase;
     }
     indicator._openPhrases();
+    await phraseDrafts(quickPhrases);
     await indicator._quickPhrases.replace([]);
     indicator._quickPhrases.focusStart();
     await Scripting.sleep(50);
@@ -523,6 +525,80 @@ async function historyEntries(indicator, extensionObject) {
     indicator._actions.pasteItem = originalPasteItem;
     history._multipleDevices = multipleDevices;
     indicator.menu.close();
+  }
+}
+
+async function phraseDrafts(panel) {
+  const originalAdd = panel._store.add;
+  const operations = [];
+  panel._store.add = async text => {
+    let release;
+    const gate = new Promise(resolve => { release = resolve; });
+    const operation = {text, release, error: null};
+    operations.push(operation);
+    await gate;
+    if (operation.error)
+      throw operation.error;
+    return originalAdd.call(panel._store, text);
+  };
+  const submit = () => {
+    const promise = panel.save();
+    const operation = operations.at(-1);
+    operation.promise = promise;
+    return operation;
+  };
+  try {
+    for (const change of ['edit', 'edit-back', 'reopen']) {
+      panel.showForm();
+      const original = `Submitted phrase ${change}`;
+      panel.entry.set_text(original);
+      const saving = submit();
+      if (change === 'reopen') {
+        panel.hideForm();
+        panel.showForm();
+      }
+      panel.entry.set_text(`Newer draft ${change}`);
+      if (change === 'edit-back')
+        panel.entry.set_text(original);
+      const draft = panel.entry.get_text();
+      saving.release();
+      await saving.promise;
+      assert(panel.phrases.includes(original) && panel.formVisible && panel.entry.get_text() === draft,
+        `Completing an old save must persist its phrase without clearing a newer ${change} draft`);
+    }
+    for (const edit of [false, true]) {
+      panel.showForm();
+      panel.entry.set_text(`Overlapping phrase ${edit}`);
+      const first = submit();
+      if (edit)
+        panel.entry.set_text('Latest overlapping draft');
+      const draft = panel.entry.get_text();
+      const latest = submit();
+      first.release();
+      await first.promise;
+      assert(panel.formVisible && panel.entry.get_text() === draft,
+        'An earlier overlapping save must not close the latest submitted form');
+      latest.release();
+      await latest.promise;
+      assert(panel.phrases.includes(draft) && !panel.formVisible && panel.entry.get_text() === '',
+        'The latest unchanged successful save must close and clear its own form');
+    }
+    panel.showForm();
+    panel.entry.set_text('Draft retained after failed persistence');
+    const failed = submit();
+    failed.error = new Error('Injected phrase save failure');
+    failed.release();
+    let error;
+    try { await failed.promise; } catch (caught) { error = caught; }
+    assert(error === failed.error && panel.formVisible
+        && panel.entry.get_text() === 'Draft retained after failed persistence',
+      'A failed save must leave the submitted draft visible for retry');
+  } finally {
+    for (const operation of operations)
+      operation.release();
+    await Promise.allSettled(operations.map(operation => operation.promise));
+    panel._store.add = originalAdd;
+    panel.hideForm();
   }
 }
 
@@ -1185,6 +1261,79 @@ async function receiving(indicator, extensionObject) {
   }
 }
 
+async function startupHistory(indicator, extensionObject) {
+  const {ClipboardController} = await import(`${extensionObject.dir.get_uri()}/clipboard/controller.js`);
+  const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
+  const {HistoryStore} = await import(`${extensionObject.dir.get_uri()}/clipboard/history/store.js`);
+  const settings = {
+    get_string: key => indicator._settings.get_string(key),
+    get_boolean: key => key === 'private-mode' || indicator._settings.get_boolean(key),
+    get_int: key => ({'history-size': 10, 'cache-size-mib': 16, 'history-retention-days': 1})[key],
+    connect: () => 0,
+    disconnect() {},
+  };
+  const deleteFixture = file => {
+    if (file.query_file_type(Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null) === Gio.FileType.DIRECTORY) {
+      const enumerator = file.enumerate_children(Gio.FILE_ATTRIBUTE_STANDARD_NAME,
+        Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+      try {
+        let info;
+        while ((info = enumerator.next_file(null)))
+          deleteFixture(file.get_child(info.get_name()));
+      } finally { enumerator.close(null); }
+    }
+    file.delete(null);
+  };
+  for (const mode of ['automatic', 'immediate-shutdown', 'unchanged']) {
+    const rootPath = GLib.dir_make_tmp('clipboard-x-startup-history-XXXXXX');
+    const controller = new ClipboardController(settings);
+    const store = new HistoryStore({rootPath, deviceId: indicator._settings.get_string('device-id'),
+      items: () => controller.items});
+    controller._store = store;
+    try {
+      const old = Date.now() - 2 * 86_400_000;
+      const expired = ClipboardItem.fromText(`Expired startup fixture ${mode}`, {createdAt: old});
+      const current = ClipboardItem.fromText(`Current startup fixture ${mode}`);
+      const pinned = ClipboardItem.fromText(`Pinned startup fixture ${mode}`, {createdAt: old, favorite: true});
+      const seed = mode === 'unchanged' ? [current, pinned] : [expired, current, pinned];
+      await store.save(seed);
+      const generation = store._saveGeneration;
+      const expiredFile = mode === 'unchanged' ? null : Gio.File.new_for_path(expired.primary.path);
+      const persistedItems = () => {
+        const [, bytes] = Gio.File.new_for_path(store.directory().index).load_contents(null);
+        return JSON.parse(new TextDecoder().decode(bytes)).items;
+      };
+      await controller.start();
+      assert(!controller.error && controller.items.length === 2
+          && controller.items.some(item => item.id === current.id)
+          && controller.items.some(item => item.id === pinned.id),
+        'Startup must retain current and pinned items while trimming expired regular items');
+      if (mode === 'immediate-shutdown')
+        await controller.destroy();
+      else if (mode === 'automatic')
+        assert(await waitUntil(() => !expiredFile.query_exists(null)
+            && !persistedItems().some(item => item.id === expired.id)),
+          'Startup pruning must persist and collect expired files without a later clipboard capture');
+      else {
+        await Scripting.sleep(200);
+        assert(controller._saveRevision === 0 && store._saveGeneration === generation,
+          'Starting unchanged history must not schedule or perform an unnecessary save');
+      }
+      if (expiredFile)
+        assert(!expiredFile.query_exists(null), 'Pruned startup content must not survive immediate shutdown');
+      const saved = persistedItems();
+      assert(saved.length === 2 && saved.some(item => item.id === current.id)
+          && saved.some(item => item.id === pinned.id)
+          && Gio.File.new_for_path(current.primary.path).query_exists(null)
+          && Gio.File.new_for_path(pinned.primary.path).query_exists(null),
+        'The persisted startup index must contain exactly the retained current and pinned items');
+    } finally {
+      await controller.destroy();
+      deleteFixture(Gio.File.new_for_path(rootPath));
+    }
+  }
+}
+
 async function screenshots(indicator, extensionObject) {
   const png = imageBytes();
   const screenshotPortal = extensionObject._portal;
@@ -1211,17 +1360,31 @@ async function screenshots(indicator, extensionObject) {
     await extensionObject._takeScreenshot();
     await Scripting.sleep(300);
     const screenshotItem = indicator._controller.items.find(item => item.isImage);
-    assert(screenshotItem?.primary.path,
-      'Screenshot pipeline did not add and persist the image history snapshot');
+    assert(screenshotItem?.primary.path && screenshotItem.preview?.path
+        && Gio.File.new_for_path(screenshotItem.preview.path).query_exists(null),
+      'Screenshot pipeline did not persist both the original image and its thumbnail');
     assert(launchedEditorUri === screenshotFile.get_uri(),
       'Screenshot editor did not receive the URI returned by the portal');
     assert(indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
       'Screenshot pipeline did not write the image to the clipboard');
 
     indicator._settings.set_boolean('screenshot-add-history', false);
-    indicator._settings.set_boolean('screenshot-open-editor', false);
+    const beforeScreenshot = 'Before screenshot without history';
+    St.Clipboard.get_default().set_text(St.ClipboardType.CLIPBOARD, beforeScreenshot);
+    assert(await waitUntil(() => indicator._controller.items.some(item => item.text === beforeScreenshot)),
+      'The screenshot clipboard baseline was not captured');
+    await indicator._controller.persist();
     const historyCount = indicator._controller.items.length;
-    await extensionObject._takeScreenshot();
+    const stagedPaths = new Set(indicator._controller._store._staged.keys());
+    for (let attempt = 0; attempt < 3; attempt++) {
+      launchedEditorUri = null;
+      await extensionObject._takeScreenshot();
+      assert([...indicator._controller._store._staged.keys()].every(path => stagedPaths.has(path)),
+        'Screenshots without history must not accumulate unused staged thumbnails');
+      assert(launchedEditorUri === screenshotFile.get_uri()
+          && indicator._controller._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD).includes('image/png'),
+        'Screenshots without history must still copy the image and launch its editor');
+    }
     await Scripting.sleep(300);
     assert(indicator._controller.items.length === historyCount,
       'Screenshot configured without history was captured again through clipboard owner change');

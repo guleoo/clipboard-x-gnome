@@ -3,6 +3,9 @@ import GLib from 'gi://GLib';
 
 import {HttpClient} from '../../src/sync/http/client.js';
 import {HttpFixture} from './integration/fixture.js';
+import {UploadQueue} from '../../src/sync/upload-queue.js';
+import {bytesFromString} from '../../src/common/bytes.js';
+import {readJson} from '../../src/common/data-store.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -19,6 +22,7 @@ const fixture = new HttpFixture();
 const fakeVerifier = Gio.File.new_for_path(`${directory}/sha256sum`);
 const childPid = Gio.File.new_for_path(`${directory}/child.pid`);
 let client;
+const queues = [];
 
 function assertPreservedTarget() {
   const [, previous] = target.load_contents(null);
@@ -41,6 +45,68 @@ async function upload(path, options = {}) {
 try {
   const address = await fixture.start();
   client = new HttpClient({serverAddress: address, apiKey: 'stress-key', deviceId: 'stress-device'});
+  const jsonBody = bytesFromString(JSON.stringify({payload: 'x'.repeat(128 * 1024)}));
+  const jsonStream = Gio.MemoryInputStream.new_from_bytes(jsonBody);
+  try {
+    await client.upload('/content', {stream: jsonStream, size: jsonBody.get_size(), mimeType: 'application/json'});
+  } finally { jsonStream.close(null); }
+  for (const path of ['/content', '/chunked', '/no-length', '/gzip']) {
+    const response = await client.request('GET', path);
+    assert(response.payload.length === 128 * 1024,
+      `${path}: valid decoded JSON must not be compared with compressed or absent wire lengths`);
+  }
+  let interruptedUpload;
+  try { await upload('/drop-response'); } catch (error) { interruptedUpload = error; }
+  assert(interruptedUpload?.code === 'network_error',
+    'An upload response interrupted after successful headers must remain retryable');
+  // Restore the valid JSON, then exercise an actual persisted task through a
+  // truncated response, shutdown, backoff and a healthy server response.
+  const retryStream = Gio.MemoryInputStream.new_from_bytes(jsonBody);
+  try {
+    await client.upload('/content', {stream: retryStream, size: jsonBody.get_size(), mimeType: 'application/json'});
+  } finally { retryStream.close(null); }
+  target.replace_contents('synthetic clipboard', null, false, Gio.FileCreateFlags.PRIVATE, null);
+  const deviceId = GLib.uuid_string_random();
+  const config = {serverAddress: address, activeChannelId: GLib.uuid_string_random()};
+  const item = {id: GLib.uuid_string_random(), sensitive: false, representations: [{path: targetPath}]};
+  const settings = {
+    get_boolean: key => key === 'sync-enabled',
+    get_string: key => key === 'device-id' ? deviceId : 'automatic',
+    get_uint: key => key === 'sync-poll-interval-seconds' ? 1 : 0,
+  };
+  let now = 1000000;
+  let route = '/drop';
+  let attempts = 0;
+  const createQueue = () => {
+    const queue = new UploadQueue(settings, {
+      directory, configuration: async () => config, current: () => config,
+      ready: () => true, sourceReady: () => true,
+      source: id => id === item.id ? item : null,
+      prepare: async () => {}, clock: () => now,
+      publish: async () => { attempts++; return client.request('GET', route); },
+      logger: {warn() {}, info() {}},
+    });
+    queues.push(queue);
+    return queue;
+  };
+  const queue = createQueue();
+  await queue.enqueue(item);
+  await queue.flush();
+  const queuePath = [...queue._queues.values()][0].path;
+  const entry = (await readJson(queuePath, 8 * 1024 * 1024)).entries[0];
+  assert(!entry.blocked && entry.attempts === 1 && entry.retryAt > now,
+    'A prematurely ended response must persist a retry deadline, not block the task');
+  await queue.destroy();
+  now += 6000;
+  route = '/content';
+  await createQueue().flush();
+  assert(attempts === 2 && (await readJson(queuePath, 8 * 1024 * 1024)).entries.length === 0,
+    'A restored outbox must retry after backoff and remove the task only after success');
+  // The existing binary fixture below is complete, but not valid JSON.
+  await upload('/content');
+  let malformed;
+  try { await client.request('GET', '/content'); } catch (error) { malformed = error; }
+  assert(malformed?.code === 'invalid_response', 'Complete invalid JSON must remain a protocol error');
   const smallBytes = new GLib.Bytes(new TextEncoder().encode('几个字 test'));
   const smallSize = smallBytes.get_size();
   const smallDigest = GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, smallBytes);
@@ -227,6 +293,12 @@ try {
   });
   assert(emptyResult.size === 0, 'an explicitly framed zero-length file must be accepted');
 } finally {
+  for (const queue of queues) {
+    await queue.destroy();
+    for (const value of queue._queues.values()) {
+      try { Gio.File.new_for_path(value.path).delete(null); } catch (_error) {}
+    }
+  }
   client?.abort();
   try { await fixture.close(); } finally {
     try { target.delete(null); } catch (_error) {}

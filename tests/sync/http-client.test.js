@@ -76,6 +76,21 @@ try {
   assert(error === cancellation, 'Cancelled requests must not report the server as unavailable');
 }
 
+for (const bodyError of [new Error('Connection reset during response'), cancellation]) {
+  const interrupted = new HttpClient({
+    serverAddress: 'http://127.0.0.1:8765', apiKey: 'key', deviceId: 'device',
+    session: {
+      send_async: async () => ({read_bytes_async: async () => { throw bodyError; }, close() {}}),
+      abort() {},
+    },
+  });
+  let failure;
+  try { await interrupted.request('GET', '/api/v1/status'); } catch (error) { failure = error; }
+  assert(bodyError === cancellation ? failure === cancellation
+    : failure instanceof HttpError && failure.code === 'network_error',
+  'Response read failures must be retryable without reclassifying user cancellation');
+}
+
 const calls = [];
 const lowLevelClient = {
   request(method, path, options = {}) {

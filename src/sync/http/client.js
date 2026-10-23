@@ -47,7 +47,8 @@ export class HttpClient {
     }
     const input = await this._send(message, cancellable);
     try {
-      const bytes = await readAll(
+      const bytes = await this._readResponse(
+        message,
         input,
         this._successful(message) ? maximumBytes : ERROR_LIMIT_BYTES,
         cancellable ?? this._cancellable,
@@ -79,7 +80,8 @@ export class HttpClient {
     try {
       const input = await this._send(message, cancellable);
       try {
-        const bytes = await readAll(
+        const bytes = await this._readResponse(
+          message,
           input,
           this._successful(message) ? JSON_LIMIT_BYTES : ERROR_LIMIT_BYTES,
           cancellable ?? this._cancellable,
@@ -110,7 +112,8 @@ export class HttpClient {
     message.request_headers.replace('Accept', mimeType);
     const input = await this._send(message, activeCancellable);
     try {
-      const bytes = await readAll(
+      const bytes = await this._readResponse(
+        message,
         input,
         this._successful(message) ? maximumBytes : ERROR_LIMIT_BYTES,
         activeCancellable,
@@ -149,7 +152,7 @@ export class HttpClient {
     stage(diagnostics, 'response');
     if (!this._successful(message)) {
       try {
-        const bytes = await readAll(input, ERROR_LIMIT_BYTES, activeCancellable);
+        const bytes = await this._readResponse(message, input, ERROR_LIMIT_BYTES, activeCancellable);
         this._throwResponseError(message, bytes);
       } finally {
         input.close(null);
@@ -260,6 +263,29 @@ export class HttpClient {
     for (const cancellable of this._fileDownloads)
       cancellable.cancel();
     this._session.abort();
+  }
+
+  async _readResponse(message, input, maximumBytes, cancellable) {
+    let bytes;
+    try {
+      bytes = await readAll(input, maximumBytes, cancellable);
+    } catch (error) {
+      if (error instanceof HttpError || error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        throw error;
+      throw new HttpError(error.message, {status: message.status_code, code: 'network_error'});
+    }
+    const headers = message.response_headers;
+    const encoding = headers.get_one('Content-Encoding')?.trim().toLowerCase();
+    // Soup decodes compressed bodies, whose Content-Length describes the wire
+    // bytes. Only compare lengths for bounded, uncompressed responses.
+    if (headers.get_encoding() === Soup.Encoding.CONTENT_LENGTH
+        && (!encoding || encoding === 'identity')
+        && bytes.get_size() !== headers.get_content_length()) {
+      throw new HttpError('Synchronization server response was interrupted', {
+        status: message.status_code, code: 'network_error',
+      });
+    }
+    return bytes;
   }
 
   async _send(message, cancellable) {
