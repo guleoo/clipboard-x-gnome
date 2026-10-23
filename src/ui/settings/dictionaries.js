@@ -47,12 +47,11 @@ function languageChoices(languageNames) {
   }).sort((left, right) => left.label.localeCompare(right.label));
 }
 
-function editDictionary(window, file, onLaunched) {
+function editDictionary(window, file) {
   const launcher = new Gtk.FileLauncher({file, writable: true});
   launcher.launch(window, null, (source, result) => {
     try {
       source.launch_finish(result);
-      onLaunched();
     } catch (error) {
       showError(window, error);
     }
@@ -223,7 +222,7 @@ export function create({settings, store, window}) {
           valign: Gtk.Align.CENTER,
           css_classes: ['flat'],
         });
-        edit.connect('clicked', () => editDictionary(window, file, () => bumpRevision(settings)));
+        edit.connect('clicked', () => editDictionary(window, file));
         row.add_suffix(edit);
         const show = new Gtk.Button({
           icon_name: 'folder-open-symbolic',

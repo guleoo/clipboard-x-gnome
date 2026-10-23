@@ -43,6 +43,14 @@ function removeTree(file) {
   file.delete(null);
 }
 
+async function waitUntil(predicate) {
+  const deadline = GLib.get_monotonic_time() + 3_000_000;
+  while (!predicate()) {
+    assert(GLib.get_monotonic_time() < deadline, 'Dictionary file change was not observed');
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+}
+
 assertEqual(normalizeLocale('pt-BR.UTF-8'), 'pt_br', 'locale normalization');
 assertEqual(localeCandidates(['zh_CN.UTF-8', 'zh', 'C']), ['zh_cn', 'zh'], 'locale fallback order');
 assertEqual(localeCandidates(['fr_FR.UTF-8', 'de_DE']), ['fr_fr', 'fr'],
@@ -102,6 +110,12 @@ const importSource = testRoot.get_child('custom-ja.txt');
 const plainImportSource = testRoot.get_child('plain-words.txt');
 const chineseSource = testRoot.get_child('zh--test.dict');
 GLib.file_set_contents(chineseSource.get_path(), '# locale: zh\n# name: Test dictionary\n注销 80\n密钥 63\n');
+const tokenizers = [];
+const createTokenizer = options => {
+  const tokenizer = new Tokenizer(options);
+  tokenizers.push(tokenizer);
+  return tokenizer;
+};
 
 try {
   const store = new DictionaryStore({rootPath: storeRoot.get_path()});
@@ -138,7 +152,7 @@ try {
       'an edited locale header must not activate a dictionary for a different language');
   }
 
-  const chineseTokenizer = new Tokenizer({
+  const chineseTokenizer = createTokenizer({
     store,
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
   });
@@ -159,7 +173,7 @@ try {
     '注销 100',
   ].join('\n'));
   const secondChinese = await store.importFile(importSource, 'zh');
-  const selectedTokenizer = new Tokenizer({
+  const selectedTokenizer = createTokenizer({
     store,
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],
   });
@@ -177,7 +191,7 @@ try {
     'multiple enabled dictionaries should be merged for the active language',
   );
 
-  const systemTokenizer = new Tokenizer({
+  const systemTokenizer = createTokenizer({
     store,
     languageNames: () => ['en_US.UTF-8', 'en', 'C'],
   });
@@ -196,7 +210,7 @@ try {
   const imported = await store.importFile(importSource, 'en');
   assert(imported.locale === 'ja' && (await store.list()).length === 3,
     'import should preserve the dictionary-declared locale');
-  const japaneseTokenizer = new Tokenizer({
+  const japaneseTokenizer = createTokenizer({
     store,
     languageNames: () => ['ja_JP.UTF-8', 'ja', 'C'],
   });
@@ -241,7 +255,97 @@ try {
   }
   const recovered = await store.load(['zh']);
   assert(recovered.lexicon.size === 2048, 'cancelled loading must not prevent a later complete load');
+
+  const watchedStore = new DictionaryStore({rootPath: testRoot.get_child('watched').get_path()});
+  const watchedFile = watchedStore.getFile('zh--editable.dict');
+  await watchedStore.list();
+  const together = '# locale: zh\n注销密钥 90\n';
+  const apart = '# locale: ja\n注销 90\n密钥 90\n';
+  GLib.file_set_contents(watchedFile.get_path(), together);
+  let changes = 0;
+  let stops = 0;
+  let loads = 0;
+  let heldLoad = null;
+  const watch = watchedStore.watch.bind(watchedStore);
+  watchedStore.watch = async (changed, cancellable) => {
+    const stop = await watch(() => { changes++; changed(); }, cancellable);
+    return () => { stops++; stop(); };
+  };
+  const load = watchedStore.load.bind(watchedStore);
+  watchedStore.load = async (...args) => {
+    loads++;
+    const result = await load(...args);
+    if (heldLoad) {
+      const held = heldLoad;
+      heldLoad = null;
+      held.entered.resolve();
+      await held.release.promise;
+    }
+    return result;
+  };
+  const watched = createTokenizer({store: watchedStore, languageNames: () => ['zh']});
+  const words = async () => (await watched.tokenize('注销密钥', {
+    dictionaryFiles: ['zh--editable.dict'],
+  })).map(token => token.text);
+  assertEqual(await words(), ['注销密钥'], 'the initial dictionary must populate the tokenizer cache');
+  const cachedLoads = loads;
+  for (let index = 0; index < 5; index++)
+    await words();
+  assert(loads === cachedLoads, 'unchanged tokenization must reuse its index without rescanning dictionaries');
+
+  const saveInPlace = contents => {
+    const stream = watchedFile.open_readwrite(null);
+    try {
+      stream.truncate(0, null);
+      stream.get_output_stream().write_all(new TextEncoder().encode(contents), null);
+    } finally { stream.close(null); }
+  };
+  let before = changes;
+  saveInPlace(apart);
+  await waitUntil(() => changes > before);
+  assertEqual(await words(), ['注销', '密钥'],
+    'saving an edited file must invalidate cached words without a settings revision or changing its imported locale');
+
+  before = changes;
+  const replacement = testRoot.get_child('editor-save.tmp');
+  GLib.file_set_contents(replacement.get_path(), together);
+  replacement.move(watchedFile, Gio.FileCopyFlags.OVERWRITE, null, null);
+  await waitUntil(() => changes > before);
+  assertEqual(await words(), ['注销密钥'], 'an atomic editor replacement must invalidate the old file index');
+
+  before = changes;
+  watchedFile.delete(null);
+  await waitUntil(() => changes > before);
+  assertEqual(await words(), tokenizeText('注销密钥').map(token => token.text),
+    'deleting the dictionary must drop cached words and restore the normal empty-store fallback');
+
+  before = changes;
+  GLib.file_set_contents(watchedFile.get_path(), together);
+  await waitUntil(() => changes > before);
+  const held = {entered: deferred(), release: deferred()};
+  heldLoad = held;
+  const pendingWords = words();
+  try {
+    await held.entered.promise;
+    before = changes;
+    saveInPlace(apart);
+    await waitUntil(() => changes > before);
+    held.release.resolve();
+    assertEqual(await pendingWords, ['注销', '密钥'],
+      'a save during loading must retry instead of returning or caching the completed old index');
+    assertEqual(await words(), ['注销', '密钥'], 'the edited index must remain current after the old load settles');
+  } finally {
+    held.release.resolve();
+    await pendingWords;
+  }
+  watched.destroy();
+  before = changes;
+  saveInPlace(together);
+  await new Promise(resolve => setTimeout(resolve, 100));
+  assert(stops === 1 && changes === before, 'destroy must disconnect and cancel the directory monitor');
 } finally {
+  for (const tokenizer of tokenizers)
+    tokenizer.destroy();
   removeTree(testRoot);
 }
 
@@ -298,3 +402,5 @@ try {
 } finally {
   concurrent.destroy();
 }
+
+print('PASS dictionary loading, file-change invalidation, caching, and cancellation');

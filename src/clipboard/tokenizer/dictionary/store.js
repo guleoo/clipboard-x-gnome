@@ -112,6 +112,23 @@ export class DictionaryStore {
     return this._root.get_child(fileName);
   }
 
+  async watch(onChanged, cancellable = null) {
+    await ensureDirectory(this._root, cancellable);
+    cancellable?.set_error_if_cancelled();
+    // Monitor the directory, not individual files: editors commonly save by
+    // renaming a temporary file over the original dictionary.
+    const monitor = this._root.monitor_directory(Gio.FileMonitorFlags.WATCH_MOVES, cancellable);
+    const signal = monitor.connect('changed', (_monitor, file, otherFile) => {
+      if (FILE_PATTERN.test(file.get_basename())
+          || (otherFile && FILE_PATTERN.test(otherFile.get_basename())))
+        onChanged();
+    });
+    return () => {
+      monitor.disconnect(signal);
+      monitor.cancel();
+    };
+  }
+
   async list(cancellable = null) {
     await ensureDirectory(this._root, cancellable);
     const dictionaries = [];
