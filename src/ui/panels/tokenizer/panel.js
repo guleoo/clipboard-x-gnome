@@ -82,6 +82,10 @@ export class TokenizerPanel {
       x_expand: true,
       y_expand: true,
     });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
+    });
     this.scroll.add_child(this._section.actor);
     this.actor.add_child(this.scroll);
 
@@ -244,9 +248,10 @@ export class TokenizerPanel {
   }
 
   captureView() {
-    if (this._pendingViewState)
-      return this._pendingViewState;
     const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
+      return this._pendingViewState;
     const tokenIndex = focus?._clipboardXGnomeToken?.index ?? null;
     return {
       state: this._state,
@@ -266,6 +271,10 @@ export class TokenizerPanel {
       this._focusIdleId = 0;
       this._pendingViewState = null;
       if (!this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
         return GLib.SOURCE_REMOVE;
       const target = viewState.tokenIndex === null ? viewState.focusActor
         : this._buttons.find(button => button._clipboardXGnomeToken.index === viewState.tokenIndex);

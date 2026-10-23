@@ -315,6 +315,23 @@ try {
         && sharing.primary.path === item.primary.path,
       'adoption must move the staged file and update all consumers of the shared descriptor');
 
+    const held = ClipboardItem.fromText('active consumer of a permanent original');
+    await staging.save([held]);
+    let releaseHeld;
+    const heldRelease = new Promise(resolve => { releaseHeld = resolve; });
+    const heldUse = staging.use(held, () => heldRelease);
+    try {
+      await staging.save([]);
+      assert(Gio.File.new_for_path(held.primary.path).query_exists(null),
+        'a permanent original must remain available to an active consumer outside the latest snapshot');
+    } finally {
+      releaseHeld();
+      await heldUse;
+    }
+    await staging.save([]);
+    assert(!Gio.File.new_for_path(held.primary.path).query_exists(null),
+      'a permanent original must be reclaimed once both active and live owners are gone');
+
     const discarded = ClipboardItem.fromText('discarded staged content');
     const discardedPath = await staging.stage(discarded.primary,
       path => writeFile(Gio.File.new_for_path(path), discarded.primary.bytes));

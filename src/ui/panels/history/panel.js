@@ -114,6 +114,10 @@ export class HistoryPanel {
       x_expand: true,
       y_expand: true,
     });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
+    });
     this.scroll.add_child(this._section.actor);
     this.scrollItem = new PopupMenu.PopupMenuSection();
     this.scrollItem.actor.x_expand = true;
@@ -273,9 +277,10 @@ export class HistoryPanel {
   }
 
   captureView() {
-    if (this._pendingViewState)
-      return this._pendingViewState;
     const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
+      return this._pendingViewState;
     const item = focus?._clipboardXGnomeHistoryRow?._clipboardXGnomeHistoryItem;
     return {
       itemId: item?.id ?? null,
@@ -295,6 +300,10 @@ export class HistoryPanel {
       this._focusIdleId = 0;
       this._pendingViewState = null;
       if (!this._isMenuOpen() || !this._isActive())
+        return GLib.SOURCE_REMOVE;
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
         return GLib.SOURCE_REMOVE;
       if (viewState.itemId) {
         let row = this._itemRows.get(viewState.itemId);

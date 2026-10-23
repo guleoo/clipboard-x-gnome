@@ -235,17 +235,18 @@ export class HistoryStore {
       throw new Error('Clipboard history storage is closed');
     // Register before the loader yields. Consumers joining a shared download
     // may not receive its descriptor until after a queued discard has run.
-    const keys = new Set(item.representations.map(contentKey));
-    for (const key of keys)
-      this._uses.set(key, (this._uses.get(key) ?? 0) + 1);
+    const contents = new Map(item.representations.map(content => [contentKey(content), content]));
+    for (const [key, content] of contents) {
+      const use = this._uses.get(key) ?? {count: 0, sha256: content.sha256};
+      use.count++;
+      this._uses.set(key, use);
+    }
     try {
       return await load();
     } finally {
-      for (const key of keys) {
-        const count = this._uses.get(key) ?? 0;
-        if (count > 1)
-          this._uses.set(key, count - 1);
-        else
+      for (const key of contents.keys()) {
+        const use = this._uses.get(key);
+        if (use && --use.count === 0)
           this._uses.delete(key);
       }
       if (!this._closed)
@@ -512,8 +513,21 @@ export class HistoryStore {
         referenced.add(GLib.canonicalize_filename(item.preview.path, null));
     }
 
-    await this._pruneDirectory(paths.objects, referenced, cancellable);
-    await this._pruneDirectory(paths.previews, referenced, cancellable);
+    // A queued snapshot may predate a new consumer of an adopted file. Consult
+    // live owners at each deletion, including changes during directory I/O.
+    const references = {has: path => referenced.has(path) || this._isRetained(path)};
+    await this._pruneDirectory(paths.objects, references, cancellable);
+    await this._pruneDirectory(paths.previews, references, cancellable);
+  }
+
+  _isRetained(path) {
+    const hash = GLib.path_get_basename(path);
+    for (const use of this._uses.values()) {
+      if (use.sha256 === hash)
+        return true;
+    }
+    return this._items().some(item => [...item.representations, item.preview]
+      .some(content => content?.path && GLib.canonicalize_filename(content.path, null) === path));
   }
 
   async _pruneDirectory(path, referenced, cancellable) {

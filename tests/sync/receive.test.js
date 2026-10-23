@@ -80,6 +80,7 @@ const transport = {
 const client = new SyncClient(settings, {
   configurationStore: {},
   stageFile: (content, write, cancellable) => store.stage(content, write, cancellable),
+  discardContent: items => store.discard(items),
   useContent: (item, load) => store.use(item, load),
   logger: createLogger('sync', {sink: () => {}}),
 });
@@ -256,55 +257,105 @@ try {
 
   // The replacement joins before it has the first consumer's descriptor.
   // Cleanup must defer to the whole acquisition, then inspect live references.
-  const removed = await client.getItem(manifest([['text/plain;charset=utf-8', 'shared original after rejoining']]).id);
-  const replacement = ClipboardItem.fromJSON(JSON.parse(JSON.stringify(removed.toJSON())));
-  retained.push(removed);
-  let enterOldSave;
-  let releaseOldSave;
-  let publishShared;
-  const oldSaveEntered = new Promise(resolve => { enterOldSave = resolve; });
-  const oldSaveRelease = new Promise(resolve => { releaseOldSave = resolve; });
-  const sharedPublication = new Promise(resolve => { publishShared = resolve; });
-  store._removeUnreferencedFiles = async function (...args) {
-    enterOldSave();
-    await oldSaveRelease;
-    return cleanup.apply(this, args);
-  };
-  const oldSave = store.save(retained);
-  let firstUse;
-  let secondUse;
-  let discard;
-  const sharedRequests = requests.length;
-  try {
-    await oldSaveEntered;
-    store._enqueue = function (action) {
-      const result = enqueue.call(this, action);
-      publishShared();
-      return result;
+  for (const adoptBeforeCleanup of [false, true]) {
+    const removed = await client.getItem(manifest([['text/plain;charset=utf-8', 'shared original after rejoining']]).id);
+    const replacement = ClipboardItem.fromJSON(JSON.parse(JSON.stringify(removed.toJSON())));
+    retained.push(removed);
+    let enterOldSave;
+    let releaseOldSave;
+    let publishShared;
+    const oldSaveEntered = new Promise(resolve => { enterOldSave = resolve; });
+    const oldSaveRelease = new Promise(resolve => { releaseOldSave = resolve; });
+    const sharedPublication = new Promise(resolve => { publishShared = resolve; });
+    store._removeUnreferencedFiles = async function (...args) {
+      enterOldSave();
+      await oldSaveRelease;
+      return cleanup.apply(this, args);
     };
-    firstUse = client.materialize(removed);
-    await sharedPublication;
-    retained.splice(retained.indexOf(removed), 1);
-    discard = store.discard([removed]);
-    retained.push(replacement);
-    secondUse = client.materialize(replacement);
-    releaseOldSave();
-    await Promise.all([oldSave, firstUse, secondUse, discard]);
-    assert(removed.primary === replacement.primary && requests.length === sharedRequests + 1
-        && Gio.File.new_for_path(replacement.primary.path).query_exists(null),
-      'removing the first consumer must not delete a shared original retained by its replacement');
-    store._enqueue = enqueue;
-    store._removeUnreferencedFiles = cleanup;
+    const oldSave = store.save(retained);
+    let firstUse;
+    let secondUse;
+    let discard;
+    let adopting;
+    let emptySave;
+    const sharedRequests = requests.length;
+    try {
+      await oldSaveEntered;
+      store._enqueue = function (action) {
+        const result = enqueue.call(this, action);
+        publishShared();
+        return result;
+      };
+      firstUse = client.materialize(removed);
+      await sharedPublication;
+      if (adoptBeforeCleanup)
+        adopting = store.save([removed]);
+      retained.splice(retained.indexOf(removed), 1);
+      discard = store.discard([removed]);
+      if (adoptBeforeCleanup)
+        emptySave = store.save([]);
+      retained.push(replacement);
+      secondUse = client.materialize(replacement);
+      releaseOldSave();
+      await Promise.all([oldSave, firstUse, secondUse, discard, adopting, emptySave]);
+      assert(removed.primary === replacement.primary && requests.length === sharedRequests + 1
+          && Gio.File.new_for_path(replacement.primary.path).query_exists(null),
+        'removing the first consumer must not delete a shared original retained by its replacement');
+      store._enqueue = enqueue;
+      store._removeUnreferencedFiles = cleanup;
+      await store.save(retained);
+      await store.materialize(replacement);
+      assert(replacement.text === 'shared original after rejoining',
+        'the replacement must remain readable and durable after queued cleanup');
+      retained.splice(retained.indexOf(replacement), 1);
+      await store.save(retained);
+      assert(!Gio.File.new_for_path(replacement.primary.path).query_exists(null),
+        'an adopted shared original must be reclaimed after its final live owner is removed');
+    } finally {
+      releaseOldSave();
+      await Promise.allSettled([oldSave, firstUse, secondUse, discard, adopting, emptySave]);
+      store._enqueue = enqueue;
+      store._removeUnreferencedFiles = cleanup;
+    }
+  }
+
+  // A session can expire after the preview was published into staging but
+  // before getItem's final check hands ownership to its caller.
+  const interruptedImage = manifest([['image/png', new Uint8Array([5, 4, 3])]]);
+  const previewBytes = bytesFromString('interrupted image preview');
+  const previewHash = sha256(previewBytes);
+  objects.set(previewHash, previewBytes);
+  interruptedImage.previews = [{id: previewHash, sha256: previewHash, size: previewBytes.get_size(),
+    contentId: interruptedImage.contents[0].id, mimeType: 'image/png', truncated: true}];
+  let interruptedPath;
+  const stagedBeforeInterrupt = store._staged.size;
+  const interruptedClient = new SyncClient(settings, {
+    configurationStore: {},
+    discardContent: items => store.discard(items),
+    stageFile: async (content, write, cancellable) => {
+      interruptedPath = await store.stage(content, write, cancellable);
+      await interruptedClient.restart();
+      return interruptedPath;
+    },
+  });
+  interruptedClient._transport = transport;
+  interruptedClient._connected = true;
+  interruptedClient._storedConfiguration = {activeChannelId: channelId};
+  interruptedClient._capabilities = client.capabilities;
+  try {
+    let cancelled = false;
+    try {
+      await interruptedClient.getItem(interruptedImage.id);
+    } catch (error) {
+      cancelled = error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED);
+    }
+    assert(cancelled && interruptedPath, 'the session must reject after a successful staged preview write');
     await store.save(retained);
-    await store.materialize(replacement);
-    assert(replacement.text === 'shared original after rejoining',
-      'the replacement must remain readable and durable after queued cleanup');
-    retained.splice(retained.indexOf(replacement), 1);
+    assert(!Gio.File.new_for_path(interruptedPath).query_exists(null)
+        && store._staged.size === stagedBeforeInterrupt,
+      'a preview not handed to its receiver must release its file and staging registration immediately');
   } finally {
-    releaseOldSave();
-    await Promise.allSettled([oldSave, firstUse, secondUse, discard]);
-    store._enqueue = enqueue;
-    store._removeUnreferencedFiles = cleanup;
+    interruptedClient.destroy();
   }
 
   if (ARGV.includes('--stress')) {

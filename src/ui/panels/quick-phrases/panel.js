@@ -106,6 +106,10 @@ export class QuickPhrasesPanel {
       x_expand: true,
       y_expand: true,
     });
+    this.scroll.connect('scroll-event', () => {
+      this._cancelFocus();
+      return Clutter.EVENT_PROPAGATE;
+    });
     this.scroll.add_child(this._section.actor);
     this.actor.add_child(this.scroll);
     this.item.add_child(this.actor);
@@ -235,9 +239,10 @@ export class QuickPhrasesPanel {
   }
 
   captureView() {
-    if (this._pendingViewState)
-      return this._pendingViewState;
     const focus = global.stage.get_key_focus();
+    if (this._pendingViewState
+        && (!this.focusGrid.contains(focus) || focus === this._pendingViewState.focusActor))
+      return this._pendingViewState;
     const row = focus?._clipboardXGnomePhraseRow;
     return {
       phrase: row?._clipboardXGnomePhrase ?? null,
@@ -256,6 +261,10 @@ export class QuickPhrasesPanel {
       this._focusIdleId = 0;
       this._pendingViewState = null;
       if (this._destroyed || !this._isActive() || !this.actor.mapped)
+        return GLib.SOURCE_REMOVE;
+      // Only repair focus lost during rendering; a current control reflects newer input.
+      const focus = global.stage.get_key_focus();
+      if (this.focusGrid.contains(focus) && focus !== viewState.focusActor)
         return GLib.SOURCE_REMOVE;
       const row = this._rows.find(value => value._clipboardXGnomePhrase === viewState.phrase);
       const target = viewState.phrase === null ? viewState.focusActor

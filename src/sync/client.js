@@ -44,6 +44,7 @@ export class SyncClient extends EventEmitter {
     sourceItem = () => null,
     applyChanges = async () => {},
     stageFile,
+    discardContent,
     useContent = (_item, load) => load(),
     logger = createLogger('sync'),
   } = {}) {
@@ -57,6 +58,7 @@ export class SyncClient extends EventEmitter {
     this._sourceItem = sourceItem;
     this._applyChanges = applyChanges;
     this._stageFile = stageFile;
+    this._discardContent = discardContent;
     this._useContent = useContent;
     this._logger = logger;
     this._settingsSignals = [];
@@ -162,6 +164,7 @@ export class SyncClient extends EventEmitter {
     this._requireConnection();
     validateItemId(itemId);
     const channelId = this._requireChannel();
+    let incoming = null;
     return this._transfers.run(async ({transport, cancellable, check}) => {
       const response = await transport.item(channelId, itemId);
       check();
@@ -180,6 +183,17 @@ export class SyncClient extends EventEmitter {
         bytes: null,
         path: null,
       }));
+      incoming = new ClipboardItem({
+        id: remote.id,
+        createdAt: remote.createdAt,
+        originDeviceId: remote.originDeviceId,
+        originDeviceTag: remote.originDeviceTag,
+        originDeviceIconKind: remote.originDeviceIconKind,
+        representations,
+        favorite: false,
+        remote: true,
+        availability: 'preview',
+      });
       let preview = null;
       const selected = remote.previews.find(value => value.contentId === representations[0].id)
         ?? remote.previews[0];
@@ -214,6 +228,7 @@ export class SyncClient extends EventEmitter {
             truncated: selected.truncated,
             derivedFrom: selected.contentId,
           };
+          incoming.preview = preview;
           await this._stageFile(preview, async path => {
             await writeFile(Gio.File.new_for_path(path), bytes, cancellable);
             check();
@@ -221,19 +236,20 @@ export class SyncClient extends EventEmitter {
         }
       }
 
-      return new ClipboardItem({
-        id: remote.id,
-        createdAt: remote.createdAt,
-        originDeviceId: remote.originDeviceId,
-        originDeviceTag: remote.originDeviceTag,
-        originDeviceIconKind: remote.originDeviceIconKind,
-        representations,
-        preview,
-        favorite: false,
-        remote: true,
-        availability: 'preview',
-      });
-    }, {errorCode: 'download_failed'});
+      incoming.preview = preview;
+      return incoming;
+    }, {errorCode: 'download_failed'}).catch(async error => {
+      // Ownership passes to the receiver only after the session's final check.
+      // Cancellation after staging must also release a successfully written file.
+      if (incoming?.preview?.path) {
+        try {
+          await this._discardContent([incoming]);
+        } catch (cleanupError) {
+          this._logger.warn('discard-preview', cleanupError);
+        }
+      }
+      throw error;
+    });
   }
 
   async cancelTransfer(transferId) {
