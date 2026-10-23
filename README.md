@@ -159,6 +159,9 @@ per line with an optional frequency:
 图片编辑 80
 ```
 
+The language is fixed when a dictionary is imported. Editing its `locale` header afterward does not
+change its language; reimport it to assign a different language.
+
 Release archives do not bundle third-party dictionaries, and the extension does not silently download
 them when installed, started, or opened.
 

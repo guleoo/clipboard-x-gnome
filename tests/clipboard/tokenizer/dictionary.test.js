@@ -126,6 +126,18 @@ try {
   assert(store.getFile(initial[0].fileName).query_exists(null),
     'stored dictionaries should expose their editable file');
 
+  GLib.file_set_contents(store.getFile(initial[0].fileName).get_path(),
+    '# locale: ja\n# name: Edited dictionary\n注销 80\n密钥 63\n');
+  const edited = (await store.list())[0];
+  assert(edited.locale === 'zh' && edited.name === 'Edited dictionary',
+    'editing metadata must preserve the imported language while updating the display name');
+  for (const selection of [[], [edited.fileName]]) {
+    assert((await store.load(['zh_CN.UTF-8'], selection)).lexicon.size === 2,
+      'edited dictionaries must still load for their imported language');
+    assert((await store.load(['ja_JP.UTF-8'], selection)).lexicon.size === 0,
+      'an edited locale header must not activate a dictionary for a different language');
+  }
+
   const chineseTokenizer = new Tokenizer({
     store,
     languageNames: () => ['zh_CN.UTF-8', 'zh', 'C'],

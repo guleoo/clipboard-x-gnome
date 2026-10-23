@@ -125,7 +125,8 @@ export class DictionaryStore {
         }, cancellable);
         dictionaries.push({
           fileName,
-          locale: parsed.locale,
+          // Import fixes the language in the filename; editable headers cannot reassign it.
+          locale,
           name: parsed.name,
           source: parsed.source,
           entryCount: parsed.entries.length,
