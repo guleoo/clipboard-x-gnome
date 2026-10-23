@@ -1,8 +1,10 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import {SyncClient} from '../../src/sync/client.js';
 import {MemoryProgressStore} from './fixtures/progress-store.js';
 import {transfer as wireTransfer, publication as wirePublication} from './fixtures/wire.js';
+import {MAX_TRANSFER_STATES} from '../../src/sync/constants.js';
 
 const deviceId = '11111111-1111-4111-8111-111111111111';
 const channelId = '22222222-2222-4222-8222-222222222222';
@@ -91,10 +93,11 @@ function sourceTransfer(state = 'queued') {
 }
 
 const sourceWork = {id: transferId, type: 'materialize-content', itemId, contentId: 'content'};
-const sourceItem = id => id === itemId ? {
+const localSource = {
   representations: [{id: 'content', mimeType: 'text/plain', size: 4,
     bytes: new Uint8Array([1, 2, 3, 4])}],
-} : null;
+};
+const sourceItem = id => id === itemId ? localSource : null;
 
 class Transport {
   constructor(name) {
@@ -146,6 +149,10 @@ class Transport {
   }
   acceptWork() {
     return this.reply('acceptWork', {uploadId: itemId, transfer: sourceTransfer()});
+  }
+  rejectWork(workId, code) {
+    this.rejection = {workId, code};
+    return this.reply('rejectWork', {});
   }
   uploadContent(_upload, _content, _source, onProgress, cancellable) {
     this.upload = {onProgress, cancellable};
@@ -533,6 +540,117 @@ const sourceReplies = {
   completeUpload: {transfer: sourceTransfer('completed')},
 };
 
+for (const change of ['deleted', 'replaced', 'sensitive', 'representation-replaced']) {
+  await test(`source work rejects a source ${change} while acceptance is pending`, async () => {
+    const transport = new Transport('current');
+    const item = copy(localSource);
+    let current = item;
+    const f = fixture([transport], {sourceItem: id => id === itemId ? current : null});
+    let pending;
+    let gate;
+    try {
+      await bounded(f.client.start());
+      gate = transport.hold('acceptWork');
+      transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+      pending = observe(f.client._syncWork());
+      await bounded(gate.entered.promise);
+      if (change === 'deleted')
+        current = null;
+      else if (change === 'replaced')
+        current = copy(item);
+      else if (change === 'sensitive')
+        item.sensitive = true;
+      else
+        item.representations = copy(item.representations);
+      gate.resolve(copy(sourceReplies.acceptWork));
+      const result = await bounded(pending);
+      assert(!result.error && !transport.calls.includes('uploadContent') && !transport.calls.includes('completeUpload'),
+        'An invalidated source must not start sending or complete an accepted upload');
+      assert(transport.rejection?.workId === sourceWork.id && transport.rejection.code === 'source_content_missing'
+          && transport.calls.includes('cancel'),
+        'Rejecting an accepted work must release peer requesters and cancel its source upload');
+      assert(f.client._progress.workCursor === 'source-rejected' && f.client._transfers.pendingIds().length === 0,
+        'A confirmed rejection must advance the work page without leaving a pending remote transfer');
+    } finally {
+      f.client.destroy();
+      gate?.resolve(copy(sourceReplies.acceptWork));
+      if (pending)
+        await pending;
+    }
+  });
+}
+
+for (const change of ['missing', 'sensitive']) {
+  await test(`source work rejects an initially ${change} source without acceptance`, async () => {
+    const transport = new Transport('current');
+    const item = change === 'missing' ? null : {...copy(localSource), sensitive: true};
+    const f = fixture([transport], {sourceItem: () => item});
+    try {
+      await bounded(f.client.start());
+      transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+      await bounded(f.client._syncWork());
+      assert(transport.rejection?.code === 'source_content_missing' && !transport.calls.includes('acceptWork')
+          && !transport.calls.includes('uploadContent') && !transport.calls.includes('cancel')
+          && f.client._progress.workCursor === 'source-rejected',
+        'An unavailable source must be rejected before acceptance and allow the work cursor to advance');
+    } finally {
+      f.client.destroy();
+    }
+  });
+}
+
+for (const method of ['acceptWork', 'completeUpload']) {
+  await test(`source removal during ${method} does not revoke an acknowledged completion`, async () => {
+    const transport = new Transport('current');
+    let current = copy(localSource);
+    const f = fixture([transport], {sourceItem: () => current});
+    let gate;
+    let pending;
+    try {
+      await bounded(f.client.start());
+      gate = transport.hold(method);
+      transport.work = () => Promise.resolve({cursor: 'source-complete', hasMore: false, work: [sourceWork]});
+      pending = observe(f.client._syncWork());
+      await bounded(gate.entered.promise);
+      current = null;
+      gate.resolve(method === 'acceptWork'
+        ? {uploadId: itemId, transfer: sourceTransfer('completed')}
+        : {transfer: sourceTransfer('completed')});
+      const result = await bounded(pending);
+      assert(!result.error && !transport.calls.includes('rejectWork') && !transport.calls.includes('cancel')
+          && f.client.getTransferForItem(itemId).state === 'completed'
+          && f.client._progress.workCursor === 'source-complete',
+        'A server-confirmed completed upload must not be rejected or cancelled after local removal');
+    } finally {
+      f.client.destroy();
+      gate?.resolve(method === 'acceptWork'
+        ? {uploadId: itemId, transfer: sourceTransfer('completed')}
+        : {transfer: sourceTransfer('completed')});
+      if (pending)
+        await pending;
+    }
+  });
+}
+
+await test('a failed source rejection leaves its work cursor unacknowledged', async () => {
+  const transport = new Transport('current');
+  const f = fixture([transport], {sourceItem: () => null});
+  try {
+    await bounded(f.client.start());
+    const cursor = f.client._progress.workCursor;
+    transport.work = () => Promise.resolve({cursor: 'source-rejected', hasMore: false, work: [sourceWork]});
+    transport.rejectWork = () => Promise.reject(new Error('Source rejection lost its response'));
+    const result = await bounded(observe(f.client._syncWork()));
+    assert(result.error && f.client._progress.workCursor === cursor,
+      'The work cursor must not advance before the server acknowledges source rejection');
+    transport.rejectWork = () => Promise.resolve();
+    await bounded(f.client._syncWork());
+    assert(f.client._progress.workCursor === 'source-rejected', 'A failed rejection must remain retryable');
+  } finally {
+    f.client.destroy();
+  }
+});
+
 for (const method of Object.keys(sourceReplies)) {
   for (const lateFailure of [false, true]) {
     await test(`source work ignores late ${method} ${lateFailure ? 'failure' : 'reply'}`, async () => {
@@ -710,6 +828,59 @@ await test('a remote download queued behind old work cannot run on a replacement
     await Promise.all([...(blocker ? [blocker] : []), ...(pending ? [pending] : [])]);
   }
 });
+
+for (const outcome of ['completed', 'cancelled']) {
+  await test(`an evicted remote transfer can still be ${outcome} while its consumer waits`, async () => {
+    const transport = new DownloadTransport('current');
+    const f = fixture([transport]);
+    const waiting = deferred();
+    let pending;
+    try {
+      await bounded(f.client.start());
+      f.settings.values.set('sync-transfer-timeout-seconds', 3);
+      transport.requestContent = () => Promise.resolve({transfer: {
+        ...sourceTransfer('waiting-for-peer'), direction: 'download',
+      }});
+      transport.transfer = () => transport.reply('transfer', {
+        ...sourceTransfer('completed'), direction: 'download',
+      });
+      f.client.connect('transfer-changed', (_client, transfer) => {
+        if (transfer.transferId === transferId && transfer.state === 'waiting-for-peer')
+          waiting.resolve();
+      });
+      const item = remoteItem();
+      pending = observe(f.client.materialize(item));
+      await bounded(waiting.promise);
+      for (let index = 0; index < MAX_TRANSFER_STATES; index++) {
+        f.client._transfers.record({transferId: GLib.uuid_string_random(), itemId: GLib.uuid_string_random(),
+          state: 'completed', completedBytes: 1, totalBytes: 1, updatedAt: Date.now()}, true);
+      }
+      assert(!f.client._transfers.get(transferId) && f.client._transfers.pendingIds().includes(transferId),
+        'The UI cache must remain bounded without dropping an unfinished protocol transfer');
+      if (outcome === 'completed')
+        await bounded(f.client._refreshActiveTransfers());
+      else
+        await bounded(f.client.cancelTransfer(transferId));
+      const result = await bounded(pending);
+      if (outcome === 'completed') {
+        assert(!result.error && item.representations[0].path && transport.calls.includes('transfer')
+            && transport.calls.includes('downloadContent') && !transport.calls.includes('cancel'),
+          'An evicted waiting transfer must still refresh and deliver its original when the server completes it');
+      } else {
+        assert(result.error && transport.calls.includes('cancel') && !transport.calls.includes('downloadContent'),
+          'Cancelling an evicted waiting transfer must immediately release its consumer without downloading');
+      }
+      assert(!f.client._transfers.pendingIds().includes(transferId)
+          && f.client._transfers._waiters.size === 0
+          && f.client._transfers.values().length <= MAX_TRANSFER_STATES,
+        'Completed or cancelled waiters must release protocol state and retain the UI cache limit');
+    } finally {
+      f.client.destroy();
+      if (pending)
+        await pending;
+    }
+  });
+}
 
 await test('explicit download cancellation prevents a late result from becoming usable', async () => {
   const transport = new DownloadTransport('current');

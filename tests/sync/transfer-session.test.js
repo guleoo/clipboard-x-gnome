@@ -63,6 +63,26 @@ try {
       && !session.running(transfer.transferId),
     'a cancelled operation must reject and release its registration when it finishes');
 
+  const remote = {...transfer, transferId: '77777777-7777-4777-8777-777777777777'};
+  let finishRemote;
+  const remoteGate = new Promise(resolve => { finishRemote = resolve; });
+  const remoteOperation = session.run(async ({track}) => {
+    track(remote);
+    await remoteGate;
+    throw new Error('Unconfirmed upload failure');
+  });
+  const remoteResult = observe(remoteOperation);
+  assert(!session.pendingIds().includes(remote.transferId),
+    'A running remote operation must not be polled alongside its live I/O');
+  finishRemote();
+  await bounded(remoteResult);
+  assert(session.get(remote.transferId).state === 'failed' && session.pendingIds().includes(remote.transferId),
+    'A local failure is not a server-confirmed terminal state and must remain refreshable');
+  session.observe({...remote, state: 'completed'});
+  session.record({...remote, state: 'completed', completedBytes: 4, updatedAt: Date.now()}, true);
+  assert(!session.pendingIds().includes(remote.transferId),
+    'Only a confirmed server terminal state may release an unfinished remote operation');
+
   const server = {...transfer, transferId: '44444444-4444-4444-8444-444444444444',
     state: 'completed', updatedAt: Date.now() + 60_000};
   session.record(server, true);

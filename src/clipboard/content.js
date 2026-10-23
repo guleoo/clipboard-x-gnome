@@ -142,7 +142,7 @@ export class Content {
   }
 
   _current(item, guard) {
-    return !this._destroyed && guard() && (!item.remote || this._history.items.includes(item));
+    return !this._destroyed && guard() && this._history.items.includes(item);
   }
 
   _check(item, guard) {

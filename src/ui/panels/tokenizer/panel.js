@@ -399,17 +399,14 @@ export class TokenizerPanel {
   applySelectionAt(x, y) {
     if (!this._selectionDrag)
       return;
-    for (const button of this._buttons) {
-      if (!button.mapped)
-        continue;
-      const [buttonX, buttonY] = button.get_transformed_position();
-      const [buttonWidth, buttonHeight] = button.get_transformed_size();
-      if (x >= buttonX && x <= buttonX + buttonWidth
-          && y >= buttonY && y <= buttonY + buttonHeight) {
-        this._applySelectionDrag(button);
-        return;
-      }
-    }
+    // Native picking respects viewport clipping and overlay scrollbars, unlike
+    // the allocation rectangles of mapped-but-clipped word buttons.
+    const picked = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+    if (!picked || !this.scroll.contains(picked))
+      return;
+    const button = this._buttons.find(value => value === picked || value.contains(picked));
+    if (button)
+      this._applySelectionDrag(button);
   }
 
   endSelectionDrag() {

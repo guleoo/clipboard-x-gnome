@@ -379,6 +379,8 @@ export class ClipboardController extends EventEmitter {
         this._cancellable);
       item.preview = preview;
     } catch (error) {
+      if (error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+        throw error;
       logger.warn('thumbnail', error);
     }
   }

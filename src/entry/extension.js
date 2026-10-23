@@ -279,17 +279,30 @@ export default class ClipboardXGnomeExtension extends Extension {
   }
 
   async _takeScreenshot() {
-    const uri = await this._portal.capture(this._settings.get_string('screenshot-target'));
+    const controller = this._controller;
+    const settings = this._settings;
+    const portal = this._portal;
+    const check = () => {
+      if (!controller || this._controller !== controller)
+        throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Screenshot operation was stopped'});
+    };
+    check();
+    const uri = await portal.capture(settings.get_string('screenshot-target'));
+    check();
     if (uri === null)
       return;
-    const addToHistory = this._settings.get_boolean('screenshot-add-history');
+    const addToHistory = settings.get_boolean('screenshot-add-history');
     const item = addToHistory
-      ? await this._controller.addFromUri(uri, 'screenshot')
-      : await this._controller.createFromUri(uri);
-    if (this._settings.get_boolean('screenshot-write-clipboard'))
-      await this._controller.writeScreenshot(item);
-    if (this._settings.get_boolean('screenshot-open-editor')) {
+      ? await controller.addFromUri(uri, 'screenshot')
+      : await controller.createFromUri(uri);
+    check();
+    if (settings.get_boolean('screenshot-write-clipboard')) {
+      await controller.writeScreenshot(item);
+      check();
+    }
+    if (settings.get_boolean('screenshot-open-editor')) {
       await this._launchEditor(uri, item.primary?.bytes);
+      check();
     }
   }
 

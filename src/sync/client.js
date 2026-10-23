@@ -737,54 +737,80 @@ export class SyncClient extends EventEmitter {
   }
 
   async _performWork(work) {
+    const generation = this._generation;
+    const transport = this._transport;
     const item = this._sourceItem(work.itemId);
     const representation = item?.representations.find(value => value.id === work.contentId);
+    const available = () => Boolean(item && !item.sensitive && this._sourceItem(work.itemId) === item
+      && item.representations.includes(representation) && (representation?.path || representation?.bytes));
     const {deviceId} = ensureDeviceIdentity(this._settings);
-    return this._transfers.run(async ({transport, cancellable, check, track, update}) => {
-      if (!item || !representation || (!representation.path && !representation.bytes)) {
-        await transport.rejectWork(work.id, 'source_content_missing');
+    let accepted = null;
+    try {
+      return await this._transfers.run(async ({transport, cancellable, check, track, update}) => {
+        const response = await transport.acceptWork(work.id);
+        this._requireCurrent(generation);
+        const result = validateAcceptedWork(response, work.itemId, deviceId);
+        if (result.transfer.kind !== 'content' || result.transfer.direction !== 'upload'
+            || result.transfer.totalBytes !== representation.size)
+          throw new Error('Synchronization server returned an inconsistent source upload size');
+        accepted = result.transfer;
         check();
+        track(accepted);
+        if (accepted.state === 'completed')
+          return;
+        if (TERMINAL_TRANSFER_STATES.has(accepted.state))
+          throw new Error(accepted.errorMessage || `Transfer ${accepted.state}`);
+        const source = {
+          ...(representation.path ? {path: representation.path} : {bytes: representation.bytes}),
+          size: representation.size,
+          mimeType: representation.mimeType,
+        };
+        await transport.uploadContent(
+          result.uploadId,
+          representation.id,
+          source,
+          completedBytes => update({state: 'transferring', completedBytes}),
+          cancellable,
+        );
+        check();
+        const responseCompleted = await transport.completeUpload(result.uploadId);
+        this._requireCurrent(generation);
+        const completed = validateTransfer(responseCompleted.transfer, deviceId);
+        if (completed.transferId !== accepted.transferId || completed.itemId !== work.itemId
+            || completed.kind !== 'content' || completed.direction !== 'upload')
+          throw new Error('Synchronization server returned an inconsistent source completion');
+        accepted = completed;
+        check();
+        if (completed.state !== 'completed')
+          throw new SyncError('source_upload_failed', 'Source upload was not confirmed complete by the server');
+        track({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)});
+      }, {errorCode: 'source_upload_failed', guard: available});
+    } catch (error) {
+      this._requireCurrent(generation);
+      if (available())
+        throw error;
+      // A previously completed upload needs no new local bytes or revocation.
+      if (accepted?.state === 'completed') {
+        this._transfers.observe(accepted);
+        this._transfers.record({...accepted, updatedAt: Math.max(Date.now(), accepted.updatedAt)}, true);
         return;
       }
-      const response = await transport.acceptWork(work.id);
-      check();
-      const accepted = validateAcceptedWork(response, work.itemId, deviceId);
-      if (accepted.transfer.kind !== 'content' || accepted.transfer.direction !== 'upload'
-          || accepted.transfer.totalBytes !== representation.size)
-        throw new Error('Synchronization server returned an inconsistent source upload size');
-      track(accepted.transfer);
-      if (accepted.transfer.state === 'completed')
-        return;
-      if (TERMINAL_TRANSFER_STATES.has(accepted.transfer.state))
-        throw new Error(accepted.transfer.errorMessage || `Transfer ${accepted.transfer.state}`);
-      const source = {
-        ...(representation.path ? {path: representation.path} : {bytes: representation.bytes}),
-        size: representation.size,
-        mimeType: representation.mimeType,
-      };
-      await transport.uploadContent(
-        accepted.uploadId,
-        representation.id,
-        source,
-        completedBytes => update({state: 'transferring', completedBytes}),
-        cancellable,
-      );
-      check();
-      const responseCompleted = await transport.completeUpload(accepted.uploadId);
-      check();
-      const completed = validateTransfer(responseCompleted.transfer, deviceId);
-      if (completed.state !== 'completed')
-        throw new SyncError('source_upload_failed', 'Source upload was not confirmed complete by the server');
-      track({...completed, updatedAt: Math.max(Date.now(), completed.updatedAt)});
-    }, {errorCode: 'source_upload_failed'});
+      // Rejection is valid before or after acceptance and releases requesters.
+      // An accepted source upload is a separate transfer and must also stop.
+      await transport.rejectWork(work.id, 'source_content_missing');
+      this._requireCurrent(generation);
+      if (accepted && !TERMINAL_TRANSFER_STATES.has(accepted.state)) {
+        this._transfers.observe(accepted);
+        await this._transfers.cancel(accepted.transferId);
+        this._requireCurrent(generation);
+      }
+    }
   }
 
   async _refreshActiveTransfers() {
     const generation = this._generation;
-    const active = this._transfers.values()
-      .filter(value => !TERMINAL_TRANSFER_STATES.has(value.state) && !this._transfers.running(value.transferId));
-    for (const current of active) {
-      const transfer = await this.getTransfer(current.transferId);
+    for (const transferId of this._transfers.pendingIds()) {
+      const transfer = await this.getTransfer(transferId);
       if (!this._isCurrent(generation))
         return;
       this._transfers.record(transfer, true);

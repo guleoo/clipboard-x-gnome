@@ -151,6 +151,8 @@ try {
   const cachedImage = (await store.load()).find(item => item.id === image.id);
   assert(cachedImage.primary.path && !cachedImage.primary.bytes,
     'A reloaded image must start with a file path and no in-memory original');
+  history.remove(image.id);
+  history.add(cachedImage);
   const imagePath = await content.file(cachedImage);
   const editor = await launchEditor({
     command: `/usr/bin/cmp - %i '${imagePath}'`,
@@ -230,19 +232,24 @@ try {
   await Promise.resolve();
   assert(history.activations === 0, 'An item removed during download must not activate');
 
-  const reading = original('deleted during final clipboard read');
-  await history.persist();
-  const enteredRead = deferred();
-  const finalRead = deferred();
-  remote.materialize = async () => {};
-  history.materialize = async () => { enteredRead.resolve(); await finalRead.promise; };
-  const activating = content.activate(reading);
-  await enteredRead.promise;
-  history.remove(reading.id);
-  finalRead.resolve();
-  await rejects(activating, 'Removal during the final read must cancel activation');
-  assert(history.activations === 0, 'The final clipboard write must recheck retention');
-  history.materialize = read;
+  for (const isRemote of [true, false]) {
+    const reading = isRemote ? original('remote deleted during final clipboard read')
+      : ClipboardItem.fromText('local deleted during final clipboard read');
+    if (!isRemote)
+      history.add(reading);
+    await history.persist();
+    const enteredRead = deferred();
+    const finalRead = deferred();
+    remote.materialize = async () => {};
+    history.materialize = async () => { enteredRead.resolve(); await finalRead.promise; };
+    const activating = content.activate(reading);
+    await enteredRead.promise;
+    history.remove(reading.id);
+    finalRead.resolve();
+    await rejects(activating, 'Removal during the final read must cancel local and remote activation');
+    assert(history.activations === 0, 'The final clipboard write must recheck retention');
+    history.materialize = read;
+  }
 
   const evicted = preview('evicted when original exceeds capacity');
   history.add(evicted);
@@ -255,9 +262,9 @@ try {
   assert(history.activations === 0, 'Content commit must precede activation');
   history.commit = () => {};
 
-  const screenshot = ClipboardItem.fromText('local transient screenshot stand-in');
-  await content.activate(screenshot);
-  assert(history.activations === 1, 'Local transient content need not be retained in history to activate');
+  const unretained = ClipboardItem.fromText('local content outside history');
+  await rejects(content.activate(unretained), 'History actions must reject unretained local content');
+  assert(history.activations === 0, 'An unretained local item must not be copied');
 
   const stopped = preview('disabled during local read');
   history.add(stopped);

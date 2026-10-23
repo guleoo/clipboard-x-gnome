@@ -28,6 +28,11 @@ export class TransferSession {
   values() { return this._tracker.values(); }
   running(id) { return this._operations.has(id); }
 
+  pendingIds() {
+    return [...new Set([...this._remoteIds, ...this._waiters.keys()])]
+      .filter(id => !this.running(id));
+  }
+
   check() {
     if (!this.current)
       throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED,
@@ -120,6 +125,13 @@ export class TransferSession {
     const transfer = this.get(id);
     if (transfer && !TERMINAL.has(transfer.state))
       this.record({...transfer, state: 'cancelled', updatedAt: Date.now()}, true);
+    // UI history may have evicted the transfer without ending its consumer.
+    const waiter = this._waiters.get(id);
+    if (waiter) {
+      clearTimeout(waiter.timeout);
+      this._waiters.delete(id);
+      waiter.reject(new Error('Transfer cancelled'));
+    }
   }
 
   async run(action, {errorCode, guard = () => true} = {}) {

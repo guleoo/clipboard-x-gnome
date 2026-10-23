@@ -55,3 +55,15 @@ for (const key of settings.list_keys()) {
   assert(settings.get_value(key).equal(settings.get_default_value(key)),
     `${key} did not return to its schema default`);
 }
+
+const observer = new Gio.Settings({settings_schema: settings.settings_schema});
+settings.set_boolean('private-mode', true);
+settings.set_boolean('sync-enabled', true);
+settings.set_int('panel-width', 480);
+assert(observer.get_boolean('private-mode') && observer.get_boolean('sync-enabled')
+    && observer.get_int('panel-width') === 480 && !settings.get_has_unapplied(),
+  'Edits after restoring defaults must immediately reach the backend and other settings instances');
+restore(settings);
+settings.set_boolean('private-mode', true);
+assert(observer.get_boolean('private-mode') && !settings.get_has_unapplied(),
+  'Restoring defaults repeatedly must not leave the preferences instance in delayed mode');
