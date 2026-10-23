@@ -83,6 +83,13 @@ function assert(condition, message) {
     throw new Error(message);
 }
 
+function waitForTokenizer(name, started, operation) {
+  return wait(name, Promise.race([
+    started,
+    operation.then(() => { throw new Error(`Word selection ended before ${name} was reached`); }),
+  ]));
+}
+
 async function indicator(previous = null) {
   stage('waiting-for-indicator');
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -289,10 +296,12 @@ export async function run() {
   const tokenize = actions.tokenizeText;
   const release = deferred();
   const resume = deferred();
+  let source = null;
   try {
     stage('delayed-tokenizer-navigation');
     const {ClipboardItem} = await import(`${Main.extensionManager.lookup(UUID).stateObj.dir.get_uri()}/clipboard/item.js`);
-    const source = ClipboardItem.fromText('Hello, world!');
+    // Use the retained history object, just as an actual entry action does.
+    source = actor._controller.add(ClipboardItem.fromText('Delayed word selection fixture'), 'local');
     const delayed = deferred();
     actions.tokenizeText = async text => {
       delayed.resolve();
@@ -300,7 +309,7 @@ export async function run() {
       return tokenize(text);
     };
     const pending = actor._openTokenizer(source);
-    await wait('dictionary-loading', delayed.promise);
+    await waitForTokenizer('dictionary-loading', delayed.promise, pending);
     actor._openPhrases();
     actor._closePhrases();
     release.resolve();
@@ -314,7 +323,7 @@ export async function run() {
       return tokenize(text);
     };
     const closed = actor._openTokenizer(source);
-    await wait('dictionary-loading-before-close', closing.promise);
+    await waitForTokenizer('dictionary-loading-before-close', closing.promise, closed);
     actor.menu.close();
     actor.menu.open();
     resume.resolve();
@@ -324,6 +333,8 @@ export async function run() {
     release.resolve();
     resume.resolve();
     actions.tokenizeText = tokenize;
+    if (source)
+      actor._controller.remove(source.id);
   }
   stage('quick-phrases-panel');
   actor._openPhrases();
