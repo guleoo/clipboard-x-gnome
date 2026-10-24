@@ -1286,3 +1286,12 @@ msgstr "Повідомити про проблему"
 
 msgid "License"
 msgstr "Ліцензія"
+
+msgid "Text and icon color"
+msgstr "Колір тексту та піктограм"
+
+msgid "Escape in secondary panels"
+msgstr "Escape у вкладених панелях"
+
+msgid "Close panel"
+msgstr "Закрити панель"

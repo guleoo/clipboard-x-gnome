@@ -1289,3 +1289,12 @@ msgstr "Ilmoita ongelmasta"
 
 msgid "License"
 msgstr "Lisenssi"
+
+msgid "Text and icon color"
+msgstr "Tekstin ja kuvakkeiden väri"
+
+msgid "Escape in secondary panels"
+msgstr "Escape alipaneeleissa"
+
+msgid "Close panel"
+msgstr "Sulje paneeli"

@@ -1418,3 +1418,12 @@ msgstr "报告问题"
 
 msgid "License"
 msgstr "许可证"
+
+msgid "Text and icon color"
+msgstr "文字与图标颜色"
+
+msgid "Escape in secondary panels"
+msgstr "非主面板按 ESC 的动作"
+
+msgid "Close panel"
+msgstr "直接关闭面板"

@@ -1275,3 +1275,12 @@ msgstr "問題を報告"
 
 msgid "License"
 msgstr "ライセンス"
+
+msgid "Text and icon color"
+msgstr "文字とアイコンの色"
+
+msgid "Escape in secondary panels"
+msgstr "サブパネルでの Esc キーの動作"
+
+msgid "Close panel"
+msgstr "パネルを閉じる"

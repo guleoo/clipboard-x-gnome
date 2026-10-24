@@ -1283,3 +1283,12 @@ msgstr "Nahlásiť problém"
 
 msgid "License"
 msgstr "Licencia"
+
+msgid "Text and icon color"
+msgstr "Farba textu a ikon"
+
+msgid "Escape in secondary panels"
+msgstr "Escape vo vedľajších paneloch"
+
+msgid "Close panel"
+msgstr "Zavrieť panel"

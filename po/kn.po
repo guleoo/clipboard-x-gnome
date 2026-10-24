@@ -1272,3 +1272,12 @@ msgstr "ಸಮಸ್ಯೆಯನ್ನು ವರದಿ ಮಾಡಿ"
 
 msgid "License"
 msgstr "ಪರವಾನಗಿ"
+
+msgid "Text and icon color"
+msgstr "ಪಠ್ಯ ಮತ್ತು ಐಕಾನ್ ಬಣ್ಣ"
+
+msgid "Escape in secondary panels"
+msgstr "ಉಪಫಲಕಗಳಲ್ಲಿ Escape ಕೀ"
+
+msgid "Close panel"
+msgstr "ಫಲಕವನ್ನು ಮುಚ್ಚಿ"

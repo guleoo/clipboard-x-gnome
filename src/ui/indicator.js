@@ -134,6 +134,7 @@ class Indicator extends PanelMenu.Button {
     this._updateThemeColor();
 
     this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
+    this._foregroundColorSignal = settings.connect('changed::foreground-color', () => this._updateMenuStyle());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
     this._panelAnchorSignal = settings.connect('changed::panel-anchor', () => this._updateMenuSource());
@@ -170,6 +171,17 @@ class Indicator extends PanelMenu.Button {
     });
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
+    // Handle Escape before PopupMenu's default handler closes the entire menu.
+    if (Clutter.KeyController) {
+      this._menuKeyController = new Clutter.KeyController();
+      this._menuCaptureSignal = this._menuKeyController.connect('key-press', controller =>
+        this._handleEscape(controller.get_key()[1]));
+      this.menu.actor.add_action_full('clipboard-x-gnome-escape', Clutter.EventPhase.CAPTURE, this._menuKeyController);
+    } else {
+      this._menuCaptureSignal = this.menu.actor.connect('captured-event', (_actor, event) =>
+        event.type() === Clutter.EventType.KEY_PRESS
+          ? this._handleEscape(event.get_key_symbol()) : Clutter.EVENT_PROPAGATE);
+    }
     this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
         this._actions.rememberInputTarget();
@@ -403,8 +415,19 @@ class Indicator extends PanelMenu.Button {
   }
 
   _setMenuGeometry({width}) {
+    this._menuWidth = width;
     this.menu.actor.set_width(width);
+    this._updateMenuStyle();
+  }
+
+  _updateMenuStyle() {
+    const width = this._menuWidth;
+    const foreground = this._settings.get_string('foreground-color');
+    const color = HEX_COLOR_PATTERN.test(foreground) ? `color: ${foreground};` : '';
     this.menu.actor.set_style(`width: ${width}px; max-width: ${width}px;`);
+    // PopupMenu's themed content has its own foreground, so override that
+    // color boundary rather than the outer BoxPointer.
+    this.menu.box.set_style(color);
   }
 
   _updateThemeColor() {
@@ -477,6 +500,18 @@ class Indicator extends PanelMenu.Button {
     });
   }
 
+  _handleEscape(symbol) {
+    if (!this.menu.isOpen || symbol !== Clutter.KEY_Escape)
+      return Clutter.EVENT_PROPAGATE;
+    if (this._panelManager.is('phrases') && this._quickPhrases.formVisible)
+      this._quickPhrases.hideForm();
+    else if (!this._panelManager.is('history') && this._settings.get_string('panel-escape-action') === 'back')
+      this._panelManager.reset();
+    else
+      this.menu.close();
+    return Clutter.EVENT_STOP;
+  }
+
   _handleMenuKey(event) {
     if (!this.menu.isOpen)
       return Clutter.EVENT_PROPAGATE;
@@ -513,6 +548,7 @@ class Indicator extends PanelMenu.Button {
     this._panelManager?.destroy();
     for (const signal of [
       this._themeColorSignal,
+      this._foregroundColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
       this._panelAnchorSignal,
@@ -527,6 +563,7 @@ class Indicator extends PanelMenu.Button {
         this._settings.disconnect(signal);
     }
     this._themeColorSignal = 0;
+    this._foregroundColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
     this._panelAnchorSignal = 0;
@@ -542,6 +579,12 @@ class Indicator extends PanelMenu.Button {
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;
+    if (this._menuCaptureSignal)
+      (this._menuKeyController ?? this.menu.actor).disconnect(this._menuCaptureSignal);
+    this._menuCaptureSignal = 0;
+    if (this._menuKeyController)
+      this.menu.actor.remove_action(this._menuKeyController);
+    this._menuKeyController = null;
     if (this._monitorsChangedSignal)
       Main.layoutManager.disconnect(this._monitorsChangedSignal);
     this._monitorsChangedSignal = 0;

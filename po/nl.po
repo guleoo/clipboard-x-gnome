@@ -1293,3 +1293,12 @@ msgstr "Probleem melden"
 
 msgid "License"
 msgstr "Licentie"
+
+msgid "Text and icon color"
+msgstr "Tekst- en pictogramkleur"
+
+msgid "Escape in secondary panels"
+msgstr "Escape in secundaire panelen"
+
+msgid "Close panel"
+msgstr "Paneel sluiten"

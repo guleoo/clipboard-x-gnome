@@ -75,6 +75,11 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   its state, and quick phrases use phrase text plus action. Theme updates do not rebuild content.
 - Scrollable content uses an overlay scrollbar and the shared thin-scrollbar style.
 - Panel geometry, text vertical offset, and scene restoration are settings, not hard-coded per-user values.
+- Escape dismisses an active quick-phrase form first. Otherwise secondary panels follow the configured
+  action (return to history by default, or close); Escape in history always closes the popup.
+- Normal text and icons inherit the system foreground color unless a custom foreground is configured.
+  Accent states, selected-word contrast, and the separate tooltip/picker preview keep their own colors.
+  Changing the foreground updates styles without rebuilding panel content.
 
 ## CSS conventions
 

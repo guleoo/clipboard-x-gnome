@@ -1295,3 +1295,12 @@ msgstr "Докладване на проблем"
 
 msgid "License"
 msgstr "Лиценз"
+
+msgid "Text and icon color"
+msgstr "Цвят на текста и иконите"
+
+msgid "Escape in secondary panels"
+msgstr "Escape във вторичните панели"
+
+msgid "Close panel"
+msgstr "Затваряне на панела"

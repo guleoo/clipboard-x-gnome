@@ -1301,3 +1301,12 @@ msgstr "Αναφορά προβλήματος"
 
 msgid "License"
 msgstr "Άδεια χρήσης"
+
+msgid "Text and icon color"
+msgstr "Χρώμα κειμένου και εικονιδίων"
+
+msgid "Escape in secondary panels"
+msgstr "Escape στα δευτερεύοντα πάνελ"
+
+msgid "Close panel"
+msgstr "Κλείσιμο πάνελ"

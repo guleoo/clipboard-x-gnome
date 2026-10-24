@@ -1298,3 +1298,12 @@ msgstr "Informeu d’un problema"
 
 msgid "License"
 msgstr "Llicència"
+
+msgid "Text and icon color"
+msgstr "Color del text i de les icones"
+
+msgid "Escape in secondary panels"
+msgstr "Escape als panells secundaris"
+
+msgid "Close panel"
+msgstr "Tanca el panell"

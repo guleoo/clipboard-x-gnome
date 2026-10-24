@@ -88,15 +88,23 @@ export class QuickPhrasesPanel {
       onChanged: () => this._formRevision++,
       onActivate: () => this.save().catch(error => this._reportError(error)),
       onKeyPress: event => {
-        if (event.get_key_symbol() === Clutter.KEY_Escape) {
-          this.hideForm();
-          return Clutter.EVENT_STOP;
-        }
+        const key = event.get_key_symbol();
+        // Adding a form action must not steal arrows used to edit the draft.
+        if ([Clutter.KEY_Left, Clutter.KEY_KP_Left].includes(key)
+            || ([Clutter.KEY_Right, Clutter.KEY_KP_Right].includes(key) && !this.entry.atEnd))
+          return Clutter.EVENT_PROPAGATE;
         return this._handleKey(event);
       },
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
     this.form.add_child(this.entry);
+    this.saveButton = createIconButton(
+      'object-select-symbolic',
+      _('Add custom phrase'),
+      () => this.save(),
+      {showTooltip: false},
+    );
+    this.form.add_child(this.saveButton);
     this.actor.add_child(this.form);
 
     this._section = new PopupMenu.PopupMenuSection();
@@ -193,7 +201,7 @@ export class QuickPhrasesPanel {
     }
     this.focusGrid.setRows([
       [this.backButton, this.addButton],
-      ...(this._formVisible ? [[this.entry.clutter_text]] : []),
+      ...(this._formVisible ? [[this.entry.clutter_text, this.saveButton]] : []),
       ...focusRows,
     ]);
   }

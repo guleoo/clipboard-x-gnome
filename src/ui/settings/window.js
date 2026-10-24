@@ -16,6 +16,7 @@ import {create as createFileVerificationRow} from './file-verification.js';
 import {create as createDictionariesGroup} from './dictionaries.js';
 import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
+import {create as createForegroundColorRow} from './foreground-color.js';
 import {create as createAboutPage} from './about.js';
 
 export default class ClipboardXGnomePreferences extends ExtensionPreferences {
@@ -107,6 +108,7 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
     const appearance = new Adw.PreferencesGroup({title: _('Appearance')});
     page.add(appearance);
     appearance.add(createThemeColorRow(settings));
+    appearance.add(createForegroundColorRow(settings));
 
     const panel = new Adw.PreferencesGroup({title: _('Panel')});
     page.add(panel);
@@ -159,6 +161,10 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       _('Keep keyboard focus in panel'),
       _('At the edge, arrow keys do not move focus outside the extension panel'),
     ));
+    panel.add(this._rows.combo('panel-escape-action', _('Escape in secondary panels'), [
+      ['back', _('Back to clipboard history')],
+      ['close', _('Close panel')],
+    ]));
 
     const actions = new Adw.PreferencesGroup({
       title: _('Icon layout'),

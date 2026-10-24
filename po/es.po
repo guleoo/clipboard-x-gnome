@@ -1301,3 +1301,12 @@ msgstr "Informar de un problema"
 
 msgid "License"
 msgstr "Licencia"
+
+msgid "Text and icon color"
+msgstr "Color del texto y los iconos"
+
+msgid "Escape in secondary panels"
+msgstr "Escape en paneles secundarios"
+
+msgid "Close panel"
+msgstr "Cerrar panel"

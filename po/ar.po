@@ -1263,3 +1263,12 @@ msgstr "الإبلاغ عن مشكلة"
 
 msgid "License"
 msgstr "الترخيص"
+
+msgid "Text and icon color"
+msgstr "لون النص والأيقونات"
+
+msgid "Escape in secondary panels"
+msgstr "مفتاح Escape في اللوحات الثانوية"
+
+msgid "Close panel"
+msgstr "إغلاق اللوحة"

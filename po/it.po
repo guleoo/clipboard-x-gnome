@@ -1299,3 +1299,12 @@ msgstr "Segnala un problema"
 
 msgid "License"
 msgstr "Licenza"
+
+msgid "Text and icon color"
+msgstr "Colore del testo e delle icone"
+
+msgid "Escape in secondary panels"
+msgstr "Escape nei pannelli secondari"
+
+msgid "Close panel"
+msgstr "Chiudi pannello"

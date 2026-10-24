@@ -1287,3 +1287,12 @@ msgstr "Eman arazo baten berri"
 
 msgid "License"
 msgstr "Lizentzia"
+
+msgid "Text and icon color"
+msgstr "Testuaren eta ikonoen kolorea"
+
+msgid "Escape in secondary panels"
+msgstr "Escape bigarren mailako paneletan"
+
+msgid "Close panel"
+msgstr "Itxi panela"

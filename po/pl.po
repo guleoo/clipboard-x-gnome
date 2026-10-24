@@ -1290,3 +1290,12 @@ msgstr "Zgłoś problem"
 
 msgid "License"
 msgstr "Licencja"
+
+msgid "Text and icon color"
+msgstr "Kolor tekstu i ikon"
+
+msgid "Escape in secondary panels"
+msgstr "Escape w panelach podrzędnych"
+
+msgid "Close panel"
+msgstr "Zamknij panel"

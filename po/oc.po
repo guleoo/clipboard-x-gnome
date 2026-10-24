@@ -1298,3 +1298,12 @@ msgstr "Senhalar un problèma"
 
 msgid "License"
 msgstr "Licéncia"
+
+msgid "Text and icon color"
+msgstr "Color del tèxte e de las icònas"
+
+msgid "Escape in secondary panels"
+msgstr "Esc dins los panèls segondaris"
+
+msgid "Close panel"
+msgstr "Tampar lo panèl"

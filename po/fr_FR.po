@@ -1300,3 +1300,12 @@ msgstr "Signaler un problème"
 
 msgid "License"
 msgstr "Licence"
+
+msgid "Text and icon color"
+msgstr "Couleur du texte et des icônes"
+
+msgid "Escape in secondary panels"
+msgstr "Échap dans les panneaux secondaires"
+
+msgid "Close panel"
+msgstr "Fermer le panneau"

@@ -1267,3 +1267,12 @@ msgstr "문제 보고"
 
 msgid "License"
 msgstr "라이선스"
+
+msgid "Text and icon color"
+msgstr "텍스트 및 아이콘 색상"
+
+msgid "Escape in secondary panels"
+msgstr "하위 패널에서 Esc 키 동작"
+
+msgid "Close panel"
+msgstr "패널 닫기"

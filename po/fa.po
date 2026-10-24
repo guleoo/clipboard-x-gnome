@@ -1276,3 +1276,12 @@ msgstr "گزارش مشکل"
 
 msgid "License"
 msgstr "مجوز"
+
+msgid "Text and icon color"
+msgstr "رنگ متن و نمادها"
+
+msgid "Escape in secondary panels"
+msgstr "کلید Escape در پنل‌های فرعی"
+
+msgid "Close panel"
+msgstr "بستن پنل"

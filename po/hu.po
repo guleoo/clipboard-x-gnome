@@ -1290,3 +1290,12 @@ msgstr "Hiba jelentése"
 
 msgid "License"
 msgstr "Licenc"
+
+msgid "Text and icon color"
+msgstr "Szöveg és ikonok színe"
+
+msgid "Escape in secondary panels"
+msgstr "Escape a másodlagos paneleken"
+
+msgid "Close panel"
+msgstr "Panel bezárása"

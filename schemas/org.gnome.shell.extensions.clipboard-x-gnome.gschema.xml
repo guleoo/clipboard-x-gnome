@@ -58,6 +58,18 @@
       <default>'system'</default>
       <summary>Accent color used by the extension interface</summary>
     </key>
+    <key name="foreground-color" type="s">
+      <default>''</default>
+      <summary>Custom text and icon color, or empty to follow the system theme</summary>
+    </key>
+    <key name="panel-escape-action" type="s">
+      <choices>
+        <choice value="close"/>
+        <choice value="back"/>
+      </choices>
+      <default>'back'</default>
+      <summary>Escape action in secondary panels after closing any active form</summary>
+    </key>
     <key name="custom-theme-colors" type="as">
       <default>[]</default>
       <summary>User-defined accent colors</summary>
