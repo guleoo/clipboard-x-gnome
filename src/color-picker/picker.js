@@ -91,6 +91,9 @@ class ColorPicker extends St.Widget {
       reactive: true,
       can_focus: true,
       style_class: 'cbx-color-overlay',
+      // Keep the modal actor mapped for input, but exclude its dimming and
+      // preview from the stage screenshot used as the immutable color source.
+      opacity: 0,
     });
     this._onPicked = onPicked;
     this._previewFormat = previewFormat;
@@ -139,6 +142,8 @@ class ColorPicker extends St.Widget {
     this._scale = scale;
     const [x, y] = global.get_pointer();
     await this._sample(x, y);
+    if (!this._closed)
+      this.opacity = 255;
   }
 
   async _sample(x, y) {
