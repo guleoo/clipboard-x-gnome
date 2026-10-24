@@ -33,6 +33,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 - [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.
 - [UI development guide](ui-architecture.md): panels, controls, focus grids, lifecycle, and CSS conventions.
+- [Local panel regression tests](panel-testing.md): reproducible entrance, navigation, scene, keyboard/pointer, and display checks.
 - [Contributing](../CONTRIBUTING.md): build, test, layout, protocol changes, and code conventions.
 
 ## Security and data flows

@@ -35,6 +35,7 @@ GitHub Release 默认展示英文，并提供中文入口。
 
 - [日志与问题排查](diagnostics_CN.md)：系统 journal、Devkit 输出、初始化阶段与隐私边界。
 - [界面开发指南](ui-architecture_CN.md)：面板、控件、焦点矩阵、生命周期和 CSS 约定。
+- [本地面板回归测试](panel-testing_CN.md)：可重复执行的入口、导航、现场、键鼠和显示环境验证。
 - [参与开发](../CONTRIBUTING.zh-CN.md)：构建、测试、目录结构、协议改动和代码约定。
 
 ## 安全与数据流

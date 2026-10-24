@@ -25,6 +25,16 @@ scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
 Shell interaction and preferences checks run separately from Meson, in an isolated test desktop:
 
+For repeatable panel entrance, focus navigation, scene restoration, animated close, and real
+multi-monitor/scaling checks, use the [local panel suite](docs/panel-testing.md). It supports individual
+PANEL-01…10 cases and fresh-session repetitions without enabling them in CI:
+
+```sh
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 3
+```
+
+Other focused Shell checks can run separately:
+
 ```sh
 run_shell_check() (
   test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)

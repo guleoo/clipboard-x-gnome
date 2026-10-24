@@ -23,6 +23,15 @@ meson install -C build
 
 Shell 交互和设置窗口测试不属于 Meson 测试集，需要在隔离测试桌面中单独运行：
 
+面板入口、焦点导航、现场恢复、关闭动画以及真实多屏和缩放，使用[本地面板测试](docs/panel-testing_CN.md)。
+支持单独运行 PANEL-01～10 及全新会话重复执行，不自动加入 CI：
+
+```sh
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 3
+```
+
+其他 Shell 专项仍可分别运行：
+
 ```sh
 run_shell_check() (
   test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
