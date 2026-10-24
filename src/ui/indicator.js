@@ -542,10 +542,11 @@ class Indicator extends PanelMenu.Button {
     const focus = global.stage.get_key_focus();
     if (!target || target === focus)
       return;
-    // Hover must not interrupt text editing or start editing another entry.
+    // Automatic search focus on opening is not an editing session.
+    // Only real entry input/clicks protect editing from pointer hover.
     const editable = candidate => candidate instanceof St.Entry
       || (candidate instanceof Clutter.Text && candidate.editable);
-    if (!pressed && (editable(focus) || editable(target)))
+    if (!pressed && (this._inputMode.editing || editable(target)))
       return;
     // The pointer target is already visible; revealing it would snap scrolling.
     grid.focusAt(grid.location(target), {ensureVisible: false});

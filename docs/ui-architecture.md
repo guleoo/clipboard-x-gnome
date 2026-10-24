@@ -75,8 +75,10 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   scrolling restore pointer feedback. Layout-driven hover/focus signals do not choose the input mode.
   Root mode classes gate hover/focus styling, not checked state, accent colors, entry focus, or caret.
   Actual pointer movement synchronizes focus to eligible controls in the current panel, so subsequent
-  keyboard actions continue from that target. Hover does not interrupt entry editing or start it;
-  wheel scrolling and layout-only hover changes never move focus or reveal a row.
+  keyboard actions continue from that target. Hover does not interrupt entry editing or start it.
+  Opening-time autofocus alone is not editing. Entry key input or a deliberate click protects its focus
+  until focus leaves that entry; closing the popup clears this editing state.
+  Wheel scrolling and layout-only hover changes never move focus or reveal a row.
   Tooltips use only the current mode's target and cancel pending help on mode changes or panel close.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.

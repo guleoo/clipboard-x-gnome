@@ -72,6 +72,16 @@ export async function verify(indicator) {
       && !indicator.menu.actor.get_transition('scale-x')
       && !indicator.menu.actor.get_transition('scale-y')
       && !history._focusIdleId, 'Opening animation did not settle');
+    await move(...center(history.colorButton));
+    assert(focus() === history.colorButton, 'Initial search autofocus must not block the first pointer handoff');
+    await key(Clutter.KEY_Right);
+    assert(focus() === history.phrasesButton, 'The first key after opening must navigate from the pointer target');
+    await move(...center(history.searchEntry));
+    assert(focus() === history.phrasesButton, 'Hovering an entry must not start editing');
+    await click();
+    await move(...center(history.colorButton));
+    assert(focus() === history.searchEntry.clutter_text,
+      'Clicking even an empty entry must protect its editing focus from hover');
     await key(Clutter.KEY_Right);
     await until(() => focus() === history.screenshotButton && tooltip.actor.visible, 'Keyboard navigation did not show icon help');
     await move(60, global.stage.height - 70);
@@ -196,6 +206,15 @@ export async function verify(indicator) {
       'Closing must remove input monitoring and tooltip work');
     await toggle();
     assert(indicator._inputMode.mode === 'keyboard', 'The opening shortcut must seed keyboard mode');
+    await until(() => focus() === history.searchEntry.clutter_text && !history._focusIdleId,
+      'Reopening did not restore search focus');
+    await until(() => !indicator.menu.actor.get_transition('opacity')
+      && !indicator.menu.actor.get_transition('scale-x')
+      && !indicator.menu.actor.get_transition('scale-y'), 'Reopening animation did not settle');
+    await move(...center(history.colorButton));
+    assert(focus() === history.colorButton, 'Reopening must not retain stale entry-editing protection');
+    await key(Clutter.KEY_Right);
+    assert(focus() === history.screenshotButton, 'Keyboard must follow the first pointer target after reopening');
     await toggle();
     await until(() => !indicator.menu.actor.visible, 'Popup did not finish closing');
     await move(...center(indicator));

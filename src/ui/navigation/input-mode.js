@@ -18,10 +18,16 @@ export class InputMode {
     this._filterId = 0;
     this._pointer = null;
     this._mode = null;
+    this._editingFocus = null;
   }
 
   get mode() {
     return this._mode;
+  }
+
+  get editing() {
+    return this._editingFocus !== null
+      && this._editingFocus === global.stage.get_key_focus();
   }
 
   open(mode = 'pointer') {
@@ -53,6 +59,7 @@ export class InputMode {
   keyboard(symbol) {
     if (!this._filterId || MODIFIERS.has(symbol))
       return;
+    this._rememberEditing();
     this._pointer = global.get_pointer().slice(0, 2);
     this._setMode('keyboard');
   }
@@ -61,6 +68,7 @@ export class InputMode {
     if (this._filterId)
       Clutter.Event.remove_filter(this._filterId);
     this._filterId = 0;
+    this._editingFocus = null;
     if (this._mode !== null) {
       this._mode = null;
       this._onChanged(null);
@@ -78,6 +86,13 @@ export class InputMode {
   _pointAt([x, y], pressed) {
     const actor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
     this._onPointer(actor, pressed);
+    if (pressed)
+      this._rememberEditing();
+  }
+
+  _rememberEditing() {
+    const focus = global.stage.get_key_focus();
+    this._editingFocus = focus instanceof Clutter.Text && focus.editable ? focus : null;
   }
 
   _setMode(mode, position = null) {
