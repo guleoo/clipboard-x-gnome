@@ -4,6 +4,9 @@
 
 先按所需运行环境分类，每类内部继续按业务领域组织：
 
+[功能测试清单](functional-inventory_CN.md) 统一维护验收范围、入口、缺口和重复测试审查，
+不是通过报告。
+
 ```text
 tests/
   logic/          # 不需要图形桌面
@@ -15,9 +18,20 @@ tests/
     sync/         # 策略、状态、HTTP、存储、生命周期及可选压力测试
     ui/           # 面板模型、焦点矩阵、布局和设置逻辑
   simulation/
-    ui/           # 真实 GNOME Shell、Mutter 输入及独立 GTK 进程
+    lifecycle/    # 安装、启动、启停的兼容性子集
+    panels/       # PANEL-01～10、导航、恢复、搜索、Esc
+      cases/      # 用例及私有会话驱动
       fixtures/   # 显示器与背景素材
-      panels/     # 面板验收驱动及用例
+    clipboard/    # 捕获、条目、图片、历史、隐私
+    phrases/      # 原生表单、快捷键、保存竞态
+    word-selection/
+    terminal/     # 实际目标输入、修饰键/事件保护、生命周期
+    sync/         # 开关、进度/会话恢复、接收落盘
+    screenshot/
+    color-picker/
+    settings/     # 独立 GTK、设置入口及前景色
+    helpers/      # 共用断言和 Shell 准备，不是功能用例
+    shell.smoke.js # 领域检查编排，不是全部模拟文件入口
   fixtures/       # 共享的外部剪切板、输入目标及进程辅助程序
 ```
 
@@ -60,6 +74,13 @@ bun run test:simulation:panels
 方式见[参与开发](../CONTRIBUTING.zh-CN.md)。Shell 和面板 runner 已改用新目录；UI 验收矩阵，
 以及原本由 CI 执行的生命周期子集均不变。具体隔离方式和验证边界见
 [Shell 兼容性](../docs/shell-compatibility_CN.md)、[面板测试](../docs/panel-testing_CN.md)。
+
+各领域的 `.smoke.js` 可使用参与开发文档中的隔离 `run_shell_check` 执行。
+`shell.smoke.js` 导入领域检查，不复制实现；可用 `CBX_SIMULATION_CASES=phrases,wordSelection`
+选择其中的命名检查，未知名称直接失败。原生表单、搜索、取色和 GTK 专项仍需单独运行。
+
+不要常规运行“综合入口 + 全部组件”再当作额外覆盖。根据清单选择相关入口和层级。
+裁剪区拖选的已知失败仍保留并记录，本次整理不把整个综合入口宣称为通过。
 
 ## 新增测试的归属
 

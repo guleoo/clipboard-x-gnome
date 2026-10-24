@@ -21,7 +21,9 @@ meson install -C build
 不为文档措辞、CSS 细节、固定图标名称或控件的常规属性编写断言。CI/Release 配置应使用
 现有校验、临时脚本或隔离 dry-run 验证，不增加锁定配置格式的测试。
 
-测试已分为[无需图形桌面的逻辑验证与桌面模拟验证](tests/README_CN.md)。普通逻辑验证使用
+测试已分为[无需图形桌面的逻辑验证与桌面模拟验证](tests/README_CN.md)。
+对应入口、覆盖缺口和重复测试处理见[功能测试清单](tests/functional-inventory_CN.md)，不要把重复执行
+当作新增功能覆盖。普通逻辑验证使用
 `bun run test:logic`，或在 `dbus-run-session` 中执行带 `--no-suite stress` 的 Meson 命令。
 Shell 交互和设置窗口检查仍在隔离测试桌面中单独运行：
 
@@ -43,18 +45,23 @@ run_shell_check() (
   dbus-run-session -- gnome-shell-test-tool --headless \
     --extension build/clipboard-x-gnome_<version>.zip "$1"
 )
-run_shell_check tests/simulation/ui/shell.smoke.js
-run_shell_check tests/simulation/ui/preferences.smoke.js
+run_shell_check tests/simulation/shell.smoke.js
+run_shell_check tests/simulation/settings/window.smoke.js
 ```
 
 隐私边界、输入框键盘导航/提交、取色器移动、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
 
 ```sh
-run_shell_check tests/simulation/ui/privacy.smoke.js
-run_shell_check tests/simulation/ui/search-picker.smoke.js
-run_shell_check tests/simulation/ui/sync-toggle.smoke.js
-run_shell_check tests/simulation/ui/screenshot-cancel.smoke.js
-run_shell_check tests/simulation/ui/word-selection.smoke.js
+run_shell_check tests/simulation/clipboard/privacy.smoke.js
+run_shell_check tests/simulation/panels/search.smoke.js
+run_shell_check tests/simulation/panels/escape.smoke.js
+run_shell_check tests/simulation/phrases/form.smoke.js
+run_shell_check tests/simulation/color-picker/movement.smoke.js
+run_shell_check tests/simulation/color-picker/sampling.smoke.js
+run_shell_check tests/simulation/settings/foreground.smoke.js
+run_shell_check tests/simulation/sync/toggle.smoke.js
+run_shell_check tests/simulation/screenshot/cancel.smoke.js
+run_shell_check tests/simulation/word-selection/drag.smoke.js
 ```
 
 设备图标选择器另有 GTK 集成测试，需要图形显示环境和已经配置的打包构建目录。
@@ -64,7 +71,7 @@ run_shell_check tests/simulation/ui/word-selection.smoke.js
 shell_libdir=/usr/lib/gnome-shell
 dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
   GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/ui/settings-icon.integration.js
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/settings/icon.integration.js
 ```
 
 `shell_libdir` 需按 GNOME Shell 的实际安装目录调整，Fedora 通常为

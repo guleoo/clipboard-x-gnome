@@ -121,7 +121,7 @@ Headless checks live in `tests/logic/`; real Shell/GTK checks live in `tests/sim
 See the [test directory guide](../tests/README.md) for the boundary and execution commands.
 
 Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and lifecycle are covered by
-`tests/simulation/ui/shell.smoke.js`; GTK preferences are covered by `tests/simulation/ui/preferences.smoke.js`. Every
+`tests/simulation/shell.smoke.js`; GTK preferences are covered by `tests/simulation/settings/window.smoke.js`. Every
 structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.
 The existing Shell compatibility entry also runs open-panel disable coverage, simulated-input source
 cleanup, and the settings lifecycle integration test in a separate GTK process. Never import GTK into Shell.

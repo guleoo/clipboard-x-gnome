@@ -6,6 +6,9 @@ This local suite makes PANEL-01 through PANEL-10 reproducible with real Mutter v
 pointer, and wheel events. It is separate from Meson and GitHub CI. It does not install the extension
 on the host desktop, read the host history, or require Clipboard X Server.
 
+The [functional inventory](../tests/functional-inventory.md) owns the complete feature scope and
+duplicate-test review; this guide describes the panel runner and finite reproduction matrix.
+
 ## Run
 
 Build a package with `-Dtarget=package`, as described in [Contributing](../CONTRIBUTING.md).

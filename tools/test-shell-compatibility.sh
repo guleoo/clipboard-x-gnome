@@ -60,7 +60,7 @@ fi
 export XDG_RUNTIME_DIR="$test_runtime"
 export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
 # Do not depend on the performance tool's animated wallpaper or distro background packages.
-base64 --decode "$project_dir/tests/simulation/ui/fixtures/background.png.base64" > "$test_runtime/background.png"
+base64 --decode "$project_dir/tests/simulation/panels/fixtures/background.png.base64" > "$test_runtime/background.png"
 export SHELL_BACKGROUND_IMAGE="$test_runtime/background.png"
 export PYTHONUNBUFFERED=1
 # Never inherit the host display or a development-session schema override.
@@ -68,4 +68,4 @@ unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
 printf 'Testing extension lifecycle on GNOME Shell %s in an isolated headless session.\n' "$shell_major"
 timeout --kill-after=10s 120s dbus-run-session -- \
   gnome-shell-test-tool --headless --disable-animations --extra-filter Gjs --extra-filter gjs --extension "$archive" \
-  "$project_dir/tests/simulation/ui/compatibility.smoke.js"
+  "$project_dir/tests/simulation/lifecycle/compatibility.smoke.js"

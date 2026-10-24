@@ -5,6 +5,9 @@
 本地测试入口使用 Mutter 真实分发的虚拟键盘、鼠标和滚轮事件，复现 PANEL-01～10。
 它独立于 Meson 和 GitHub CI，不安装宿主插件、不读取宿主历史，也不需要 Clipboard X Server。
 
+[功能测试清单](../tests/functional-inventory_CN.md) 统一维护完整功能范围和重复审查；
+本文描述面板执行入口及有限的稳定复现矩阵。
+
 ## 运行
 
 按[参与开发](../CONTRIBUTING.zh-CN.md)使用 `-Dtarget=package` 构建，将下列 `1.x.x` 替换为实际版本：

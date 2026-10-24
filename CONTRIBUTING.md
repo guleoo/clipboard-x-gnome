@@ -24,6 +24,8 @@ names, or routine widget properties. Validate CI/release configuration with exis
 scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
 Tests are separated into [headless logic and desktop simulation](tests/README.md).
+Use the [functional inventory](tests/functional-inventory.md) to choose the owning check and identify
+unverified external/manual boundaries; avoid running copied scenarios as extra coverage.
 For the ordinary logic suite, use `bun run test:logic` or run Meson with `--no-suite stress` inside
 `dbus-run-session`. Shell interaction and preferences checks run separately, in an isolated test desktop:
 
@@ -46,8 +48,8 @@ run_shell_check() (
   dbus-run-session -- gnome-shell-test-tool --headless \
     --extension build/clipboard-x-gnome_<version>.zip "$1"
 )
-run_shell_check tests/simulation/ui/shell.smoke.js
-run_shell_check tests/simulation/ui/preferences.smoke.js
+run_shell_check tests/simulation/shell.smoke.js
+run_shell_check tests/simulation/settings/window.smoke.js
 ```
 
 For privacy boundaries, entry keyboard navigation / submission, color-picker movement, sync toggles, screenshot cancellation,
@@ -55,11 +57,16 @@ or press-and-drag word selection,
 run the corresponding focused check using the same helper:
 
 ```sh
-run_shell_check tests/simulation/ui/privacy.smoke.js
-run_shell_check tests/simulation/ui/search-picker.smoke.js
-run_shell_check tests/simulation/ui/sync-toggle.smoke.js
-run_shell_check tests/simulation/ui/screenshot-cancel.smoke.js
-run_shell_check tests/simulation/ui/word-selection.smoke.js
+run_shell_check tests/simulation/clipboard/privacy.smoke.js
+run_shell_check tests/simulation/panels/search.smoke.js
+run_shell_check tests/simulation/panels/escape.smoke.js
+run_shell_check tests/simulation/phrases/form.smoke.js
+run_shell_check tests/simulation/color-picker/movement.smoke.js
+run_shell_check tests/simulation/color-picker/sampling.smoke.js
+run_shell_check tests/simulation/settings/foreground.smoke.js
+run_shell_check tests/simulation/sync/toggle.smoke.js
+run_shell_check tests/simulation/screenshot/cancel.smoke.js
+run_shell_check tests/simulation/word-selection/drag.smoke.js
 ```
 
 The device-icon chooser has a separate GTK integration check. It requires a graphical display and
@@ -69,7 +76,7 @@ a configured package build; it uses an in-memory settings backend, not the host 
 shell_libdir=/usr/lib/gnome-shell
 dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
   GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/ui/settings-icon.integration.js
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/settings/icon.integration.js
 ```
 
 Set `shell_libdir` to the installed GNOME Shell library directory (typically

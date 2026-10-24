@@ -325,11 +325,11 @@ export async function run() {
   const extensionObject = Main.extensionManager.lookup(UUID).stateObj;
   await wait('initial-startup', extensionObject._startup);
   const {TerminalInput} = await import(`${extensionObject.dir.get_uri()}/clipboard/terminal/input.js`);
-  const {verify: verifyTerminalLifecycle} = await import('./terminal-lifecycle.smoke.js');
+  const {verify: verifyTerminalLifecycle} = await import('../terminal/lifecycle.smoke.js');
   await wait('terminal-source-cleanup', verifyTerminalLifecycle(TerminalInput));
-  const {verifyLifecycle: verifyPreferencesLifecycle} = await import('./preferences.smoke.js');
+  const {verifyLifecycle: verifyPreferencesLifecycle} = await import('../settings/window.smoke.js');
   await wait('settings-close-lifecycle', verifyPreferencesLifecycle());
-  const {verify: verifyInputMode} = await import('./input-mode.smoke.js');
+  const {verify: verifyInputMode} = await import('../panels/input-mode.smoke.js');
   await wait('input-mode', verifyInputMode(actor));
   actor.menu.open();
   await Scripting.sleep(150);

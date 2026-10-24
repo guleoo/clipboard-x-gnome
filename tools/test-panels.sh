@@ -89,8 +89,8 @@ with zipfile.ZipFile(sys.argv[1]) as source, zipfile.ZipFile(sys.argv[2], 'w') a
             content = (json.dumps(metadata, indent=2) + '\n').encode()
         target.writestr(entry, content)
 PY
-base64 --decode "$project_dir/tests/simulation/ui/fixtures/background.png.base64" > "$panel_runtime/background.png"
-cp -- "$project_dir/tests/simulation/ui/fixtures/dual-monitor.sh" "$panel_runtime/dual-monitor.sh"
+base64 --decode "$project_dir/tests/simulation/panels/fixtures/background.png.base64" > "$panel_runtime/background.png"
+cp -- "$project_dir/tests/simulation/panels/fixtures/dual-monitor.sh" "$panel_runtime/dual-monitor.sh"
 chmod +x "$panel_runtime/dual-monitor.sh"
 summary="$report_dir/summary.txt"
 printf 'GNOME Shell: %s\nArchive: %s\nSHA-256: %s\nCases: %s\nRepeats: %s\nDisplay: %s\n' \
@@ -109,8 +109,8 @@ for ((round = 1; round <= repeats; round++)); do
     mkdir -m 700 -- "$session_runtime"
     log="$report_dir/$profile-$round.log"
     options=()
-    test_script="$project_dir/tests/simulation/ui/panel-navigation.smoke.js"
-    if [[ "$profile" != standard ]]; then test_script="$project_dir/tests/simulation/ui/panel-monitors.smoke.js"; fi
+    test_script="$project_dir/tests/simulation/panels/navigation.smoke.js"
+    if [[ "$profile" != standard ]]; then test_script="$project_dir/tests/simulation/panels/monitors.smoke.js"; fi
     if [[ "$profile" == dual ]]; then options+=(--wrap "$panel_runtime/dual-monitor.sh"); fi
     printf '[panels] Running GNOME %s / %s / round %s\n' "$shell_major" "$profile" "$round"
     if (

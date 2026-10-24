@@ -1,9 +1,9 @@
 import GLib from 'gi://GLib';
-import {Session, assert} from './panels/session.js';
-import {entrance, anchors, geometry, scene, returnToHistory} from './panels/entry.js';
-import {firstTarget, matrix, boundaries, scrolling} from './panels/navigation.js';
+import {Session, assert} from './cases/session.js';
+import {entrance, anchors, geometry, scene, returnToHistory} from './cases/entry.js';
+import {firstTarget, matrix, boundaries, scrolling} from './cases/navigation.js';
 import {verify as verifyInputMode} from './input-mode.smoke.js';
-export {init} from './panels/session.js';
+export {init} from './cases/session.js';
 
 const cases = new Map([
   ['PANEL-01', entrance], ['PANEL-02', anchors], ['PANEL-03', geometry],

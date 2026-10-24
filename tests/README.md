@@ -4,6 +4,9 @@
 
 Tests are grouped by the environment they require, then by domain:
 
+The [functional inventory](functional-inventory.md) owns acceptance scope, entry points, gaps and
+the duplicate-test review. It is not a pass report.
+
 ```text
 tests/
   logic/          # No graphical desktop required
@@ -15,9 +18,20 @@ tests/
     sync/         # Policy, state, HTTP, storage, lifecycle and optional stress
     ui/           # Panel models, focus matrix, layouts and settings logic
   simulation/
-    ui/           # Real GNOME Shell, Mutter input and separate GTK processes
+    lifecycle/    # Installation/startup/enable/disable compatibility subset
+    panels/       # PANEL-01…10, navigation, restoration, search and Escape
+      cases/      # Panel suite cases and private-session driver
       fixtures/   # Display/background fixtures
-      panels/     # Panel acceptance driver and cases
+    clipboard/    # Capture, entries, images, history and privacy
+    phrases/      # Native forms, shortcuts and save races
+    word-selection/
+    terminal/     # Target typing, modifier/event guards and lifecycle
+    sync/         # Toggle, progress/session recovery and received persistence
+    screenshot/
+    color-picker/
+    settings/     # Separate GTK processes, Shell preferences and foreground
+    helpers/      # Shared assertions and Shell setup, not feature cases
+    shell.smoke.js # Aggregate of domain checks, not all simulation files
   fixtures/       # Shared external clipboard, typing and process helpers
 ```
 
@@ -64,6 +78,15 @@ focused checks and GTK invocations are described in [Contributing](../CONTRIBUTI
 The Shell and panel runners automatically use the new directory; the UI check matrix and
 the lifecycle subset already used by CI are unchanged. Detailed isolation and coverage boundaries:
 [Shell compatibility](../docs/shell-compatibility.md), [panel tests](../docs/panel-testing.md).
+
+Each domain's `.smoke.js` can run through the isolated `run_shell_check` helper documented in
+Contributing. `shell.smoke.js` imports its checks from those owners instead of duplicating them.
+`CBX_SIMULATION_CASES=phrases,wordSelection` selects named checks from that aggregate; unknown names
+fail. Focused native form/search/picker suites and GTK integrations still run separately.
+
+Do not routinely run the aggregate plus every component and count that as extra coverage. Select
+the relevant entry and layer from the inventory. The retained viewport-drag regression has a known
+failure recorded there; this reorganization does not remove it or claim the whole aggregate passes.
 
 ## Adding tests
 

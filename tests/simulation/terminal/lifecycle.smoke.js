@@ -109,13 +109,19 @@ export async function verify(TerminalInput) {
   }
 
   let held = true;
+  let releaseModifierReads = 0;
   const characters = [];
   const released = new TerminalInput();
-  released._modifierState = () => held ? Clutter.ModifierType.CONTROL_MASK : 0;
+  released._modifierState = () => {
+    releaseModifierReads++;
+    return held ? Clutter.ModifierType.CONTROL_MASK : 0;
+  };
   released._typeCharacter = character => characters.push(character);
   try {
     const active = released.type('A中');
-    await waitUntil(() => released._sources.size > 0, 'Modifier release wait did not start');
+    await waitUntil(() => released._sources.size > 0 && releaseModifierReads >= 2,
+      'Held modifiers must keep input polling before release');
+    assert(characters.length === 0, 'Held trigger modifiers must prevent character output');
     held = false;
     await drains(active, 'Released modifiers must allow normal typing to finish');
     assert(characters.join('') === 'A中' && released._sources.size === 0,

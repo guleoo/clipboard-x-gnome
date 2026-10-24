@@ -30,6 +30,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 ## Extension development
 
 - [Test organization](../tests/README.md): separate headless logic checks from real desktop simulation.
+- [Functional test inventory](../tests/functional-inventory.md): behavior ownership, evidence boundaries, gaps, and duplicate-test review.
 - [GNOME Shell compatibility](shell-compatibility.md): shared interfaces for 50+, CI matrix, and isolated lifecycle checks.
 
 - [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.

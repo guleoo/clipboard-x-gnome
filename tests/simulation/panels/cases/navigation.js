@@ -22,7 +22,7 @@ export async function firstTarget(s) {
   await s.click(s.history.phrasesButton);
   await until(() => s.manager.is('phrases'), 'empty phrases opened');
   await s.settle();
-  await s.key(Clutter.KEY_Right);
+  await s.key(Clutter.KEY_Left);
   assert(s.focus === s.phrases.addButton, 'Empty phrases must initially navigate to Add');
 }
 

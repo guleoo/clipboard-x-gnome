@@ -23,7 +23,7 @@ export async function verifyLifecycle() {
   launcher.setenv('GI_TYPELIB_PATH', [GLib.getenv('GI_TYPELIB_PATH'), ...libraries,
     ...libraries.map(path => `${path}/girepository-1.0`)].filter(Boolean).join(':'), true);
   launcher.setenv('LD_LIBRARY_PATH', [GLib.getenv('LD_LIBRARY_PATH'), ...libraries].filter(Boolean).join(':'), true);
-  const test = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('settings-lifecycle.integration.js');
+  const test = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('lifecycle.integration.js');
   const child = launcher.spawnv(['gjs', '-m', test.get_path()]);
   let completed = false;
   try {

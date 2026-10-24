@@ -1,8 +1,8 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {Session, assert, until, rect} from './panels/session.js';
-export {init} from './panels/session.js';
+import {Session, assert, until, rect} from './cases/session.js';
+export {init} from './cases/session.js';
 
 async function config(method, parameters = null) {
   return new Promise((resolve, reject) => Gio.DBus.session.call('org.gnome.Mutter.DisplayConfig',
