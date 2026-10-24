@@ -92,12 +92,19 @@ export async function verify(indicator) {
     const focusAlpha = history.colorButton.get_theme_node().get_background_color().alpha;
     assert(hoverAlpha < focusAlpha, 'Stationary hover must not remain highlighted in keyboard mode');
 
+    await move(...center(history.phrasesButton));
+    assert(focus() === history.phrasesButton, 'Actual pointer movement must hand keyboard focus to its target');
+    await move(...center(history.colorButton));
+    assert(focus() === history.colorButton, 'Further pointer movement must update focus even in pointer mode');
+    await key(Clutter.KEY_Right);
+    assert(focus() === history.phrasesButton, 'The first keyboard arrow must navigate from the last pointer target');
+
     // A pending pointer timer must not later replace help for the new keyboard target.
     await move(80, global.stage.height - 80);
     await move(...center(history.screenshotButton));
     await key(Clutter.KEY_Right);
     await Scripting.sleep(400);
-    assert(focus() === history.phrasesButton && tooltip._source === history.phrasesButton,
+    assert(focus() === history.colorButton && tooltip._source === history.colorButton,
       'A stale pointer timer replaced the keyboard tooltip');
     settings.set_strv('panel-toolbar-actions', ['quick-phrases', 'color-picker', 'screenshot']);
     await Scripting.sleep(400);
@@ -138,6 +145,9 @@ export async function verify(indicator) {
     await key(Clutter.KEY_Right);
     assert(indicator._inputMode.mode === 'keyboard', 'Secondary panels must share the input mode');
     await move(...center(indicator._quickPhrases.backButton));
+    await key(Clutter.KEY_Right);
+    assert(focus() === indicator._quickPhrases.addButton, 'Quick phrases must navigate from the pointer target');
+    await move(...center(indicator._quickPhrases.backButton));
     await click();
     const app = Main.extensionManager.lookup(UUID).stateObj;
     const {ClipboardItem} = await import(`${app.dir.get_uri()}/clipboard/item.js`);
@@ -149,7 +159,13 @@ export async function verify(indicator) {
       await key(Clutter.unicode_to_keysym(character.codePointAt(0)));
     await until(() => history._itemRows.has(wordItem.id) && !history._focusIdleId, 'Word fixture did not appear in search');
     await key(Clutter.KEY_Down);
-    await key(Clutter.KEY_Right);
+    const row = history._itemRows.get(wordItem.id);
+    const pin = row.focusActors.find(actor => actor._clipboardXGnomeEntryAction === 'pin');
+    const tokenize = row.focusActors.find(actor => actor._clipboardXGnomeEntryAction === 'tokenize');
+    await move(...center(pin));
+    assert(focus() === pin, 'History action hover must become the keyboard target');
+    await key(Clutter.KEY_Left);
+    assert(focus() === tokenize, 'History navigation must continue from its hovered action');
     await key(Clutter.KEY_Return);
     await until(() => indicator._panelManager.is('tokenizer'), 'Native word action did not open word selection');
     const words = indicator._tokenizer;
@@ -161,10 +177,15 @@ export async function verify(indicator) {
       return [value.red, value.green, value.blue, value.alpha].join(',');
     };
     const selectedColor = color(selected);
-    await move(...center(selected));
+    await move(...center(words.buttons[2]));
+    assert(focus() === words.buttons[2], 'Word hover must hand off keyboard focus');
+    await key(Clutter.KEY_space);
+    assert(words.buttons[2].checked, 'Activation without an intervening arrow must use the pointer target');
     await key(Clutter.KEY_Right);
-    assert(focus() === words.buttons[1] && indicator._inputMode.mode === 'keyboard',
+    assert(focus() === words.buttons[3] && indicator._inputMode.mode === 'keyboard',
       `Word buttons must share keyboard mode (mode=${indicator._inputMode.mode}, focus=${focus()}, source=${words.state.source}, tokens=${words.buttons.length})`);
+    await key(Clutter.KEY_space);
+    assert(words.buttons[3].checked, 'The first activation must use the pointer-derived keyboard target');
     assert(selected.checked && color(selected) === selectedColor, 'Input mode must not change a selected word or its accent');
     const [x, y] = global.get_pointer();
     await move(x, y);

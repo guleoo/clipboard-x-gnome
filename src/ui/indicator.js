@@ -68,7 +68,10 @@ class Indicator extends PanelMenu.Button {
       style_class: 'system-status-icon',
     }));
     this.menu.actor.add_style_class_name('cbx-menu');
-    this._inputMode = new InputMode(this.menu.actor, (mode, position) => this._tooltip.setMode(mode, position));
+    this._inputMode = new InputMode(this.menu.actor, {
+      onChanged: (mode, position) => this._tooltip.setMode(mode, position),
+      onPointer: (actor, pressed) => this._focusPointer(actor, pressed),
+    });
     this._indicatorArrowSide = this.menu._boxPointer.arrowSide;
     this._indicatorArrowAlignment = this.menu._arrowAlignment;
     this._menuAnchor = new St.Widget({
@@ -531,6 +534,21 @@ class Indicator extends PanelMenu.Button {
     else
       this.menu.close();
     return Clutter.EVENT_STOP;
+  }
+
+  _focusPointer(actor, pressed) {
+    const grid = this._panelManager.focusGrid;
+    const target = grid?.resolve(actor);
+    const focus = global.stage.get_key_focus();
+    if (!target || target === focus)
+      return;
+    // Hover must not interrupt text editing or start editing another entry.
+    const editable = candidate => candidate instanceof St.Entry
+      || (candidate instanceof Clutter.Text && candidate.editable);
+    if (!pressed && (editable(focus) || editable(target)))
+      return;
+    // The pointer target is already visible; revealing it would snap scrolling.
+    grid.focusAt(grid.location(target), {ensureVisible: false});
   }
 
   _handleMenuKey(event) {

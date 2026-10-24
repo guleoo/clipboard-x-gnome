@@ -57,5 +57,27 @@ assert(focused.join(',') === 'second-content,first-delete,second-delete,first-co
 assert(revealed.join(',') === focused.join(','),
   'each focus move should reveal its target');
 
+const icon = {get_parent: () => firstPin};
+assert(grid.resolve(icon) === firstPin,
+  'pointer picking a child icon should resolve its registered control');
+assert(grid.resolve(hiddenSync) === null,
+  'hidden controls must not become pointer focus targets');
+firstPin.reactive = false;
+assert(grid.resolve(icon) === null,
+  'disabled controls must not become pointer focus targets');
+firstPin.reactive = true;
+assert(grid.resolve({}) === null, 'unregistered pointer targets should be ignored');
+const revealCount = revealed.length;
+assert(grid.focusAt(grid.location(firstPin), {ensureVisible: false}) === firstPin,
+  'pointer handoff should focus its target');
+assert(revealed.length === revealCount,
+  'pointer handoff must not reposition the scroll viewport');
+
+grid.setRows([[search, screenshot], [search]]);
+assert(grid.location(search).row === 0,
+  'duplicate controls should retain their first matrix location');
+assert(!grid.contains(firstPin), 'replacing rows must release old controls');
+
 grid.clear();
 assert(!grid.contains(search), 'clear should release the matrix');
+assert(grid.resolve(search) === null, 'clear should release pointer target lookup');

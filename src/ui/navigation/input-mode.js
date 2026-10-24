@@ -9,11 +9,12 @@ const MODIFIERS = new Set([
   Clutter.KEY_ISO_Level3_Shift,
 ]);
 
-// Presentation only: neither pointer motion nor mode changes move key focus.
+// Arbitrates feedback and reports real pointer targets while the popup is open.
 export class InputMode {
-  constructor(actor, onChanged) {
+  constructor(actor, {onChanged, onPointer}) {
     this._actor = actor;
     this._onChanged = onChanged;
+    this._onPointer = onPointer;
     this._filterId = 0;
     this._pointer = null;
     this._mode = null;
@@ -35,12 +36,15 @@ export class InputMode {
         if (point[0] !== this._pointer[0] || point[1] !== this._pointer[1]) {
           this._pointer = point;
           this._setMode('pointer', point);
+          this._pointAt(point, false);
         }
       } else if (type === Clutter.EventType.BUTTON_PRESS
           || type === Clutter.EventType.SCROLL
           || type === Clutter.EventType.TOUCH_BEGIN) {
         this._pointer = event.get_coords();
         this._setMode('pointer', this._pointer);
+        if (type !== Clutter.EventType.SCROLL)
+          this._pointAt(this._pointer, true);
       }
       return Clutter.EVENT_PROPAGATE;
     });
@@ -66,8 +70,14 @@ export class InputMode {
   destroy() {
     this.close();
     this._onChanged = null;
+    this._onPointer = null;
     this._actor = null;
     this._pointer = null;
+  }
+
+  _pointAt([x, y], pressed) {
+    const actor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+    this._onPointer(actor, pressed);
   }
 
   _setMode(mode, position = null) {

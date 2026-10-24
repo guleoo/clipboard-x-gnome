@@ -14,7 +14,8 @@ follow. Extend these boundaries instead of putting state and widgets back into `
 - `ui/navigation/focus-grid.js`: two-dimensional keyboard navigation inside a panel. Each panel owns
   its matrix; no global focus listener repairs focus.
 - `ui/navigation/input-mode.js`: popup-wide keyboard/pointer presentation arbitration. It observes
-  pointer input only while open; existing menu key capture supplies keyboard input. It never moves focus.
+  pointer input only while open; existing menu key capture supplies keyboard input. Real pointer targets
+  are handed to the current panel's focus grid without global focus-change listeners.
 - `ui/layouts/panel-actions.js`: layout model and validation for top and bottom actions.
 - `ui/layouts/entry-actions.js`: clipboard-entry action order, visibility, and content-type eligibility.
 - `ui/controls/`: public Shell controls. Controls provide structure and generic state; they do not read
@@ -73,6 +74,9 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - Keyboard navigation suppresses stationary-pointer hover feedback; actual pointer movement, clicks, or
   scrolling restore pointer feedback. Layout-driven hover/focus signals do not choose the input mode.
   Root mode classes gate hover/focus styling, not checked state, accent colors, entry focus, or caret.
+  Actual pointer movement synchronizes focus to eligible controls in the current panel, so subsequent
+  keyboard actions continue from that target. Hover does not interrupt entry editing or start it;
+  wheel scrolling and layout-only hover changes never move focus or reveal a row.
   Tooltips use only the current mode's target and cancel pending help on mode changes or panel close.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.

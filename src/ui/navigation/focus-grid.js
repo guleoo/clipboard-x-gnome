@@ -17,6 +17,7 @@ export class FocusGrid {
     this._eligible = eligible;
     this._ensureVisible = ensureVisible;
     this._rows = [];
+    this._locations = new Map();
   }
 
   setRows(rows) {
@@ -24,21 +25,35 @@ export class FocusGrid {
       .filter(Array.isArray)
       .map(row => row.filter(Boolean))
       .filter(row => row.length > 0);
+    this._locations.clear();
+    this._rows.forEach((row, rowIndex) => row.forEach((actor, column) => {
+      if (!this._locations.has(actor))
+        this._locations.set(actor, {row: rowIndex, column});
+    }));
   }
 
   clear() {
     this._rows = [];
+    this._locations.clear();
   }
 
   contains(actor) {
-    return this._locate(actor) !== null;
+    return this._locations.has(actor);
   }
 
   location(actor) {
     return this._locate(actor);
   }
 
-  focusAt(location) {
+  resolve(actor) {
+    for (let candidate = actor; candidate; candidate = candidate.get_parent?.()) {
+      if (this.contains(candidate) && this._eligible(candidate))
+        return candidate;
+    }
+    return null;
+  }
+
+  focusAt(location, {ensureVisible = true} = {}) {
     if (!location)
       return null;
     const row = this._rows[location.row];
@@ -46,7 +61,8 @@ export class FocusGrid {
     if (!actor || !this._eligible(actor))
       return null;
     this._focus(actor);
-    this._ensureVisible(actor);
+    if (ensureVisible)
+      this._ensureVisible(actor);
     return actor;
   }
 
@@ -67,12 +83,8 @@ export class FocusGrid {
   }
 
   _locate(actor) {
-    for (let row = 0; row < this._rows.length; row++) {
-      const column = this._rows[row].indexOf(actor);
-      if (column >= 0)
-        return {row, column};
-    }
-    return null;
+    const location = this._locations.get(actor);
+    return location ? {...location} : null;
   }
 
   _horizontal({row, column}, direction) {

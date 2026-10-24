@@ -188,8 +188,6 @@ export class TokenizerPanel {
         const result = this.handleKey(button, event);
         return result === Clutter.EVENT_PROPAGATE ? this._handlePanelKey(event) : result;
       });
-      button.connect('key-focus-in', () =>
-        AnimationUtils.ensureActorVisibleInScrollView(this.scroll, button));
       button.connect('notify::pressed', () => {
         const [, , modifiers] = global.get_pointer();
         if (button.pressed && !this._selectionDrag
@@ -483,7 +481,7 @@ export class TokenizerPanel {
       candidate.checked = state.selected.has(candidateToken.index);
       this._updateButtonStyle(candidate);
     }
-    target.grab_key_focus();
+    this.focusGrid.focusAt(this.focusGrid.location(target));
     this.updateResult();
   }
 
