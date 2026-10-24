@@ -24,6 +24,7 @@ import {ensureDeviceIdentity} from '../sync/device.js';
 import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
 import {Indicator} from '../ui/indicator.js';
 import {ScreenshotPortal} from '../screenshot/portal.js';
+import {observeCancellation} from '../screenshot/cancellation.js';
 
 const SHORTCUT_KEYS = Object.freeze([
   'panel-shortcut',
@@ -42,7 +43,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._controller = new ClipboardController(this._settings);
     const controller = this._controller;
     const settings = this._settings;
-    this._portal = new ScreenshotPortal();
+    this._portal = new ScreenshotPortal({observeCancellation});
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
       applyChanges: (changes, scope) => content.receive(changes, scope),

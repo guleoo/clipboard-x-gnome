@@ -172,6 +172,44 @@ const deniedPortal = new ScreenshotPortal({
 });
 await assertRejects(deniedPortal.capture('screen'), /denied/u, 'denied screenshot');
 
+let userDismissed;
+let activeObservers = 0;
+const observedConnection = new FakePortalConnection({mode: 'pending'});
+const observedPortal = new ScreenshotPortal({
+  connection: observedConnection,
+  timeoutMilliseconds: 100,
+  observeCancellation: cancelled => {
+    userDismissed = cancelled;
+    activeObservers++;
+    return () => { activeObservers--; };
+  },
+});
+const observedCapture = observedPortal.capture('interactive');
+await new Promise(resolve => setTimeout(resolve, 10));
+userDismissed();
+observedConnection.mode = 'denied';
+observedConnection._respond();
+assert(await observedCapture === null && activeObservers === 0,
+  'GNOME response 2 after confirmed user dismissal must cancel and disconnect the observer');
+assert(observedConnection._subscriptions.size === 0 && observedPortal._request === null,
+  'GNOME user cancellation must release its Portal resources');
+
+await assertRejects(observedPortal.capture('interactive'), /denied/u,
+  'A later response 2 without user dismissal must remain a failure');
+assert(activeObservers === 0, 'A screenshot failure must disconnect the cancellation observer');
+observedConnection.mode = 'success';
+assert(await observedPortal.capture('interactive') === uri && activeObservers === 0,
+  'A successful screenshot must disconnect the cancellation observer');
+observedConnection.mode = 'pending';
+const observedCancel = observedPortal.capture('interactive');
+await new Promise(resolve => setTimeout(resolve, 10));
+observedPortal.cancel();
+assert(await observedCancel === null && activeObservers === 0,
+  'Disabling during a screenshot must disconnect the cancellation observer');
+await assertRejects(observedPortal.capture('interactive'), /timed out/u,
+  'An unresponsive Portal must still time out');
+assert(activeObservers === 0, 'A screenshot timeout must disconnect the cancellation observer');
+
 const userCancelConnection = new FakePortalConnection({mode: 'cancelled'});
 const userCancelPortal = new ScreenshotPortal({connection: userCancelConnection, timeoutMilliseconds: 100});
 assert(await userCancelPortal.capture('interactive') === null,
