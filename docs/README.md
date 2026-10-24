@@ -29,6 +29,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Extension development
 
+- [Test organization](../tests/README.md): separate headless logic checks from real desktop simulation.
 - [GNOME Shell compatibility](shell-compatibility.md): shared interfaces for 50+, CI matrix, and isolated lifecycle checks.
 
 - [Logs and troubleshooting](diagnostics.md): system journal, Devkit output, initialization stages, and privacy boundaries.

@@ -303,8 +303,8 @@ Before submitting code:
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/simulation/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/simulation/ui/preferences.smoke.js
 ```
 
 Clipboard X Gnome does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,

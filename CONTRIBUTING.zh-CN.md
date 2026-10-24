@@ -21,7 +21,9 @@ meson install -C build
 不为文档措辞、CSS 细节、固定图标名称或控件的常规属性编写断言。CI/Release 配置应使用
 现有校验、临时脚本或隔离 dry-run 验证，不增加锁定配置格式的测试。
 
-Shell 交互和设置窗口测试不属于 Meson 测试集，需要在隔离测试桌面中单独运行：
+测试已分为[无需图形桌面的逻辑验证与桌面模拟验证](tests/README_CN.md)。普通逻辑验证使用
+`bun run test:logic`，或在 `dbus-run-session` 中执行带 `--no-suite stress` 的 Meson 命令。
+Shell 交互和设置窗口检查仍在隔离测试桌面中单独运行：
 
 面板入口、焦点导航、现场恢复、关闭动画以及真实多屏和缩放，使用[本地面板测试](docs/panel-testing_CN.md)。
 支持单独运行 PANEL-01～10 及全新会话重复执行，不自动加入 CI：
@@ -41,18 +43,18 @@ run_shell_check() (
   dbus-run-session -- gnome-shell-test-tool --headless \
     --extension build/clipboard-x-gnome_<version>.zip "$1"
 )
-run_shell_check tests/ui/shell.smoke.js
-run_shell_check tests/ui/preferences.smoke.js
+run_shell_check tests/simulation/ui/shell.smoke.js
+run_shell_check tests/simulation/ui/preferences.smoke.js
 ```
 
 隐私边界、输入框键盘导航/提交、取色器移动、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
 
 ```sh
-run_shell_check tests/ui/privacy.smoke.js
-run_shell_check tests/ui/search-picker.smoke.js
-run_shell_check tests/ui/sync-toggle.smoke.js
-run_shell_check tests/ui/screenshot-cancel.smoke.js
-run_shell_check tests/ui/word-selection.smoke.js
+run_shell_check tests/simulation/ui/privacy.smoke.js
+run_shell_check tests/simulation/ui/search-picker.smoke.js
+run_shell_check tests/simulation/ui/sync-toggle.smoke.js
+run_shell_check tests/simulation/ui/screenshot-cancel.smoke.js
+run_shell_check tests/simulation/ui/word-selection.smoke.js
 ```
 
 设备图标选择器另有 GTK 集成测试，需要图形显示环境和已经配置的打包构建目录。
@@ -62,7 +64,7 @@ run_shell_check tests/ui/word-selection.smoke.js
 shell_libdir=/usr/lib/gnome-shell
 dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
   GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/ui/settings-icon.integration.js
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/ui/settings-icon.integration.js
 ```
 
 `shell_libdir` 需按 GNOME Shell 的实际安装目录调整，Fedora 通常为
@@ -96,7 +98,8 @@ LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en ./tools/run-dev-shell.sh
 - `src/common/` 只存放被多个领域复用的基础设施。
 - `src/entry/`、`clipboard/`、`sync/`、`screenshot/`、`color-picker/` 和 `ui/` 按功能领域
   组织实现；分词属于剪切板领域，位于 `src/clipboard/tokenizer/`。
-- `tests/` 使用相同的领域目录；跨进程测试程序放在 `tests/fixtures/`。
+- `tests/logic/` 存放无需图形桌面的验证，`tests/simulation/` 存放真实 Shell/GTK 集成验证；
+  两类内部按领域组织，共享跨进程辅助程序放在 `tests/fixtures/`。
 
 同步协议及其 OpenAPI 契约由 Clipboard X Server 负责制定。协议变更应先在 Server 仓库提出并
 落地，再更新本仓库的 GJS 路由、校验器与客户端兼容性测试。兼容性破坏必须创建新的 HTTP API
@@ -111,7 +114,7 @@ meson compile -C build clipboard-x-gnome-pot
 meson compile -C build clipboard-x-gnome-update-po
 ```
 
-然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/i18n/coverage.sh`。
+然后补齐 `po/LINGUAS` 列出的所有语言，并运行 `bash tests/logic/i18n/coverage.sh`。
 检查会验证提取的文本、gettext 格式有效性，并拒绝缺失或 fuzzy 的译文。
 源码语言为英语，无需单独的英文 PO 文件。机器翻译草稿仍需母语者审校措辞。
 仓库根目录的中文文档使用 `.zh-CN.md`；`docs/` 中的指南平铺存放，中文使用 `{name}_CN.md`。

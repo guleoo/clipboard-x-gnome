@@ -273,8 +273,8 @@ tools/run-dev-shell.sh
 ```sh
 meson test -C build --print-errorlogs
 meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/preferences.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/simulation/ui/shell.smoke.js
+gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/simulation/ui/preferences.smoke.js
 ```
 
 项目不使用 ESLint。目录结构、本地化流程、代码约定和发布边界见

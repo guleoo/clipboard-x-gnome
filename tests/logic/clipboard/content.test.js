@@ -1,0 +1,412 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
+import {Content} from '../../../src/clipboard/content.js';
+import {ClipboardItem} from '../../../src/clipboard/item.js';
+import {HistoryStore} from '../../../src/clipboard/history/store.js';
+import {bytesFromString} from '../../../src/common/bytes.js';
+import {launchEditor} from '../../../src/screenshot/editor-launcher.js';
+
+function assert(condition, message) {
+  if (!condition)
+    throw new Error(message);
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise(done => { resolve = done; });
+  return {promise, resolve};
+}
+
+async function rejects(operation, message) {
+  try { await operation; } catch { return; }
+  throw new Error(message);
+}
+
+// Exercise the coordinator against real isolated history files. This adapter
+// supplies only the Controller contract, not GNOME clipboard or retention policy.
+class History {
+  constructor(store) {
+    this.store = store;
+    this.items = [];
+    this.writes = 0;
+    this.commits = 0;
+    this.activations = 0;
+    this.activated = [];
+    this.selectionRevision = 0;
+    this.commit = () => {};
+  }
+
+  add(item, _source, {replaceDuplicate} = {}) {
+    const existing = this.items.find(value => value.equals(item));
+    if (existing && !replaceDuplicate)
+      return existing;
+    if (existing) {
+      item.favorite = existing.favorite;
+      this.remove(existing.id);
+    }
+    this.items.push(item);
+    return item;
+  }
+
+  remove(id) { this.items = this.items.filter(item => item.id !== id); }
+  async persist() {
+    this.writes++;
+    await this.store.save(this.items);
+  }
+  commitContent(item) {
+    this.commits++;
+    this.commit(item);
+    return this.items.includes(item);
+  }
+  materialize(item) { return this.store.materialize(item); }
+  discardContent(items) { return this.store.discard(items); }
+  async activate(item, {guard}) {
+    await this.materialize(item);
+    if (guard()) {
+      this.activations++;
+      this.activated.push(item.id);
+      this.selectionRevision++;
+    }
+  }
+}
+
+const root = GLib.dir_make_tmp('clipboard-x-gnome-content-test-XXXXXX');
+const deviceId = GLib.uuid_string_random();
+const store = new HistoryStore({rootPath: root, deviceId, items: () => history.items});
+const history = new History(store);
+const incoming = new Map();
+const errors = [];
+let mode = 'history';
+const remote = {
+  getItem: async id => incoming.get(id),
+  materialize: async () => {},
+};
+const content = new Content({
+  history, remote, receiveMode: () => mode, deviceId: () => deviceId,
+  onError: error => errors.push(error),
+});
+const receive = changes => content.receive(changes, {isCurrent: () => true});
+const upsert = item => ({kind: 'upsert', itemId: item.id});
+const remove = item => ({kind: 'remove', itemId: item.id});
+const preview = text => {
+  const item = ClipboardItem.fromText(text, {originDeviceId: GLib.uuid_string_random(), remote: true});
+  item.primary.bytes = null;
+  item.availability = 'preview';
+  incoming.set(item.id, item);
+  return item;
+};
+const original = text => {
+  const item = preview(text);
+  item.primary.bytes = bytesFromString(text);
+  item.availability = 'ready';
+  history.add(item);
+  return item;
+};
+
+try {
+  const page = [preview('incoming one'), preview('incoming two')];
+  const downloaded = deferred();
+  let downloads = 0;
+  remote.materialize = async (item, options) => {
+    assert(history.writes === 1 && options.withinThreshold,
+      'Automatic originals must start after one durable metadata write per page');
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+    if (++downloads === page.length)
+      downloaded.resolve();
+  };
+  await receive(page.map(upsert));
+  await downloaded.promise;
+  await Promise.resolve();
+  assert(history.writes === 1 && history.commits === 2,
+    'Received originals must be committed without another immediate whole-history write');
+  await history.persist();
+  const restored = await store.load();
+  assert(page.every(item => restored.some(value => value.id === item.id)),
+    'Accepted metadata must survive a new history load');
+
+  const fullText = 'The full original extends well beyond its preview.';
+  const text = original(fullText);
+  text.preview.text = 'The full';
+  await history.persist();
+  text.primary.bytes = null;
+  remote.materialize = async () => {};
+  await content.read(text);
+  assert(text.text === fullText, 'Interactive text use must read the full locally cached original');
+
+  const edited = preview('original prepared for editing');
+  history.add(edited);
+  let localReads = 0;
+  const read = history.materialize;
+  history.materialize = async item => { localReads++; return read.call(history, item); };
+  remote.materialize = async item => {
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+  };
+  const beforeEdit = history.writes;
+  const path = await content.file(edited);
+  assert(path === edited.primary.path && history.writes === beforeEdit + 1 && localReads === 0,
+    'Preparing an editor file must flush once without rereading the full original');
+  history.materialize = read;
+
+  const image = ClipboardItem.fromBytes('image/png', new GLib.Bytes(new Uint8Array([137, 80, 78, 71])));
+  history.add(image);
+  await history.persist();
+  const cachedImage = (await store.load()).find(item => item.id === image.id);
+  assert(cachedImage.primary.path && !cachedImage.primary.bytes,
+    'A reloaded image must start with a file path and no in-memory original');
+  history.remove(image.id);
+  history.add(cachedImage);
+  const imagePath = await content.file(cachedImage);
+  const editor = await launchEditor({
+    command: `/usr/bin/cmp - %i '${imagePath}'`,
+    uri: Gio.File.new_for_path(imagePath).get_uri(),
+    bytes: cachedImage.primary.bytes,
+  });
+  await new Promise((resolve, reject) => editor.wait_check_async(null, (process, result) => {
+    try { process.wait_check_finish(result); resolve(); } catch (error) { reject(error); }
+  }));
+  assert(!cachedImage.primary.bytes,
+    'A standard-input editor must receive the exact cached file without loading it into the item');
+
+  const previous = preview('duplicate across destinations');
+  previous.favorite = true;
+  history.add(previous);
+  const replacement = preview('duplicate across destinations');
+  let requested;
+  remote.materialize = async item => { requested = item.id; };
+  await receive([upsert(replacement)]);
+  assert(requested === replacement.id && replacement.favorite && !history.items.includes(previous),
+    'Incomplete duplicates must request the incoming locator while preserving the pin');
+
+  const deleted = preview('deletion persisted before cursor acceptance');
+  history.add(deleted);
+  await history.persist();
+  const persist = history.persist;
+  history.persist = async () => { throw new Error('Temporary disk failure'); };
+  await rejects(receive([remove(deleted)]), 'Failed deletion persistence must reject acceptance');
+  history.persist = persist;
+  await receive([remove(deleted)]);
+  assert(!(await store.load()).some(item => item.id === deleted.id),
+    'Replaying an already removed item must still persist its deletion');
+
+  const obsolete = preview('obsolete session');
+  const manifest = deferred();
+  const getItem = remote.getItem;
+  remote.getItem = () => manifest.promise;
+  let current = true;
+  const receiving = content.receive([upsert(obsolete)], {isCurrent: () => current});
+  current = false;
+  manifest.resolve(obsolete);
+  await receiving;
+  assert(!history.items.includes(obsolete), 'A superseded manifest must not enter the new history');
+  remote.getItem = getItem;
+
+  mode = 'activate';
+  const superseded = preview('session switched during download');
+  const obsoleteDownload = deferred();
+  const obsoleteFinished = deferred();
+  remote.materialize = async () => {
+    await obsoleteDownload.promise;
+    obsoleteFinished.resolve();
+  };
+  current = true;
+  const beforeSwitch = history.commits;
+  await content.receive([upsert(superseded)], {isCurrent: () => current});
+  current = false;
+  obsoleteDownload.resolve();
+  await obsoleteFinished.promise;
+  await Promise.resolve();
+  assert(history.commits === beforeSwitch && history.activations === 0,
+    'A superseded background download must not commit state or activate');
+
+  const delayed = preview('deleted during download');
+  const download = deferred();
+  const finished = deferred();
+  remote.materialize = async item => {
+    await download.promise;
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+    finished.resolve();
+  };
+  await receive([upsert(delayed)]);
+  await receive([remove(delayed)]);
+  download.resolve();
+  await finished.promise;
+  await Promise.resolve();
+  assert(history.activations === 0, 'An item removed during download must not activate');
+
+  for (const isRemote of [true, false]) {
+    const reading = isRemote ? original('remote deleted during final clipboard read')
+      : ClipboardItem.fromText('local deleted during final clipboard read');
+    if (!isRemote)
+      history.add(reading);
+    await history.persist();
+    const enteredRead = deferred();
+    const finalRead = deferred();
+    remote.materialize = async () => {};
+    history.materialize = async () => { enteredRead.resolve(); await finalRead.promise; };
+    const activating = content.activate(reading);
+    await enteredRead.promise;
+    history.remove(reading.id);
+    finalRead.resolve();
+    await rejects(activating, 'Removal during the final read must cancel local and remote activation');
+    assert(history.activations === 0, 'The final clipboard write must recheck retention');
+    history.materialize = read;
+  }
+
+  const evicted = preview('evicted when original exceeds capacity');
+  history.add(evicted);
+  history.commit = item => history.remove(item.id);
+  remote.materialize = async item => {
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+  };
+  await rejects(content.activate(evicted), 'A capacity-evicted item must not activate');
+  assert(history.activations === 0, 'Content commit must precede activation');
+  history.commit = () => {};
+
+  const unretained = ClipboardItem.fromText('local content outside history');
+  await rejects(content.activate(unretained), 'History actions must reject unretained local content');
+  assert(history.activations === 0, 'An unretained local item must not be copied');
+
+  const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+  const complete = item => {
+    item.primary.bytes = bytesFromString(item.preview.text);
+    item.availability = 'ready';
+  };
+  const slow = preview('older automatic original');
+  const latest = preview('latest automatic original');
+  const slowDownload = deferred();
+  remote.materialize = async item => {
+    if (item === slow)
+      await slowDownload.promise;
+    complete(item);
+  };
+  await receive([upsert(slow), upsert(latest)]);
+  await tick();
+  assert(history.activated.join() === latest.id, 'Only the latest item on a page may auto-activate');
+  slowDownload.resolve();
+  await tick();
+  assert(history.activated.join() === latest.id && slow.primary.bytes && history.items.includes(slow),
+    'A slower old original must stay in history without overwriting the newer clipboard');
+
+  const previousPage = preview('previous page original');
+  const nextPage = preview('new page with slow metadata');
+  const previousDownload = deferred();
+  const nextManifest = deferred();
+  remote.materialize = async item => {
+    if (item === previousPage)
+      await previousDownload.promise;
+    complete(item);
+  };
+  await receive([upsert(previousPage)]);
+  remote.getItem = id => id === nextPage.id ? nextManifest.promise : getItem(id);
+  const receivingNext = receive([upsert(nextPage)]);
+  previousDownload.resolve();
+  await tick();
+  assert(!history.activated.includes(previousPage.id),
+    'A newly received page must supersede old activation before its metadata arrives');
+  nextManifest.resolve(nextPage);
+  await receivingNext;
+  await tick();
+  assert(history.activated.at(-1) === nextPage.id,
+    'A later page must activate normally after the previous automatic clipboard write');
+  remote.getItem = getItem;
+
+  for (const stage of ['manifest', 'download', 'final-read']) {
+    const interrupted = preview(`user copies during automatic ${stage}`);
+    const entered = deferred();
+    const release = deferred();
+    remote.getItem = async id => {
+      if (id === interrupted.id && stage === 'manifest') {
+        entered.resolve();
+        await release.promise;
+      }
+      return getItem(id);
+    };
+    remote.materialize = async item => {
+      if (item === interrupted && stage === 'download') {
+        entered.resolve();
+        await release.promise;
+      }
+      complete(item);
+    };
+    history.materialize = async item => {
+      if (item === interrupted && stage === 'final-read') {
+        entered.resolve();
+        await release.promise;
+      }
+      return read.call(history, item);
+    };
+    const receivingInterrupted = receive([upsert(interrupted)]);
+    await entered.promise;
+    // An owner change matters even if private/excluded/duplicate content never
+    // creates a new history item, or its capture has not completed yet.
+    history.selectionRevision++;
+    release.resolve();
+    await receivingInterrupted;
+    await tick();
+    assert(!history.activated.includes(interrupted.id) && interrupted.primary.bytes,
+      `A user copy during ${stage} must suppress automatic writing, not original caching`);
+    remote.getItem = getItem;
+    history.materialize = read;
+  }
+
+  const automatic = preview('old automatic download during explicit selection');
+  const chosen = preview('explicit selection with its own slow original');
+  history.add(chosen);
+  const automaticGate = deferred();
+  const chosenGate = deferred();
+  remote.materialize = async item => {
+    await (item === automatic ? automaticGate.promise : chosenGate.promise);
+    complete(item);
+  };
+  await receive([upsert(automatic)]);
+  const choosing = content.activate(chosen);
+  automaticGate.resolve();
+  await tick();
+  assert(!history.activated.includes(automatic.id),
+    'Explicit selection must invalidate old automatic writing before its own download finishes');
+  chosenGate.resolve();
+  await choosing;
+  assert(history.activated.at(-1) === chosen.id, 'Explicit selection must still copy its complete original');
+
+  const repeated = preview('repeated latest candidate');
+  const middle = preview('middle candidate');
+  remote.materialize = async item => complete(item);
+  const beforeRepeated = history.activated.length;
+  await receive([upsert(repeated), upsert(middle), upsert(repeated)]);
+  await tick();
+  assert(history.activated.slice(beforeRepeated).join() === repeated.id,
+    'The last occurrence must win even when a page repeats an item after another candidate');
+  assert(errors.length === 0, 'Supersession and successful automatic owner changes must not report errors');
+
+  const stopped = preview('disabled during local read');
+  history.add(stopped);
+  const stoppedRead = deferred();
+  const releaseRead = deferred();
+  history.materialize = async () => { stoppedRead.resolve(); await releaseRead.promise; };
+  const operation = content.read(stopped);
+  await stoppedRead.promise;
+  content.destroy();
+  releaseRead.resolve();
+  await rejects(operation, 'Disabling the coordinator must invalidate a pending local read');
+  assert(errors.length === 0, 'Expected supersession or deletion must not report background errors');
+  print('Content coordination: durable pages, originals, retention and lifecycle passed');
+} finally {
+  content.destroy();
+  deleteTree(Gio.File.new_for_path(root));
+}
+
+function deleteTree(file) {
+  if (file.query_file_type(Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null) === Gio.FileType.DIRECTORY) {
+    const enumerator = file.enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+    let info;
+    while ((info = enumerator.next_file(null)))
+      deleteTree(file.get_child(info.get_name()));
+    enumerator.close(null);
+  }
+  file.delete(null);
+}

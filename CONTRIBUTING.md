@@ -23,7 +23,9 @@ Add lasting regression tests for repeatable behavior, not document wording, CSS 
 names, or routine widget properties. Validate CI/release configuration with existing checks, temporary
 scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
-Shell interaction and preferences checks run separately from Meson, in an isolated test desktop:
+Tests are separated into [headless logic and desktop simulation](tests/README.md).
+For the ordinary logic suite, use `bun run test:logic` or run Meson with `--no-suite stress` inside
+`dbus-run-session`. Shell interaction and preferences checks run separately, in an isolated test desktop:
 
 For repeatable panel entrance, focus navigation, scene restoration, animated close, and real
 multi-monitor/scaling checks, use the [local panel suite](docs/panel-testing.md). It supports individual
@@ -44,8 +46,8 @@ run_shell_check() (
   dbus-run-session -- gnome-shell-test-tool --headless \
     --extension build/clipboard-x-gnome_<version>.zip "$1"
 )
-run_shell_check tests/ui/shell.smoke.js
-run_shell_check tests/ui/preferences.smoke.js
+run_shell_check tests/simulation/ui/shell.smoke.js
+run_shell_check tests/simulation/ui/preferences.smoke.js
 ```
 
 For privacy boundaries, entry keyboard navigation / submission, color-picker movement, sync toggles, screenshot cancellation,
@@ -53,11 +55,11 @@ or press-and-drag word selection,
 run the corresponding focused check using the same helper:
 
 ```sh
-run_shell_check tests/ui/privacy.smoke.js
-run_shell_check tests/ui/search-picker.smoke.js
-run_shell_check tests/ui/sync-toggle.smoke.js
-run_shell_check tests/ui/screenshot-cancel.smoke.js
-run_shell_check tests/ui/word-selection.smoke.js
+run_shell_check tests/simulation/ui/privacy.smoke.js
+run_shell_check tests/simulation/ui/search-picker.smoke.js
+run_shell_check tests/simulation/ui/sync-toggle.smoke.js
+run_shell_check tests/simulation/ui/screenshot-cancel.smoke.js
+run_shell_check tests/simulation/ui/word-selection.smoke.js
 ```
 
 The device-icon chooser has a separate GTK integration check. It requires a graphical display and
@@ -67,7 +69,7 @@ a configured package build; it uses an in-memory settings backend, not the host 
 shell_libdir=/usr/lib/gnome-shell
 dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
   GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/ui/settings-icon.integration.js
+  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/ui/settings-icon.integration.js
 ```
 
 Set `shell_libdir` to the installed GNOME Shell library directory (typically
@@ -102,7 +104,8 @@ check installed locales; the script has no `--lang` option.
 - `src/common/` contains infrastructure shared by multiple domains.
 - `src/entry/`, `clipboard/`, `sync/`, `screenshot/`, `color-picker/`, and `ui/` are organized
   by feature domain; tokenization belongs to `src/clipboard/tokenizer/`.
-- `tests/` follows the same domain layout; cross-process fixtures live in `tests/fixtures/`.
+- `tests/logic/` holds headless checks; `tests/simulation/` holds real Shell/GTK integration checks.
+  Both follow the domain layout. Shared cross-process fixtures live in `tests/fixtures/`.
 
 Clipboard X Server owns the synchronization protocol and its OpenAPI contract. Propose and land protocol
 changes in the Server repository first; then update the GJS routes and validators and the client conformance
@@ -119,7 +122,7 @@ meson compile -C build clipboard-x-gnome-update-po
 ```
 
 Then update every catalog listed in `po/LINGUAS` and run
-`bash tests/i18n/coverage.sh`. The check verifies extracted strings, gettext format validity, and
+`bash tests/logic/i18n/coverage.sh`. The check verifies extracted strings, gettext format validity, and
 missing or fuzzy translations. English is the source language and has no PO catalog.
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the

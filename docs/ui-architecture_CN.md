@@ -96,7 +96,10 @@
 
 ## 6. 验证要求
 
+无需图形桌面的验证位于 `tests/logic/`，真实 Shell/GTK 验证位于 `tests/simulation/`；
+分类边界与运行命令见[测试目录说明](../tests/README_CN.md)。
+
 - 纯状态和布局算法提供 GJS 单元测试。
-- Shell actor、焦点、菜单生命周期通过 `tests/ui/shell.smoke.js` 验证。
-- GTK 设置组件通过 `tests/ui/preferences.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
+- Shell actor、焦点、菜单生命周期通过 `tests/simulation/ui/shell.smoke.js` 验证。
+- GTK 设置组件通过 `tests/simulation/ui/preferences.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
 - 每次结构重构必须通过构建、常规测试、Shell 冒烟测试和设置窗口冒烟测试。
