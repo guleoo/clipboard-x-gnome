@@ -384,7 +384,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     const actions = {
       'panel-shortcut': () => {
         ensureDeviceIdentity(this._settings);
-        this._indicator.toggle();
+        this._indicator.toggle({keyboard: true});
       },
       'screenshot-shortcut': () => this._takeScreenshot().catch(error => this._reportError(error)),
       'color-picker-shortcut': () => this._pickColor(),

@@ -13,6 +13,8 @@ follow. Extend these boundaries instead of putting state and widgets back into `
   width and height for every panel; a registered panel may override them with a partial `geometry` object.
 - `ui/navigation/focus-grid.js`: two-dimensional keyboard navigation inside a panel. Each panel owns
   its matrix; no global focus listener repairs focus.
+- `ui/navigation/input-mode.js`: popup-wide keyboard/pointer presentation arbitration. It observes
+  pointer input only while open; existing menu key capture supplies keyboard input. It never moves focus.
 - `ui/layouts/panel-actions.js`: layout model and validation for top and bottom actions.
 - `ui/layouts/entry-actions.js`: clipboard-entry action order, visibility, and content-type eligibility.
 - `ui/controls/`: public Shell controls. Controls provide structure and generic state; they do not read
@@ -68,6 +70,10 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, word selection buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.
+- Keyboard navigation suppresses stationary-pointer hover feedback; actual pointer movement, clicks, or
+  scrolling restore pointer feedback. Layout-driven hover/focus signals do not choose the input mode.
+  Root mode classes gate hover/focus styling, not checked state, accent colors, entry focus, or caret.
+  Tooltips use only the current mode's target and cancel pending help on mode changes or panel close.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.
 - Refreshable panels capture and restore focused content identity and scroll position. History uses
@@ -87,6 +93,8 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   the parent PopupMenu can close an open menu and emit those signals again.
 - Simulated input owns every wait timer and deferred notification. Destruction removes their sources and
   settles waiting promises; removing a source must not strand active or queued input.
+- Closing, hiding, or destroying the popup removes its input-mode filter before disposing the tooltip.
+  Mode classes remain during the closing animation; the next opening chooses its actual input source.
 - Settings use `ui/settings/lifecycle.js`'s `onClosed()` for cleanup on window close or actual unroot.
   A closed GTK window may retain rooted children, so unroot alone is not a close notification.
 - Cancel read-only requests, native choosers, and launch callbacks when preferences close; explicitly close
@@ -108,3 +116,5 @@ Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and l
 structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.
 The existing Shell compatibility entry also runs open-panel disable coverage, simulated-input source
 cleanup, and the settings lifecycle integration test in a separate GTK process. Never import GTK into Shell.
+`input-mode.smoke.js` verifies actual keyboard/pointer switching, delayed help, stationary hover, entry
+caret, selected words, and popup cleanup on both supported Shell versions.

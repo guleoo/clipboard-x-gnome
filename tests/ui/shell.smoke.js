@@ -192,6 +192,7 @@ async function panels(indicator) {
     'The quick-phrase anchor did not consume Right and focus the first phrase');
     const quickPhrases = indicator._quickPhrases;
     quickPhrases.addButton.grab_key_focus();
+    indicator._inputMode.keyboard(Clutter.KEY_Right);
     indicator._tooltip.show(quickPhrases.addButton, {immediate: true});
     assert(indicator._tooltip.actor.visible, 'The persistent add action lost its tooltip after panel switching');
     indicator._panelManager.refresh('phrases');
@@ -310,12 +311,11 @@ async function panels(indicator) {
     assert(indicator._panelManager.is('history'),
       'Saved-phrase panel did not return to clipboard history');
     history.privateButton.grab_key_focus();
+    indicator._inputMode.keyboard(Clutter.KEY_Right);
     indicator._tooltip.show(history.privateButton, {immediate: true});
     assert(indicator._tooltip.actor.visible && indicator._tooltip.actor.get_parent() === Main.uiGroup,
       'Icon help must use a floating Shell tooltip');
-    indicator._tooltip._handleCapturedEvent({type: () => Clutter.EventType.MOTION});
-    assert(!indicator._tooltip.actor.visible,
-      'Moving the mouse did not dismiss a keyboard-triggered tooltip');
+    indicator._tooltip.hide();
     const originalSearchShortcut = indicator._settings.get_strv('history-search-shortcut');
     indicator._settings.set_strv('history-search-shortcut', ['<Control>f']);
     assert(indicator._handleMenuKey({

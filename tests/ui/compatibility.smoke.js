@@ -281,6 +281,7 @@ async function verifyOpenPanelDisable(actor) {
         await Scripting.sleep(50);
         assert(actor.menu.isOpen, `${panel} must be open before testing disable`);
         const tooltip = actor._tooltip;
+        const inputMode = actor._inputMode;
         const hide = tooltip.hide;
         let destroyed = false;
         let lateUses = 0;
@@ -295,6 +296,7 @@ async function verifyOpenPanelDisable(actor) {
           await wait('open-panel-shutdown', app._shutdown);
           assert(destroyed && lateUses === 0,
             `Disabling ${panel} must not call its tooltip after destruction`);
+          assert(inputMode._filterId === 0, 'Disabling an open panel must remove its input filter');
         } finally {
           tooltip.hide = hide;
         }
@@ -327,6 +329,8 @@ export async function run() {
   await wait('terminal-source-cleanup', verifyTerminalLifecycle(TerminalInput));
   const {verifyLifecycle: verifyPreferencesLifecycle} = await import('./preferences.smoke.js');
   await wait('settings-close-lifecycle', verifyPreferencesLifecycle());
+  const {verify: verifyInputMode} = await import('./input-mode.smoke.js');
+  await wait('input-mode', verifyInputMode(actor));
   actor.menu.open();
   await Scripting.sleep(150);
   assert(actor.menu.isOpen, 'Main panel did not open');

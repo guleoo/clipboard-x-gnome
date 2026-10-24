@@ -10,6 +10,7 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 import {PanelManager} from './panel-manager.js';
 import {IconButton} from './controls/icon-button.js';
 import {Tooltip} from './controls/tooltip.js';
+import {InputMode} from './navigation/input-mode.js';
 import {HistoryPanel} from './panels/history/panel.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases/panel.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
@@ -67,6 +68,7 @@ class Indicator extends PanelMenu.Button {
       style_class: 'system-status-icon',
     }));
     this.menu.actor.add_style_class_name('cbx-menu');
+    this._inputMode = new InputMode(this.menu.actor, (mode, position) => this._tooltip.setMode(mode, position));
     this._indicatorArrowSide = this.menu._boxPointer.arrowSide;
     this._indicatorArrowAlignment = this.menu._arrowAlignment;
     this._menuAnchor = new St.Widget({
@@ -166,24 +168,37 @@ class Indicator extends PanelMenu.Button {
         this._panelManager.reset();
     });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
-      if (!this.menu.actor.visible)
+      if (!this.menu.actor.visible) {
+        this._inputMode.close();
         this._panelManager.hidden();
+      }
     });
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
     // Handle Escape before PopupMenu's default handler closes the entire menu.
     if (Clutter.KeyController) {
       this._menuKeyController = new Clutter.KeyController();
-      this._menuCaptureSignal = this._menuKeyController.connect('key-press', controller =>
-        this._handleEscape(controller.get_key()[1]));
+      this._menuCaptureSignal = this._menuKeyController.connect('key-press', controller => {
+        const symbol = controller.get_key()[1];
+        this._inputMode.keyboard(symbol);
+        return this._handleEscape(symbol);
+      });
       this.menu.actor.add_action_full('clipboard-x-gnome-escape', Clutter.EventPhase.CAPTURE, this._menuKeyController);
     } else {
-      this._menuCaptureSignal = this.menu.actor.connect('captured-event', (_actor, event) =>
-        event.type() === Clutter.EventType.KEY_PRESS
-          ? this._handleEscape(event.get_key_symbol()) : Clutter.EVENT_PROPAGATE);
+      this._menuCaptureSignal = this.menu.actor.connect('captured-event', (_actor, event) => {
+        if (event.type() !== Clutter.EventType.KEY_PRESS)
+          return Clutter.EVENT_PROPAGATE;
+        const symbol = event.get_key_symbol();
+        this._inputMode.keyboard(symbol);
+        return this._handleEscape(symbol);
+      });
     }
     this._menuOpenStateSignal = this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
+        const eventType = Clutter.get_current_event()?.type();
+        const keyboard = this._openingWithKeyboard
+          || eventType === Clutter.EventType.KEY_PRESS || eventType === Clutter.EventType.KEY_RELEASE;
+        this._inputMode.open(keyboard ? 'keyboard' : 'pointer');
         this._actions.rememberInputTarget();
         this._panelManager.open();
         this._actions.ensureIdentity();
@@ -194,6 +209,7 @@ class Indicator extends PanelMenu.Button {
         else if (this._panelManager.is('phrases'))
           this._quickPhrases.focusStart();
       } else {
+        this._inputMode.close();
         this._tokenizerRequest++;
         this._tooltip.hide();
         this._panelManager.close({
@@ -216,13 +232,18 @@ class Indicator extends PanelMenu.Button {
     }
   }
 
-  toggle() {
+  toggle({keyboard = false} = {}) {
     if (this.menu.isOpen) {
       this.menu.close();
       return;
     }
     this._updateMenuSource();
-    this.menu.open();
+    this._openingWithKeyboard = keyboard;
+    try {
+      this.menu.open();
+    } finally {
+      this._openingWithKeyboard = false;
+    }
   }
 
   _buildMenu() {
@@ -595,6 +616,7 @@ class Indicator extends PanelMenu.Button {
     if (this._workareasChangedSignal)
       global.display.disconnect(this._workareasChangedSignal);
     this._workareasChangedSignal = 0;
+    this._inputMode.destroy();
     this._panelManager?.destroy();
     this._tooltip.destroy();
     this.menu.sourceActor = this;
