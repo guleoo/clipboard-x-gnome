@@ -41,6 +41,7 @@ export const cases = {
       for (const action of ['click', 'enter', 'paste', 'type', 'configured-type']) {
         await target.focus();
         await target.call('clear');
+        await target.offer(`Different clipboard before ${action}`);
         await focusPhrase(desktop, phrase);
         if (action === 'click') await desktop.click(desktop.phrases.buttons[0]);
         else if (action === 'enter') await desktop.key(Clutter.KEY_Return);
@@ -72,6 +73,7 @@ export const cases = {
     try {
       for (const close of [false, true]) {
         desktop.settings.set_boolean('phrase-close-after-copy', close);
+        await target.offer(`Different clipboard before close=${close}`);
         await focusPhrase(desktop, phrase);
         await desktop.key(Clutter.KEY_Return);
         await until(() => desktop.indicator.menu.isOpen === !close, 'configured close-after-copy');
@@ -116,6 +118,9 @@ export const cases = {
     const panel = desktop.phrases;
     const path = panel._store.path;
     const failurePath = GLib.dir_make_tmp('cbx-phrase-directory-XXXXXX');
+    const reportError = panel._reportError;
+    const errors = [];
+    panel._reportError = error => { errors.push(error); reportError(error); };
     // A directory is a genuine replace_contents failure, also when tests run as root.
     panel._store.path = failurePath;
     try {
@@ -123,6 +128,7 @@ export const cases = {
       await desktop.click(panel.addButton);
       await desktop.type('Retry after actual IO failure');
       await desktop.key(Clutter.KEY_Return);
+      await until(() => errors.length === 1, 'first native Enter must report the real directory replacement error');
       await panel._store._operation;
       assert(panel.formVisible && panel.entry.get_text() === 'Retry after actual IO failure'
         && !panel.phrases.includes('Retry after actual IO failure'),
@@ -133,6 +139,6 @@ export const cases = {
       const [, bytes] = Gio.File.new_for_path(path).load_contents(null);
       assert(JSON.parse(new TextDecoder().decode(bytes)).phrases.includes('Retry after actual IO failure'),
         'Retry must reach actual durable phrase storage');
-    } finally { panel._store.path = path; }
+    } finally { panel._store.path = path; panel._reportError = reportError; }
   },
 };

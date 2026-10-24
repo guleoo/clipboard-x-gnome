@@ -5,9 +5,11 @@ import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 
-async function trigger(desktop, target, text, key) {
+async function trigger(desktop, target, text, key, {replaceClipboard = false} = {}) {
   const item = await capture(desktop, target, text);
+  if (replaceClipboard) await target.offer('Independent clipboard sentinel before action');
   await desktop.open();
+  if (replaceClipboard) await desktop.search(text);
   await desktop.key(Clutter.KEY_Down);
   assert(desktop.focus === desktop.history._itemRows.get(item.id).focusActors[0], 'Native action targets the copied row');
   await desktop.key(key);
@@ -17,14 +19,15 @@ export const cases = {
   async 'TYPE-01'(desktop) {
     const target = await Target.open(desktop);
     try {
-      await trigger(desktop, target, 'copy changes clipboard only', Clutter.KEY_Return);
+      await trigger(desktop, target, 'copy changes clipboard only', Clutter.KEY_Return, {replaceClipboard: true});
       assert((await target.clipboard()).text === 'copy changes clipboard only' && target.state.text === '',
         'Copy must not type into the external target');
-      await trigger(desktop, target, 'paste into the original target', Clutter.KEY_v);
+      await trigger(desktop, target, 'paste into the original target', Clutter.KEY_v, {replaceClipboard: true});
       await until(() => target.state.text === 'paste into the original target', 'paste into real GTK target');
       await target.call('clear');
-      await trigger(desktop, target, 'simulated input target', Clutter.KEY_apostrophe);
+      await trigger(desktop, target, 'simulated input target', Clutter.KEY_apostrophe, {replaceClipboard: true});
       await until(() => target.state.text === 'simulated input target', 'native simulated-input shortcut', 15000);
+      assert((await target.clipboard()).text === 'Independent clipboard sentinel before action', 'Typing must not overwrite the clipboard');
     } finally { await target.close(); }
   },
 

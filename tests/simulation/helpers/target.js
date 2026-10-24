@@ -11,9 +11,11 @@ export class Target {
     const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
     launcher.setenv('GDK_BACKEND', 'wayland', true);
     target.process = launcher.spawnv(['gjs', '-m', script.get_path(), target.directory, target.title]);
-    await until(() => target.state.ready && target.window, 'independent GTK target ready', 10000);
-    await target.focus();
-    return target;
+    try {
+      await until(() => target.state.ready && target.window, 'independent GTK target ready', 10000);
+      await target.focus();
+      return target;
+    } catch (error) { await target.close({force: true}); throw error; }
   }
 
   constructor(desktop) {
@@ -92,9 +94,9 @@ export class Target {
     return this.call('read', {mime});
   }
 
-  async close() {
+  async close({force = false} = {}) {
     if (!this.process) return;
-    try { if (!this.paused) await this.call('quit'); } finally {
+    try { if (!force && !this.paused) await this.call('quit'); } finally {
       // Only this owned fixture process is terminated if its normal close stalls.
       this.process.force_exit();
       await new Promise(resolve => this.process.wait_async(null, (process, result) => {

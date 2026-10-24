@@ -7,6 +7,9 @@ Tests are grouped by the environment they require, then by domain:
 The [functional inventory](functional-inventory.md) owns acceptance scope, entry points, gaps and
 the duplicate-test review. It is not a pass report.
 
+Observed results and retained failures are recorded separately in the
+[desktop acceptance snapshot](acceptance-status.md).
+
 ```text
 tests/
   logic/          # No graphical desktop required
@@ -113,6 +116,70 @@ assertions/runs, unexecuted cases and missing dependencies. Exit codes are 0 for
 passing, 1 for failures/unexecuted cases, and 2 for dependency blocks only. Unregistered gaps remain
 in the [functional inventory](functional-inventory.md); a green subset is not complete acceptance.
 This entry point is not added to CI.
+
+Reports record the original and prepared ZIP hashes plus a test-source fingerprint fixed at start.
+Changing test sources during a run invalidates that run; documentation edits do not. An abnormal
+Shell exit fails its active case, and later unstarted cases remain NOT_RUN. Assertion failures also
+try to save a screenshot of the isolated desktop; a crashed compositor cannot supply one.
+
+Locale-specific cases require a generated non-C UTF-8 base locale (for example `en_US.UTF-8`),
+because gettext ignores `LANGUAGE` under C.UTF-8. DICT cases additionally require `--language zh_CN`;
+missing locale/application/GVfs dependencies are BLOCKED, not passed. Examples:
+
+```sh
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-02,DICT-06,DICT-08 --language zh_CN
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case LANG-02 --language ja
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case EDIT-07-native,EDIT-07-flatpak
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium,CLIP-02-office --isolate-cases
+```
+
+Application-source cases use private profiles and local HTML/RTF/images. A headless-only Office
+build cannot establish graphical clipboard compatibility. Firefox uses its native Copy Image
+context-menu action; Chromium copies the standalone image. Both require independent original-byte
+readback, not an HTML image reference.
+
+Real server acceptance:
+
+```sh
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases
+# Builds the adjacent clipboard-x-server source by default; an existing image also works:
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image SERVER_IMAGE --case RECV-04
+# Another Shell-version image with Python/GJS/GNOME test tools already installed:
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container GNOME_TEST_IMAGE --shell 50 --isolate-cases
+```
+
+This requires running Docker. It creates owned containers, one temporary volume and a random
+loopback port with synthetic credentials. An optional Shell container shares only that server's
+network namespace. Cleanup removes only this run's resources, never Docker-prunes or edits server
+sources. Cross-container logs are copied into `build/simulation-tests/`.
+The independent `sync-peer.js` uses production SyncClient/protocol/storage to supply originals;
+it is not a second GNOME Shell and does not establish two-desktop automatic-activation races.
+
+Full preferences run in an independent GTK process. IPC observes widget positions/state only;
+clicks, scrolling, combination recording and reset confirmation use Mutter input. Actual gettext
+is retained, not replaced with English. Successful screenshot tests require runner-owned special
+XDG directories, never the host Pictures directory. Long cases periodically renew GNOME PerfHelper
+to prevent its 30-second idle exit from being mistaken for a product failure.
+
+The session wrapper updates only the private bus activation environment so portals/default editors
+use the same private XDG as Shell. Search-indexer crawl roots are also limited to the fixture directory.
+An HTTP gate streams to the real server, controlling timing/one lost response without fabricating
+protocol results or logging credentials/bodies. Helpers watch their owning Shell to avoid orphan
+pollers after a crash. `--isolate-cases` is useful for collecting independent failures; it is not a
+hidden requirement for otherwise independent cases.
+
+### Cold replacement and recovery
+
+```sh
+python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --shell 51
+# Actual version upgrade, if an earlier release ZIP is available:
+python3 tools/test-lifecycle.py CURRENT.zip --previous PREVIOUS.zip
+```
+
+This installs only into a private XDG, checks installed file bytes, closes one real Shell process and
+opens another over the same data. ENV-02/06 restore history/pins, phrases, DeviceId and an offline
+destination-bound upload queue. Without `--previous`, the same artifact is reinstalled; do not call
+that a version-migration test. Logs and `report.json` are written to `build/lifecycle-tests/`.
 
 ## Adding tests
 

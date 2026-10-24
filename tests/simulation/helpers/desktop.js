@@ -4,6 +4,7 @@ import Meta from 'gi://Meta';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import {ExtensionState} from 'resource:///org/gnome/shell/misc/extensionUtils.js';
+import {screenshot} from './diagnostics.js';
 
 export const UUID = 'clipboard-x-gnome@guleoo.github.io';
 export const pause = milliseconds => Scripting.sleep(milliseconds);
@@ -20,6 +21,11 @@ export function init() {
 }
 export function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+export function block(message) {
+  const error = new Error(message);
+  error.name = 'SimulationBlocked';
+  throw error;
 }
 export async function until(predicate, message, timeout = 5000) {
   const deadline = GLib.get_monotonic_time() + timeout * 1000;
@@ -201,16 +207,33 @@ export class Desktop {
 
   async check(id, run) {
     print(`[${this.tag}] START ${id}`);
+    let keepAlive = null;
+    let keepAliveError = null;
+    const source = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10000, () => {
+      if (!keepAlive) keepAlive = Scripting.waitTestWindows()
+        .catch(error => { keepAliveError = error; })
+        .finally(() => { keepAlive = null; });
+      return GLib.SOURCE_CONTINUE;
+    });
     try {
       // The native helper otherwise exits after 30 seconds without a D-Bus call.
       await Scripting.waitTestWindows();
       await this.reset();
       await run(this);
+      await keepAlive;
+      assert(!keepAliveError, `Native helper keepalive failed: ${keepAliveError?.message}`);
       print(`[${this.tag}] PASS ${id}`);
     } catch (error) {
+      if (error.name === 'SimulationBlocked') {
+        print(`[${this.tag}] BLOCKED ${id}: ${error.message}`);
+        return;
+      }
       const box = rect(this.indicator.menu.actor);
       printerr(`[${this.tag}] FAIL ${id}: ${error.message}; panel=${this.manager.currentName}; focus=${this.focus?.accessible_name ?? this.focus}; popup=${box.x},${box.y},${box.width},${box.height}; actionMode=${Main.actionMode}; overview=${Main.overview.visible}`);
+      try { await screenshot(id); } catch (diagnostic) { printerr(`[${this.tag}] Screenshot unavailable: ${diagnostic.message}`); }
       throw error;
+    } finally {
+      GLib.Source.remove(source);
     }
   }
 

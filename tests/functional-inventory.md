@@ -26,7 +26,11 @@ Fresh/cold-overwrite installation; empty/existing storage; repeated enable/disab
 
 Maintained simulation entries: [lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-Evidence / remaining boundary: CI covers a lifecycle subset. Cold overwrite and same-XDG two-process restart need recorded isolated runs; old temporary probes are not maintained runners. Each in-flight operation needs its own cancellation checkpoint.
+Cold entry: `tools/test-lifecycle.py`, [lifecycle/cold.smoke.js](simulation/lifecycle/cold.smoke.js).
+ENV-02/06 install into private XDG, verify installed bytes and use two different Shell PIDs over the
+same data to check pinned order, phrases, DeviceId and a destination-bound offline queue. Without
+`--previous`, this is same-package replacement, not an older-version upgrade. Each in-flight operation
+retains its own cancellation checkpoint; CI scope is unchanged.
 
 ### Panels — PANEL-01…10
 
@@ -49,8 +53,11 @@ Native entry: [clipboard/native.js](simulation/clipboard/native.js), via
 sources/receivers for multilingual/multiline long text, PNG/JPEG/WebP/GIF/SVG, thumbnail proportions
 and original-byte readback, capture-size boundaries, suspended/exited/rapid owners, deduplication,
 native click/Enter, action isolation and Ctrl+click. CLIP-03/12 data rules remain in logic tests.
-Actual browser/office sources (CLIP-02) and XWayland remain separate gaps; a multi-MIME GTK fixture
-does not establish compatibility with those applications.
+CLIP-02's conditional [application cases](simulation/clipboard/applications.native.js) copy from
+private Firefox/Chromium profiles and a LibreOffice RTF document using native input. An independent
+GTK receiver checks text/HTML hashes; browser originals also require exact dimensions and pixels.
+The actual applications and GUI backends must be installed. XWayland remains separate; the GTK
+multi-MIME fixture alone does not establish browser/office compatibility.
 
 ### History — HIST-01…10
 
@@ -90,7 +97,12 @@ Locale/region matching and system fallback; multiple enabled dictionaries; UTF-8
 
 Maintained simulation entries: [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-Evidence / remaining boundary: Use logic/clipboard/tokenizer/dictionary.test.js for data/network. GTK teardown covers selected in-flight operations, not full import/edit/refresh GUI flows or large-file timing.
+Native entry: [word-selection/dictionary.native.js](simulation/word-selection/dictionary.native.js),
+with `--language zh_CN`. DICT-02 operates the real file chooser and multiple source switches;
+DICT-06 covers explicit network Add/refresh, actual word-panel reload, invalid-refresh retention,
+no implicit downloads (DICT-07) and removal. DICT-08 targets a real default editor and file manager.
+Missing applications/GVfs HTTP support are BLOCKED. Data limits stay logic-owned; large-dictionary
+timing and every backend variant remain separate boundaries.
 
 ### Quick phrases — PHRASE-01…08
 
@@ -114,7 +126,11 @@ Button/shortcut and supported portal targets; history/copy/editor option combina
 
 Maintained simulation entries: [screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
 
-Evidence / remaining boundary: pipeline injects portal URI/editor callbacks and phase identity changes. cancel also operates real ScreenshotUI. A real successful capture and each backend/target still need explicit acceptance; logic/screenshot covers protocol.
+Native entry: [screenshot/native.js](simulation/screenshot/native.js). SHOT-03 uses both entry points,
+the real portal/permission UI and history/copy combinations with editing disabled; SHOT-04 cancels
+actual ScreenshotUI without a failure notice. Owner/capture completion is awaited, not inferred from
+callback return. Pictures is configured before Shell starts inside the private runtime. Other targets
+and induced protocol failures retain separate pipeline/logic ownership.
 
 ### Image editor — EDIT-01…07
 
@@ -122,7 +138,11 @@ Empty command does not fetch; argv %u/%f/%i/%%, quoting and paths; invalid place
 
 Maintained simulation entries: [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
-Evidence / remaining boundary: Shell checks use /usr/bin/true and materialization probes. logic/screenshot/tools.test.js uses controlled stdin subprocesses. Neither substitutes for real Gradia/Flatpak acceptance.
+Native entry: [screenshot/editor.native.js](simulation/screenshot/editor.native.js). EDIT-01 checks
+the real missing-command notification without fetching originals; EDIT-06 exercises a slow/non-reading
+stdin child and early exits while measuring Shell heartbeat. EDIT-07-native launches real Gradia and
+checks distinctive image pixels on its canvas. EDIT-07-flatpak requires the installed application,
+not merely the CLI. Argument/data rules remain in logic tests.
 
 ### Color picker — COLOR-01…07
 
@@ -138,7 +158,12 @@ IP/HTTP/HTTPS/subpaths/authentication/invalid URLs; test unsaved inputs without 
 
 Maintained simulation entries: [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-Evidence / remaining boundary: Use logic/ui/sync-connection* and logic/sync/configuration*. HTTP/GTK fixtures do not prove actual server device discovery or management-console visibility.
+Native entries: [sync/connection.native.js](simulation/sync/connection.native.js),
+[sync/native.js](simulation/sync/native.js), via `tools/test-sync-server.py`. CONN-02/03/04/05 operate
+the complete independent GTK window against the real server: unsaved Test input, busy controls,
+repeated native clicks, in-flight close, immediate profile Apply and retry. CONN-06-profile checks
+identity/profile persistence against the management API, not the web UI. URL/auth/concurrent-store
+combinations retain their existing logic ownership.
 
 ### Upload queues — SEND-01…10
 
@@ -146,7 +171,12 @@ Send modes/favorites-only, exact text/image thresholds; freeze manifest before r
 
 Maintained simulation entries: [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js), [sync/status.smoke.js](simulation/sync/status.smoke.js).
 
-Evidence / remaining boundary: logic/sync/upload-queue.test.js owns queue/destination boundaries; Shell checks persistence and wiring. Reuse PRIV for sensitive refusal. Real interrupted multi-device upload needs an isolated server.
+Native entries: [sync/native.js](simulation/sync/native.js), [sync/queue.native.js](simulation/sync/queue.native.js)
+and [sync/local-boundary.native.js](simulation/sync/local-boundary.native.js). The real server receives
+manual/automatic/pinned-only publications, independent MIME policy, exact thresholds, disabled-copy
+exclusion and durable delivery confirmation. A separate streaming HTTP gate holds actual requests or
+drops one real completion response for frozen-manifest/interruption/deletion/idempotency checks.
+It never replaces SyncClient results. Corruption, backoff and full destination matrices remain logic-owned.
 
 ### Receive and lazy content — RECV-01…10
 
@@ -154,7 +184,12 @@ Off/history/activate modes; late join, pagination, replay and cursor persistence
 
 Maintained simulation entries: [sync/receive.smoke.js](simulation/sync/receive.smoke.js).
 
-Evidence / remaining boundary: Shell injects client results; logic/sync/{receive,client,http-client}.test.js uses controlled services. Complete lazy-origin interoperability needs the real server and two independent clients.
+Native entries: [sync/native.js](simulation/sync/native.js), [sync/network.native.js](simulation/sync/network.native.js).
+An independent production source client/store uses the real server. Cases cover receive modes, local
+thresholds, server-and-receiver lazy originals, shared downloads, source rejection, multi-representation
+persistence/offline primary reuse, late-result protection and local versus server deletion. A streaming
+gate delays actual bytes. This is one real Shell plus an independent source process, not two actual
+desktops or every pagination boundary.
 
 ### Transfers and errors — XFER-01…09
 
@@ -162,7 +197,11 @@ Distinct unsent/wait/transfer/verify/snapshot-complete/original-complete/error s
 
 Maintained simulation entries: [sync/status.smoke.js](simulation/sync/status.smoke.js), [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js).
 
-Evidence / remaining boundary: Pair with logic/sync/{transfers,http-failures,file-verifier}.test.js. Injected transfer state/button signals are not real network throughput or full startup-latency evidence. Measure verifier paths separately.
+XFER-02 observes real uploads and exact remote totals; XFER-02-download throttles a real response and
+requires intermediate, bounded, monotonic byte counts per transfer plus exact final clipboard hash.
+XFER-04 restores 20 completed server records and observes zero render/persist/save calls inside the
+restore phase. These supplement logic/sync/{transfers,http-failures,file-verifier}.test.js. Optional
+stress/verifier memory benchmarks remain separate explicit runs, not ordinary CI.
 
 ### Settings — SET-01…09
 
@@ -170,7 +209,10 @@ Current pages/options and valid boundaries; classify internal/inactive keys; acc
 
 Maintained simulation entries: [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/foreground.smoke.js](simulation/settings/foreground.smoke.js), [settings/layout.smoke.js](simulation/settings/layout.smoke.js), [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-Evidence / remaining boundary: logic/ui covers settings models. No blanket GUI coverage claim: actual shortcut recording, external links, reset confirmation and theme interactions need targeted display/manual runs; component teardown is different evidence.
+Native entry: [settings/native.js](simulation/settings/native.js). SET-01 visits all eight actual pages;
+SET-06 records/cancels/clears a real chord in independent GTK; SET-08 operates both reset branches,
+preserves identity/phrases and verifies a later setting still saves. Theme/layout/exclusion/link cases
+retain their component/data ownership, not blanket GUI certification.
 
 ### Languages and visuals — LANG-01…07
 
@@ -178,7 +220,11 @@ Catalog extraction/compilation and safe placeholders; actual menu/settings/error
 
 Maintained simulation entries: [shell.smoke.js](simulation/shell.smoke.js).
 
-Evidence / remaining boundary: logic/i18n/coverage.sh checks catalogs. Aggregate translation-only mode checks a search placeholder. Neither proves translation quality or all notifications; visual assertions remain manual, not CSS-string snapshots.
+Native entry: [settings/language.native.js](simulation/settings/language.native.js), LANG-02 with
+`--language en_US`, `zh_CN`, `ja`, `ko`. Check installed catalogs in the actual menu, word panel,
+independent preferences and missing-editor notification. A generated non-C message locale is required:
+C.UTF-8 ignores gettext LANGUAGE selection. Catalog completeness remains logic/i18n/coverage.sh;
+linguistic quality, RTL/long-string layout and visual polish remain manual.
 
 ### Responsiveness and tooling — OPS-01…08
 
@@ -193,21 +239,29 @@ These are coverage boundaries, not certification of every requirement within an 
 
 | Module | IDs | Actual evidence and boundary |
 | --- | --- | --- |
+| `clipboard/applications.native.js` | CLIP-02-firefox/chromium/office | Real local HTML/RTF sources, private profiles, native copy and independent MIME readback; conditional on GUI applications |
 | `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04/10 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pinned-first restart, Unicode search and real replace errors; not password-manager or disk-full interoperability |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
 | `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, 2000-word/configured limits, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup |
 | `terminal/native.js` | TYPE-01/03/05/06/07 | Independent GTK target, exact mixed-language output at both speeds, real backend modifier wait/fuse, one notification/queued cancellation, no old typing after actual disable/re-enable |
+| `sync/native.js` | CONN-06-profile, SEND-01/01-pinned/02/03/06/10, RECV-01/03/04/09, XFER-02/04 | Real server/source, durable state and actual transport |
+| `sync/connection.native.js` | CONN-02/03/04/05 | Complete GTK Test/Apply/failure/retry and in-flight close |
+| `sync/network.native.js` | RECV-05/06/07/08, XFER-02-download | Real gated downloads, source failure, stale choices and exact progress |
+| `sync/queue.native.js` | SEND-04/07/08 | Frozen disk manifests, interrupted/deleted work and lost responses |
+| `sync/local-boundary.native.js` | PHRASE-08, PRIV-08 | Active-server local-only data boundaries; not a log-redaction audit |
+| `settings/native.js`, `settings/language.native.js` | SET-01/06/08, LANG-02 | Complete independent preferences, native recording/reset and actual catalogs |
+| `word-selection/dictionary.native.js` | DICT-02/06/08 (also DICT-07) | Local/network import, multiple sources, refresh/retention, editor/file manager |
+| `screenshot/native.js`, `screenshot/editor.native.js` | SHOT-03/04, EDIT-01/06/07-native/07-flatpak | Actual portal, cancellation, bounded stdin and real Gradia canvas |
+| `color-picker/native.js` | COLOR-01/03/04/07 | Actual swatches, pixel movement, formats and disable/reopen |
 
 SELECT-01 reuses the existing drag implementation including SELECT-02 ranges; SELECT-03 reuses
 viewport. Form/Escape also share verifiers instead of copied scenarios. Native cases replace claims
 that invoking a handler alone establishes user interaction; logic tests still own data boundaries.
 
-WORD-07 intentionally retains a failing assertion: in this GNOME 50/51 software-rendered run,
-100,000-character URLs and 200,000-character unbroken text stalled the main loop for seconds to
-roughly 20 seconds, exceeding the 1000ms interactive budget; ordinary 2000-word input was much faster.
-Each sample logs length, word count and maximum gap. Do not enlarge the budget, skip it, or change
-production code just to make this test green. A virtual backend modifier fuse proves neither physical
-key delivery nor input-method bypass. CI scope is unchanged.
+WORD-07 measures ordinary 2000-word input, 100,000-character URLs and 200,000-character unbroken text
+against a 1000ms main-loop budget. Each sample logs length, word count and maximum gap. Do not enlarge
+budgets, skip failures or change production code just to make tests green. A virtual backend modifier
+fuse proves neither physical input delivery nor input-method bypass. CI scope is unchanged.
 
 ## Duplicate-test review
 
@@ -231,4 +285,4 @@ stress-test policy changes are part of this organization.
 Extend an existing owner before adding another test. Reference cross-domain evidence (privacy/upload
 cancellation, package/install, notification/cancel), rather than copy scenarios. Store run results separately.
 Do not add permanent assertions for CSS strings, routine widget properties, wording or release formatting.
-Physical typing/IME, real multi-client server flows, actual editors and visuals need independent evidence.
+Physical typing/IME, two-desktop activation races, uninstalled applications and visuals need independent evidence.

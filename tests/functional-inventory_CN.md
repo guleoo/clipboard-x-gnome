@@ -25,7 +25,10 @@ GNOME 50/51 通过。旧 .codex 报告仅是对应版本证据，不再作为当
 
 长期模拟入口：[lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-验证边界 / 缺口：CI 仅覆盖生命周期子集。冷覆盖和同 XDG 的两进程重开需单独记录；旧临时探针不算长期入口。在途操作需分别确认取消点。
+冷启动入口：`tools/test-lifecycle.py` 和 [lifecycle/cold.smoke.js](simulation/lifecycle/cold.smoke.js)。
+ENV-02/06 在私有 XDG 安装并核验文件，使用不同 Shell PID 共用数据，检查固定排序、快捷语句、
+DeviceId 及绑定目的地的离线上传队列。不指定 `--previous` 仅代表同包冷覆盖，不代表旧版本升级。
+在途操作仍需分别确认取消点；CI 范围不变。
 
 ### 面板入口、导航与现场 — PANEL-01…10
 
@@ -46,7 +49,9 @@ CLIP-01、04～11 使用独立 GTK Wayland 来源/接收端，覆盖多语言、
 缩略图比例与原图回读、捕获大小边界、暂停/退出/快速 owner、去重、真实点击/Enter、操作隔离和 Ctrl+点击。
 CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
 
-验证边界 / 缺口：浏览器/办公来源（CLIP-02）和 XWayland 兼容性还需实际应用；GTK 多 MIME 夹具不代替它们。
+CLIP-02 的[实际应用条件用例](simulation/clipboard/applications.native.js)使用私有 Firefox/Chromium
+profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文本/HTML hash；浏览器原图还校验
+尺寸和像素。需要安装实际应用和图形后端。XWayland 仍需独立证据；GTK 多 MIME 夹具不代替这些来源。
 
 ### 搜索、排序、保留与持久化 — HIST-01…10
 
@@ -86,7 +91,10 @@ CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
 
 长期模拟入口：[settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-验证边界 / 缺口：数据网络使用 logic/clipboard/tokenizer/dictionary.test.js；GTK 销毁覆盖部分在途操作，不代表导入编辑刷新全流程或大文件测时通过。
+原生入口：[word-selection/dictionary.native.js](simulation/word-selection/dictionary.native.js)，以
+`--language zh_CN` 运行。DICT-02 操作真实文件选择器和多来源开关；DICT-06 覆盖网络添加、主动刷新、
+实际分词重载、失败保留、不偷偷下载（DICT-07）和删除；DICT-08 使用真实默认编辑器与文件管理器。
+缺少应用/GVfs HTTP 支持标记 BLOCKED。数据限制仍归逻辑测试，大词库测时及全部后端变体仍有边界。
 
 ### 快捷语句 — PHRASE-01…08
 
@@ -110,7 +118,10 @@ CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
 
 长期模拟入口：[screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
 
-验证边界 / 缺口：pipeline 注入门户 URI、编辑回调和阶段身份变化；cancel 还操作真实 ScreenshotUI。成功截图和每种后端目标需单独验收；logic/screenshot 覆盖协议。
+原生入口：[screenshot/native.js](simulation/screenshot/native.js)。SHOT-03 从按钮/快捷键进入真实门户、
+权限确认及截图界面，覆盖编辑关闭时的历史/复制组合；SHOT-04 实际取消且无失败通知。等待 owner
+与捕获处理完成，不以回调返回代替。Pictures 在 Shell 启动前设为私有目录。其他目标及协议故障
+仍由对应 pipeline/逻辑测试负责。
 
 ### 图片编辑 — EDIT-01…07
 
@@ -118,7 +129,10 @@ CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
 
 长期模拟入口：[clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
-验证边界 / 缺口：Shell 使用 /usr/bin/true 和原图探针；logic/screenshot/tools.test.js 用受控 stdin 子进程，均不代替真实 Gradia/Flatpak 验收。
+原生入口：[screenshot/editor.native.js](simulation/screenshot/editor.native.js)。EDIT-01 检查真实空命令
+通知且不取原图；EDIT-06 操作慢读/不读 stdin 和提前退出子进程，并测 Shell heartbeat；EDIT-07-native
+启动真实 Gradia，检查画布中的特征像素。EDIT-07-flatpak 要求应用本身已安装，只有 CLI 不算。
+参数和数据边界仍归逻辑测试。
 
 ### 取色器 — COLOR-01…07
 
@@ -134,7 +148,11 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-验证边界 / 缺口：配合 logic/ui/sync-connection* 和 logic/sync/configuration*；HTTP/GTK 夹具不证明真实服务端设备发现和管理页面已更新。
+原生入口：[sync/connection.native.js](simulation/sync/connection.native.js)、
+[sync/native.js](simulation/sync/native.js)，通过 `tools/test-sync-server.py` 运行。CONN-02/03/04/05
+操作完整独立 GTK 窗口及真实服务端，检查未保存输入测试、忙碌互斥、快速点击、在途关闭、立即应用
+设备信息和失败重试。CONN-06-profile 从管理 API 验证身份/设备持久化，不代表 web 页面验收。
+URL、认证和并发配置的数据组合仍归现有逻辑测试。
 
 ### 发布策略与持久化队列 — SEND-01…10
 
@@ -142,7 +160,11 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[sync/toggle.smoke.js](simulation/sync/toggle.smoke.js), [sync/status.smoke.js](simulation/sync/status.smoke.js).
 
-验证边界 / 缺口：logic/sync/upload-queue.test.js 负责队列目的地边界；Shell 负责确认落盘和接线；敏感拒绝复用 PRIV。真实多端中断上传需隔离服务器。
+原生入口：[sync/native.js](simulation/sync/native.js)、[sync/queue.native.js](simulation/sync/queue.native.js)、
+[sync/local-boundary.native.js](simulation/sync/local-boundary.native.js)。真实服务端接收手动/自动/仅固定、
+各 MIME 策略、精确阈值，并检查关闭期间不补传、确认落盘。独立流式 HTTP gate 挂起实际请求或丢弃
+一次真实完成响应，检查冻结清单、中断/删除与幂等恢复，不伪造 SyncClient 结果。损坏、退避和完整
+目的地矩阵仍归逻辑测试。
 
 ### 接收、增量与懒加载 — RECV-01…10
 
@@ -150,7 +172,10 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[sync/receive.smoke.js](simulation/sync/receive.smoke.js).
 
-验证边界 / 缺口：Shell 注入客户端结果，logic/sync/{receive,client,http-client}.test.js 使用受控服务；完整 lazy 来源互操作需真实服务端和两个独立客户端。
+原生入口：[sync/native.js](simulation/sync/native.js)、[sync/network.native.js](simulation/sync/network.native.js)。
+独立进程使用生产来源客户端/存储及真实服务端，覆盖接收模式、本机阈值、服务端和接收端均 lazy、
+并发复用、来源拒绝、多表示持久化/离线主内容复用、迟到保护、本地与服务端删除。gate 控制真实
+下载字节的时序。这是一台真实 Shell 加独立来源进程，不等于两台真实桌面或全部分页边界。
 
 ### 传输状态、恢复与错误 — XFER-01…09
 
@@ -158,7 +183,10 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[sync/status.smoke.js](simulation/sync/status.smoke.js), [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js).
 
-验证边界 / 缺口：配合 logic/sync/{transfers,http-failures,file-verifier}.test.js；注入状态或按钮信号不代表真实网络吞吐和完整启动耗时；分别测量校验路径。
+XFER-02 观察真实上传及远端精确总量；XFER-02-download 限速实际响应，要求中间进度、每个传输内的
+单调精确字节和最终剪切板 hash；XFER-04 恢复服务端 20 条完成记录，观察恢复阶段无逐条 render、
+persist、save。它们补充而非重复 logic/sync/{transfers,http-failures,file-verifier}.test.js。
+压力与各校验路径的内存预算仍显式选跑，不加入普通 CI。
 
 ### 设置、快捷键与恢复默认 — SET-01…09
 
@@ -166,7 +194,9 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/foreground.smoke.js](simulation/settings/foreground.smoke.js), [settings/layout.smoke.js](simulation/settings/layout.smoke.js), [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
-验证边界 / 缺口：logic/ui 覆盖设置模型。不声称全部 GUI 覆盖：真实快捷键录制、外链、重置确认和主题交互需专项界面人工证据，组件销毁不是同一行为。
+原生入口：[settings/native.js](simulation/settings/native.js)。SET-01 遍历八个真实页面；SET-06 在独立
+GTK 中录制、取消、清空组合键；SET-08 操作恢复默认的两个确认分支、保留身份/语句，并确认之后还能
+保存设置。主题、布局、排除和外链仍有各自的组件/数据归属，不声称所有 GUI 均已完整验收。
 
 ### 多语言、通知与视觉 — LANG-01…07
 
@@ -174,7 +204,10 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 长期模拟入口：[shell.smoke.js](simulation/shell.smoke.js).
 
-验证边界 / 缺口：logic/i18n/coverage.sh 验翻译目录，综合入口翻译模式验搜索 placeholder；不能证明翻译质量或全部通知。视觉人工验收，不做 CSS 字符串快照。
+原生入口：[settings/language.native.js](simulation/settings/language.native.js)，LANG-02 分别使用
+`--language en_US`、`zh_CN`、`ja`、`ko`，检查实际菜单、分词、独立设置窗口及空编辑命令通知。
+必须生成非 C 的基础消息 locale，C.UTF-8 会忽略 gettext 的 LANGUAGE 选择。目录完整性仍归
+logic/i18n/coverage.sh；翻译质量、RTL/长文本布局和视觉效果仍人工验收。
 
 ### 响应度、资源、打包与工具 — OPS-01…08
 
@@ -191,19 +224,28 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 
 | 模块 | ID | 实际验证及边界 |
 | --- | --- | --- |
+| `clipboard/applications.native.js` | CLIP-02-firefox/chromium/office | 实际本地 HTML/RTF、私有 profile、原生复制和独立 MIME 回读；依赖图形应用 |
 | `clipboard/policy.native.js` | PRIV-01/03/04/05/07、HIST-01/04/10 | 实际 GTK owner、敏感 MIME、真实窗口排除、在途取消、固定项重启排序、Unicode 搜索、真实文件替换错误；不等于真实密码管理器或磁盘满兼容性 |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | 原生输入/提交、Esc、独立目标收到复制/粘贴/模拟输入、关闭策略、延迟保存与实际 IO 失败重试；不覆盖全部 IME 或冷 Shell 恢复 |
 | `word-selection/native.js` | WORD-05/06/07/08、SELECT-01/03/04/06/07 | 真实行入口、选择结果回读、2000 边界/配置、长文 heartbeat、迟到处理、拖选、持续 Shift 连选、滚动和退出清理 |
 | `terminal/native.js` | TYPE-01/03/05/06/07 | 独立 GTK 目标、两档混合语言逐字一致、等待真实 backend 修饰键、熔断一次及队列取消、实际禁用重开不继续输入 |
+| `sync/native.js` | CONN-06-profile、SEND-01/01-pinned/02/03/06/10、RECV-01/03/04/09、XFER-02/04 | 真实服务端/来源、持久化和实际传输 |
+| `sync/connection.native.js` | CONN-02/03/04/05 | 完整 GTK 测试/应用/失败重试和在途关闭 |
+| `sync/network.native.js` | RECV-05/06/07/08、XFER-02-download | 实际下载门控、来源失败、迟到选择及精确进度 |
+| `sync/queue.native.js` | SEND-04/07/08 | 冻结清单、中断/删除、完成响应丢失 |
+| `sync/local-boundary.native.js` | PHRASE-08、PRIV-08 | 活跃同步下本地数据边界；不代替日志脱敏审计 |
+| `settings/native.js`、`settings/language.native.js` | SET-01/06/08、LANG-02 | 完整独立设置、原生录制/重置和实际翻译目录 |
+| `word-selection/dictionary.native.js` | DICT-02/06/08（含 DICT-07） | 本地/网络导入、多来源、刷新保留、编辑器和目录 |
+| `screenshot/native.js`、`screenshot/editor.native.js` | SHOT-03/04、EDIT-01/06/07-native/07-flatpak | 真实门户/取消、stdin 和 Gradia 画布 |
+| `color-picker/native.js` | COLOR-01/03/04/07 | 真实色块、像素移动、格式和禁用重开 |
 
 SELECT-01 直接复用已有 drag 实现，包含 SELECT-02 范围；SELECT-03 复用 viewport；表单和 Esc
 也复用同一函数，不复制一份测试。仅以这些原生用例替代“调用 handler 就代表用户操作”的结论，
 原有逻辑测试仍负责数据边界。
 
-WORD-07 保留失败断言：在本轮 GNOME 50/51 软件渲染测试中，10 万字符 URL 和 20 万字符无空白
-文本造成数秒至约 20 秒主循环停顿，超过 1000ms 交互预算；普通 2000 词明显更快。入口会记录
-各样本长度、词数及最大间隔，不扩大预算、跳过或通过修改插件代码把结果变绿。虚拟修饰键熔断
-不证明物理键盘事件一定送达，也不证明绕过输入法。CI 范围未扩大。
+WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本，以 1000ms 主循环间隔为预算，
+记录样本长度、词数和最大间隔。不扩大预算、跳过失败或修改插件代码把测试变绿。虚拟修饰键
+熔断不证明物理键盘事件一定送达，也不证明绕过输入法。CI 范围未扩大。
 
 | 原有重叠 | 处理 |
 | --- | --- |
@@ -223,4 +265,4 @@ CI 仍只运行原有兼容性子集。本次不改插件功能、CI 范围和�
 
 补测试先找已有归属，优先扩充边界；跨领域以引用复用证据（隐私/上传取消、打包/安装、通知/取消），
 不再复制场景。每次验收结果另存，不把本清单当通过矩阵。纯 CSS、成熟控件普通属性、文档措辞、
-release 排版不新增永久断言。模拟输入的物理键盘/IME、真实服务端多端、真实编辑器和视觉需补独立证据。
+release 排版不新增永久断言。物理键盘/IME、双桌面激活竞态、未安装应用和视觉仍需独立证据。

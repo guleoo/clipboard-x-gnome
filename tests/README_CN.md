@@ -7,6 +7,8 @@
 [功能测试清单](functional-inventory_CN.md) 统一维护验收范围、入口、缺口和重复测试审查，
 不是通过报告。
 
+实际运行结果、保留的失败和环境限制另见[桌面验收结果快照](acceptance-status_CN.md)。
+
 ```text
 tests/
   logic/          # 不需要图形桌面
@@ -102,6 +104,62 @@ bun run test:simulation:panels
 `PASS`、`FAIL`、`NOT_RUN`、`BLOCKED` 分别表示通过、断言/运行失败、未执行、缺少依赖；
 退出码分别为 0（全部选中项通过）、1（失败或未执行）、2（仅依赖阻塞）。注册用例之外的缺口仍以
 [功能清单](functional-inventory_CN.md)为准，不能用选中子集的绿色结果代替整体结论。此入口不加入 CI。
+
+报告在开始时固定原包/测试包 hash 和测试源码指纹；运行中修改测试源码会使本轮无效，文档修改不影响。
+Shell 异常退出会把正在执行的用例标为 FAIL，之后尚未开始的仍是 NOT_RUN。断言失败时也尽量保存
+隔离桌面的截图；合成器已经崩溃时无法截图。
+
+指定语言需生成非 C 的基础 UTF-8 locale（如 `en_US.UTF-8`），否则 gettext 会忽略 LANGUAGE。
+DICT 还要求 `--language zh_CN`；缺少 locale、应用或 GVfs 等依赖均为 BLOCKED，不算通过。例如：
+
+```sh
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-02,DICT-06,DICT-08 --language zh_CN
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case LANG-02 --language ja
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case EDIT-07-native,EDIT-07-flatpak
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium,CLIP-02-office --isolate-cases
+```
+
+实际应用来源使用私有 profile、本地 HTML/RTF/图片。只有 headless 的 Office 构建不证明图形
+剪切板兼容性。Firefox 使用原生右键菜单“复制图像”，Chromium 复制独立图片；两者均要求
+独立回读原图字节，而不把 HTML 图片引用当作图片复制通过。
+
+真实同步服务端验收使用：
+
+```sh
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases
+# 默认构建相邻 clipboard-x-server 源码；也可提供已有镜像：
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image SERVER_IMAGE --case RECV-04
+# 已准备好 Python/GJS/GNOME 测试工具的另一个 Shell 版本镜像：
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container GNOME_TEST_IMAGE --shell 50 --isolate-cases
+```
+
+该入口需要运行中的 Docker；创建独占容器、一个临时 volume 和随机 loopback 端口，使用合成认证信息。
+另一个 Shell 镜像仅共享该服务端的网络命名空间。结束后只删除本次资源，不执行 Docker prune，
+不修改服务端源码。跨容器日志会复制回 `build/simulation-tests/`。
+独立 `sync-peer.js` 使用生产 SyncClient、协议和存储提供原文，但它不是第二个 GNOME Shell；
+不能据此宣称已经验证两个真实桌面的剪切板自动激活竞态。
+
+完整设置窗口在独立 GTK 进程构造，IPC 只观察控件位置/状态；点击、滚动、组合键录制和恢复默认
+使用 Mutter 输入。保留真实 gettext，而不是把翻译替换成英文。成功截图前会为隔离 Shell 准备
+私有 XDG Pictures 等目录，拒绝把截图保存到宿主的图片目录。长用例定期续活 GNOME PerfHelper，
+不把助手的 30 秒空闲退出误判为产品失败。
+
+会话 wrapper 仅更新私有总线的激活环境，让门户和默认编辑器与 Shell 共用私有 XDG；搜索索引器的
+扫描根目录也限制到夹具目录。HTTP gate 流式转发到真实服务端，只改变时序或丢一次完成响应，
+不伪造协议结果、不记录认证或正文。助手监测所属 Shell，避免崩溃后残留轮询进程。
+`--isolate-cases` 用于收集独立失败，不是正常组合运行的隐藏前提。
+
+### 冷覆盖与恢复
+
+```sh
+python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --shell 51
+# 有旧版 ZIP 时，验证实际版本升级：
+python3 tools/test-lifecycle.py CURRENT.zip --previous PREVIOUS.zip
+```
+
+该入口只安装到私有 XDG，核验安装文件字节，关闭一个真实 Shell 进程，再共用数据启动另一个进程。
+ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离线上传队列。未指定 `--previous`
+是重装同一个包，不可视为旧版本数据迁移测试。日志和 `report.json` 位于 `build/lifecycle-tests/`。
 
 ## 新增测试的归属
 

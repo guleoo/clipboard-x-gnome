@@ -14,6 +14,14 @@
     ]
   },
   {
+    "module": "clipboard/applications.native.js",
+    "cases": [
+      {"id": "CLIP-02-firefox", "commands": ["python3", "firefox"]},
+      {"id": "CLIP-02-chromium", "commands": ["python3", "chromium"]},
+      {"id": "CLIP-02-office", "commands": ["python3", "soffice"]}
+    ]
+  },
+  {
     "module": "phrases/native.js",
     "cases": [
       {"id": "PHRASE-01"}, {"id": "PHRASE-02"}, {"id": "PHRASE-04"},
@@ -29,6 +37,14 @@
     ]
   },
   {
+    "module": "word-selection/dictionary.native.js",
+    "cases": [
+      {"id": "DICT-02", "languages": ["zh"], "commands": ["nautilus"]},
+      {"id": "DICT-06", "languages": ["zh"], "commands": ["python3"]},
+      {"id": "DICT-08", "languages": ["zh"], "commands": ["gnome-text-editor", "nautilus"]}
+    ]
+  },
+  {
     "module": "clipboard/policy.native.js",
     "cases": [
       {"id": "PRIV-01"}, {"id": "PRIV-03"}, {"id": "PRIV-04"},
@@ -41,6 +57,71 @@
     "cases": [
       {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-05"},
       {"id": "TYPE-06"}, {"id": "TYPE-07"}
+    ]
+  },
+  {
+    "module": "sync/native.js",
+    "cases": [
+      {"id": "CONN-06-profile", "server": true}, {"id": "SEND-01", "server": true},
+      {"id": "SEND-01-pinned", "server": true}, {"id": "SEND-02", "server": true}, {"id": "SEND-03", "server": true},
+      {"id": "SEND-06", "server": true}, {"id": "SEND-10", "server": true},
+      {"id": "RECV-01", "server": true}, {"id": "RECV-03", "server": true},
+      {"id": "RECV-04", "server": true}, {"id": "RECV-09", "server": true},
+      {"id": "XFER-02", "server": true}, {"id": "XFER-04", "server": true}
+    ]
+  },
+  {
+    "module": "sync/connection.native.js",
+    "cases": [
+      {"id": "CONN-02", "server": true, "commands": ["python3"]},
+      {"id": "CONN-03", "server": true, "commands": ["python3"]},
+      {"id": "CONN-04", "server": true, "commands": ["python3"]},
+      {"id": "CONN-05", "server": true, "commands": ["python3"]}
+    ]
+  },
+  {
+    "module": "sync/network.native.js",
+    "cases": [
+      {"id": "RECV-05", "server": true, "commands": ["python3"]},
+      {"id": "RECV-06", "server": true, "commands": ["python3"]},
+      {"id": "RECV-07", "server": true, "commands": ["python3"]},
+      {"id": "RECV-08", "server": true, "commands": ["python3"]},
+      {"id": "XFER-02-download", "server": true, "commands": ["python3"]}
+    ]
+  },
+  {
+    "module": "sync/queue.native.js",
+    "cases": [
+      {"id": "SEND-04", "server": true, "commands": ["python3"]},
+      {"id": "SEND-07", "server": true, "commands": ["python3"]},
+      {"id": "SEND-08", "server": true, "commands": ["python3"]}
+    ]
+  },
+  {
+    "module": "sync/local-boundary.native.js",
+    "cases": [{"id": "PHRASE-08", "server": true}, {"id": "PRIV-08", "server": true}]
+  },
+  {
+    "module": "settings/native.js",
+    "cases": [{"id": "SET-01"}, {"id": "SET-06"}, {"id": "SET-08"}]
+  },
+  {
+    "module": "settings/language.native.js",
+    "cases": [{"id": "LANG-02", "languages": ["en", "zh", "ja", "ko"]}]
+  },
+  {
+    "module": "color-picker/native.js",
+    "cases": [{"id": "COLOR-01"}, {"id": "COLOR-03"}, {"id": "COLOR-04"}, {"id": "COLOR-07"}]
+  },
+  {
+    "module": "screenshot/native.js",
+    "cases": [{"id": "SHOT-03"}, {"id": "SHOT-04"}]
+  },
+  {
+    "module": "screenshot/editor.native.js",
+    "cases": [
+      {"id": "EDIT-01"}, {"id": "EDIT-06", "commands": ["python3"]},
+      {"id": "EDIT-07-native", "commands": ["gradia"]}, {"id": "EDIT-07-flatpak", "commands": ["flatpak"]}
     ]
   }
 ]

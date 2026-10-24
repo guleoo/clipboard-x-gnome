@@ -159,8 +159,10 @@ export const cases = {
       const item = await capture(desktop, target, 'recopied pinned content');
       await desktop.open();
       await desktop.click(desktop.history._itemRows.get(item.id).focusActors.find(actor => actor._clipboardXGnomeEntryAction === 'pin'));
+      const revision = desktop.app._controller.selectionRevision;
       await target.offer(item.text);
-      await until(() => !desktop.app._controller._captureInProgress, 'recopy completed');
+      await until(() => desktop.app._controller.selectionRevision > revision
+        && !desktop.app._controller._captureInProgress && !desktop.app._controller._captureQueued, 'recopy owner handled');
       assert(desktop.app._controller.items.filter(value => value.text === item.text).length === 1 && item.favorite,
         'External recopy must dedupe and preserve favorite');
       const count = desktop.app._controller.items.length;
