@@ -265,6 +265,48 @@ async function verifyHistoryLifecycle(actor) {
   return actor;
 }
 
+async function verifyOpenPanelDisable(actor) {
+  const preserve = actor._settings.get_boolean('preserve-panel-state');
+  try {
+    for (const keepState of [false, true]) {
+      actor._settings.set_boolean('preserve-panel-state', keepState);
+      for (const panel of ['history', 'tokenizer', 'phrases']) {
+        stage(`disable-open-${panel}-preserve-${keepState}`);
+        const app = Main.extensionManager.lookup(UUID).stateObj;
+        await wait('open-panel-startup', app._startup);
+        const state = panel === 'tokenizer'
+          ? await actor._tokenizer.createState(null, 'Open panel shutdown') : null;
+        actor.menu.open();
+        actor._panelManager.show(panel, state);
+        await Scripting.sleep(50);
+        assert(actor.menu.isOpen, `${panel} must be open before testing disable`);
+        const tooltip = actor._tooltip;
+        const hide = tooltip.hide;
+        let destroyed = false;
+        let lateUses = 0;
+        tooltip.actor.connect('destroy', () => { destroyed = true; });
+        tooltip.hide = function (...args) {
+          if (destroyed)
+            lateUses++;
+          return hide.apply(this, args);
+        };
+        try {
+          await disable();
+          await wait('open-panel-shutdown', app._shutdown);
+          assert(destroyed && lateUses === 0,
+            `Disabling ${panel} must not call its tooltip after destruction`);
+        } finally {
+          tooltip.hide = hide;
+        }
+        actor = await enable(actor);
+      }
+    }
+    return actor;
+  } finally {
+    actor._settings.set_boolean('preserve-panel-state', preserve);
+  }
+}
+
 export async function run() {
   clearStartupWatchdog();
   stage('automation-run');
@@ -278,6 +320,13 @@ export async function run() {
     'Shared backend/seat API is unavailable');
 
   stage('main-panel');
+  const extensionObject = Main.extensionManager.lookup(UUID).stateObj;
+  await wait('initial-startup', extensionObject._startup);
+  const {TerminalInput} = await import(`${extensionObject.dir.get_uri()}/clipboard/terminal/input.js`);
+  const {verify: verifyTerminalLifecycle} = await import('./terminal-lifecycle.smoke.js');
+  await wait('terminal-source-cleanup', verifyTerminalLifecycle(TerminalInput));
+  const {verifyLifecycle: verifyPreferencesLifecycle} = await import('./preferences.smoke.js');
+  await wait('settings-close-lifecycle', verifyPreferencesLifecycle());
   actor.menu.open();
   await Scripting.sleep(150);
   assert(actor.menu.isOpen, 'Main panel did not open');
@@ -357,6 +406,7 @@ export async function run() {
   assert(actor.menu.isOpen, 'Panel did not open after re-enabling');
   actor.menu.close();
   actor = await verifyHistoryLifecycle(actor);
+  actor = await verifyOpenPanelDisable(actor);
   stage('final-disable');
   await disable();
   stage('completed');

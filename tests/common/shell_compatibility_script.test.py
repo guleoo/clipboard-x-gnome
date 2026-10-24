@@ -33,7 +33,13 @@ class ShellCompatibilityScriptTest(unittest.TestCase):
 printf '%s\\n' "$XDG_RUNTIME_DIR" "${DISPLAY-unset}" "${WAYLAND_DISPLAY-unset}" \
   "${GDK_BACKEND-unset}" "${GSETTINGS_SCHEMA_DIR-unset}" "$LIBGL_ALWAYS_SOFTWARE" \
   "$GTK_A11Y" "$NO_AT_BRIDGE" "$@" > "$CBX_TEST_TRACE"
-cp -- "$4" "$CBX_TEST_ARCHIVE"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--extension" ]; then
+    cp -- "$2" "$CBX_TEST_ARCHIVE"
+    break
+  fi
+  shift
+done
 exit "${CBX_TEST_EXIT:-0}"
 """)
         self.env = {**os.environ, "PATH": f"{self.bin}:{os.environ['PATH']}",
@@ -63,7 +69,10 @@ exit "${CBX_TEST_EXIT:-0}"
                 self.assertEqual(lines[1:5], ["unset"] * 4)
                 expected_archive = (str(self.archive) if version == "50"
                                     else str(Path(lines[0]) / self.archive.name))
-                self.assertEqual(lines[8:12], ["--headless", "--disable-animations", "--extension", expected_archive])
+                arguments = lines[8:]
+                self.assertIn("--headless", arguments)
+                self.assertIn("--disable-animations", arguments)
+                self.assertEqual(arguments[arguments.index("--extension") + 1], expected_archive)
                 self.assertEqual(self.archive.read_bytes(), self.original_archive,
                                  "the release ZIP must remain byte-for-byte unchanged")
                 with zipfile.ZipFile(self.test_archive) as archive:

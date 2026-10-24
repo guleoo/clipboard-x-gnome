@@ -81,6 +81,19 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   Accent states, selected-word contrast, and the separate tooltip/picker preview keep their own colors.
   Changing the foreground updates styles without rebuilding panel content.
 
+## Lifecycle conventions
+
+- Disconnect popup state/visibility callbacks before destroying the panel manager or tooltip. Destroying
+  the parent PopupMenu can close an open menu and emit those signals again.
+- Simulated input owns every wait timer and deferred notification. Destruction removes their sources and
+  settles waiting promises; removing a source must not strand active or queued input.
+- Settings use `ui/settings/lifecycle.js`'s `onClosed()` for cleanup on window close or actual unroot.
+  A closed GTK window may retain rooted children, so unroot alone is not a close notification.
+- Cancel read-only requests, native choosers, and launch callbacks when preferences close; explicitly close
+  shortcut-recording windows. Late results must not update controls or present error dialogs.
+- An already accepted persistent save/import may finish safely, but must not revive a closed UI or start
+  another network stage after its owner closes.
+
 ## CSS conventions
 
 - Put dimensions and spacing on structural components such as menus, headers, rows, toolbars, and footers.
@@ -93,3 +106,5 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and lifecycle are covered by
 `tests/ui/shell.smoke.js`; GTK preferences are covered by `tests/ui/preferences.smoke.js`. Every
 structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.
+The existing Shell compatibility entry also runs open-panel disable coverage, simulated-input source
+cleanup, and the settings lifecycle integration test in a separate GTK process. Never import GTK into Shell.

@@ -67,5 +67,5 @@ export PYTHONUNBUFFERED=1
 unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
 printf 'Testing extension lifecycle on GNOME Shell %s in an isolated headless session.\n' "$shell_major"
 timeout --kill-after=10s 120s dbus-run-session -- \
-  gnome-shell-test-tool --headless --disable-animations --extension "$archive" \
+  gnome-shell-test-tool --headless --disable-animations --extra-filter Gjs --extra-filter gjs --extension "$archive" \
   "$project_dir/tests/ui/compatibility.smoke.js"

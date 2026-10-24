@@ -182,7 +182,7 @@ class Indicator extends PanelMenu.Button {
         event.type() === Clutter.EventType.KEY_PRESS
           ? this._handleEscape(event.get_key_symbol()) : Clutter.EVENT_PROPAGATE);
     }
-    this.menu.connect('open-state-changed', (_menu, open) => {
+    this._menuOpenStateSignal = this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
         this._actions.rememberInputTarget();
         this._panelManager.open();
@@ -545,7 +545,6 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._tokenizerRequest++;
-    this._panelManager?.destroy();
     for (const signal of [
       this._themeColorSignal,
       this._foregroundColorSignal,
@@ -573,6 +572,11 @@ class Indicator extends PanelMenu.Button {
     this._preservePanelStateSignal = 0;
     this._phraseLimitSignal = 0;
     this._wordLimitSignal = 0;
+    // PopupMenu destruction closes the menu. Disconnect its callbacks before
+    // disposing the panel state or tooltip they would otherwise still access.
+    if (this._menuOpenStateSignal)
+      this.menu.disconnect(this._menuOpenStateSignal);
+    this._menuOpenStateSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;
@@ -591,6 +595,7 @@ class Indicator extends PanelMenu.Button {
     if (this._workareasChangedSignal)
       global.display.disconnect(this._workareasChangedSignal);
     this._workareasChangedSignal = 0;
+    this._panelManager?.destroy();
     this._tooltip.destroy();
     this.menu.sourceActor = this;
     this.menu.focusActor = this;
