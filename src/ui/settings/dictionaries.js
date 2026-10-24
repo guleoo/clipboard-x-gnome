@@ -4,7 +4,7 @@ import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 import * as Selection from '../../clipboard/tokenizer/dictionary/selection.js';
 
 import {
@@ -49,29 +49,29 @@ function languageChoices(languageNames) {
   }).sort((left, right) => left.label.localeCompare(right.label));
 }
 
-function editDictionary(window, file) {
+function editDictionary(window, file, cancellable, report) {
   const launcher = new Gtk.FileLauncher({file, writable: true});
-  launcher.launch(window, null, (source, result) => {
+  launcher.launch(window, cancellable, (source, result) => {
     try {
       source.launch_finish(result);
     } catch (error) {
-      showError(window, error);
+      report(error);
     }
   });
 }
 
-function showDictionary(window, file) {
+function showDictionary(window, file, cancellable, report) {
   const launcher = new Gtk.FileLauncher({file});
-  launcher.open_containing_folder(window, null, (source, result) => {
+  launcher.open_containing_folder(window, cancellable, (source, result) => {
     try {
       source.open_containing_folder_finish(result);
     } catch (error) {
-      showError(window, error);
+      report(error);
     }
   });
 }
 
-function requestNetworkLocation(window) {
+function requestNetworkLocation(window, cancellable) {
   return new Promise(resolve => {
     const entry = new Adw.EntryRow({
       title: _('HTTP(S) URL'),
@@ -86,7 +86,7 @@ function requestNetworkLocation(window) {
     dialog.add_response('add', _('Add'));
     dialog.default_response = 'add';
     dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
-    dialog.choose(window, null, (source, result) => {
+    dialog.choose(window, cancellable, (source, result) => {
       try {
         const response = source.choose_finish(result);
         resolve(response === 'add' ? entry.text.trim() : '');
@@ -224,7 +224,7 @@ export function create({settings, store, window}) {
           valign: Gtk.Align.CENTER,
           css_classes: ['flat'],
         });
-        edit.connect('clicked', () => editDictionary(window, file));
+        edit.connect('clicked', () => editDictionary(window, file, cancellable, report));
         row.add_suffix(edit);
         const show = new Gtk.Button({
           icon_name: 'folder-open-symbolic',
@@ -232,7 +232,7 @@ export function create({settings, store, window}) {
           valign: Gtk.Align.CENTER,
           css_classes: ['flat'],
         });
-        show.connect('clicked', () => showDictionary(window, file));
+        show.connect('clicked', () => showDictionary(window, file, cancellable, report));
         row.add_suffix(show);
         if (dictionary.source) {
           const refreshButton = new Gtk.Button({
@@ -291,7 +291,7 @@ export function create({settings, store, window}) {
     if (!changingSelection)
       refresh();
   });
-  disconnectWhenUnrooted(group, () => {
+  onClosed(group, () => {
     active = false;
     refreshRequest++;
     cancellable.cancel();
@@ -299,8 +299,8 @@ export function create({settings, store, window}) {
   });
 
   addNetworkButton.connect('clicked', async () => {
-    const source = await requestNetworkLocation(window);
-    if (!source)
+    const source = await requestNetworkLocation(window, cancellable);
+    if (!active || !source)
       return;
     addNetworkButton.sensitive = false;
     try {
@@ -321,15 +321,17 @@ export function create({settings, store, window}) {
     const dialog = new Gtk.FileDialog({
       title: _('Import dictionary'),
     });
-    dialog.open(window, null, (source, result) => {
+    dialog.open(window, cancellable, (source, result) => {
       let file;
       try {
         file = source.open_finish(result);
       } catch (error) {
         if (!error.matches(Gtk.DialogError.quark(), Gtk.DialogError.DISMISSED))
-          showError(window, error);
+          report(error);
         return;
       }
+      if (!active || cancellable.is_cancelled())
+        return;
       importButton.sensitive = false;
       store.importFile(file)
         .then(() => {

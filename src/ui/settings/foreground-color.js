@@ -5,7 +5,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
@@ -70,7 +70,7 @@ export function create(settings) {
   reset.connect('clicked', () => settings.reset('foreground-color'));
   const colorSignal = settings.connect('changed::foreground-color', update);
   const themeSignal = styleManager.connect('notify::dark', update);
-  disconnectWhenUnrooted(row, () => {
+  onClosed(row, () => {
     pending?.cancel();
     settings.disconnect(colorSignal);
     styleManager.disconnect(themeSignal);

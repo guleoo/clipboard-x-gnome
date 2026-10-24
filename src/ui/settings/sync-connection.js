@@ -1,7 +1,16 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
 import {apiKey, serverAddress} from '../../sync/configuration.js';
 import {channels as validateChannels, device as validateDevice, status as validateStatus} from '../../sync/protocol.js';
 
 export function createConnectionActions({store, notifyChanged, createTransport, now, identity}) {
+  let closed = false;
+  const transports = new Set();
+  const ensureOpen = () => {
+    if (closed)
+      throw new GLib.Error(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED, 'Connection settings closed');
+  };
   const configuration = inputs => {
     const address = String(inputs.serverAddress ?? '').trim();
     return {
@@ -12,14 +21,20 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     };
   };
   const withTransport = async (current, operation) => {
+    ensureOpen();
     const transport = createTransport(current);
+    transports.add(transport);
     try {
-      return await operation(transport);
+      const result = await operation(transport);
+      ensureOpen();
+      return result;
     } finally {
-      transport.abort();
+      if (transports.delete(transport))
+        transport.abort();
     }
   };
   const save = async inputs => {
+    ensureOpen();
     const current = await store.saveConnection(configuration(inputs));
     notifyChanged();
     return current;
@@ -36,6 +51,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
     return {...result, status, latency};
   };
   const apply = async inputs => {
+    ensureOpen();
     const current = configuration(inputs);
     const profile = identity();
     // Keep connection changes locally even if the server cannot be reached.
@@ -49,6 +65,7 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
           tag: profile.deviceTag,
           iconKind: profile.deviceIconKind,
         }), profile.deviceId);
+        ensureOpen();
         return {device, ...selectChannels(saved, await transport.channels())};
       });
       if (result.configuration.activeChannelId !== saved.activeChannelId)
@@ -60,7 +77,13 @@ export function createConnectionActions({store, notifyChanged, createTransport, 
       notifyChanged();
     }
   };
-  return {save, channels, test, apply};
+  const close = () => {
+    closed = true;
+    for (const transport of transports)
+      transport.abort();
+    transports.clear();
+  };
+  return {save, channels, test, apply, close};
 }
 
 function selectChannels(current, rawValue) {
@@ -74,20 +97,22 @@ function selectChannels(current, rawValue) {
   };
 }
 
-export function createRunner({setBusy, onError}) {
+export function createRunner({setBusy, onError, isActive = () => true}) {
   let busy = false;
   return async operation => {
-    if (busy)
+    if (busy || !isActive())
       return;
     busy = true;
     setBusy(true);
     try {
       return await operation();
     } catch (error) {
-      onError(error);
+      if (isActive())
+        onError(error);
     } finally {
       busy = false;
-      setBusy(false);
+      if (isActive())
+        setBusy(false);
     }
   };
 }

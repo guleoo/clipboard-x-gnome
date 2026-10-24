@@ -41,7 +41,7 @@ function gate() {
 }
 
 async function fixture({status = online, channels = available, fail = '',
-  profile = device, profileGate = null, channelGate = null} = {}) {
+  profile = device, profileGate = null, channelGate = null, statusGate = null, saveGate = null} = {}) {
   const path = GLib.build_filenamev([directory, `${files.length}-connection.json`]);
   const progressPath = GLib.build_filenamev([directory, `${files.length}-progress.json`]);
   files.push(path, progressPath);
@@ -63,6 +63,10 @@ async function fixture({status = online, channels = available, fail = '',
     state.events.push('save');
     if (fail === 'save')
       throw new Error('local save failed');
+    if (saveGate) {
+      saveGate.entered();
+      return saveGate.promise.then(() => save(value));
+    }
     return save(value);
   };
   let time = 10;
@@ -85,6 +89,10 @@ async function fixture({status = online, channels = available, fail = '',
         aborted: 0,
         status: async () => {
           state.requests.push('status');
+          if (statusGate) {
+            statusGate.entered();
+            await statusGate.promise;
+          }
           if (fail === 'status')
             throw new Error('status failed');
           return status;
@@ -338,6 +346,58 @@ try {
         && cleared.state.reconnects === 1,
       'Clearing connection credentials must save locally without sending an unauthenticated profile');
   }
+
+  const statusGate = gate();
+  const closingTest = await fixture({statusGate});
+  const lateTest = closingTest.actions.test(draft).catch(error => error);
+  await statusGate.started;
+  closingTest.actions.close();
+  statusGate.resolve();
+  const closedTestError = await lateTest;
+  assert(closedTestError.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)
+      && closingTest.state.requests.join() === 'status',
+    'Closing settings during status must cancel testing without starting the second channels request');
+  closingTest.assertReadOnly();
+
+  const closingProfileGate = gate();
+  const closingApply = await fixture({profileGate: closingProfileGate});
+  const lateApply = closingApply.actions.apply(draft);
+  await closingProfileGate.started;
+  closingApply.actions.close();
+  closingProfileGate.resolve();
+  const closedApply = await lateApply;
+  assert(closedApply.error?.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED)
+      && closingApply.state.requests.join() === 'profile'
+      && closingApply.state.saves === 1 && closingApply.state.reconnects === 1,
+    'Closing during profile upload must stop channels while preserving the saved connection and its notification');
+  assert(closingApply.store.current.serverAddress === 'draft.invalid:8765'
+      && closingApply.state.transports.every(transport => transport.aborted === 1),
+    'Closing must abort the active transport once without rolling back an accepted Apply');
+
+  const saveGate = gate();
+  const savingApply = await fixture({saveGate});
+  const pendingSave = savingApply.actions.apply(draft);
+  await saveGate.started;
+  savingApply.actions.close();
+  saveGate.resolve();
+  const closedSave = await pendingSave;
+  assert(closedSave.configuration.serverAddress === 'draft.invalid:8765'
+      && savingApply.store.current.serverAddress === 'draft.invalid:8765'
+      && savingApply.state.transports.length === 0 && savingApply.state.reconnects === 1,
+    'Closing while an accepted local Apply saves must finish persistence and notify without starting HTTP');
+
+  let active = true;
+  const runnerGate = gate();
+  const closedErrors = [];
+  const closedBusy = [];
+  const closedRunner = createRunner({isActive: () => active,
+    setBusy: value => closedBusy.push(value), onError: error => closedErrors.push(error)});
+  const lateRun = closedRunner(async () => { await runnerGate.promise; throw new Error('late failure'); });
+  active = false;
+  runnerGate.resolve();
+  await lateRun;
+  assert(closedErrors.length === 0 && closedBusy.join() === 'true',
+    'A closed settings runner must not report late errors or update closed widgets');
 } finally {
   for (const path of files) {
     const file = Gio.File.new_for_path(path);

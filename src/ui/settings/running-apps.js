@@ -6,6 +6,7 @@ import Gtk from 'gi://Gtk';
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {BUS_NAME, INTERFACE, OBJECT_PATH} from '../../common/running-apps.js';
+import {onClosed} from './lifecycle.js';
 
 export function create(settings) {
   const row = new Adw.ComboRow({
@@ -28,23 +29,32 @@ export function create(settings) {
   row.add_suffix(add);
   row.add_suffix(refresh);
   let applications = [];
+  let active = true;
+  const cancellable = new Gio.Cancellable();
   const load = () => {
     refresh.sensitive = false;
     Gio.DBus.session.call(
       BUS_NAME, OBJECT_PATH, INTERFACE, 'ListRunningApplications', null,
-      new GLib.VariantType('(a(ss))'), Gio.DBusCallFlags.NONE, 3000, null,
+      new GLib.VariantType('(a(ss))'), Gio.DBusCallFlags.NONE, 3000, cancellable,
       (connection, result) => {
-        refresh.sensitive = true;
         try {
-          [applications] = connection.call_finish(result).deepUnpack();
+          const [values] = connection.call_finish(result).deepUnpack();
+          if (!active)
+            return;
+          applications = values;
           row.model = Gtk.StringList.new(applications.length
             ? applications.map(([name, wmClass]) => `${name} (${wmClass})`)
             : [_('No running applications found')]);
           add.sensitive = applications.length > 0;
         } catch (_error) {
+          if (!active)
+            return;
           applications = [];
           row.model = Gtk.StringList.new([_('Enable the extension to choose running applications')]);
           add.sensitive = false;
+        } finally {
+          if (active)
+            refresh.sensitive = true;
         }
       },
     );
@@ -57,6 +67,10 @@ export function create(settings) {
     const current = settings.get_strv('excluded-apps');
     if (!current.some(value => value.toLocaleLowerCase() === wmClass.toLocaleLowerCase()))
       settings.set_strv('excluded-apps', [...current, wmClass]);
+  });
+  onClosed(row, () => {
+    active = false;
+    cancellable.cancel();
   });
   load();
   return row;

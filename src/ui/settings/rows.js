@@ -5,7 +5,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 import {capture} from './shortcut-capture.js';
 import {bindStringChoice} from './string-choice.js';
 
@@ -42,7 +42,7 @@ export class PreferenceRows {
       if (!editing && row.get_text() !== this._settings.get_string(key))
         row.set_text(this._settings.get_string(key));
     });
-    disconnectWhenUnrooted(row, () => this._settings.disconnect(signal));
+    onClosed(row, () => this._settings.disconnect(signal));
     return row;
   }
 
@@ -77,7 +77,7 @@ export class PreferenceRows {
       row.value = value;
       updating = false;
     });
-    disconnectWhenUnrooted(row, () => this._settings.disconnect(signal));
+    onClosed(row, () => this._settings.disconnect(signal));
     return row;
   }
 
@@ -89,7 +89,7 @@ export class PreferenceRows {
       selected: Math.max(0, values.indexOf(this._settings.get_string(key))),
     });
     const disconnect = bindStringChoice(this._settings, row, key, values);
-    disconnectWhenUnrooted(row, disconnect);
+    onClosed(row, disconnect);
     return row;
   }
 
@@ -129,12 +129,14 @@ export class PreferenceRows {
       list_factory: createFactory(),
     });
     const disconnect = bindStringChoice(this._settings, row, key, values);
-    disconnectWhenUnrooted(row, disconnect);
+    onClosed(row, disconnect);
     return row;
   }
 
   shortcut(key, title, contextual = false) {
     const row = new Adw.ActionRow({title});
+    const dialogs = new Set();
+    let active = true;
     const shortcut = new Adw.ShortcutLabel({disabled_text: _('Disabled')});
     const button = new Gtk.Button({
       child: shortcut,
@@ -143,6 +145,8 @@ export class PreferenceRows {
       tooltip_text: _('Click to set a shortcut'),
     });
     const update = () => {
+      if (!active)
+        return;
       shortcut.accelerator = this._settings.get_strv(key)[0] ?? '';
       shortcut.disabled_text = _('Disabled');
       button.remove_css_class('error');
@@ -191,6 +195,8 @@ export class PreferenceRows {
         propagation_phase: Gtk.PropagationPhase.CAPTURE,
       });
       controller.connect('key-pressed', (_controller, keyval, keycode, state) => {
+        if (!active)
+          return true;
         const result = capture(keyval, keycode, state, contextual);
         if (result.action === 'wait')
           return true;
@@ -208,16 +214,24 @@ export class PreferenceRows {
       });
       dialog.add_controller(controller);
       dialog.connect('close-request', () => {
+        dialogs.delete(dialog);
         update();
         return false;
       });
+      dialogs.add(dialog);
       dialog.present();
     });
     update();
     row.add_suffix(button);
     row.activatable_widget = button;
     const signal = this._settings.connect(`changed::${key}`, update);
-    disconnectWhenUnrooted(row, () => this._settings.disconnect(signal));
+    onClosed(row, () => {
+      active = false;
+      this._settings.disconnect(signal);
+      for (const dialog of [...dialogs])
+        dialog.close();
+      dialogs.clear();
+    });
     return row;
   }
 
@@ -236,7 +250,7 @@ export class PreferenceRows {
         this._settings.set_strv(key, [...new Set(values)]);
     });
     const signal = this._settings.connect(`changed::${key}`, update);
-    disconnectWhenUnrooted(row, () => this._settings.disconnect(signal));
+    onClosed(row, () => this._settings.disconnect(signal));
     return row;
   }
 

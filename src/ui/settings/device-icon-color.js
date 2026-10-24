@@ -6,7 +6,7 @@ import Gtk from 'gi://Gtk';
 import {gettext} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 import {deriveDarkColor, readIconColor, setIconColor, setIconColorLinked} from '../../sync/icon-color.js';
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 const iconDirectory = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('icons');
 const LINK_ICON = new Gio.FileIcon({file: iconDirectory.get_child('link-2-symbolic.svg')});
@@ -97,7 +97,7 @@ export function create(settings, _ = gettext) {
     settings.connect('changed::device-icon-color-dark', update),
     settings.connect('changed::device-icon-color-linked', update),
   ];
-  disconnectWhenUnrooted(row, () => signals.forEach(signal => settings.disconnect(signal)));
+  onClosed(row, () => signals.forEach(signal => settings.disconnect(signal)));
   update();
   return row;
 }

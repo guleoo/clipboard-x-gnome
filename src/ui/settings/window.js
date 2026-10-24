@@ -1,5 +1,6 @@
 // Clipboard X Gnome settings window composition.
 import Adw from 'gi://Adw';
+import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -18,6 +19,7 @@ import {PreferenceRows} from './rows.js';
 import {create as createThemeColorRow} from './theme-color.js';
 import {create as createForegroundColorRow} from './foreground-color.js';
 import {create as createAboutPage} from './about.js';
+import {onClosed} from './lifecycle.js';
 
 export default class ClipboardXGnomePreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
@@ -183,6 +185,8 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       label: _('Restore'),
       valign: Gtk.Align.CENTER,
     });
+    const confirmation = new Gio.Cancellable();
+    onClosed(row, () => confirmation.cancel());
     button.connect('clicked', () => {
       const dialog = new Adw.AlertDialog({
         heading: _('Restore default settings?'),
@@ -193,14 +197,14 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
       dialog.default_response = 'cancel';
       dialog.close_response = 'cancel';
       dialog.set_response_appearance('restore', Adw.ResponseAppearance.DESTRUCTIVE);
-      dialog.choose(window, null, (source, result) => {
+      dialog.choose(window, confirmation, (source, result) => {
         let response;
         try {
           response = source.choose_finish(result);
         } catch (_error) {
           return;
         }
-        if (response === 'restore')
+        if (!confirmation.is_cancelled() && response === 'restore')
           restoreDefaults(settings);
       });
     });

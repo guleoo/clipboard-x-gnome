@@ -3,7 +3,7 @@ import Gio from 'gi://Gio';
 
 import {check} from '../../sync/http/file-verifier.js';
 import {message} from '../../sync/errors.js';
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 const KEY = 'sync-use-sha256sum';
 
@@ -19,7 +19,7 @@ export function create(settings, _) {
     dialog.set_close_response('close');
     dialog.present(row.get_root());
   }});
-  disconnectWhenUnrooted(row, disconnect);
+  onClosed(row, disconnect);
   return row;
 }
 

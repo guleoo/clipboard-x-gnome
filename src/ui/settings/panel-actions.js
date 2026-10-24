@@ -10,7 +10,7 @@ import {
   normalize as normalizeEntries,
   normalizeHidden as normalizeHiddenEntries,
 } from '../layouts/entry-actions.js';
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 export function create(settings) {
   const row = new Adw.PreferencesRow({activatable: false});
@@ -134,7 +134,7 @@ export function create(settings) {
     if (!updating)
       render();
   }));
-  disconnectWhenUnrooted(row, () => {
+  onClosed(row, () => {
     for (const signal of signals)
       settings.disconnect(signal);
   });

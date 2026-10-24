@@ -1,6 +1,7 @@
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 const UUID = 'clipboard-x-gnome@guleoo.github.io';
 
@@ -9,6 +10,36 @@ export const METRICS = {};
 function assert(condition, message) {
   if (!condition)
     throw new Error(message);
+}
+
+// GTK must stay in its own process, never be imported into GNOME Shell.
+export async function verifyLifecycle() {
+  const extension = Main.extensionManager.lookup(UUID).stateObj;
+  const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
+  launcher.setenv('GSETTINGS_BACKEND', 'memory', true);
+  launcher.setenv('CBX_TEST_BUILD_DIR', extension.dir.get_child('schemas').get_path(), true);
+  const libraries = ['/usr/lib/gnome-shell', '/usr/lib64/gnome-shell']
+    .filter(path => GLib.file_test(path, GLib.FileTest.IS_DIR));
+  launcher.setenv('GI_TYPELIB_PATH', [GLib.getenv('GI_TYPELIB_PATH'), ...libraries,
+    ...libraries.map(path => `${path}/girepository-1.0`)].filter(Boolean).join(':'), true);
+  launcher.setenv('LD_LIBRARY_PATH', [GLib.getenv('LD_LIBRARY_PATH'), ...libraries].filter(Boolean).join(':'), true);
+  const test = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('settings-lifecycle.integration.js');
+  const child = launcher.spawnv(['gjs', '-m', test.get_path()]);
+  let completed = false;
+  try {
+    await new Promise((resolve, reject) => child.wait_check_async(null, (process, result) => {
+      try {
+        process.wait_check_finish(result);
+        completed = true;
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    }));
+  } finally {
+    if (!completed)
+      child.force_exit();
+  }
 }
 
 export async function run() {

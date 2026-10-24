@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 export function create(metadata) {
   const page = new Adw.PreferencesPage({
@@ -28,7 +28,7 @@ export function create(metadata) {
   ]) {
     const row = new Adw.ActionRow({title, subtitle, activatable: true});
     const cancellable = new Gio.Cancellable();
-    disconnectWhenUnrooted(row, () => cancellable.cancel());
+    onClosed(row, () => cancellable.cancel());
     row.connect('activated', () => {
       const window = row.get_root();
       const launcher = new Gtk.UriLauncher({uri});
