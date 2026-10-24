@@ -66,6 +66,9 @@ Meson 只注册这一类测试，原有测试名称和可选的 `stress` 分组�
 ```sh
 bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 2
+# 原生功能验收（清单内已实现的用例，不等于全部功能已通过）：
+python3 tools/test-simulation.py --list
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --group clipboard --isolate-cases
 # 面板套件也可以通过以下入口运行：
 bun run test:simulation:panels
 ```
@@ -80,7 +83,25 @@ bun run test:simulation:panels
 选择其中的命名检查，未知名称直接失败。原生表单、搜索、取色和 GTK 专项仍需单独运行。
 
 不要常规运行“综合入口 + 全部组件”再当作额外覆盖。根据清单选择相关入口和层级。
-裁剪区拖选的已知失败仍保留并记录，本次整理不把整个综合入口宣称为通过。
+裁剪区拖选使用固定舞台坐标和实时 picking，避免焦点滚动后复用过时 Actor 坐标。
+入口存在不表示整个综合套件已通过。
+
+### 原生功能验收入口
+
+`tools/test-simulation.py` 按 `simulation/manifest.json` 中的功能 ID 运行，支持 `--case CLIP-01,CLIP-09`、
+`--group clipboard`、`--shell 50` / `51` 和 `--language zh_CN`。默认每个模块一个独立 Shell；
+`--isolate-cases` 每个用例启动新的 Shell，失败后继续下一项，不自动重试。
+原包不变；51 测试需要时只补测试副本的 metadata。
+
+运行目录位于私有 `/tmp/clipboard-x-simulation-*`；XDG、Session Bus、剪切板来源和输入目标均隔离。
+不要把该入口的 automation script 直接放进宿主或开发桌面运行：夹具会清空自己的历史与语句。
+`fixtures/desktop-app.js` 是真正独立的 GTK Wayland 来源和接收端，直接回读 MIME 字节/hash；
+来源竞态通过暂停/恢复/退出自己的来源进程制造，不替换插件读取函数。虚拟设备不证明物理输入熔断。
+
+日志、`summary.txt`、`report.json` 保存于 `build/simulation-tests/`，包含包 hash、Shell、语言及结果。
+`PASS`、`FAIL`、`NOT_RUN`、`BLOCKED` 分别表示通过、断言/运行失败、未执行、缺少依赖；
+退出码分别为 0（全部选中项通过）、1（失败或未执行）、2（仅依赖阻塞）。注册用例之外的缺口仍以
+[功能清单](functional-inventory_CN.md)为准，不能用选中子集的绿色结果代替整体结论。此入口不加入 CI。
 
 ## 新增测试的归属
 

@@ -3,7 +3,10 @@ import {assert} from '../helpers/checks.js';
 import {runNative, until} from '../helpers/native.js';
 
 export function run() {
-  return runNative(async ({phrases, key, click, openPhrases}) => {
+  return runNative(verify);
+}
+
+export async function verify({phrases, key, click, type, openPhrases}) {
     await openPhrases();
     await click(phrases.addButton);
     await until(() => global.stage.get_key_focus() === phrases.entry.clutter_text,
@@ -16,17 +19,25 @@ export function run() {
       await until(() => global.stage.get_key_focus() === phrases.entry.clutter_text,
         'Opening the phrase form must focus its input');
       const phrase = `Saved with ${mode}`;
-      phrases.entry.set_text(phrase);
-      phrases.entry.clutter_text.set_selection(1, 1);
+      await type(phrase);
+      await until(() => phrases.entry.get_text() === phrase,
+        `Native input did not complete: ${JSON.stringify(phrases.entry.get_text())}`);
+      await key(Clutter.KEY_Home);
+      await until(() => phrases.entry.clutter_text.get_cursor_position() === 0,
+        `Home must move to the draft start (cursor=${phrases.entry.clutter_text.get_cursor_position()})`);
       await key(Clutter.KEY_Right);
+      await until(() => phrases.entry.clutter_text.get_cursor_position() === 1, 'First Right moves inside draft');
+      await key(Clutter.KEY_Right);
+      await until(() => phrases.entry.clutter_text.get_cursor_position() === 2,
+        'Second Right must move inside the draft without leaving the entry');
       assert(global.stage.get_key_focus() === phrases.entry.clutter_text
         && phrases.entry.clutter_text.get_cursor_position() === 2,
-      'The new save button must not steal arrows inside the draft');
-      phrases.entry.clutter_text.set_selection(-1, -1);
+      `The new save button must not steal arrows inside the draft (cursor=${phrases.entry.clutter_text.get_cursor_position()})`);
+      await key(Clutter.KEY_End);
       await key(Clutter.KEY_Right);
       assert(global.stage.get_key_focus() === phrases.saveButton,
         'Right at the draft end must reach its save button');
-      phrases.entry.clutter_text.grab_key_focus();
+      await click(phrases.entry);
       if (mode === 'button')
         await click(phrases.saveButton);
       else
@@ -36,5 +47,4 @@ export function run() {
       assert(phrases.entry.get_text() === '', `${mode}: draft was not cleared`);
     }
     print('Quick phrase native Enter, keypad Enter and save button passed');
-  });
 }

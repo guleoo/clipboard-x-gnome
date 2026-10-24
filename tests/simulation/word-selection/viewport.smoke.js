@@ -15,6 +15,18 @@ export async function clippedWordSelection(indicator) {
     const [width, height] = actor.get_transformed_size();
     return [x + width / 2, y + height / 2];
   };
+  const viewport = () => {
+    const [x, y] = panel.scroll.get_transformed_position();
+    const [width, height] = panel.scroll.get_transformed_size();
+    return {x, y, width, height};
+  };
+  const visibleWords = () => {
+    const {y, height} = viewport();
+    return panel.buttons.filter(button => {
+      const [, centerY] = center(button);
+      return centerY > y + 8 && centerY < y + height - 8;
+    });
+  };
   const move = async point => {
     pointer.notify_absolute_motion(GLib.get_monotonic_time(), ...point);
     await Scripting.sleep(80);
@@ -24,6 +36,15 @@ export async function clippedWordSelection(indicator) {
     pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.PRESSED);
     held = true;
     assert(await waitUntil(() => Boolean(panel._selectionDrag)), 'A native word press did not start selection');
+  };
+  const moveOutside = async point => {
+    await move(point);
+    const {y, height} = viewport();
+    const [actualX, actualY] = global.get_pointer();
+    assert(actualY < y || actualY > y + height, 'Outside target must remain outside the current viewport');
+    const picked = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, actualX, actualY);
+    assert(!picked || !panel.buttons.some(button => button === picked || button.contains(picked)),
+      'An outside release coordinate must not pick a word');
   };
   const release = async () => {
     pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
@@ -61,31 +82,29 @@ export async function clippedWordSelection(indicator) {
         panel.setSelected(button, false, false);
       panel.updateResult();
       await Scripting.sleep(100);
-      const [, top] = panel.scroll.get_transformed_position();
-      const [, height] = panel.scroll.get_transformed_size();
-      const visible = panel.buttons.filter(button => {
-        const [, y] = center(button);
-        return y > top + 5 && y < top + height - 5;
-      }).sort((left, right) => Math.abs(center(left)[1] - top - height / 2)
-        - Math.abs(center(right)[1] - top - height / 2));
-      const clipped = panel.buttons.find(button => {
-        const [, y] = center(button);
-        return button.mapped && (edge === 'below'
-          ? y > top + height + 20 && y < global.stage.height - 20
-          : y < top - 5 && y > 5);
-      });
-      assert(visible.length > 1 && clipped,
-        `The drag fixture needs visible words and mapped clipped words (edge=${edge}, top=${top}, height=${height}, visible=${visible.length}, clipped=${Boolean(clipped)}, tokens=${panel.buttons.length}, ${geometry()})`);
-      await press(visible[0]);
+      assert(visibleWords().length > 1, `The fixture needs at least two visible words (${geometry()})`);
+      await press(visibleWords()[1]);
+      await Scripting.sleep(100);
+      const {x, y, width, height} = viewport();
+      // Focus reveal/scroll moves actors after press. Keep a physical point,
+      // not the center of an actor that merely used to be clipped.
+      const outside = [x + width / 2, edge === 'below' ? y + height + 15 : y - 10];
       const selected = [...state.selected].sort().join();
-      await move(center(clipped));
+      await moveOutside(outside);
       assert([...state.selected].sort().join() === selected,
         `Dragging ${edge} the viewport must not select clipped words`);
-      await move(center(visible[1]));
-      assert(state.selected.has(visible[1]._clipboardXGnomeToken.index),
+      const current = viewport();
+      const returning = visibleWords().sort((left, right) =>
+        Math.abs(center(left)[1] - current.y - current.height / 2)
+        - Math.abs(center(right)[1] - current.y - current.height / 2))[0];
+      await move(center(returning));
+      const [actualX, actualY] = global.get_pointer();
+      const picked = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, actualX, actualY);
+      const actualWord = panel.buttons.find(button => button === picked || button.contains(picked));
+      assert(actualWord && state.selected.has(actualWord._clipboardXGnomeToken.index),
         'Returning inside the viewport must continue the original held selection');
       const returned = [...state.selected].sort().join();
-      await move(center(clipped));
+      await moveOutside(outside);
       await release();
       assert([...state.selected].sort().join() === returned,
         'Releasing outside the viewport must retain the last visible selection');

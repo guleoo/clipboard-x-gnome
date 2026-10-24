@@ -1,0 +1,46 @@
+[
+  {
+    "module": "clipboard/native.js",
+    "cases": [
+      {"id": "CLIP-01"},
+      {"id": "CLIP-04"},
+      {"id": "CLIP-05"},
+      {"id": "CLIP-06"},
+      {"id": "CLIP-07"},
+      {"id": "CLIP-08"},
+      {"id": "CLIP-09"},
+      {"id": "CLIP-10"},
+      {"id": "CLIP-11"}
+    ]
+  },
+  {
+    "module": "phrases/native.js",
+    "cases": [
+      {"id": "PHRASE-01"}, {"id": "PHRASE-02"}, {"id": "PHRASE-04"},
+      {"id": "PHRASE-05"}, {"id": "PHRASE-06"}, {"id": "PHRASE-07"}
+    ]
+  },
+  {
+    "module": "word-selection/native.js",
+    "cases": [
+      {"id": "WORD-05"}, {"id": "WORD-06"}, {"id": "WORD-07"}, {"id": "WORD-08"},
+      {"id": "SELECT-01"}, {"id": "SELECT-03"}, {"id": "SELECT-04"},
+      {"id": "SELECT-06"}, {"id": "SELECT-07"}
+    ]
+  },
+  {
+    "module": "clipboard/policy.native.js",
+    "cases": [
+      {"id": "PRIV-01"}, {"id": "PRIV-03"}, {"id": "PRIV-04"},
+      {"id": "PRIV-05"}, {"id": "PRIV-07"},
+      {"id": "HIST-01"}, {"id": "HIST-04"}, {"id": "HIST-10"}
+    ]
+  },
+  {
+    "module": "terminal/native.js",
+    "cases": [
+      {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-05"},
+      {"id": "TYPE-06"}, {"id": "TYPE-07"}
+    ]
+  }
+]

@@ -44,6 +44,10 @@ export async function runNative(check) {
     pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
     await Scripting.sleep(80);
   };
+  const type = async text => {
+    for (const character of text)
+      await key(Clutter.unicode_to_keysym(character.codePointAt(0)));
+  };
   const openPhrases = async () => {
     indicator.menu.open();
     indicator._openPhrases();
@@ -57,7 +61,7 @@ export async function runNative(check) {
   Main.overview.hide();
   await until(() => !Main.overview.visible && !Main.overview.animationInProgress, 'Overview did not close');
   try {
-    await check({indicator, settings, phrases, key, click, openPhrases, desktopSettings, originalEscape});
+    await check({indicator, settings, phrases, key, click, type, openPhrases, desktopSettings, originalEscape});
   } finally {
     await phrases.replace(originalPhrases);
     settings.set_string('panel-escape-action', originalEscape);

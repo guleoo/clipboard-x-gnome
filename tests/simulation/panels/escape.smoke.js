@@ -4,13 +4,16 @@ import {assert} from '../helpers/checks.js';
 import {runNative} from '../helpers/native.js';
 
 export function run() {
-  return runNative(async ({indicator, settings, phrases, key, click, openPhrases, originalEscape}) => {
+  return runNative(verify);
+}
+
+export async function verify({indicator, settings, phrases, key, click, type, openPhrases, originalEscape}) {
     assert(originalEscape === 'back', 'Secondary panels must return to history by default');
     for (const action of ['back', 'close']) {
       settings.set_string('panel-escape-action', action);
       await openPhrases();
       await click(phrases.addButton);
-      phrases.entry.set_text('Discard this draft');
+      await type('Discard this draft');
       await key(Clutter.KEY_Escape);
       assert(indicator.menu.isOpen && indicator._panelManager.is('phrases') && !phrases.formVisible,
         `${action}: first Escape must only dismiss the form`);
@@ -40,5 +43,4 @@ export function run() {
     }
     print('Native Escape: form, secondary panels, and history passed');
 
-  });
 }

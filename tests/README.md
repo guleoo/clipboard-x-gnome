@@ -69,6 +69,9 @@ Use the existing isolated entry points after building the release ZIP:
 ```sh
 bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 2
+# Native acceptance (implemented registry cases, not a claim of complete coverage):
+python3 tools/test-simulation.py --list
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --group clipboard --isolate-cases
 # The panel suite is also available as:
 bun run test:simulation:panels
 ```
@@ -85,8 +88,31 @@ Contributing. `shell.smoke.js` imports its checks from those owners instead of d
 fail. Focused native form/search/picker suites and GTK integrations still run separately.
 
 Do not routinely run the aggregate plus every component and count that as extra coverage. Select
-the relevant entry and layer from the inventory. The retained viewport-drag regression has a known
-failure recorded there; this reorganization does not remove it or claim the whole aggregate passes.
+the relevant entry and layer from the inventory. Viewport dragging uses fixed stage coordinates and
+live picking, not stale actor coordinates after focus scrolling. An entry point is not proof that
+the entire aggregate passes.
+
+### Native functional runner
+
+`tools/test-simulation.py` selects functional IDs from `simulation/manifest.json`. It accepts
+`--case CLIP-01,CLIP-09`, `--group clipboard`, `--shell 50` / `51`, and `--language zh_CN`.
+By default each module gets a fresh Shell; `--isolate-cases` starts one per case and continues after
+failures, without automatic retries. The original ZIP is unchanged; metadata is amended only in a
+private test copy if required for 51.
+
+XDG directories, Session Bus, clipboard sources and input targets are isolated under a private
+`/tmp/clipboard-x-simulation-*`. Never run the automation script directly in a host or development
+desktop: fixtures clear their own history and phrases. `fixtures/desktop-app.js` is an independent
+GTK Wayland source/receiver that reads actual MIME bytes and hashes. Delayed-owner races suspend,
+resume or terminate that owned source process instead of replacing the extension's read function.
+Virtual input does not establish physical-keyboard interruption guarantees.
+
+Logs, `summary.txt` and `report.json` are saved under `build/simulation-tests/`, including ZIP hash,
+Shell, language and outcomes. `PASS`, `FAIL`, `NOT_RUN`, `BLOCKED` distinguish success, failed
+assertions/runs, unexecuted cases and missing dependencies. Exit codes are 0 for all selected cases
+passing, 1 for failures/unexecuted cases, and 2 for dependency blocks only. Unregistered gaps remain
+in the [functional inventory](functional-inventory.md); a green subset is not complete acceptance.
+This entry point is not added to CI.
 
 ## Adding tests
 

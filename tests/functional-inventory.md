@@ -42,7 +42,15 @@ External text/HTML/image sources, multilingual/multiline/tab/emoji content, repr
 
 Maintained simulation entries: [clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js), [clipboard/entries.smoke.js](simulation/clipboard/entries.smoke.js), [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
-Evidence / remaining boundary: Includes real St.Clipboard and optional wl-copy/XWayland. Some routing uses constructed events. Browser/office MIME combinations, image codecs, row click versus action click and target clipboard readback need explicit external-source/input runs.
+Evidence / remaining boundary: Includes real St.Clipboard and optional wl-copy/XWayland. Some older routing checks use constructed events; the native entry below owns external-source/input readback.
+
+Native entry: [clipboard/native.js](simulation/clipboard/native.js), via
+`tools/test-simulation.py --group clipboard`. CLIP-01 and 04–11 use independent GTK Wayland
+sources/receivers for multilingual/multiline long text, PNG/JPEG/WebP/GIF/SVG, thumbnail proportions
+and original-byte readback, capture-size boundaries, suspended/exited/rapid owners, deduplication,
+native click/Enter, action isolation and Ctrl+click. CLIP-03/12 data rules remain in logic tests.
+Actual browser/office sources (CLIP-02) and XWayland remain separate gaps; a multi-MIME GTK fixture
+does not establish compatibility with those applications.
 
 ### History — HIST-01…10
 
@@ -74,7 +82,7 @@ Click toggles once; held A→C selects ABC, backtracking to B leaves AB, selecte
 
 Maintained simulation entries: [word-selection/drag.smoke.js](simulation/word-selection/drag.smoke.js), [word-selection/viewport.smoke.js](simulation/word-selection/viewport.smoke.js), [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
-Evidence / remaining boundary: drag uses native dispatch; keyboard also directly invokes handlers for Shift semantics. viewport has a previously observed outside-release selection failure: retain it, do not delete or mark it passed. Navigation-only Back/Copy checks belong to PANEL.
+Evidence / remaining boundary: drag uses native dispatch; keyboard also directly invokes handlers for Shift semantics. The old viewport failure reused stale actor coordinates after focus scrolling; the fixture now uses fixed stage points and live picking. It is not evidence of a product defect. Navigation-only Back/Copy checks belong to PANEL.
 
 ### Dictionaries — DICT-01…09
 
@@ -177,6 +185,29 @@ Evidence / remaining boundary: logic/i18n/coverage.sh checks catalogs. Aggregate
 Measure main-loop stalls across complete operations, not only callback return; distinguish network waits, track memory/FD/source growth and verifier-specific budgets; optional ten-times-daily stress; runtime-only packages/no secrets; dev-shell build/isolation/language/exit/logs.
 
 Evidence / remaining boundary: Use existing logic/sync measurements/stress, logic/common checks and tools/check_release.py. Stress remains opt-in/outside ordinary CI. Packaging reuses ENV-01 evidence. Async APIs or one successful run do not prove the Shell never blocks.
+
+## Native acceptance additions
+
+`tools/test-simulation.py` maintains these additional native chains; select IDs with `--case`.
+These are coverage boundaries, not certification of every requirement within an ID.
+
+| Module | IDs | Actual evidence and boundary |
+| --- | --- | --- |
+| `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04/10 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pinned-first restart, Unicode search and real replace errors; not password-manager or disk-full interoperability |
+| `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
+| `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, 2000-word/configured limits, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup |
+| `terminal/native.js` | TYPE-01/03/05/06/07 | Independent GTK target, exact mixed-language output at both speeds, real backend modifier wait/fuse, one notification/queued cancellation, no old typing after actual disable/re-enable |
+
+SELECT-01 reuses the existing drag implementation including SELECT-02 ranges; SELECT-03 reuses
+viewport. Form/Escape also share verifiers instead of copied scenarios. Native cases replace claims
+that invoking a handler alone establishes user interaction; logic tests still own data boundaries.
+
+WORD-07 intentionally retains a failing assertion: in this GNOME 50/51 software-rendered run,
+100,000-character URLs and 200,000-character unbroken text stalled the main loop for seconds to
+roughly 20 seconds, exceeding the 1000ms interactive budget; ordinary 2000-word input was much faster.
+Each sample logs length, word count and maximum gap. Do not enlarge the budget, skip it, or change
+production code just to make this test green. A virtual backend modifier fuse proves neither physical
+key delivery nor input-method bypass. CI scope is unchanged.
 
 ## Duplicate-test review
 

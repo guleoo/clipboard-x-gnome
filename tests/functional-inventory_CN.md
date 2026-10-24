@@ -41,7 +41,12 @@ GNOME 50/51 通过。旧 .codex 报告仅是对应版本证据，不再作为当
 
 长期模拟入口：[clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js), [clipboard/entries.smoke.js](simulation/clipboard/entries.smoke.js), [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
-验证边界 / 缺口：含真实 St.Clipboard 及可选 wl-copy/XWayland。部分路由使用构造事件。浏览器和办公 MIME、图像格式、内容与操作按钮点击隔离、剪切板回读需专项来源和输入验收。
+原生入口：[clipboard/native.js](simulation/clipboard/native.js)，由 `tools/test-simulation.py --group clipboard` 运行。
+CLIP-01、04～11 使用独立 GTK Wayland 来源/接收端，覆盖多语言、多行长文、PNG/JPEG/WebP/GIF/SVG、
+缩略图比例与原图回读、捕获大小边界、暂停/退出/快速 owner、去重、真实点击/Enter、操作隔离和 Ctrl+点击。
+CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
+
+验证边界 / 缺口：浏览器/办公来源（CLIP-02）和 XWayland 兼容性还需实际应用；GTK 多 MIME 夹具不代替它们。
 
 ### 搜索、排序、保留与持久化 — HIST-01…10
 
@@ -73,7 +78,7 @@ GNOME 50/51 通过。旧 .codex 报告仅是对应版本证据，不再作为当
 
 长期模拟入口：[word-selection/drag.smoke.js](simulation/word-selection/drag.smoke.js), [word-selection/viewport.smoke.js](simulation/word-selection/viewport.smoke.js), [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
-验证边界 / 缺口：drag 使用原生分发；keyboard 对 Shift 语义也直接调用 handler。viewport 此前存在可视区外释放保留选择的失败：保留，不删除或标通过。纯返回/复制焦点导航归 PANEL。
+验证边界 / 缺口：drag 使用原生分发；keyboard 对 Shift 语义也直接调用 handler。viewport 的旧失败是焦点滚动后继续使用旧 Actor 坐标，现改为固定舞台点并检查实时 picking；不能再视作已证实的产品缺陷。纯返回/复制焦点导航归 PANEL。
 
 ### 词库与降级 — DICT-01…09
 
@@ -178,6 +183,27 @@ IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同�
 验证边界 / 缺口：使用现有 logic/sync 测量压力、logic/common 检查和 tools/check_release.py；压力显式选跑，不加普通 CI。打包复用 ENV-01 证据；异步 API 或单次成功不证明 Shell 永不卡顿。
 
 ## 重复测试审查与处理
+
+### 原生验收补充
+
+统一入口 `tools/test-simulation.py` 除剪切板外，还维护以下原生操作链；可用 `--case` 精确选择。
+这里是覆盖范围，不是整个功能 ID 的完成认证。
+
+| 模块 | ID | 实际验证及边界 |
+| --- | --- | --- |
+| `clipboard/policy.native.js` | PRIV-01/03/04/05/07、HIST-01/04/10 | 实际 GTK owner、敏感 MIME、真实窗口排除、在途取消、固定项重启排序、Unicode 搜索、真实文件替换错误；不等于真实密码管理器或磁盘满兼容性 |
+| `phrases/native.js` | PHRASE-01/02/04/05/06/07 | 原生输入/提交、Esc、独立目标收到复制/粘贴/模拟输入、关闭策略、延迟保存与实际 IO 失败重试；不覆盖全部 IME 或冷 Shell 恢复 |
+| `word-selection/native.js` | WORD-05/06/07/08、SELECT-01/03/04/06/07 | 真实行入口、选择结果回读、2000 边界/配置、长文 heartbeat、迟到处理、拖选、持续 Shift 连选、滚动和退出清理 |
+| `terminal/native.js` | TYPE-01/03/05/06/07 | 独立 GTK 目标、两档混合语言逐字一致、等待真实 backend 修饰键、熔断一次及队列取消、实际禁用重开不继续输入 |
+
+SELECT-01 直接复用已有 drag 实现，包含 SELECT-02 范围；SELECT-03 复用 viewport；表单和 Esc
+也复用同一函数，不复制一份测试。仅以这些原生用例替代“调用 handler 就代表用户操作”的结论，
+原有逻辑测试仍负责数据边界。
+
+WORD-07 保留失败断言：在本轮 GNOME 50/51 软件渲染测试中，10 万字符 URL 和 20 万字符无空白
+文本造成数秒至约 20 秒主循环停顿，超过 1000ms 交互预算；普通 2000 词明显更快。入口会记录
+各样本长度、词数及最大间隔，不扩大预算、跳过或通过修改插件代码把结果变绿。虚拟修饰键熔断
+不证明物理键盘事件一定送达，也不证明绕过输入法。CI 范围未扩大。
 
 | 原有重叠 | 处理 |
 | --- | --- |

@@ -51,7 +51,7 @@ if [[ ! "$shell_major" =~ ^(50|51)$ || ( -n "$expected_major" && "$expected_majo
   printf 'Expected GNOME Shell %s, found %s. No session started.\n' "${expected_major:-50 or 51}" "$shell_major" >&2
   exit 2
 fi
-panel_runtime=$(mktemp -d /tmp/clipboard-x-panels-XXXXXX)
+panel_runtime=$(mktemp -d /tmp/clipboard-x-simulation-XXXXXX)
 cleanup() {
   local result=$? attempt
   trap - EXIT
@@ -115,7 +115,7 @@ for ((round = 1; round <= repeats; round++)); do
     printf '[panels] Running GNOME %s / %s / round %s\n' "$shell_major" "$profile" "$round"
     if (
       export XDG_RUNTIME_DIR="$session_runtime" TMPDIR="$session_runtime"
-      export CBX_PANEL_TEST_RUNTIME="$session_runtime" CBX_PANEL_TEST_CASES="$cases" CBX_PANEL_TEST_DISPLAY="$profile"
+      export CBX_SIMULATION_RUNTIME="$session_runtime" CBX_PANEL_TEST_CASES="$cases" CBX_PANEL_TEST_DISPLAY="$profile"
       export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1 PYTHONUNBUFFERED=1
       export SHELL_BACKGROUND_IMAGE="$panel_runtime/background.png" XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_TYPE=wayland
       unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR GSETTINGS_BACKEND
