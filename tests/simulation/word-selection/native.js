@@ -30,6 +30,106 @@ async function firstWord(desktop) {
   assert(desktop.focus === desktop.words.buttons[0], 'First arrow must focus the first word');
 }
 
+async function lateWords(desktop, exit) {
+  const target = await Target.open(desktop);
+  const indicator = desktop.indicator;
+  const openTokenizer = indicator._openTokenizer;
+  const requests = new Map();
+  const panel = desktop.words;
+  const tokenize = panel._tokenize;
+  const previousState = panel.state;
+  const previousButtons = [...panel.buttons];
+  let release;
+  let pending;
+  let calls = 0;
+  let newerState;
+  let newerButtons;
+  indicator._openTokenizer = function (item) {
+    const result = openTokenizer.call(this, item);
+    requests.set(item.id, result);
+    return result;
+  };
+  panel._tokenize = text => {
+    if (calls++ > 0)
+      return tokenize(text);
+    // Run the real processor first and only delay delivery of its result.
+    // Never replace the expected words or bypass the native request handler.
+    pending = (async () => {
+      const tokens = await tokenize(text);
+      await new Promise(resolve => { release = resolve; });
+      return tokens;
+    })();
+    return pending;
+  };
+  try {
+    const item = await capture(desktop, target, 'late word request after ' + exit);
+    const newer = exit === 'newer'
+      ? await capture(desktop, target, 'newer result wins over the pending original')
+      : null;
+    await request(desktop, item);
+    await until(() => Boolean(release), 'native row action reaches delayed real word result');
+    if (exit === 'phrases') {
+      await desktop.click(desktop.history.phrasesButton);
+      await until(() => desktop.manager.is('phrases'), 'switch away while word result is pending');
+    } else if (exit === 'close') {
+      await desktop.key(Clutter.KEY_Escape);
+      await until(() => !desktop.indicator.menu.isOpen, 'native Escape closes pending word request');
+    } else if (exit === 'newer') {
+      assert(desktop.manager.is('history') && desktop.indicator.menu.isOpen,
+        'Second request must start in the same open history, not cancel the first via popup close');
+      await desktop.click(desktop.history._itemRows.get(newer.id).focusActors
+        .find(actor => actor._clipboardXGnomeEntryAction === 'tokenize'));
+      await until(() => requests.has(newer.id), 'second native row click reaches the real request handler');
+      await requests.get(newer.id);
+      await until(() => desktop.manager.is('tokenizer') && panel.state?.source === newer.text,
+        'ungated real second result completes before the first is released');
+      newerState = panel.state;
+      newerButtons = [...panel.buttons];
+      assert(newerButtons.length > 0 && release, 'First request remains gated while the second has real word actors');
+    } else {
+      await restart(desktop, async () => {
+        release();
+        await requests.get(item.id);
+      });
+    }
+    release();
+    // Await the native top-level handler, not just its inner processor Promise:
+    // this includes createState, request guards and any attempted panel update.
+    await requests.get(item.id);
+    await desktop.settle();
+    if (exit === 'phrases')
+      assert(desktop.manager.is('phrases'), 'Late word result must not replace the newer panel');
+    else if (exit === 'newer')
+      assert(desktop.indicator.menu.isOpen && desktop.manager.is('tokenizer') && panel.state === newerState
+        && panel.buttons.length === newerButtons.length
+        && panel.buttons.every((button, index) => button === newerButtons[index]),
+      'Completing the old request must preserve both the newer real state and its rendered word actors');
+    else {
+      assert(!desktop.indicator.menu.isOpen && desktop.manager.is('history'),
+        'Late result must not reopen the popup or install an obsolete word panel');
+      if (exit === 'disable')
+        assert(panel.state === null && panel.buttons.length === 0,
+          'Destroyed pending word request must not populate the old panel');
+      else
+        assert(panel.state === previousState && panel.buttons.length === previousButtons.length
+          && panel.buttons.every((button, index) => button === previousButtons[index]),
+        'Closed pending request must not replace a previously retained word result');
+      await desktop.open();
+      assert(desktop.manager.is('history'), 'Next native open must not resurrect the cancelled result');
+    }
+  } finally {
+    release?.();
+    try {
+      if (pending) await pending;
+      await Promise.all(requests.values());
+    } finally {
+      indicator._openTokenizer = openTokenizer;
+      panel._tokenize = tokenize;
+      await target.close();
+    }
+  }
+}
+
 export const cases = {
   'SELECT-01': () => drag(), // Owns single-click and held/backtracking ranges; no copied scenarios.
   'SELECT-03': desktop => clippedWordSelection(desktop.indicator),
@@ -122,28 +222,10 @@ export const cases = {
     } finally { GLib.Source.remove(timer); await target.close(); }
   },
 
-  async 'WORD-08'(desktop) {
-    const target = await Target.open(desktop);
-    const panel = desktop.words;
-    const tokenize = panel._tokenize;
-    let release;
-    let pending;
-    panel._tokenize = text => {
-      pending = new Promise(resolve => { release = resolve; }).then(() => tokenize(text));
-      return pending;
-    };
-    try {
-      const item = await capture(desktop, target, 'late word request must not replace phrases');
-      await request(desktop, item);
-      await until(() => Boolean(release), 'native row action reaches delayed word processing');
-      await desktop.click(desktop.history.phrasesButton);
-      await until(() => desktop.manager.is('phrases'), 'switch away while tokenization pending');
-      release();
-      await pending;
-      await desktop.settle();
-      assert(desktop.manager.is('phrases'), 'Late word result must not replace the newer panel');
-    } finally { release?.(); if (pending) await pending; panel._tokenize = tokenize; await target.close(); }
-  },
+  'WORD-08': desktop => lateWords(desktop, 'phrases'),
+  'WORD-08-close': desktop => lateWords(desktop, 'close'),
+  'WORD-08-disable': desktop => lateWords(desktop, 'disable'),
+  'WORD-08-newer': desktop => lateWords(desktop, 'newer'),
 
   async 'SELECT-04'(desktop) {
     const target = await Target.open(desktop);

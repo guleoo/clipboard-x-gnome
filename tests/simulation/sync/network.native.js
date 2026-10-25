@@ -57,6 +57,129 @@ export const cases = {
     assert((await target.clipboard()).text === 'concurrent activation uses one real download', 'Concurrent consumers must receive exact full text');
   }),
 
+  'RECV-05-automatic-manual': desktop => fixture(desktop, async ({gate, peer, target}) => {
+    const text = 'automatic materialization shares the manual activation original';
+    const sentinel = 'automatic history fetching must not change clipboard before explicit activation';
+    await capture(desktop, target, sentinel);
+    desktop.settings.set_uint('text-full-threshold', 4096);
+    const content = desktop.app._content;
+    const finish = content._finishReceived;
+    const activate = content.activate;
+    let automaticStarted = 0;
+    let automaticSettled = 0;
+    let manualSettled = false;
+    content._finishReceived = async function (item, ...options) {
+      if (item.text === text) automaticStarted++;
+      try { return await finish.call(this, item, ...options); }
+      finally { if (item.text === text) automaticSettled++; }
+    };
+    content.activate = async function (item, ...options) {
+      try { return await activate.call(this, item, ...options); }
+      finally { if (item.text === text) manualSettled = true; }
+    };
+    try {
+      gate.set({path: contentPath, hold: true});
+      const remote = await peer.call('publish', {text, threshold: 4096});
+      const item = await received(desktop, remote.id);
+      await held(gate);
+      assert(automaticStarted > 0 && automaticSettled === 0 && !item.primary.path,
+        'Real history receive must already be fetching the original before the manual action');
+      assert((await target.clipboard()).text === sentinel,
+        'Automatic history-mode fetching must not prematurely activate the incoming clipboard');
+      await click(desktop, item);
+      assert(!manualSettled, 'Explicit activation must wait for the held shared original');
+      gate.set({});
+      await until(() => manualSettled && automaticSettled === automaticStarted,
+        'both real automatic and manual consumers have settled', 20000);
+      await complete(desktop, item);
+      await until(() => gate.state.requests.some(value => value.method === 'GET'
+        && value.path.includes(`/items/${item.id}/contents/`) && value.stage === 'completed'),
+      'streaming gate recorded the completed original response');
+      const downloads = gate.state.requests.filter(value => value.method === 'GET'
+        && value.path.includes(`/items/${item.id}/contents/`));
+      assert(downloads.length === 1 && downloads[0].stage === 'completed',
+        'Automatic and manual consumers must share one successful original GET, not merely deduplicate repeated clicks');
+      const [, bytes] = Gio.File.new_for_path(item.primary.path).load_contents(null);
+      assert(GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes) === remote.primary.sha256
+        && (await target.clipboard()).text === text,
+      'Both consumers must retain the same verified original and explicit activation must copy its exact bytes');
+    } finally { content._finishReceived = finish; content.activate = activate; }
+  }),
+
+  'CLIP-08-remote-loop': desktop => fixture(desktop, async ({server, gate, peer, target}) => {
+    desktop.settings.set_string('sync-send-mode', 'automatic');
+    const control = await capture(desktop, target, 'positive control: local copying really uploads in automatic mode');
+    await until(() => desktop.app._sync.getTransferForItem(control.id)?.state === 'completed',
+      'automatic sending is genuinely active before testing remote feedback', 20000);
+    assert((await server.items()).items.some(item => item.id === control.id), 'Positive control must reach the actual server');
+    const start = gate.state.requests.length;
+    const content = desktop.app._content;
+    const finish = content._finishReceived;
+    const activate = content.activate;
+    const observed = new Map();
+    const additions = [];
+    const controller = desktop.app._controller;
+    const addedSignal = controller.connect('item-added', (_controller, item, source) => additions.push({id: item.id, text: item.text, source}));
+    content._finishReceived = async function (item, ...options) {
+      const state = observed.get(item.text);
+      if (state) state.started++;
+      try { return await finish.call(this, item, ...options); }
+      finally { if (state) state.finished++; }
+    };
+    content.activate = async function (item, ...options) {
+      try { return await activate.call(this, item, ...options); }
+      finally { if (observed.has(item.text)) observed.get(item.text).activated = true; }
+    };
+    const remoteIds = [];
+    try {
+      for (const mode of ['history', 'activate']) {
+        desktop.settings.set_string('sync-receive-mode', mode);
+        desktop.settings.set_uint('text-full-threshold', 4096);
+        const text = `remote ${mode} writeback cannot become a local automatic publication`;
+        const state = {started: 0, finished: 0, activated: false};
+        observed.set(text, state);
+        const revision = controller.selectionRevision;
+        const remote = await peer.call('publish', {text, threshold: 4096});
+        remoteIds.push(remote.id);
+        const item = await received(desktop, remote.id);
+        if (mode === 'history') {
+          await until(() => state.started > 0 && state.finished === state.started, 'history automatic content fetch finished', 20000);
+          await click(desktop, item);
+          await until(() => state.activated, 'explicit remote activation has finished');
+        } else {
+          await until(() => state.started > 0 && state.finished === state.started, 'receive-and-activate has finished', 20000);
+        }
+        await until(() => controller.selectionRevision > revision && !controller._captureInProgress && !controller._captureQueued,
+          'remote writeback owner event and self-capture have settled');
+        assert((await target.clipboard()).text === text, 'Remote writeback must actually own the external GTK clipboard');
+        let polls = 0;
+        const sync = desktop.app._sync;
+        const pollSignal = sync.connect('poll-completed', () => polls++);
+        try {
+          await until(() => polls >= 2 && !desktop.app._uploadQueue._worker,
+            'two automatic polls and any outgoing worker have drained', 15000);
+          await desktop.app._uploadQueue._chain;
+        } finally { sync.disconnect(pollSignal); }
+        assert(controller.items.filter(value => value.text === text).length === 1
+          && controller.items.find(value => value.text === text)?.id === remote.id && item.remote,
+        'Clipboard recapture must retain exactly the remote identity, not create a local duplicate');
+        assert(!additions.some(value => value.text === text && value.source !== 'remote'),
+          'Remote activation must not emit a fresh local item-added publication trigger');
+        assert(![...desktop.app._uploadQueue._queues.values()].some(queue =>
+          [...queue.entries.values()].some(entry => entry.itemId === remote.id)), 'Remote identity must never remain in a local outbox');
+      }
+      const items = (await server.items()).items;
+      assert(items.length === 1 + remoteIds.length && remoteIds.every(id => items.filter(item => item.id === id).length === 1),
+        'Actual server history must contain only the positive control and independently published remote items');
+      assert(!gate.state.requests.slice(start).some(value => value.method === 'POST' && /\/channels\/[^/]+\/items$/.test(value.path)),
+        'Remote clipboard feedback must not issue any publication request, including one later deduplicated by the server');
+    } finally {
+      content._finishReceived = finish;
+      content.activate = activate;
+      controller.disconnect(addedSignal);
+    }
+  }),
+
   'RECV-06': desktop => fixture(desktop, async ({peer, target, server}) => {
     const remote = await peer.call('publish', {text: 'unavailable source cannot become original', threshold: 1});
     const item = await received(desktop, remote.id);

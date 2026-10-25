@@ -442,7 +442,7 @@ WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本
 
 ### 扩展原生用例的归属
 
-原生注册表有 126 个用例（新增 42），不代表 126 项全部通过。以下扩展原有归属，不复制正常路径。
+原生注册表有 135 个用例（第一批新增 42，后续新增 9），不代表 135 项全部通过。以下扩展原有归属，不复制正常路径。
 实际失败写进[结果快照](acceptance-status_CN.md)，不在本清单放宽预期。
 
 | 归属 | 新增/强化 ID | 独立行为边界 |
@@ -464,6 +464,16 @@ WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本
 `tools/test-lifecycle.py --dictionary-cold`。应用/locale 依赖显式登记。
 真实 IME、可信 HTTPS、Flatpak Gradia、两个完整桌面竞态仍需专门准备环境，不视为天然不可测。
 格式、存储、策略、错误响应等数据矩阵继续归逻辑测试，不复制到 Shell。
+
+后续补充继续复用已有归属：`sync/network.native.js` 负责自动/手动获取竞争、远端剪切板回流
+（`RECV-05-automatic-manual`、`CLIP-08-remote-loop`）；`sync/connection.native.js` 负责在途 Refresh、
+忙态真实点击及设置进程自然退出（`CONN-03-refresh`）；`sync/local-boundary.native.js` 验证同一测试后端
+两个配置地址/Channel 切换后语句仍本地（`PHRASE-08-destinations`）。`clipboard/policy.native.js` 暂停真实
+缩略图暂存结果提交（`PRIV-05-thumbnail`），并强化已有 HIST-04 的 emoji 和过滤结果上限。
+`word-selection/native.js` 等关闭、禁用、较新条目请求后的顶层 handler 完整结束再验迟到结果
+（`WORD-08-close/disable/newer`）。`screenshot/native.js` 验证真实不支持目标及支持目标重试
+（`SHOT-05-unsupported`），不伪造门户响应。这些是独立故障边界，不重复基础捕获、重复手动点击或
+直接调用 handler；解码器内部取消、物理输入、所有部署环境仍单列。
 
 | 原有重叠 | 处理 |
 | --- | --- |

@@ -11,11 +11,12 @@ Date: 2026-10-25. These are observed results, not certification of all requireme
   `9d7c1453af80df946c3ad2eb038323e6347588e76f1c41656cd77492c4820d17`.
 - Real isolated GNOME 50.6 / 51.1 with software rendering, independent GTK sources/receivers and
   native virtual input. No host installation/logout, production changes or CI expansion.
-- Native registry: **84 → 126 cases**, **42 additions** plus strengthened existing checks.
+- Native registry: **84 → 126 → 135 cases**, **42 + 9 additions** plus strengthened existing checks.
   Cold dictionary restoration is a separate opt-in lifecycle check. Counts are not passing totals,
   nor can they be subtracted from the inventory's 173 requirements to calculate coverage.
 - Every new case reached its target on both versions in focused runs: **50: 34 PASS / 8 FAIL**;
-  **51: 33 PASS / 9 FAIL**. This is the 42-case addition set, not all 126 or 173 requirements.
+  **51: 33 PASS / 9 FAIL**. This is the first 42-case addition set, not all 135 or 173 requirements.
+- The next **9 cases passed on both 50 and 51**, including stricter reruns described below.
 - Sync uses disposable Docker servers, synthetic credentials, actual HTTP and a separate source
   client—not two full desktops. The private fixture allows 20,000 requests/60 seconds for the real
   205-item pagination test; production limits are unchanged.
@@ -45,6 +46,27 @@ These are focused runs, not one uninterrupted passing suite:
 Native Gradia displayed the fixture on 51; native Gradia on 50 and Flatpak Gradia on both are absent.
 Custom editor success does not close those application-specific gaps. Catalog samples cover EN/ZH
 on 50 and EN/ZH/JA/KO on 51, not linguistic review of every translation.
+
+### Follow-up concurrency and cancellation checks
+
+| New case | Verified behavior | 50 / 51 |
+| --- | --- | --- |
+| CLIP-08-remote-loop | Actual remote manual/automatic clipboard writeback with automatic sending enabled: no duplicate identity/outbox or feedback POST; local publication is the positive control | PASS / PASS |
+| RECV-05-automatic-manual | A real automatic original download held in flight is joined by native manual activation; exactly one GET, full verified file and actual clipboard readback | PASS / PASS |
+| CONN-03-refresh | Refresh/Test/Apply share busy; native disabled clicks do not queue extra requests; closing an in-flight Refresh lets the preferences process exit naturally without forced termination or late writes | PASS / PASS |
+| PHRASE-08-destinations | Phrase survives configured address/Channel switch and restart and is absent from both server histories; actual traffic proves the new address is used | PASS / PASS |
+| PRIV-05-thumbnail | Real thumbnail generated/staged, then privacy/exclusion toggled before commit; old result and staging file discarded, later capture recovers | PASS / PASS |
+| WORD-08-close | Native close while a real computed result is delayed; after the full handler settles, no popup resurrection or result replacement | PASS / PASS |
+| WORD-08-disable | Actual disable/re-enable while the result is delayed; no population of destroyed old actors or request revival in the new instance | PASS / PASS |
+| WORD-08-newer | In the same open history, B completes before held A; late A cannot replace B's state or actors | PASS / PASS |
+| SHOT-05-unsupported | Read actual backend capabilities, identify the real unsupported-target error without clipboard/history side effects, then successfully capture a supported target | PASS / PASS |
+
+Existing WORD-08 was rerun with full top-level request observation; HIST-04 adds actual emoji search
+and filtered-result limits, both passing on 50/51. The thumbnail check gates completed computation
+before commit, not decoder-internal abort. The phrase check uses two addresses/Channels of one
+owned backend, not two deployments. The screenshot check does not exhaust actual portal failures.
+Dictionary-change races and complete backend/error matrices therefore remain explicit gaps, not
+automatically covered by these passing cases.
 
 ## Retained failures and unresolved target checks
 

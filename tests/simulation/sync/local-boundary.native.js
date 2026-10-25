@@ -3,6 +3,7 @@ import Gio from 'gi://Gio';
 import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {Server} from '../helpers/server.js';
+import {Gate} from '../helpers/gate.js';
 import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 import {openPhrases} from '../phrases/native.js';
@@ -11,13 +12,19 @@ import {withCleanup} from '../helpers/resources.js';
 async function fixture(desktop, run) {
   let server;
   let target;
+  const gates = [];
   return withCleanup(async () => {
     server = await Server.open(desktop);
     target = await Target.open(desktop);
     await server.enable();
     desktop.settings.set_string('sync-send-mode', 'automatic');
-    await run({server, target});
-  }, () => [target, server]);
+    const openGate = async () => {
+      const gate = await Gate.open(server.address);
+      gates.push(gate);
+      return gate;
+    };
+    await run({server, target, openGate});
+  }, () => [target, server, ...gates]);
 }
 async function polls(desktop) {
   const sync = desktop.app._sync;
@@ -28,6 +35,41 @@ async function polls(desktop) {
 }
 
 export const cases = {
+  'PHRASE-08-destinations': desktop => fixture(desktop, async ({target, server, openGate}) => {
+    // Keep the proxy alive until the fixture has stopped the sync session.
+    const gate = await openGate();
+    const phrase = 'Local phrase survives changing sync destination without publication';
+    await openPhrases(desktop);
+    await desktop.click(desktop.phrases.addButton);
+    await desktop.type(phrase);
+    await desktop.key(Clutter.KEY_Return);
+    await until(() => desktop.phrases.phrases.includes(phrase), 'local phrase saved before destination switch');
+    const first = await capture(desktop, target, 'destination A public positive control');
+    await until(() => desktop.app._sync.getTransferForItem(first.id)?.state === 'completed', 'A public control uploaded', 20000);
+    const other = await server.createChannel();
+    await server.join(other.id, server.identity.id);
+    await server.configure(other.id, server.identity.key, gate.address);
+    desktop.settings.set_string('sync-send-mode', 'automatic');
+    await until(() => desktop.app._sync.ready && desktop.app._sync.configuration.activeChannelId === other.id,
+      'new configured address and Channel ready', 20000);
+    const second = await capture(desktop, target, 'destination B public positive control');
+    await until(() => desktop.app._sync.getTransferForItem(second.id)?.state === 'completed', 'B public control uploaded', 20000);
+    await restart(desktop);
+    await until(() => desktop.app._sync.ready, 'destination B session restored', 20000);
+    await polls(desktop);
+    assert(desktop.phrases.phrases.includes(phrase), 'Destination switch and actual restart preserve the same local phrase store');
+    assert(desktop.app._sync.configuration.serverAddress === gate.address
+      && gate.state.requests.some(request => request.path.includes(`/channels/${other.id}/`)
+        && request.stage === 'completed' && request.status >= 200 && request.status < 300),
+    'The second configured address must actually carry successful Channel traffic, not be ignored in favor of A');
+    const a = (await server.items()).items;
+    const b = (await server.request('GET', `/items?channelId=${other.id}&limit=200`)).items;
+    assert(a.some(item => item.id === first.id) && b.some(item => item.id === second.id),
+      'Both configured destinations need actual successful publication controls');
+    assert(![...a, ...b].some(item => JSON.stringify(item).includes(phrase)),
+      'Changing server address/Channel must never publish locally saved phrases to either destination');
+  }),
+
   'PHRASE-08': desktop => fixture(desktop, async ({target, server}) => {
     const phrase = 'Saved locally without publishing the phrase store';
     await openPhrases(desktop);

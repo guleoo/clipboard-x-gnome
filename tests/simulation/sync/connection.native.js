@@ -1,5 +1,6 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import Clutter from 'gi://Clutter';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Preferences} from '../helpers/preferences.js';
 import {Server} from '../helpers/server.js';
@@ -52,6 +53,31 @@ async function settled(preferences) {
   await ready(preferences);
 }
 
+const refreshButton = {type: 'GtkButton', tooltip: 'Refresh channels'};
+async function connectionControls(preferences) {
+  const selectors = [];
+  // The preferences observer has one command slot, so observations must not
+  // race each other when this process has not cached these translations yet.
+  for (const selector of [button('Test connection'), button('Apply'), refreshButton])
+    selectors.push(await preferences.translate(selector));
+  const window = (await preferences.inspect()).windows.find(value => value.title === 'Clipboard X Gnome');
+  const widgets = selectors.map(selector => window.widgets.find(widget => widget.mapped && widget.bounds
+    && Object.entries(selector).every(([key, value]) => widget[key] === value)));
+  assert(widgets.every(Boolean), 'All three actual connection buttons must exist');
+  return {window, widgets};
+}
+
+async function clickInsensitiveControl(desktop, preferences, observed, widget) {
+  const window = preferences.window('Clipboard X Gnome');
+  const frame = window.get_frame_rect();
+  const buffer = window.get_buffer_rect();
+  const origin = Math.abs(buffer.width - observed.width) < Math.abs(frame.width - observed.width) ? buffer : frame;
+  const bounds = widget.bounds;
+  assert(bounds.y > 0 && bounds.y + bounds.height < observed.height,
+    'Disabled-control clicks must target a visible native button, not clipped content');
+  await desktop.pointClick(origin.x + bounds.x + bounds.width / 2, origin.y + bounds.y + bounds.height / 2);
+}
+
 export const cases = {
   'CONN-02': desktop => fixture(desktop, async ({gate, preferences}) => {
     const previous = connectionFile();
@@ -91,6 +117,74 @@ export const cases = {
     await pause(200);
     await desktop.open();
     assert(desktop.indicator.menu.isOpen, 'Closing in-flight preferences must leave Shell and extension usable');
+  }),
+
+  'CONN-03-refresh': desktop => fixture(desktop, async ({gate, preferences}) => {
+    await preferences.input('Server address', gate.address);
+    await preferences.scrollTo(button('Test connection'));
+    await preferences.scrollTo(refreshButton);
+    const activeControls = await connectionControls(preferences);
+    assert(activeControls.widgets.every(widget => widget.hit && widget.sensitive),
+      'All connection buttons must be exposed before the busy-state native clicks');
+    const revision = desktop.settings.get_uint('sync-configuration-revision');
+    gate.set({path: '/channels(?:\\?|$)', hold: true});
+    await preferences.click(refreshButton);
+    await until(() => gate.state.requests.some(value => value.stage === 'held'), 'real channel refresh is held');
+    const saved = connectionFile();
+    assert(JSON.parse(saved).serverAddress === gate.address
+      && desktop.settings.get_uint('sync-configuration-revision') === revision + 1,
+    'Refresh intentionally saves current connection inputs exactly once before requesting channels');
+    const observed = await connectionControls(preferences);
+    assert(observed.widgets.every(widget => !widget.sensitive),
+      'Refresh must share the actual busy lock with Test and Apply');
+    for (const widget of observed.widgets)
+      await clickInsensitiveControl(desktop, preferences, observed.window, widget);
+    assert(gate.state.requests.length === 1 && /\/channels(?:\?|$)/.test(gate.state.requests[0].path),
+      'Native clicks on all busy actions must neither overlap Refresh nor start Test/profile Apply requests');
+    assert(connectionFile() === saved && desktop.settings.get_uint('sync-configuration-revision') === revision + 1,
+      'Blocked native actions must not save connection inputs again');
+    gate.set({});
+    await settled(preferences);
+    assert(await hasStatus(preferences, 'Channels refreshed'), 'Completing the actual refresh releases controls with channel results');
+    assert((await connectionControls(preferences)).widgets.every(widget => widget.sensitive),
+      'All shared connection controls become usable after Refresh completes');
+    assert(gate.state.requests.length === 1,
+      'Disabled clicks must not leave delayed Test/Apply/Refresh requests after the first operation completes');
+
+    // Close a different real in-flight Refresh. Its earlier local save is
+    // intentional; late callbacks must not write anything else after closure.
+    await preferences.scrollTo(refreshButton);
+    const previousRequests = gate.state.requests.length;
+    gate.set({path: '/channels(?:\\?|$)', hold: true});
+    await preferences.click(refreshButton);
+    await until(() => gate.state.requests.slice(previousRequests).some(value => value.stage === 'held'),
+      'second real channel refresh pending before preferences close');
+    const closingSaved = connectionFile();
+    const closingRevision = desktop.settings.get_uint('sync-configuration-revision');
+    assert(closingRevision === revision + 2, 'The second explicit Refresh saves only once');
+    const process = preferences.process;
+    let exited = false;
+    const exit = new Promise((resolve, reject) => process.wait_async(null, (child, result) => {
+      try { child.wait_finish(result); exited = true; resolve(); } catch (error) { reject(error); }
+    }));
+    // Do not use Preferences.close() here: its force-exit fallback could hide a
+    // missing production close/cancellation path. The fixture still owns the
+    // cleanup fallback if this assertion fails.
+    preferences.window('Clipboard X Gnome').delete(global.get_current_time());
+    await until(() => !preferences.window('Clipboard X Gnome'), 'native preferences window closed without forced process exit');
+    gate.set({});
+    await until(() => gate.state.requests.slice(previousRequests).every(value =>
+      ['completed', 'disconnected'].includes(value.stage)), 'closed preferences request reaches a terminal gate state', 10000);
+    await until(() => exited, 'preferences host exits naturally after native close', 10000);
+    await exit;
+    assert(process.get_successful(), 'Natural preferences shutdown must succeed');
+    preferences.process = null;
+    assert(connectionFile() === closingSaved && desktop.settings.get_uint('sync-configuration-revision') === closingRevision
+      && !desktop.settings.get_boolean('sync-enabled'),
+    'Closing pending Refresh must not allow late configuration writes or enable synchronization');
+    await desktop.open();
+    await desktop.key(Clutter.KEY_Right);
+    assert(desktop.indicator.menu.isOpen, 'Closing a pending native Refresh must leave the Shell panel responsive');
   }),
 
   'CONN-04': desktop => fixture(desktop, async ({server, gate, preferences}) => {

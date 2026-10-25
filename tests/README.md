@@ -183,7 +183,7 @@ that a version-migration test. Logs and `report.json` are written to `build/life
 
 ### Extended local coverage
 
-The native registry has 126 selectable cases, not 126 certified features. New checks reuse existing
+The native registry has 135 selectable cases, not 135 certified features. New checks reuse existing
 owners for malformed-image recovery, missing originals, phrase IO failure, selection gestures,
 settings persistence/layout, actual editor processes and destination-bound sync recovery.
 See the [observed snapshot](acceptance-status.md) for retained failures.
@@ -215,6 +215,19 @@ Dictionary GUI tests need a normal desktop user and installed file manager/edito
 root sessions. `DICT-06-https` additionally needs `openssl` and checks rejection of an owned self-signed
 certificate—not trusted HTTPS success. Cold dictionary checks need a generated non-C UTF-8 locale.
 No test changes host certificate stores or disables certificate verification.
+
+Additional concurrency entries cover `RECV-05-automatic-manual`, `CLIP-08-remote-loop`,
+`CONN-03-refresh` and `PHRASE-08-destinations` through the server runner. They verify one actual
+download, no feedback publication, shared busy controls and a naturally exiting preferences host,
+and local phrase survival across configured address/Channel changes. The latter uses two addresses
+of one owned backend, not two independently deployed servers.
+
+`PRIV-05-thumbnail` gates the return of an already generated/staged real thumbnail before capture
+commit; it does not prove cancellation inside the decoder. `WORD-08-close/disable/newer` delay the
+real computed result and await the entire native request handler before checking stale-result guards;
+they do not simulate aborting the computation itself. `SHOT-05-unsupported` reads actual portal
+capabilities, verifies the unsupported-target error and retries a supported capture. It is BLOCKED
+if that backend supports every target, not a substitute for every backend's denial/timeout behavior.
 
 The Docker wrapper changes only its disposable server config to 20,000 requests/60 seconds so real
 205-item publication/pagination does not exhaust the default 600-request budget. It neither changes

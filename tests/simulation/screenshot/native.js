@@ -3,7 +3,7 @@ import GdkPixbuf from 'gi://GdkPixbuf';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import Gio from 'gi://Gio';
-import {assert, pause, until} from '../helpers/desktop.js';
+import {assert, block, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 
 export async function capture(desktop, {shortcut = false, cancel = false} = {}) {
@@ -72,6 +72,48 @@ async function baseline(desktop, target, text) {
 }
 
 export const cases = {
+  async 'SHOT-05-unsupported'(desktop) {
+    const reply = await new Promise((resolve, reject) => Gio.DBus.session.call(
+      'org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop',
+      'org.freedesktop.DBus.Properties', 'GetAll',
+      new GLib.Variant('(s)', ['org.freedesktop.portal.Screenshot']), new GLib.VariantType('(a{sv})'),
+      Gio.DBusCallFlags.NONE, 10000, null, (bus, result) => {
+        try { resolve(bus.call_finish(result).deepUnpack()[0]); } catch (error) { reject(error); }
+      }));
+    const version = reply.version?.deepUnpack() ?? 0;
+    const targets = reply.AvailableTargets?.deepUnpack() ?? 0;
+    const unsupported = [['window', 2], ['area', 4], ['active-window', 8]]
+      .find(([_name, flag]) => version < 3 || !(targets & flag));
+    if (!unsupported) block('The real portal supports every configured target; unsupported-target path is not applicable');
+    const target = await Target.open(desktop);
+    const report = desktop.app._reportError;
+    const errors = [];
+    desktop.app._reportError = function (...args) { errors.push(args[0]); return report.apply(this, args); };
+    try {
+      await baseline(desktop, target, 'unsupported portal target preserves clipboard');
+      const ids = desktop.app._controller.items.map(item => item.id).join();
+      desktop.settings.set_string('screenshot-target', unsupported[0]);
+      desktop.settings.set_boolean('screenshot-open-editor', false);
+      let failure = null;
+      try { await capture(desktop); } catch (error) { failure = error; }
+      await until(() => errors.length === 1, 'one actual unsupported-target error reaches the normal notification path');
+      assert(failure && errors[0] === failure && failure.message.includes(unsupported[0]),
+        'The observed failure must identify the selected unsupported target, not an unrelated transient error');
+      assert(!desktop.app._portal._request && !Main.screenshotUI.visible,
+        'Unsupported real backend capability must fail without leaking a request or shared screenshot UI');
+      assert(desktop.app._controller.items.map(item => item.id).join() === ids
+        && (await target.clipboard()).text === 'unsupported portal target preserves clipboard',
+      'Unsupported target must not create an item or replace the real clipboard');
+      desktop.settings.set_string('screenshot-target', 'screen');
+      desktop.settings.set_boolean('screenshot-add-history', true);
+      desktop.settings.set_boolean('screenshot-write-clipboard', true);
+      await capture(desktop);
+      const image = desktop.app._controller.items.find(item => item.isImage);
+      assert(image && (await target.clipboard('image/png')).sha256 === image.primary.sha256 && errors.length === 1,
+        'A supported retry must produce the actual original without repeating the prior error');
+    } finally { desktop.app._reportError = report; await target.close(); }
+  },
+
   async 'SHOT-03-editor'(desktop) {
     const target = await Target.open(desktop);
     const processes = [];

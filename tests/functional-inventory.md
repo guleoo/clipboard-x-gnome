@@ -458,7 +458,7 @@ fuse proves neither physical input delivery nor input-method bypass. CI scope is
 
 ### Extended native owners
 
-The registry now contains 126 cases (42 additions), not 126 passing requirements. The following
+The registry now contains 135 cases (42 additions in the first batch, 9 in the next), not 135 passing requirements. The following
 entries extend the owners above rather than duplicate their happy paths. Failures belong in the
 [result snapshot](acceptance-status.md), not weaker expected results in this inventory.
 
@@ -482,6 +482,18 @@ Select conditional displays with `--display dual` or `--display fractional`; use
 dependencies are explicit. Prepared environments are still needed for real IME, trusted HTTPS,
 Flatpak Gradia and two-full-desktop races; those are not declared inherently untestable.
 Do not duplicate logic-owned format, storage, policy or error-response data matrices into Shell.
+
+Further extensions reuse existing owners: `sync/network.native.js` owns automatic/manual concurrent
+materialization and remote clipboard feedback (`RECV-05-automatic-manual`, `CLIP-08-remote-loop`);
+`sync/connection.native.js` owns held Refresh, disabled native clicks and natural process shutdown
+(`CONN-03-refresh`). `sync/local-boundary.native.js` checks local phrases across two configured
+addresses/Channels of one test backend (`PHRASE-08-destinations`). `clipboard/policy.native.js` gates
+real thumbnail staging before commit (`PRIV-05-thumbnail`) and strengthens existing HIST-04 with emoji
+and filtered-result limits. `word-selection/native.js` observes complete top-level handlers after close,
+disable and a newer row request (`WORD-08-close/disable/newer`). `screenshot/native.js` verifies real
+unsupported capabilities and supported retry (`SHOT-05-unsupported`), not fabricated portal replies.
+These are distinct failure boundaries, not copies of basic capture, repeated manual clicks or direct
+handler invocation. Decoder-internal cancellation, physical input and every deployment remain separate.
 
 ## Duplicate-test review
 
