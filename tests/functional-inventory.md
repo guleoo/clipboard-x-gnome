@@ -28,9 +28,9 @@ in the [acceptance snapshot](acceptance-status.md); a case's PASS does not certi
 | ENV-02 | Overwrite an installed package, then start a different Shell process and verify the installed code and preserved data; hot reloading is not required. |
 | ENV-03 | Start with empty and existing storage; merge copies arriving during initialization without replacing valid history with an empty snapshot. |
 | ENV-04 | Enable, disable, immediately re-enable and repeat; keep one indicator, one shortcut response and one capture per clipboard change. |
-| ENV-05 | Disable during initialization, save, download, word processing, screenshot or typing; cancel owned work and reject late results. |
+| ENV-05 | Disable during initialization, save, download, word processing, screenshot or typing; cancel owned work and reject late results. A system-owned screenshot UI may remain open: completing/canceling it after disable must release its modal, keep Shell interactive and not resume plugin side effects. |
 | ENV-06 | Close and reopen an isolated Shell; restore history and destination-bound upload queues, and explicitly reject corrupt state. Physical logout/power-loss recovery is not required. |
-| ENV-07 | After disable, release signals, timers, modal grabs, virtual devices, HTTP sessions and waiting consumers. |
+| ENV-07 | After disable, release owned signals, timers, modal grabs, virtual devices, HTTP sessions and waiting consumers. A system-owned screenshot modal is assessed after user completion/cancellation under ENV-05. |
 | ENV-08 | Run preferences in a separate GTK process without Meta/Adw import errors; closing it must end owned UI and pending follow-up work. |
 
 Maintained simulation entries: [lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
@@ -228,7 +228,7 @@ Evidence / remaining boundary: typing compares a real GTK Wayland target. guard 
 | SHOT-03 | Verify history, clipboard and editor options independently and in necessary combinations. |
 | SHOT-04 | User cancellation emits no screenshot-failed notification and causes no history/copy/editor side effects. |
 | SHOT-05 | Report denial, timeout, unavailable portal and missing URI clearly, then allow retry. |
-| SHOT-06 | Repeated requests, capability lookup, cancellation and disable release requests/subscriptions/timers and reject old results. |
+| SHOT-06 | Repeated requests, capability lookup, cancellation and disable release owned requests/subscriptions/timers and reject old results. After disable, the user may complete/cancel the system screenshot UI normally without impairing Shell; immediate UI dismissal is not required. |
 | SHOT-07 | Use real image/URI results, spaced/non-ASCII paths and immediate retry after cancellation. |
 
 Maintained simulation entries: [screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
@@ -469,7 +469,7 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 | `word-selection/native.js` | SELECT-04-cross-row, SELECT-05, SELECT-07-disable | Held Shift across rows, Space/Enter and actual disable while dragging |
 | `terminal/native.js` | TYPE-03/user-sample, TYPE-08-capslock/layout | Full maintained sample at both speeds, optional user file, real CapsLock and US/German input sources |
 | `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
-| `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Observe actual shared screenshot modal at disable; large text/image capture/thumbnail/save main-loop gaps |
+| `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Complete/cancel the actual system screenshot UI after disable, verify released modal and native external input, no old plugin side effects, then normal re-enable; large capture/thumbnail/save main-loop gaps |
 | `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |
 | `word-selection/dictionary.native.js`, `lifecycle/cold.smoke.js` | DICT-02/06/06-https/07/08/09 | Language lists, multiple sources, refresh failure/declaration change, actual editor, 120,002-word indexing, two-Shell no-implicit-download proof; TLS case is rejection, not trusted-CA success |
 | `sync/scenarios.native.js` | SEND-03-image, SEND-05-destinations, RECV-02-pages/03-boundaries | Actual image/send and text-image/receive boundaries, 205-item production pagination, durable cursor and per-address/Channel queues across restart |

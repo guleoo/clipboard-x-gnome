@@ -12,8 +12,9 @@
   未安装宿主插件、未注销宿主、未修改生产代码或扩大 CI。
 - 原生注册表 **84 → 126 → 135 个用例，先后新增 42 + 9 个**，并强化已有用例；词库冷恢复另有可选生命周期入口。
   数量不是通过数，也不能与清单的 173 个功能要求相减计算覆盖率。
-- 新增 42 项均已分批执行到目标：**50 为 34 通过 / 8 失败；51 为 33 通过 / 9 失败**。
-  仅指第一批 42 项，不代表全部 135 项或 173 个功能要求。
+- 第一批 42 项最初记录为 **50：34 通过 / 8 失败；51：33 通过 / 9 失败**。
+  按下述确认后的 ENV-05 截图边界复验后，该集合为 **50：35 通过 / 7 失败；51：34 通过 / 8 失败**。
+  不代表全部 135 项或 173 个功能要求均通过。
 - 后续新增 **9 项在 50/51 均通过**，包含下述收紧证据后的复跑。
 - 同步使用临时 Docker 服务、合成认证、真实 HTTP 和独立来源客户端，不是两个完整桌面。
   为容纳真实 205 条分页，私有服务夹具设为每 60 秒 20,000 请求，不改变生产限流。
@@ -61,12 +62,21 @@
 不是两个独立部署；截图用例也未穷尽真实门户异常。词库变化竞态、完整后端/错误矩阵仍明确保留缺口，
 不因这些通过就自动判全部覆盖。
 
+### ENV-05 截图验收边界调整
+
+禁用插件不要求立即关闭系统自有截图界面；验收点是之后正常完成/取消截图，模态释放、Shell 可交互，
+且已禁用插件不再导入历史、写剪切板、启动编辑器或发送错误通知。
+
+50/51 两版的两个原生分支均通过：Esc 取消为 0 次截图，Enter 完成为 1 次真实系统截图，最终 modal 为 0。
+独立 GTK 窗口能接收原生键盘输入，插件历史文件不变，重新启用后面板正常打开。
+旧的“必须立即关闭界面”失败按本次明确确认的范围替代，不是生产代码修复。
+下列其他同步中断失败不变。复跑使用 `--case ENV-05-screenshot`。
+
 ## 保留失败与待归因目标
 
 | 用例 | 实际结果 / 结论边界 |
 | --- | --- |
 | WORD-07 | 50/51：10 万字符 URL 约阻塞 5 秒，20 万无空白字符约 20 秒，超过 1 秒预算 |
-| ENV-05-screenshot / SHOT-06 | 50/51：共享 ScreenshotUI 活跃时禁用后仍有显示/模态；夹具在观察缺陷后才清理 |
 | SEND-04 / SEND-08 | 前期真实发布中断/删除使隔离 Shell 异常退出，51 确认 SIGSEGV；不宣称后续恢复已验 |
 | CONN-08-revoked | 活跃轮询时撤销 Channel 成员资格使隔离 Shell 异常退出；51 另查确认 SIGSEGV |
 | XFER-05-disable-download / XFER-06-cancel-download | 下载响应被暂停时关闭同步或取消该任务，50/51 隔离 Shell 异常退出 |
@@ -81,7 +91,7 @@ HTTP gate 流式转发真实请求，只控制时序。崩溃记 FAIL，后续�
 不自动重试、放宽断言或修改生产代码换取绿色。
 
 ```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,ENV-05-screenshot,TYPE-08-capslock --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual,XFER-09-sha256sum --isolate-cases
 ```
 

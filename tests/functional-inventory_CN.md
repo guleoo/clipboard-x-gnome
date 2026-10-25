@@ -27,9 +27,9 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | ENV-02 | 覆盖安装后，在重新启动的独立 Shell 中加载新版代码；同一 Shell 内不要求热更新。 |
 | ENV-03 | 全新数据目录、已有正常数据目录分别启动，不用空启动快照覆盖原数据。 |
 | ENV-04 | 启用、禁用、立即重新启用、连续启停；无重复入口、失效快捷键或重复捕获。 |
-| ENV-05 | 初始化、保存、下载、分词、截图或模拟输入中禁用，取消任务并拒绝迟到回调。 |
+| ENV-05 | 初始化、保存、下载、分词、截图或模拟输入中禁用，取消自有任务并拒绝迟到回调。系统截图界面允许保留；禁用后完成/取消截图应正常释放模态，Shell 可交互，且不恢复插件副作用。 |
 | ENV-06 | 关闭独立Shell后重新打开，恢复历史和上传队列；不将损坏状态当成功。不要求真实注销/登录、物理断电或未落盘数据的崩溃恢复。 |
-| ENV-07 | 禁用后信号、定时器、modal grab、虚拟设备、HTTP 会话与等待消费者正确释放。 |
+| ENV-07 | 禁用后自有信号、定时器、modal grab、虚拟设备、HTTP 会话与等待消费者正确释放；系统自有截图模态按 ENV-05 在用户完成/取消后验收。 |
 | ENV-08 | 设置进程与 Shell 进程独立运行，无 Meta/Adw 导入错误；设置关闭后无悬挂操作。 |
 
 长期模拟入口：[lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
@@ -220,7 +220,7 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 | SHOT-03 | 加入历史、写剪切板、打开编辑器相关配置分别及必要组合正确。 |
 | SHOT-04 | 用户主动取消无“截图失败”通知，不写历史、不复制、不启动编辑器。 |
 | SHOT-05 | 拒绝、超时、门户不可用、无 URI 时有可理解错误，并能再次截图。 |
-| SHOT-06 | 连续点击、能力查询或截图期间取消/禁用，清理请求、订阅、超时，不复活旧请求。 |
+| SHOT-06 | 连续点击、能力查询或截图期间取消/禁用，清理自有请求、订阅、超时，不复活旧请求；禁用后用户仍可正常完成/取消系统截图，不影响 Shell，不要求立即关闭系统界面。 |
 | SHOT-07 | 真实结果图像和 URI、空格/中文路径、取消后立即重试均正确。 |
 
 长期模拟入口：[screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
@@ -452,7 +452,7 @@ WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本
 | `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
 | `terminal/native.js` | TYPE-03/user-sample、TYPE-08-capslock/layout | 两档完整维护样本、可选用户文件、实际 CapsLock 与 US/German 输入源 |
 | `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
-| `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用时观察真实共享截图模态；大文本/图片捕获/缩略图/保存主循环间隙 |
+| `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用后真正完成/取消系统截图，验证模态释放、外部窗口原生输入、旧插件无副作用及重新启用；大捕获/缩略图/保存主循环间隙 |
 | `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |
 | `word-selection/dictionary.native.js`、`lifecycle/cold.smoke.js` | DICT-02/06/06-https/07/08/09 | 语言列表、多来源、刷新故障/声明变化、实际编辑器、120,002 词索引、跨 Shell 无隐式下载；TLS 测拒绝，不是可信 CA 成功 |
 | `sync/scenarios.native.js` | SEND-03-image、SEND-05-destinations、RECV-02-pages/03-boundaries | 图片发送/文本图片接收边界、205 条生产分页、持久游标与按地址/Channel 分队列的真实重启 |

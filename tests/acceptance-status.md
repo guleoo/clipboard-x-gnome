@@ -14,8 +14,9 @@ Date: 2026-10-25. These are observed results, not certification of all requireme
 - Native registry: **84 → 126 → 135 cases**, **42 + 9 additions** plus strengthened existing checks.
   Cold dictionary restoration is a separate opt-in lifecycle check. Counts are not passing totals,
   nor can they be subtracted from the inventory's 173 requirements to calculate coverage.
-- Every new case reached its target on both versions in focused runs: **50: 34 PASS / 8 FAIL**;
-  **51: 33 PASS / 9 FAIL**. This is the first 42-case addition set, not all 135 or 173 requirements.
+- The first 42-case batch initially reported **50: 34 PASS / 8 FAIL; 51: 33 PASS / 9 FAIL**.
+  After the agreed ENV-05 screenshot boundary was reverified below, that set has **50: 35 PASS / 7 FAIL;
+  51: 34 PASS / 8 FAIL**. Neither count certifies all 135 cases or 173 requirements.
 - The next **9 cases passed on both 50 and 51**, including stricter reruns described below.
 - Sync uses disposable Docker servers, synthetic credentials, actual HTTP and a separate source
   client—not two full desktops. The private fixture allows 20,000 requests/60 seconds for the real
@@ -68,12 +69,23 @@ owned backend, not two deployments. The screenshot check does not exhaust actual
 Dictionary-change races and complete backend/error matrices therefore remain explicit gaps, not
 automatically covered by these passing cases.
 
+### Revised ENV-05 screenshot boundary
+
+The system-owned screenshot UI need not disappear immediately when the extension is disabled.
+Acceptance is normal screenshot completion/cancellation afterward: modal released, Shell interactive,
+and no history import, clipboard write, editor launch or error notification from the disabled plugin.
+
+Both 50 and 51 passed both native branches: Escape produced zero captures, Enter produced one actual
+system capture, and the final modal count was zero. An independent GTK window received native input,
+the persisted plugin history was unchanged, and the extension reopened normally after re-enable.
+The former immediate-dismissal failure is superseded by this explicitly agreed scope, not a production
+fix. Other sync interruption failures below remain unchanged. Use `--case ENV-05-screenshot` to rerun.
+
 ## Retained failures and unresolved target checks
 
 | Case | Observed result / limit |
 | --- | --- |
 | WORD-07 | 50/51: about 5 seconds for a 100,000-character URL and 20 seconds for 200,000 unbroken characters, above the 1-second main-loop budget |
-| ENV-05-screenshot / SHOT-06 | 50/51: disabling with shared ScreenshotUI active leaves its visible/modal state; fixture cleanup occurs after observing the defect |
 | SEND-04 / SEND-08 | Earlier actual publication interruption/deletion runs terminate the isolated Shell; SIGSEGV confirmed on 51. Later recovery is not claimed |
 | CONN-08-revoked | Revoking live Channel membership terminates the isolated Shell; 51 SIGSEGV independently confirmed |
 | XFER-05-disable-download / XFER-06-cancel-download | Disabling during a held download or canceling its task terminates the isolated Shell on 50/51 |
@@ -88,7 +100,7 @@ The HTTP gate streams real requests and changes only timing. Crashes are FAIL, l
 cases NOT_RUN; no silent retry, relaxed assertions or production fixes make these green.
 
 ```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,ENV-05-screenshot,TYPE-08-capslock --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual,XFER-09-sha256sum --isolate-cases
 ```
 
