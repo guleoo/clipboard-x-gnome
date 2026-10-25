@@ -65,7 +65,7 @@ Evidence / remaining boundary: Use tools/test-panels.sh. Restoration adds queued
 | ID | What to test / expected result |
 | --- | --- |
 | CLIP-01 | Capture and copy back short/long, multiline and tabbed text, CJK/English, emoji and combining characters from an independent application. |
-| CLIP-02 | Copy real Firefox/Chromium rich text offering plain and HTML representations; deduplicate aliases and verify primary text and preview. |
+| CLIP-02 | Copy real Chromium rich text offering plain and HTML representations; deduplicate aliases and verify primary text and preview. |
 | CLIP-03 | Reject empty HTML, metadata-only/tags-only, blank and invalid representations without discarding valid rich text. |
 | CLIP-04 | Capture actual PNG/JPEG/WebP/GIF/SVG offers; failed formats must not leave capture permanently busy. |
 | CLIP-05 | Preserve thumbnail aspect ratio for wide/tall/high-resolution images; copy/edit the original, never the thumbnail. |
@@ -87,7 +87,7 @@ sources/receivers for multilingual/multiline long text, PNG/JPEG/WebP/GIF/SVG, t
 and original-byte readback, capture-size boundaries, suspended/exited/rapid owners, deduplication,
 native click/Enter, action isolation and Ctrl+click. CLIP-03/12 data rules remain in logic tests.
 CLIP-02's conditional [application cases](simulation/clipboard/applications.native.js) copy from
-private Firefox/Chromium profiles and local HTML using native input. An independent
+an isolated Chromium profile and local HTML using native input. An independent
 GTK receiver checks text/HTML hashes; browser originals also require exact dimensions and pixels.
 The actual applications and GUI backends must be installed. XWayland remains separate; the GTK
 multi-MIME fixture alone does not establish browser compatibility.
@@ -432,7 +432,7 @@ These are coverage boundaries, not certification of every requirement within an 
 
 | Module | IDs | Actual evidence and boundary |
 | --- | --- | --- |
-| `clipboard/applications.native.js` | CLIP-02-firefox/chromium | Real local HTML sources, private browser profiles, native copy and independent MIME readback |
+| `clipboard/applications.native.js` | CLIP-02-chromium | Real local HTML, private Chromium profile, native copy and independent MIME readback |
 | `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04/10 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pinned-first restart, Unicode search and real replace errors; not password-manager or disk-full interoperability |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
 | `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, 2000-word/configured limits, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup |
@@ -458,7 +458,7 @@ fuse proves neither physical input delivery nor input-method bypass. CI scope is
 
 ### Extended native owners
 
-The registry now contains 134 cases (42 additions in the first batch, 9 in the next, one source removed by scope agreement), not 134 passing requirements. The following
+The registry now contains 133 cases (42 additions in the first batch, 9 in the next, two copy sources removed by scope agreement), not 133 passing requirements. The following
 entries extend the owners above rather than duplicate their happy paths. Failures belong in the
 [result snapshot](acceptance-status.md), not weaker expected results in this inventory.
 

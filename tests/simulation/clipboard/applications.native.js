@@ -167,20 +167,7 @@ async function image(desktop, application, target) {
     'fullscreen image viewport has no browser toolbar offset');
   await pause(150);
   const revision = desktop.app._controller.selectionRevision;
-  if (application.kind === 'firefox') {
-    // Firefox selects the image URL with Ctrl+A/C; its native Copy Image menu
-    // action is the operation that actually offers image bytes. The private
-    // profile requests en-US so the access key is independent of Shell locale.
-    const box = window.get_frame_rect();
-    await desktop.move(box.x + box.width / 2, box.y + box.height / 2);
-    desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_SECONDARY, Clutter.ButtonState.PRESSED);
-    await pause(25);
-    desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_SECONDARY, Clutter.ButtonState.RELEASED);
-    await pause(150);
-    await desktop.key(Clutter.KEY_y);
-  } else {
-    await application.copy(window);
-  }
+  await application.copy(window);
   await until(() => desktop.app._controller.selectionRevision > revision
     && !desktop.app._controller._captureInProgress && !desktop.app._controller._captureQueued
     && desktop.app._controller.items.some(item => item.isImage), 'native browser image copy captured', 15000);
@@ -199,12 +186,12 @@ async function image(desktop, application, target) {
     'Independent GTK image read must equal the browser-offered original bytes');
 }
 
-async function run(desktop, kind) {
+async function run(desktop) {
   const target = await Target.open(desktop);
   let application;
   try {
-    await target.offer(`external application baseline ${kind}`);
-    application = await Application.open(desktop, kind);
+    await target.offer('external application baseline chromium');
+    application = await Application.open(desktop, 'chromium');
     await richText(desktop, application, target);
     await image(desktop, application, target);
   } finally {
@@ -213,6 +200,5 @@ async function run(desktop, kind) {
 }
 
 export const cases = {
-  'CLIP-02-firefox': desktop => run(desktop, 'firefox'),
-  'CLIP-02-chromium': desktop => run(desktop, 'chromium'),
+  'CLIP-02-chromium': run,
 };

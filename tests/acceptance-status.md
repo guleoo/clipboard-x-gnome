@@ -11,13 +11,13 @@ Date: 2026-10-25. These are observed results, not certification of all requireme
   `9d7c1453af80df946c3ad2eb038323e6347588e76f1c41656cd77492c4820d17`.
 - Real isolated GNOME 50.6 / 51.1 with software rendering, independent GTK sources/receivers and
   native virtual input. No host installation/logout, production changes or CI expansion.
-- Native registry: **134 cases** after the agreed removal of one application source; previous batches
+- Native registry: **133 cases** after the agreed removal of two copy sources; previous batches
   added **42 + 9 cases**, plus strengthened existing checks.
   Cold dictionary restoration is a separate opt-in lifecycle check. Counts are not passing totals,
   nor can they be subtracted from the inventory's 173 requirements to calculate coverage.
 - The first 42-case batch initially reported **50: 34 PASS / 8 FAIL; 51: 33 PASS / 9 FAIL**.
   After the agreed ENV-05 screenshot boundary was reverified below, that set has **50: 35 PASS / 7 FAIL;
-  51: 34 PASS / 8 FAIL**. Neither count certifies all 134 cases or 173 requirements.
+  51: 34 PASS / 8 FAIL**. Neither count certifies all 133 cases or 173 requirements.
 - The next **9 cases passed on both 50 and 51**, including stricter reruns described below.
 - Sync uses disposable Docker servers, synthetic credentials, actual HTTP and a separate source
   client—not two full desktops. The private fixture allows 20,000 requests/60 seconds for the real
@@ -41,7 +41,7 @@ These are focused runs, not one uninterrupted passing suite:
 | Cold dictionaries | A local HTTP dictionary imported once is reused by two separate Shells; custom-word output and no additional HTTP request are checked |
 | Capture responsiveness | Actual 760,000-byte text and 2,881,318-byte PNG capture/thumbnail/persist; passed on both. On 51 maximum timer gaps were 26ms/21ms |
 | Large dictionary | 120,002-word UI import/index/cache passed on both: 50 import 8,563ms, cold/warm 560ms/434ms, max gap 53ms; 51 import 7,001ms, cold/warm 566ms/423ms, max gap 39ms. Import timings include native path entry |
-| Applications | Firefox/Chromium rich text and original images passed on 50/51. CLIP-02 is scoped to those two browsers; office applications are not a coverage requirement |
+| Applications | Chromium rich text and original images passed on 50/51. CLIP-02 is scoped to Chromium only; other browser and office copy sources are not a coverage requirement |
 | Input targets | Full 460-character systemd sample, optional user sample, CapsLock, US/German layout, Firefox/Chromium textareas and a GTK3/VTE PTY; mixed results below |
 | Displays | Actual virtual dual monitors / 125% Mutter scaling, color sampling and one-physical-pixel arrow step; not physical-monitor certification |
 
