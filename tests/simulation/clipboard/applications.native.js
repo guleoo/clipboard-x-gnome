@@ -26,57 +26,38 @@ export class Application {
     const app = new Application(desktop, kind);
     const profile = `${app.directory}/profile`;
     GLib.mkdir_with_parents(profile, 0o700);
-    const document = `${app.directory}/${app.title}.${kind === 'soffice' ? 'rtf' : 'html'}`;
+    const document = `${app.directory}/${app.title}.html`;
     app.expected = `${app.title} bold italic & tail.`;
     let command;
-    if (kind === 'soffice') {
-      write(document, `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Liberation Sans;}}\n`
-        + `\\viewkind4\\uc1\\pard\\f0\\fs28 ${app.title} \\b bold\\b0  \\i italic\\i0  & tail.\\par\n}`);
-      // The new profile has no links, macros, recovery files or inherited extensions.
-      GLib.mkdir_with_parents(`${profile}/user`, 0o700);
-      write(`${profile}/user/registrymodifications.xcu`, '<?xml version="1.0" encoding="UTF-8"?>'
-        + '<oor:items xmlns:oor="http://openoffice.org/2001/registry">'
-        + '<item oor:path="/org.openoffice.Inet/Settings">'
-        + '<prop oor:name="ooInetProxyType" oor:op="fuse"><value>2</value></prop>'
-        + '<prop oor:name="ooInetHTTPProxyName" oor:op="fuse"><value>127.0.0.1</value></prop>'
-        + '<prop oor:name="ooInetHTTPProxyPort" oor:op="fuse"><value>9</value></prop>'
-        + '<prop oor:name="ooInetHTTPSProxyName" oor:op="fuse"><value>127.0.0.1</value></prop>'
-        + '<prop oor:name="ooInetHTTPSProxyPort" oor:op="fuse"><value>9</value></prop>'
-        + '<prop oor:name="ooInetNoProxy" oor:op="fuse"><value></value></prop>'
-        + '</item></oor:items>');
-      command = [kind, `-env:UserInstallation=${uri(profile)}`, '--norestore', '--nodefault',
-        '--nofirststartwizard', '--nologo', '--writer', '--view', document];
+    write(document, '<!doctype html><html><head><meta charset="utf-8">'
+      + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">'
+      + `<title>${app.title}</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;`
+      + 'font:22px sans-serif;background:white;color:black}main{max-width:85%;padding:30px}</style></head>'
+      + `<body><main><p>${app.title} <b>bold</b> <i>italic</i> &amp; tail.</p></main></body></html>`);
+    if (kind === 'firefox') {
+      const preferences = {
+        'browser.shell.checkDefaultBrowser': false, 'browser.aboutwelcome.enabled': false,
+        'intl.locale.requested': 'en-US',
+        'browser.startup.homepage_override.mstone': 'ignore', 'browser.startup.page': 0,
+        'browser.newtabpage.enabled': false, 'browser.newtabpage.activity-stream.feeds.telemetry': false,
+        'datareporting.policy.dataSubmissionEnabled': false, 'toolkit.telemetry.enabled': false,
+        'app.update.auto': false, 'extensions.update.enabled': false,
+        'network.proxy.type': 1, 'network.proxy.http': '127.0.0.1', 'network.proxy.http_port': 9,
+        'network.proxy.ssl': '127.0.0.1', 'network.proxy.ssl_port': 9,
+        'network.proxy.no_proxies_on': allowLoopback ? '127.0.0.1' : '',
+        'network.trr.mode': 5, 'network.dns.disablePrefetch': true, 'network.prefetch-next': false,
+        'network.http.speculative-parallel-limit': 0,
+      };
+      write(`${profile}/user.js`, Object.entries(preferences)
+        .map(([key, value]) => `user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`).join('\n'));
+      command = [kind, '--no-remote', '--new-instance', '--profile', profile, '--new-window', uri(document)];
     } else {
-      write(document, '<!doctype html><html><head><meta charset="utf-8">'
-        + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">'
-        + `<title>${app.title}</title><style>html,body{height:100%;margin:0}body{display:grid;place-items:center;`
-        + 'font:22px sans-serif;background:white;color:black}main{max-width:85%;padding:30px}</style></head>'
-        + `<body><main><p>${app.title} <b>bold</b> <i>italic</i> &amp; tail.</p></main></body></html>`);
-      if (kind === 'firefox') {
-        const preferences = {
-          'browser.shell.checkDefaultBrowser': false, 'browser.aboutwelcome.enabled': false,
-          'intl.locale.requested': 'en-US',
-          'browser.startup.homepage_override.mstone': 'ignore', 'browser.startup.page': 0,
-          'browser.newtabpage.enabled': false, 'browser.newtabpage.activity-stream.feeds.telemetry': false,
-          'datareporting.policy.dataSubmissionEnabled': false, 'toolkit.telemetry.enabled': false,
-          'app.update.auto': false, 'extensions.update.enabled': false,
-          'network.proxy.type': 1, 'network.proxy.http': '127.0.0.1', 'network.proxy.http_port': 9,
-          'network.proxy.ssl': '127.0.0.1', 'network.proxy.ssl_port': 9,
-          'network.proxy.no_proxies_on': allowLoopback ? '127.0.0.1' : '',
-          'network.trr.mode': 5, 'network.dns.disablePrefetch': true, 'network.prefetch-next': false,
-          'network.http.speculative-parallel-limit': 0,
-        };
-        write(`${profile}/user.js`, Object.entries(preferences)
-          .map(([key, value]) => `user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`).join('\n'));
-        command = [kind, '--no-remote', '--new-instance', '--profile', profile, '--new-window', uri(document)];
-      } else {
-        command = [executable, `--user-data-dir=${profile}`, '--ozone-platform=wayland', '--no-first-run',
-          '--no-default-browser-check', '--disable-background-networking', '--disable-component-update',
-          '--disable-default-apps', '--disable-extensions', '--disable-sync', '--password-store=basic',
-          '--proxy-server=http://127.0.0.1:9', `--proxy-bypass-list=${allowLoopback ? '127.0.0.1' : '<-loopback>'}`,
-          `--host-resolver-rules=MAP * ~NOTFOUND${allowLoopback ? ', EXCLUDE 127.0.0.1' : ''}`, '--new-window', uri(document)];
-        if (GLib.get_user_name() === 'root') command.splice(1, 0, '--no-sandbox');
-      }
+      command = [executable, `--user-data-dir=${profile}`, '--ozone-platform=wayland', '--no-first-run',
+        '--no-default-browser-check', '--disable-background-networking', '--disable-component-update',
+        '--disable-default-apps', '--disable-extensions', '--disable-sync', '--password-store=basic',
+        '--proxy-server=http://127.0.0.1:9', `--proxy-bypass-list=${allowLoopback ? '127.0.0.1' : '<-loopback>'}`,
+        `--host-resolver-rules=MAP * ~NOTFOUND${allowLoopback ? ', EXCLUDE 127.0.0.1' : ''}`, '--new-window', uri(document)];
+      if (GLib.get_user_name() === 'root') command.splice(1, 0, '--no-sandbox');
     }
     const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.STDERR_MERGE});
     launcher.set_stdout_file_path(`${app.directory}/application.log`);
@@ -86,20 +67,13 @@ export class Application {
     launcher.setenv('no_proxy', '', true);
     launcher.setenv('MOZ_ENABLE_WAYLAND', '1', true);
     launcher.setenv('GDK_BACKEND', 'wayland', true);
-    launcher.setenv('SAL_USE_VCLPLUGIN', 'gtk3', true);
     app.process = launcher.spawnv(['python3', fixtureScript, 'launch', ...command]);
     app.group = app.process.get_identifier();
     app.exited = new Promise(resolve => app.process.wait_async(null, (process, result) => {
       try { process.wait_finish(result); } finally { app.finished = true; resolve(); }
     }));
     try {
-      try {
-        await until(() => app.window || app.finished, `actual ${kind} private document window`, 30000);
-      } catch (error) {
-        if (kind === 'soffice') block(`LibreOffice could not open a GUI document; a graphical GTK3 build is required. ${app.log}`);
-        throw error;
-      }
-      if (!app.window && kind === 'soffice') block(`LibreOffice has no GUI document window. ${app.log}`);
+      await until(() => app.window || app.finished, `actual ${kind} private document window`, 30000);
       assert(app.window, `${kind} exited without opening a private document; ${app.log}`);
       return app;
     } catch (error) { await app.close(); throw error; }
@@ -232,7 +206,7 @@ async function run(desktop, kind) {
     await target.offer(`external application baseline ${kind}`);
     application = await Application.open(desktop, kind);
     await richText(desktop, application, target);
-    if (kind !== 'soffice') await image(desktop, application, target);
+    await image(desktop, application, target);
   } finally {
     try { await application?.close(); } finally { await target.close(); }
   }
@@ -241,5 +215,4 @@ async function run(desktop, kind) {
 export const cases = {
   'CLIP-02-firefox': desktop => run(desktop, 'firefox'),
   'CLIP-02-chromium': desktop => run(desktop, 'chromium'),
-  'CLIP-02-office': desktop => run(desktop, 'soffice'),
 };

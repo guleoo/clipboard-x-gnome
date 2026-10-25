@@ -116,11 +116,10 @@ DICT 还要求 `--language zh_CN`；缺少 locale、应用或 GVfs 等依赖均�
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-02,DICT-06,DICT-08 --language zh_CN
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case LANG-02 --language ja
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case EDIT-07-native,EDIT-07-flatpak
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium,CLIP-02-office --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium --isolate-cases
 ```
 
-实际应用来源使用私有 profile、本地 HTML/RTF/图片。只有 headless 的 Office 构建不证明图形
-剪切板兼容性。Firefox 使用原生右键菜单“复制图像”，Chromium 复制独立图片；两者均要求
+实际应用来源使用私有浏览器 profile、本地 HTML/图片。Firefox 使用原生右键菜单“复制图像”，Chromium 复制独立图片；两者均要求
 独立回读原图字节，而不把 HTML 图片引用当作图片复制通过。
 
 真实同步服务端验收使用：
@@ -163,7 +162,7 @@ ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离
 
 ### 扩展本地覆盖
 
-原生注册表有 135 个可选用例，不代表 135 项功能已全部通过。新检查复用原有归属，补齐畸形图片恢复、
+原生注册表有 134 个可选用例，不代表 134 项功能已全部通过。新检查复用原有归属，补齐畸形图片恢复、
 原文丢失、语句 IO 故障、选择手势、设置持久化/布局、实际编辑进程及按目的地恢复同步队列。
 保留失败见[实际结果](acceptance-status_CN.md)。
 

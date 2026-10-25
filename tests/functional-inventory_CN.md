@@ -63,7 +63,7 @@ DeviceId 及绑定目的地的离线上传队列。不指定 `--previous` 仅代
 | ID | 要测什么 / 预期结果 |
 | --- | --- |
 | CLIP-01 | 独立应用复制短文本、多行、Tab、长文本、中文/英文、emoji、组合字符；记录与复制回读一致。 |
-| CLIP-02 | 浏览器/办公应用同时提供纯文本和 HTML，表示去重正确，优先正文与预览正确。 |
+| CLIP-02 | 实际 Firefox/Chromium 复制同时提供纯文本和 HTML，表示去重正确，优先正文与预览正确。 |
 | CLIP-03 | 空 HTML、仅 meta/标签、空白与无效表示不会制造伪条目；有效富文本不误删。 |
 | CLIP-04 | PNG/JPEG/WebP/GIF/SVG 等实际可提供的图像表示可捕获；失败有反馈，不永久卡在捕获中。 |
 | CLIP-05 | 宽图、长图、大分辨率图片缩略图等比；复制/编辑使用原图，不使用缩略图。 |
@@ -83,7 +83,7 @@ CLIP-01、04～11 使用独立 GTK Wayland 来源/接收端，覆盖多语言、
 CLIP-03、12 的数据规则仍归逻辑测试，不重复搬入 Shell。
 
 CLIP-02 的[实际应用条件用例](simulation/clipboard/applications.native.js)使用私有 Firefox/Chromium
-profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文本/HTML hash；浏览器原图还校验
+profile、本地 HTML，原生复制后由独立 GTK 回读文本/HTML hash；浏览器原图还校验
 尺寸和像素。需要安装实际应用和图形后端。XWayland 仍需独立证据；GTK 多 MIME 夹具不代替这些来源。
 
 ### 搜索、排序、保留与持久化 — HIST-01…10
@@ -417,7 +417,7 @@ logic/i18n/coverage.sh；翻译质量、RTL/长文本布局和视觉效果仍人
 
 | 模块 | ID | 实际验证及边界 |
 | --- | --- | --- |
-| `clipboard/applications.native.js` | CLIP-02-firefox/chromium/office | 实际本地 HTML/RTF、私有 profile、原生复制和独立 MIME 回读；依赖图形应用 |
+| `clipboard/applications.native.js` | CLIP-02-firefox/chromium | 实际本地 HTML、私有浏览器 profile、原生复制和独立 MIME 回读 |
 | `clipboard/policy.native.js` | PRIV-01/03/04/05/07、HIST-01/04/10 | 实际 GTK owner、敏感 MIME、真实窗口排除、在途取消、固定项重启排序、Unicode 搜索、真实文件替换错误；不等于真实密码管理器或磁盘满兼容性 |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | 原生输入/提交、Esc、独立目标收到复制/粘贴/模拟输入、关闭策略、延迟保存与实际 IO 失败重试；不覆盖全部 IME 或冷 Shell 恢复 |
 | `word-selection/native.js` | WORD-05/06/07/08、SELECT-01/03/04/06/07 | 真实行入口、选择结果回读、2000 边界/配置、长文 heartbeat、迟到处理、拖选、持续 Shift 连选、滚动和退出清理 |
@@ -442,7 +442,7 @@ WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本
 
 ### 扩展原生用例的归属
 
-原生注册表有 135 个用例（第一批新增 42，后续新增 9），不代表 135 项全部通过。以下扩展原有归属，不复制正常路径。
+原生注册表有 134 个用例（第一批新增 42，后续新增 9，按确认范围移除一个来源），不代表 134 项全部通过。以下扩展原有归属，不复制正常路径。
 实际失败写进[结果快照](acceptance-status_CN.md)，不在本清单放宽预期。
 
 | 归属 | 新增/强化 ID | 独立行为边界 |

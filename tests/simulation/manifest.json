@@ -17,8 +17,7 @@
     "module": "clipboard/applications.native.js",
     "cases": [
       {"id": "CLIP-02-firefox", "commands": ["python3", "firefox"]},
-      {"id": "CLIP-02-chromium", "commands": ["python3"]},
-      {"id": "CLIP-02-office", "commands": ["python3", "soffice"]}
+      {"id": "CLIP-02-chromium", "commands": ["python3"]}
     ]
   },
   {

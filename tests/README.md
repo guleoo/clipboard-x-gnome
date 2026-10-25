@@ -130,11 +130,10 @@ missing locale/application/GVfs dependencies are BLOCKED, not passed. Examples:
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-02,DICT-06,DICT-08 --language zh_CN
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case LANG-02 --language ja
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case EDIT-07-native,EDIT-07-flatpak
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium,CLIP-02-office --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-firefox,CLIP-02-chromium --isolate-cases
 ```
 
-Application-source cases use private profiles and local HTML/RTF/images. A headless-only Office
-build cannot establish graphical clipboard compatibility. Firefox uses its native Copy Image
+Application-source cases use private browser profiles and local HTML/images. Firefox uses its native Copy Image
 context-menu action; Chromium copies the standalone image. Both require independent original-byte
 readback, not an HTML image reference.
 
@@ -183,7 +182,7 @@ that a version-migration test. Logs and `report.json` are written to `build/life
 
 ### Extended local coverage
 
-The native registry has 135 selectable cases, not 135 certified features. New checks reuse existing
+The native registry has 134 selectable cases, not 134 certified features. New checks reuse existing
 owners for malformed-image recovery, missing originals, phrase IO failure, selection gestures,
 settings persistence/layout, actual editor processes and destination-bound sync recovery.
 See the [observed snapshot](acceptance-status.md) for retained failures.
