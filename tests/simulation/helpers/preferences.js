@@ -124,6 +124,21 @@ export class Preferences {
     const actual = snapshot.windows[0].widgets.find(widget => widget.type === 'GtkText' && widget.row === selector.row)?.text;
     assert(actual === text, `Native entry ${row} must contain its typed input (actual=${JSON.stringify(actual)})`);
   }
+  async choice(row, index) {
+    await this.scrollTo({type: 'AdwComboRow', row});
+    await this.click({type: 'AdwComboRow', row});
+    await this.desktop.key(Clutter.KEY_Home);
+    for (let current = 0; current < index; current++) await this.desktop.key(Clutter.KEY_Down);
+    await this.desktop.key(Clutter.KEY_Return);
+    const translated = await this.translate({row});
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const snapshot = await this.inspect();
+      const selected = snapshot.windows[0].widgets.find(widget => widget.type === 'AdwComboRow' && widget.row === translated.row)?.selected;
+      if (selected === index) return;
+      await pause(20);
+    }
+    throw new Error(`Native choice ${row} must select item ${index}`);
+  }
   async close() {
     if (!this.process) return;
     this.window('Clipboard X Gnome')?.delete(global.get_current_time());

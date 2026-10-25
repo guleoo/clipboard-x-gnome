@@ -10,14 +10,14 @@
       {"id": "CLIP-08"},
       {"id": "CLIP-09"},
       {"id": "CLIP-10"},
-      {"id": "CLIP-11"}
+      {"id": "CLIP-11"}, {"id": "CLIP-04-recovery"}, {"id": "CLIP-09-missing"}
     ]
   },
   {
     "module": "clipboard/applications.native.js",
     "cases": [
       {"id": "CLIP-02-firefox", "commands": ["python3", "firefox"]},
-      {"id": "CLIP-02-chromium", "commands": ["python3", "chromium"]},
+      {"id": "CLIP-02-chromium", "commands": ["python3"]},
       {"id": "CLIP-02-office", "commands": ["python3", "soffice"]}
     ]
   },
@@ -25,7 +25,8 @@
     "module": "phrases/native.js",
     "cases": [
       {"id": "PHRASE-01"}, {"id": "PHRASE-02"}, {"id": "PHRASE-04"},
-      {"id": "PHRASE-05"}, {"id": "PHRASE-06"}, {"id": "PHRASE-07"}
+      {"id": "PHRASE-05"}, {"id": "PHRASE-06"}, {"id": "PHRASE-07"},
+      {"id": "PHRASE-07-delete"}, {"id": "PHRASE-07-corrupt"}
     ]
   },
   {
@@ -33,7 +34,8 @@
     "cases": [
       {"id": "WORD-05"}, {"id": "WORD-06"}, {"id": "WORD-07"}, {"id": "WORD-08"},
       {"id": "SELECT-01"}, {"id": "SELECT-03"}, {"id": "SELECT-04"},
-      {"id": "SELECT-06"}, {"id": "SELECT-07"}
+      {"id": "SELECT-06"}, {"id": "SELECT-07"}, {"id": "SELECT-05"},
+      {"id": "SELECT-04-cross-row"}, {"id": "SELECT-07-disable"}
     ]
   },
   {
@@ -41,7 +43,9 @@
     "cases": [
       {"id": "DICT-02", "languages": ["zh"], "commands": ["nautilus"]},
       {"id": "DICT-06", "languages": ["zh"], "commands": ["python3"]},
-      {"id": "DICT-08", "languages": ["zh"], "commands": ["gnome-text-editor", "nautilus"]}
+      {"id": "DICT-08", "languages": ["zh"], "commands": ["gnome-text-editor", "nautilus"]},
+      {"id": "DICT-06-https", "languages": ["zh"], "commands": ["python3", "openssl"]},
+      {"id": "DICT-09", "languages": ["zh"], "commands": ["python3", "nautilus"]}
     ]
   },
   {
@@ -49,14 +53,27 @@
     "cases": [
       {"id": "PRIV-01"}, {"id": "PRIV-03"}, {"id": "PRIV-04"},
       {"id": "PRIV-05"}, {"id": "PRIV-07"},
-      {"id": "HIST-01"}, {"id": "HIST-04"}, {"id": "HIST-10"}
+      {"id": "HIST-01"}, {"id": "HIST-04"}, {"id": "HIST-10"},
+      {"id": "PRIV-05-exclusion", "commands": ["python3"]}
     ]
   },
   {
     "module": "terminal/native.js",
     "cases": [
       {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-05"},
-      {"id": "TYPE-06"}, {"id": "TYPE-07"}
+      {"id": "TYPE-06"}, {"id": "TYPE-07"}, {"id": "TYPE-03-user-sample"},
+      {"id": "TYPE-08-capslock"}, {"id": "TYPE-08-layout"}
+    ]
+  },
+  {
+    "module": "terminal/vte.native.js",
+    "cases": [{"id": "TYPE-02-vte", "commands": ["python3"]}]
+  },
+  {
+    "module": "terminal/browser.native.js",
+    "cases": [
+      {"id": "TYPE-09-firefox", "commands": ["python3", "firefox"]},
+      {"id": "TYPE-09-chromium", "commands": ["python3"]}
     ]
   },
   {
@@ -86,7 +103,22 @@
       {"id": "RECV-06", "server": true, "commands": ["python3"]},
       {"id": "RECV-07", "server": true, "commands": ["python3"]},
       {"id": "RECV-08", "server": true, "commands": ["python3"]},
-      {"id": "XFER-02-download", "server": true, "commands": ["python3"]}
+      {"id": "XFER-02-download", "server": true, "commands": ["python3"]},
+      {"id": "RECV-08-manual", "server": true, "commands": ["python3"]}
+    ]
+  },
+  {
+    "module": "sync/scenarios.native.js",
+    "cases": [
+      {"id": "SEND-03-image", "server": true},
+      {"id": "SEND-05-destinations", "server": true, "commands": ["python3"]},
+      {"id": "RECV-02-pages", "server": true, "commands": ["python3"]},
+      {"id": "RECV-03-boundaries", "server": true},
+      {"id": "CONN-08-empty", "server": true}, {"id": "CONN-08-revoked", "server": true},
+      {"id": "CONN-09-device", "server": true}, {"id": "CONN-09-offline", "server": true},
+      {"id": "XFER-05-disable-download", "server": true, "commands": ["python3"]},
+      {"id": "XFER-06-cancel-download", "server": true, "commands": ["python3"]},
+      {"id": "XFER-09-glib", "server": true}, {"id": "XFER-09-sha256sum", "server": true, "commands": ["sha256sum"]}
     ]
   },
   {
@@ -106,22 +138,46 @@
     "cases": [{"id": "SET-01"}, {"id": "SET-06"}, {"id": "SET-08"}]
   },
   {
+    "module": "settings/coverage.native.js",
+    "cases": [
+      {"id": "SET-02"}, {"id": "SET-04"}, {"id": "SET-05"}, {"id": "SET-07"},
+      {"id": "SET-09", "commands": ["python3"]}
+    ]
+  },
+  {
     "module": "settings/language.native.js",
     "cases": [{"id": "LANG-02", "languages": ["en", "zh", "ja", "ko"]}]
   },
   {
     "module": "color-picker/native.js",
-    "cases": [{"id": "COLOR-01"}, {"id": "COLOR-03"}, {"id": "COLOR-04"}, {"id": "COLOR-07"}]
+    "cases": [{"id": "COLOR-01"}, {"id": "COLOR-03"}, {"id": "COLOR-04"}, {"id": "COLOR-07"}, {"id": "COLOR-05-edges"}]
+  },
+  {
+    "module": "color-picker/displays.native.js",
+    "cases": [{"id": "COLOR-05-displays", "displays": ["dual", "fractional"]}]
   },
   {
     "module": "screenshot/native.js",
-    "cases": [{"id": "SHOT-03"}, {"id": "SHOT-04"}]
+    "cases": [{"id": "SHOT-03"}, {"id": "SHOT-04"}, {"id": "SHOT-03-editor", "commands": ["python3"]}, {"id": "SHOT-07"}]
   },
   {
     "module": "screenshot/editor.native.js",
     "cases": [
       {"id": "EDIT-01"}, {"id": "EDIT-06", "commands": ["python3"]},
-      {"id": "EDIT-07-native", "commands": ["gradia"]}, {"id": "EDIT-07-flatpak", "commands": ["flatpak"]}
+      {"id": "EDIT-07-native", "commands": ["gradia"]}, {"id": "EDIT-07-flatpak", "commands": ["flatpak"]},
+      {"id": "EDIT-07-lifetime", "commands": ["python3"]}
     ]
+  },
+  {
+    "module": "screenshot/remote.native.js",
+    "cases": [{"id": "EDIT-05-remote", "server": true, "commands": ["python3"]}]
+  },
+  {
+    "module": "lifecycle/native.js",
+    "cases": [{"id": "ENV-05-screenshot"}]
+  },
+  {
+    "module": "lifecycle/responsiveness.native.js",
+    "cases": [{"id": "OPS-01-capture"}]
   }
 ]

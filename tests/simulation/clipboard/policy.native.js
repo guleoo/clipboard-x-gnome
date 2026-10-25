@@ -1,5 +1,6 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
@@ -88,6 +89,30 @@ export const cases = {
       assert(!desktop.app._controller.items.some(item => item.text === 'cancelled policy snapshot'),
         'Turning policy on and back off must still reject the old in-flight bytes');
       await capture(desktop, target, 'fresh public owner after cancelled policy');
+    } finally { await target.close(); }
+  },
+
+  async 'PRIV-05-exclusion'(desktop) {
+    const target = await Target.open(desktop);
+    try {
+      const controller = desktop.app._controller;
+      const windowClass = target.window.get_wm_class();
+      assert(windowClass, 'Actual owner must expose an exclusion class');
+      for (const image of [false, true]) {
+        const bytes = new TextEncoder().encode(image ? 'delayed invalid PNG source' : 'late excluded source');
+        const revision = controller.selectionRevision;
+        await target.offerBytes({[image ? 'image/png' : 'text/plain;charset=utf-8']: bytes}, {pause: true});
+        await until(() => controller.selectionRevision > revision && controller._captureInProgress,
+          'real owner transfer is pending before exclusion changes');
+        desktop.settings.set_strv('excluded-apps', [windowClass]);
+        desktop.settings.set_strv('excluded-apps', []);
+        await target.resume();
+        await until(() => !controller._captureInProgress && !controller._captureQueued, 'cancelled excluded owner finished');
+        const hash = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes);
+        assert(!controller.items.some(item => item.primary.sha256 === hash),
+          'Removing exclusion again must not revive bytes from the previous policy');
+        await capture(desktop, target, `fresh allowed owner after exclusion ${image}`);
+      }
     } finally { await target.close(); }
   },
 

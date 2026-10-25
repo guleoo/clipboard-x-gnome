@@ -9,7 +9,7 @@ export class Server {
     await server.request('POST', '/session', {username: GLib.getenv('CBX_SIMULATION_ADMIN'),
       password: GLib.getenv('CBX_SIMULATION_PASSWORD')});
     server.identity = await server.device(desktop.settings.get_string('device-id'));
-    server.channel = await server.request('POST', '/channels', {name: `Native ${GLib.uuid_string_random()}`});
+    server.channel = await server.createChannel();
     await server.join(server.channel.id, server.identity.id);
     await server.configure();
     return server;
@@ -23,6 +23,7 @@ export class Server {
     this.session = new Soup.Session({timeout: 15});
     this.session.add_feature(new Soup.CookieJar());
     this.createdDevices = [];
+    this.createdChannels = [];
   }
 
   async request(method, path, value) {
@@ -52,6 +53,12 @@ export class Server {
 
   join(channelId, deviceId) { return this.request('PUT', `/channels/${channelId}/members/${deviceId}`, {}); }
 
+  async createChannel() {
+    const channel = await this.request('POST', '/channels', {name: `Native ${GLib.uuid_string_random()}`});
+    this.createdChannels.push(channel.id);
+    return channel;
+  }
+
   async configure(channelId = this.channel.id, key = this.identity.key, address = this.address) {
     const {SyncConfigurationStore} = await import(`${this.desktop.app.dir.get_uri()}/sync/configuration-store.js`);
     await new SyncConfigurationStore().saveConnection({serverAddress: address, apiKey: key, activeChannelId: channelId});
@@ -80,7 +87,7 @@ export class Server {
     try {
       this.desktop.settings.set_boolean('sync-enabled', false);
       await until(() => !this.desktop.app._sync.ready, 'fixture session stopped before server cleanup');
-      if (this.channel) await this.request('DELETE', `/channels/${this.channel.id}`);
+      for (const id of this.createdChannels) await this.request('DELETE', `/channels/${id}`);
       for (const id of this.createdDevices) await this.request('DELETE', `/devices/${id}`);
     } finally { this.session.abort(); }
   }

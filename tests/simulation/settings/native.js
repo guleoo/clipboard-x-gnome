@@ -1,7 +1,11 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Preferences} from '../helpers/preferences.js';
+import {Target} from '../helpers/target.js';
+import {capture} from '../clipboard/native.js';
 
 async function fixture(desktop, run) {
   const preferences = await Preferences.open(desktop);
@@ -24,6 +28,14 @@ export const cases = {
     const previous = desktop.settings.get_strv('panel-shortcut').join();
     await preferences.click(button);
     await until(() => preferences.window(title), 'real native shortcut recorder');
+    await desktop.key(Clutter.KEY_Control_L);
+    assert(Boolean(preferences.window(title)) && desktop.settings.get_strv('panel-shortcut').join() === previous,
+      'A modifier alone must leave the real recorder waiting without changing its binding');
+    await desktop.key(Clutter.KEY_Left);
+    const invalid = (await preferences.inspect()).windows.find(window => window.title === title);
+    assert(invalid?.widgets.some(widget => widget.type === 'GtkImage' && widget.icon === 'dialog-warning-symbolic')
+      && desktop.settings.get_strv('panel-shortcut').join() === previous,
+    'An invalid unmodified navigation key must show native warning feedback without saving or closing');
     await desktop.key(Clutter.KEY_Escape);
     await until(() => !preferences.window(title), 'Escape closes recorder');
     assert(desktop.settings.get_strv('panel-shortcut').join() === previous, 'Cancel must preserve existing shortcut');
@@ -47,26 +59,59 @@ export const cases = {
   'SET-08': desktop => fixture(desktop, async preferences => {
     desktop.settings.set_int('panel-width', 460);
     await desktop.phrases.replace(['Data survives native settings reset']);
-    const identity = desktop.settings.get_string('device-id');
-    const button = {type: 'GtkButton', label: 'Restore'};
-    await preferences.scrollTo(button);
-    await preferences.click(button);
-    await pause(100);
-    assert(desktop.settings.get_int('panel-width') === 460, 'First Restore only asks for confirmation');
-    await desktop.key(Clutter.KEY_Escape);
-    assert(desktop.settings.get_int('panel-width') === 460, 'Cancelling confirmation must preserve settings');
-    await preferences.click(button);
-    await pause(100);
-    await preferences.click({type: 'GtkButton', label: 'Restore', row: ''});
-    await until(() => desktop.settings.get_int('panel-width') === desktop.settings.get_default_value('panel-width').deepUnpack(),
-      'native confirmation restores configured width');
-    assert(desktop.settings.get_string('device-id') === identity
-      && desktop.phrases.phrases.includes('Data survives native settings reset'),
-    'Native reset must preserve device identity and phrase data');
-    // The actual preferences bindings must remain usable after the reset.
-    await preferences.page('general');
-    await preferences.scrollTo({type: 'AdwSwitchRow', row: 'Show panel indicator'});
-    await preferences.click({type: 'AdwSwitchRow', row: 'Show panel indicator'});
-    await until(() => !desktop.settings.get_boolean('show-indicator'), 'preferences remains live after reset');
+    const target = await Target.open(desktop);
+    let item;
+    try { item = await capture(desktop, target, 'History survives the actual Restore confirmation'); }
+    finally { await target.close(); }
+    await desktop.app._controller.persist();
+    const {DictionaryStore} = await import(`${desktop.app.dir.get_uri()}/clipboard/tokenizer/dictionary/store.js`);
+    const {SyncConfigurationStore} = await import(`${desktop.app.dir.get_uri()}/sync/configuration-store.js`);
+    const dictionaries = new DictionaryStore();
+    const source = Gio.File.new_for_path(`${GLib.getenv('CBX_SIMULATION_RUNTIME')}/reset-preserved.dict`);
+    source.replace_contents(new TextEncoder().encode('# locale: zh_CN\n# name: Reset Preservation\n青铜机械海豚 1000\n'),
+      null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+    const dictionary = await dictionaries.importFile(source);
+    const imported = dictionaries.getFile(dictionary.fileName);
+    const [, dictionaryBefore] = imported.load_contents(null);
+    const connection = new SyncConfigurationStore();
+    const connectionFile = Gio.File.new_for_path(connection.path);
+    const originalConnection = connectionFile.query_exists(null) ? connectionFile.load_contents(null)[1] : null;
+    const configuration = {serverAddress: '127.0.0.1:9', apiKey: 'synthetic-reset-key', activeChannelId: GLib.uuid_string_random()};
+    await connection.saveConnection(configuration);
+    const [, connectionBefore] = connectionFile.load_contents(null);
+    try {
+      const identity = desktop.settings.get_string('device-id');
+      const button = {type: 'GtkButton', label: 'Restore'};
+      await preferences.scrollTo(button);
+      await preferences.click(button);
+      await pause(100);
+      assert(desktop.settings.get_int('panel-width') === 460, 'First Restore only asks for confirmation');
+      await desktop.key(Clutter.KEY_Escape);
+      assert(desktop.settings.get_int('panel-width') === 460, 'Cancelling confirmation must preserve settings');
+      await preferences.click(button);
+      await pause(100);
+      await preferences.click({type: 'GtkButton', label: 'Restore', row: ''});
+      await until(() => desktop.settings.get_int('panel-width') === desktop.settings.get_default_value('panel-width').deepUnpack(),
+        'native confirmation restores configured width');
+      assert(desktop.settings.get_string('device-id') === identity
+        && desktop.phrases.phrases.includes('Data survives native settings reset'),
+      'Native reset must preserve device identity and phrase data');
+      assert(desktop.app._controller.items.some(value => value.id === item.id)
+        && (await desktop.app._controller._store.load()).some(value => value.id === item.id),
+      'Native Restore must preserve actual captured history in memory and on disk');
+      assert(GLib.base64_encode(imported.load_contents(null)[1]) === GLib.base64_encode(dictionaryBefore),
+        'Native Restore must preserve the managed dictionary bytes');
+      assert(GLib.base64_encode(connectionFile.load_contents(null)[1]) === GLib.base64_encode(connectionBefore),
+        'Native Restore must preserve the entire server connection file');
+      // The actual preferences bindings must remain usable after the reset.
+      await preferences.page('general');
+      await preferences.scrollTo({type: 'AdwSwitchRow', row: 'Show panel indicator'});
+      await preferences.click({type: 'AdwSwitchRow', row: 'Show panel indicator'});
+      await until(() => !desktop.settings.get_boolean('show-indicator'), 'preferences remains live after reset');
+    } finally {
+      await dictionaries.remove(dictionary.fileName);
+      if (originalConnection) connectionFile.replace_contents(originalConnection, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+      else if (connectionFile.query_exists(null)) connectionFile.delete(null);
+    }
   }),
 };

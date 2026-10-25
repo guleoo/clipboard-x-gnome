@@ -456,6 +456,33 @@ against a 1000ms main-loop budget. Each sample logs length, word count and maxim
 budgets, skip failures or change production code just to make tests green. A virtual backend modifier
 fuse proves neither physical input delivery nor input-method bypass. CI scope is unchanged.
 
+### Extended native owners
+
+The registry now contains 126 cases (42 additions), not 126 passing requirements. The following
+entries extend the owners above rather than duplicate their happy paths. Failures belong in the
+[result snapshot](acceptance-status.md), not weaker expected results in this inventory.
+
+| Owner | Added/strengthened IDs | Distinct behavior |
+| --- | --- | --- |
+| `clipboard/native.js`, `clipboard/policy.native.js` | CLIP-04-recovery, CLIP-09-missing, PRIV-05-exclusion | Failed decode then normal capture; missing original after restart; exclusion while a real owner is paused |
+| `phrases/native.js` | PHRASE-07-delete/corrupt | Real deletion IO failure/retry and invalid persisted data recovery |
+| `word-selection/native.js` | SELECT-04-cross-row, SELECT-05, SELECT-07-disable | Held Shift across rows, Space/Enter and actual disable while dragging |
+| `terminal/native.js` | TYPE-03/user-sample, TYPE-08-capslock/layout | Full maintained sample at both speeds, optional user file, real CapsLock and US/German input sources |
+| `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
+| `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Observe actual shared screenshot modal at disable; large text/image capture/thumbnail/save main-loop gaps |
+| `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |
+| `word-selection/dictionary.native.js`, `lifecycle/cold.smoke.js` | DICT-02/06/06-https/07/08/09 | Language lists, multiple sources, refresh failure/declaration change, actual editor, 120,002-word indexing, two-Shell no-implicit-download proof; TLS case is rejection, not trusted-CA success |
+| `sync/scenarios.native.js` | SEND-03-image, SEND-05-destinations, RECV-02-pages/03-boundaries | Actual image/send and text-image/receive boundaries, 205-item production pagination, durable cursor and per-address/Channel queues across restart |
+| `sync/scenarios.native.js`, `sync/network.native.js` | CONN-08-empty/revoked, CONN-09-device/offline, XFER-05-disable-download/06-cancel-download/09-glib/09-sha256sum, RECV-08-manual | Real missing/revoked access, refused connection, session/task cancel, both checksum paths and independently executed newer-choice branches |
+| `screenshot/native.js`, `screenshot/editor.native.js`, `screenshot/remote.native.js` | SHOT-03-editor/07, EDIT-05-remote/07-lifetime | Actual screenshot/edit combinations, cancel/retry, remote original to a real custom editor, offline cache and editor surviving extension disable |
+| `color-picker/native.js`, `color-picker/displays.native.js` | COLOR-05-edges/displays | Corners/clamping, actual dual virtual displays and 125% scaling; coordinates, clipboard and physical screenshot-pixel step |
+
+Select conditional displays with `--display dual` or `--display fractional`; use
+`tools/test-lifecycle.py --dictionary-cold` for a separate cold dictionary run. Application/locale
+dependencies are explicit. Prepared environments are still needed for real IME, trusted HTTPS,
+Flatpak Gradia and two-full-desktop races; those are not declared inherently untestable.
+Do not duplicate logic-owned format, storage, policy or error-response data matrices into Shell.
+
 ## Duplicate-test review
 
 | Previous overlap | Disposition |

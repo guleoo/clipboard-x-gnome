@@ -1,6 +1,6 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
-import {assert, pause, until} from '../helpers/desktop.js';
+import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {Server} from '../helpers/server.js';
 import {Gate} from '../helpers/gate.js';
@@ -105,33 +105,8 @@ export const cases = {
       'Already cached primary remains usable offline without a new request');
   }),
 
-  'RECV-08': desktop => fixture(desktop, async ({gate, peer, target}) => {
-    const local = await capture(desktop, target, 'manually selected local item wins');
-    for (const selection of ['new-copy', 'manual-item']) {
-      const remote = await peer.call('publish', {text: `late original must not replace ${selection}`, threshold: 4096});
-      const item = await received(desktop, remote.id);
-      gate.set({path: contentPath, hold: true});
-      await click(desktop, item);
-      await held(gate);
-      if (selection === 'new-copy') {
-        await capture(desktop, target, 'new external owner wins');
-      } else {
-        await desktop.open();
-        await desktop.search(local.text);
-        await desktop.click(desktop.history._itemRows.get(local.id).focusActors[0]);
-      }
-      const expected = selection === 'new-copy' ? 'new external owner wins' : local.text;
-      assert((await target.clipboard()).text === expected, 'Newer choice must already own the real clipboard');
-      gate.set({});
-      await complete(desktop, item);
-      await pause(150);
-      const actual = (await target.clipboard()).text;
-      assert(actual === expected, `Late remote download must not overwrite ${selection} (actual=${JSON.stringify(actual)})`);
-      await desktop.open();
-      await desktop.search('');
-      await desktop.close();
-    }
-  }),
+  'RECV-08': desktop => lateSelection(desktop, 'new-copy'),
+  'RECV-08-manual': desktop => lateSelection(desktop, 'manual-item'),
 
   'XFER-02-download': desktop => fixture(desktop, async ({gate, peer, target}) => {
     const text = 'bounded download progress '.repeat(100000);
@@ -162,3 +137,39 @@ export const cases = {
     } finally { GLib.Source.remove(timer); sync.disconnect(signal); }
   }),
 };
+
+// Independent entry points ensure a failure in external-copy precedence cannot
+// prevent the distinct native history-selection precedence from being tested.
+async function lateSelection(desktop, selection) {
+  return fixture(desktop, async ({gate, peer, target}) => {
+    const local = await capture(desktop, target, 'manually selected local item wins');
+    const remote = await peer.call('publish', {text: `late original must not replace ${selection}`, threshold: 4096});
+    const item = await received(desktop, remote.id);
+    const content = desktop.app._content;
+    const activate = content.activate;
+    let settled = false;
+    content.activate = async function (value, ...options) {
+      try { return await activate.call(this, value, ...options); }
+      finally { if (value.id === item.id) settled = true; }
+    };
+    try {
+      gate.set({path: contentPath, hold: true});
+      await click(desktop, item);
+      await held(gate);
+      if (selection === 'new-copy') {
+        await capture(desktop, target, 'new external owner wins');
+      } else {
+        await desktop.open();
+        await desktop.search(local.text);
+        await desktop.click(desktop.history._itemRows.get(local.id).focusActors[0]);
+      }
+      const expected = selection === 'new-copy' ? 'new external owner wins' : local.text;
+      assert((await target.clipboard()).text === expected, 'Newer choice must already own the real clipboard');
+      gate.set({});
+      await complete(desktop, item);
+      await until(() => settled, 'original native activation promise has settled');
+      const actual = (await target.clipboard()).text;
+      assert(actual === expected, `Late remote download must not overwrite ${selection} (actual=${JSON.stringify(actual)})`);
+    } finally { content.activate = activate; }
+  });
+}

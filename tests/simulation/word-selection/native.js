@@ -5,6 +5,7 @@ import {Target} from '../helpers/target.js';
 import {capture} from '../clipboard/native.js';
 import {run as drag} from './drag.smoke.js';
 import {clippedWordSelection} from './viewport.smoke.js';
+import {restart} from '../helpers/restart.js';
 
 async function request(desktop, item) {
   await desktop.open();
@@ -181,6 +182,64 @@ export const cases = {
     } finally { await target.close(); }
   },
 
+  async 'SELECT-05'(desktop) {
+    const target = await Target.open(desktop);
+    try {
+      await openWords(desktop, target, 'A B C D');
+      await firstWord(desktop);
+      await desktop.key(Clutter.KEY_space);
+      await until(() => selection(desktop.words) === '0', 'Space selects the focused word once');
+      await desktop.key(Clutter.KEY_space);
+      await until(() => selection(desktop.words) === '', 'Space deselects the focused word once');
+      await desktop.key(Clutter.KEY_Return);
+      await until(() => selection(desktop.words) === '0', 'Enter selects the focused word once');
+      await desktop.key(Clutter.KEY_Return);
+      await until(() => selection(desktop.words) === '', 'Enter deselects the focused word once');
+      assert(desktop.indicator.menu.isOpen && desktop.manager.is('tokenizer'),
+        'Word activation must not copy and close the panel');
+      await desktop.key(Clutter.KEY_Right);
+      assert(desktop.focus === desktop.words.buttons[1], 'Right navigates to B without selecting it');
+      assert(selection(desktop.words) === '', 'Plain arrows must not change selection');
+    } finally { await target.close(); }
+  },
+
+  async 'SELECT-04-cross-row'(desktop) {
+    const target = await Target.open(desktop);
+    let held = false;
+    try {
+      desktop.settings.set_int('panel-width', 320);
+      await openWords(desktop, target, 'Aaaaaaaaaa Bbbbbbbbbb Cccccccccc Dddddddddd Eeeeeeeeee Ffffffffff');
+      const panel = desktop.words;
+      const first = panel.buttons[0];
+      const nextRow = panel.tokenBox.get_children()[1];
+      assert(nextRow?.get_children().length, 'Narrow geometry must produce a second word row');
+      const center = rect(first).x + rect(first).width / 2;
+      const targetButton = nextRow.get_children().reduce((closest, button) => {
+        const box = rect(button);
+        const distance = Math.abs(box.x + box.width / 2 - center);
+        return distance < closest.distance ? {button, distance} : closest;
+      }, {button: null, distance: Infinity}).button;
+      const targetIndex = panel.buttons.indexOf(targetButton);
+      await firstWord(desktop);
+      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Shift_L, Clutter.KeyState.PRESSED);
+      held = true;
+      await pause(25);
+      await desktop.key(Clutter.KEY_Down);
+      await until(() => desktop.focus === targetButton, 'Shift+Down reaches the nearest word on the next row');
+      assert(selection(panel) === Array.from({length: targetIndex + 1}, (_, index) => index).join(','),
+        'Cross-row Shift must select every source-order word between anchor and destination');
+      await desktop.key(Clutter.KEY_Up);
+      await until(() => desktop.focus === first && selection(panel) === '0',
+        'Shift+Up backtracking restores the original selection outside the anchor');
+    } finally {
+      if (held) {
+        desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Shift_L, Clutter.KeyState.RELEASED);
+        await pause(25);
+      }
+      await target.close();
+    }
+  },
+
   async 'SELECT-06'(desktop) {
     const target = await Target.open(desktop);
     try {
@@ -229,6 +288,35 @@ export const cases = {
         await desktop.close();
         desktop.manager.reset();
       }
+    } finally {
+      if (held) desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
+      await target.close();
+    }
+  },
+
+  async 'SELECT-07-disable'(desktop) {
+    const target = await Target.open(desktop);
+    let held = false;
+    try {
+      await openWords(desktop, target, 'A B C D');
+      const old = desktop.words;
+      const box = rect(old.buttons[0]);
+      await desktop.move(box.x + box.width / 2, box.y + box.height / 2);
+      desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.PRESSED);
+      held = true;
+      await until(() => Boolean(old._selectionDrag), 'held drag exists before actual disable');
+      let released = false;
+      await restart(desktop, async () => {
+        released = !old._selectionDrag && old._dragSourceId === 0 && old.buttons.length === 0;
+        desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
+        held = false;
+        await pause(25);
+      });
+      assert(released, 'Disable must release the active drag, polling source and old button references');
+      await openWords(desktop, target, 'fresh selection after disable');
+      await desktop.click(desktop.words.buttons[0]);
+      await until(() => !desktop.words._selectionDrag && selection(desktop.words) === '0',
+        'New panel must accept a normal click without inheriting the held session');
     } finally {
       if (held) desktop.pointer.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
       await target.close();

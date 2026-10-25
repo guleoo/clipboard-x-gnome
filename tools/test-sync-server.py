@@ -4,10 +4,12 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -48,6 +50,17 @@ def main():
              '-e', 'CBX_TLS_CERT_FILE=', '-e', 'CBX_TLS_KEY_FILE=', '-e', 'CBX_PUBLIC_ORIGIN=', image],
             env=env, stdout=subprocess.DEVNULL)
         created_container = True
+        # Pagination needs >200 actual publications (several requests each).
+        # Configure only this owned fixture, never weaken the deployed defaults
+        # or silently retry 429s and call that a successful client operation.
+        with tempfile.TemporaryDirectory(prefix='cbx-server-config-') as temporary:
+            configuration_file = Path(temporary) / 'config.yaml'
+            run(['docker', 'cp', f'{name}:/app/storage/config.yaml', str(configuration_file)])
+            contents = configuration_file.read_text()
+            if re.search(r'^http\s*:', contents, re.M):
+                raise RuntimeError('Test image already defines http options; provide the standard server fixture image')
+            configuration_file.write_text(contents + '\nhttp:\n  rate-limit:\n    limit: 20000\n    window: 60\n')
+            run(['docker', 'cp', str(configuration_file), f'{name}:/app/storage/config.yaml'])
         run(['docker', 'start', name], stdout=subprocess.DEVNULL)
         configuration = json.loads(subprocess.check_output(['docker', 'inspect', name]))[0]
         port = configuration['NetworkSettings']['Ports']['28787/tcp'][0]['HostPort']
@@ -71,7 +84,7 @@ def main():
                    CBX_SIMULATION_PASSWORD=env['CBX_ADMIN_PASSWORD'], CBX_SIMULATION_SERVER_IMAGE=configuration['Image'])
         env['CBX_SIMULATION_TEST_REVISION'] = (subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
           text=True, capture_output=True).stdout.strip() if shutil.which('git') else '')
-        print(f'Isolated server ready: {address}; container={name}', flush=True)
+        print(f'Isolated server ready: {address}; container={name}; fixture request limit=20000/60s', flush=True)
         if args.shell_container:
             archive = args.archive.resolve().relative_to(ROOT)
             env['CBX_SIMULATION_SERVER'] = 'http://127.0.0.1:28787'

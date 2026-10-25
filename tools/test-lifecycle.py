@@ -3,9 +3,11 @@
 import argparse
 import base64
 from configparser import ConfigParser
+from contextlib import contextmanager, ExitStack
 from datetime import datetime, timezone
 import hashlib
 import json
+import locale
 import os
 from pathlib import Path
 import re
@@ -13,10 +15,36 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import zipfile
 from simulation_runtime import UUID, fingerprint, prepare_archive, private_directory
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+@contextmanager
+def dictionary_endpoint(runtime):
+    """Keep one real HTTP source alive across both Shell PIDs."""
+    directory = runtime / 'dictionary-http'
+    directory.mkdir()
+    (directory / 'response.json').write_text(json.dumps({
+        'text': '# locale: zh_CN\n# name: Cold network dictionary\n冷启动机械海豚 999999\n'}))
+    process = subprocess.Popen([sys.executable, str(ROOT / 'tests/fixtures/dictionary-http.py'), str(directory)],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        deadline = time.monotonic() + 5
+        state = directory / 'state.json'
+        while not state.is_file():
+            if process.poll() is not None or time.monotonic() > deadline:
+                raise RuntimeError('Private dictionary HTTP endpoint did not start')
+            time.sleep(0.02)
+        yield directory
+    finally:
+        process.terminate()
+        try: process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
 
 
 def main():
@@ -24,6 +52,7 @@ def main():
     parser.add_argument('archive', type=Path)
     parser.add_argument('--previous', type=Path, help='Previous package for an actual version upgrade; defaults to reinstalling the same ZIP')
     parser.add_argument('--shell', choices=['50', '51'])
+    parser.add_argument('--dictionary-cold', action='store_true', help='Also check persisted network dictionaries across two real Shells')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/lifecycle-tests')
     args = parser.parse_args()
     for dependency in ['gnome-shell', 'gnome-extensions', 'dbus-run-session', 'dbus-update-activation-environment', 'gsettings', 'timeout']:
@@ -39,7 +68,7 @@ def main():
     current_bytes = args.archive.read_bytes()
     previous_bytes = (args.previous or args.archive).read_bytes()
     source_hash = fingerprint(ROOT)
-    with private_directory() as runtime:
+    with private_directory() as runtime, ExitStack() as resources:
         current_source = runtime / 'current-source.zip'
         previous_source = runtime / 'previous-source.zip'
         current_source.write_bytes(current_bytes)
@@ -56,6 +85,15 @@ def main():
                    XDG_STATE_HOME=str(runtime / 'state'), GSETTINGS_BACKEND='keyfile',
                    LIBGL_ALWAYS_SOFTWARE='1', GTK_A11Y='none', NO_AT_BRIDGE='1',
                    XDG_CURRENT_DESKTOP='GNOME', XDG_SESSION_TYPE='wayland', LANG='C.UTF-8', LC_ALL='C.UTF-8', LANGUAGE='en_US')
+        dictionary = resources.enter_context(dictionary_endpoint(runtime)) if args.dictionary_cold else None
+        dictionary_requests = None
+        if dictionary:
+            try: locale.setlocale(locale.LC_MESSAGES, 'en_US.UTF-8')
+            except locale.Error: parser.error('--dictionary-cold requires generated en_US.UTF-8')
+            env.update(LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8', LANGUAGE='zh_CN',
+                       CBX_SIMULATION_DICTIONARY_STATE=str(dictionary / 'state.json'),
+                       CBX_SIMULATION_DICTIONARY_URL='http://127.0.0.1:'
+                         + str(json.loads((dictionary / 'state.json').read_text())['port']) + '/cold.dict')
         for key in ['DISPLAY', 'WAYLAND_DISPLAY', 'GDK_BACKEND', 'GSETTINGS_SCHEMA_DIR']:
             env.pop(key, None)
         background = runtime / 'background.png'
@@ -95,7 +133,19 @@ def main():
             results[phase] = 'PASS' if status == 0 and expected in log.read_text(errors='replace') else f'FAIL exit {status}'
             print(f'{phase}: {results[phase]}; {log}', flush=True)
             if results[phase] != 'PASS': break
+            if dictionary:
+                requests = json.loads((dictionary / 'state.json').read_text())['requests']
+                if phase == 'seed':
+                    dictionary_requests = requests
+                    if requests < 1:
+                        results['DICT-07-cold'] = 'FAIL explicit import made no real request'
+                        break
+                else:
+                    valid = requests == dictionary_requests and '[lifecycle] PASS DICT-07-cold' in log.read_text(errors='replace')
+                    results['DICT-07-cold'] = 'PASS' if valid else 'FAIL implicit download or cached dictionary not used'
         if results.get('restore') == 'PASS': results['ENV-02'] = results['ENV-06'] = 'PASS'
+        if dictionary and 'DICT-07-cold' not in results:
+            results['DICT-07-cold'] = 'FAIL cold dictionary scenario did not finish'
     if fingerprint(ROOT) != source_hash: results['sources'] = 'FAIL tests changed during this run'
     document = {'shell': shell, 'sha256': hashlib.sha256(current_bytes).hexdigest(),
                 'testsFingerprint': source_hash,
@@ -104,7 +154,7 @@ def main():
                 'replacement': 'version upgrade' if args.previous else 'same-package reinstall', 'results': results}
     (report / 'report.json').write_text(json.dumps(document, indent=2) + '\n')
     print(f'Report: {report}')
-    return 0 if results.get('ENV-06') == 'PASS' and 'sources' not in results else 1
+    return 0 if results.get('ENV-06') == 'PASS' and 'sources' not in results and results.get('DICT-07-cold', 'PASS') == 'PASS' else 1
 
 
 if __name__ == '__main__': sys.exit(main())

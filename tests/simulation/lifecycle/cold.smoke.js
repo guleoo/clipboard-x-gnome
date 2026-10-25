@@ -52,6 +52,13 @@ export async function run() {
       'production history save and destination-bound intent are durable', 10000);
       const expected = {pid: new Gio.Credentials().get_unix_pid(), deviceId: desktop.settings.get_string('device-id'),
         pinnedId: pinned.id, queuedId: queued.id, channelId};
+      const source = GLib.getenv('CBX_SIMULATION_DICTIONARY_URL');
+      if (source) {
+        const dictionary = await desktop.app._dictionaryStore.refreshSource(source);
+        desktop.settings.set_strv('tokenizer-dictionary-files', [dictionary.fileName]);
+        expected.dictionaryFile = dictionary.fileName;
+        expected.dictionarySource = source;
+      }
       Gio.File.new_for_path(statePath).replace_contents(new TextEncoder().encode(JSON.stringify(expected)), null, false,
         Gio.FileCreateFlags.REPLACE_DESTINATION, null);
       print('[lifecycle] SEEDED actual clipboard, phrase and durable destination-bound upload');
@@ -71,6 +78,25 @@ export async function run() {
   assert(documents.some(document => document.entries.some(entry => entry.itemId === expected.queuedId
     && entry.channelId === expected.channelId && entry.deviceId === expected.deviceId
     && entry.serverAddress === 'http://127.0.0.1:1')), 'Cold startup must retain the original queue destination');
+  if (expected.dictionaryFile) {
+    const state = GLib.getenv('CBX_SIMULATION_DICTIONARY_STATE');
+    const before = read(state).requests;
+    const dictionaries = await desktop.app._dictionaryStore.list();
+    assert(dictionaries.some(dictionary => dictionary.fileName === expected.dictionaryFile
+      && dictionary.source === expected.dictionarySource), 'Cold startup retains the network source metadata');
+    const target = await Target.open(desktop);
+    try {
+      const item = await capture(desktop, target, '冷启动机械海豚');
+      await desktop.open();
+      await desktop.click(desktop.history._itemRows.get(item.id).focusActors
+        .find(actor => actor._clipboardXGnomeEntryAction === 'tokenize'));
+      await until(() => desktop.words.state?.source === '冷启动机械海豚', 'cold dictionary word panel targets the new item, not pinned history');
+      assert(desktop.words.state.tokens.some(token => token.text === '冷启动机械海豚'),
+        'The actual word panel must use the persisted custom dictionary after cold startup');
+      assert(read(state).requests === before, 'Opening the real word panel must not refresh a network dictionary');
+      print('[lifecycle] PASS DICT-07-cold');
+    } finally { await target.close(); }
+  }
   await desktop.destroy();
   print(`[lifecycle] PASS ENV-06: two real Shell PIDs; identity/history/phrases/queue restored (${UUID})`);
 }

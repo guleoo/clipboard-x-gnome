@@ -5,6 +5,7 @@ import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {verify as form} from './form.smoke.js';
 import {verify as escape} from '../panels/escape.smoke.js';
+import {restart} from '../helpers/restart.js';
 
 export async function openPhrases(desktop) {
   await desktop.open();
@@ -140,5 +141,61 @@ export const cases = {
       assert(JSON.parse(new TextDecoder().decode(bytes)).phrases.includes('Retry after actual IO failure'),
         'Retry must reach actual durable phrase storage');
     } finally { panel._store.path = path; panel._reportError = reportError; }
+  },
+
+  async 'PHRASE-07-delete'(desktop) {
+    const panel = desktop.phrases;
+    const phrase = 'Delete must wait for durable success';
+    await panel.replace([phrase]);
+    const path = panel._store.path;
+    const [, before] = Gio.File.new_for_path(path).load_contents(null);
+    const failurePath = GLib.dir_make_tmp('cbx-phrase-delete-directory-XXXXXX');
+    const reportError = panel._reportError;
+    const errors = [];
+    panel._reportError = error => { errors.push(error); reportError(error); };
+    try {
+      panel._store.path = failurePath;
+      await focusPhrase(desktop, phrase);
+      await desktop.key(Clutter.KEY_Delete);
+      await until(() => errors.length === 1, 'native Delete reports actual directory replacement failure');
+      await panel._store._operation;
+      assert(panel.phrases.includes(phrase) && panel.buttons.length === 1,
+        'Failed deletion must leave the visible phrase available');
+      const [, after] = Gio.File.new_for_path(path).load_contents(null);
+      assert(new TextDecoder().decode(before) === new TextDecoder().decode(after),
+        'Failed deletion must not modify the previous durable file');
+      panel._store.path = path;
+      await focusPhrase(desktop, phrase);
+      await desktop.key(Clutter.KEY_Delete);
+      await until(() => !panel.phrases.includes(phrase), 'native Delete retry succeeds');
+      const [, result] = Gio.File.new_for_path(path).load_contents(null);
+      assert(!JSON.parse(new TextDecoder().decode(result)).phrases.includes(phrase),
+        'Successful retry must remove the phrase on disk');
+    } finally { panel._store.path = path; panel._reportError = reportError; }
+  },
+
+  async 'PHRASE-07-corrupt'(desktop) {
+    await desktop.phrases.replace(['existing phrase before corruption']);
+    const path = desktop.phrases._store.path;
+    const file = Gio.File.new_for_path(path);
+    const [, original] = file.load_contents(null);
+    const malformed = new TextEncoder().encode('{invalid quick phrases document');
+    try {
+      file.replace_contents(malformed, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+      await restart(desktop);
+      await desktop.phrases.ready;
+      await openPhrases(desktop);
+      assert(desktop.phrases.phrases.length === 0 && desktop.phrases.addButton.reactive,
+        'Malformed durable phrases must not prevent opening the panel or expose invented entries');
+      const [, after] = file.load_contents(null);
+      assert(new TextDecoder().decode(after) === new TextDecoder().decode(malformed),
+        'Failed startup read must preserve the corrupt file rather than silently overwrite it');
+    } finally {
+      file.replace_contents(original, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+      await restart(desktop);
+    }
+    await openPhrases(desktop);
+    assert(desktop.phrases.phrases.includes('existing phrase before corruption'),
+      'Correcting the real file and restarting must restore the original phrase');
   },
 };

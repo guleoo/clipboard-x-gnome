@@ -440,6 +440,31 @@ WORD-07 测量普通 2000 词、10 万字符 URL 和 20 万字符无空白文本
 记录样本长度、词数和最大间隔。不扩大预算、跳过失败或修改插件代码把测试变绿。虚拟修饰键
 熔断不证明物理键盘事件一定送达，也不证明绕过输入法。CI 范围未扩大。
 
+### 扩展原生用例的归属
+
+原生注册表有 126 个用例（新增 42），不代表 126 项全部通过。以下扩展原有归属，不复制正常路径。
+实际失败写进[结果快照](acceptance-status_CN.md)，不在本清单放宽预期。
+
+| 归属 | 新增/强化 ID | 独立行为边界 |
+| --- | --- | --- |
+| `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05-exclusion | 解码失败后正常捕获；重启后原文缺失；真实 owner 暂停期间改变排除策略 |
+| `phrases/native.js` | PHRASE-07-delete/corrupt | 实际删除 IO 失败/重试、损坏持久文件恢复 |
+| `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
+| `terminal/native.js` | TYPE-03/user-sample、TYPE-08-capslock/layout | 两档完整维护样本、可选用户文件、实际 CapsLock 与 US/German 输入源 |
+| `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
+| `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用时观察真实共享截图模态；大文本/图片捕获/缩略图/保存主循环间隙 |
+| `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |
+| `word-selection/dictionary.native.js`、`lifecycle/cold.smoke.js` | DICT-02/06/06-https/07/08/09 | 语言列表、多来源、刷新故障/声明变化、实际编辑器、120,002 词索引、跨 Shell 无隐式下载；TLS 测拒绝，不是可信 CA 成功 |
+| `sync/scenarios.native.js` | SEND-03-image、SEND-05-destinations、RECV-02-pages/03-boundaries | 图片发送/文本图片接收边界、205 条生产分页、持久游标与按地址/Channel 分队列的真实重启 |
+| `sync/scenarios.native.js`、`sync/network.native.js` | CONN-08-empty/revoked、CONN-09-device/offline、XFER-05-disable-download/06-cancel-download/09-glib/09-sha256sum、RECV-08-manual | 实际无权限/撤销、连接拒绝、会话/任务取消、两条校验路径、独立执行的较新选择分支 |
+| `screenshot/native.js`、`screenshot/editor.native.js`、`screenshot/remote.native.js` | SHOT-03-editor/07、EDIT-05-remote/07-lifetime | 实际截图编辑组合、取消重试、远端原图送到真实自定义编辑进程、离线缓存及禁用后编辑器继续存活 |
+| `color-picker/native.js`、`color-picker/displays.native.js` | COLOR-05-edges/displays | 四角/clamp、实际虚拟双屏/125%，坐标、剪切板和一个物理截图像素步长 |
+
+显示条件用 `--display dual` / `--display fractional`；词库冷启动用独立
+`tools/test-lifecycle.py --dictionary-cold`。应用/locale 依赖显式登记。
+真实 IME、可信 HTTPS、Flatpak Gradia、两个完整桌面竞态仍需专门准备环境，不视为天然不可测。
+格式、存储、策略、错误响应等数据矩阵继续归逻辑测试，不复制到 Shell。
+
 | 原有重叠 | 处理 |
 | --- | --- |
 | 面板尺寸 | PANEL-03 负责完整矩阵和覆盖值，删除综合入口较小的副本。 |

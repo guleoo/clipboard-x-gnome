@@ -2,7 +2,7 @@ import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {assert, pause, until} from '../helpers/desktop.js';
+import {assert, pause, rect, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
 
@@ -22,7 +22,7 @@ async function fixture(desktop, run) {
   }
 }
 
-async function open(desktop, shortcut = false) {
+export async function open(desktop, shortcut = false) {
   if (shortcut) {
     desktop.settings.set_strv('color-picker-shortcut', ['<Control><Shift>F11']);
     await desktop.key(Clutter.KEY_F11, [Clutter.KEY_Control_L, Clutter.KEY_Shift_L]);
@@ -35,6 +35,43 @@ async function open(desktop, shortcut = false) {
 }
 
 export const cases = {
+  async 'COLOR-05-edges'(desktop) {
+    const target = await Target.open(desktop);
+    const backdrop = new St.Widget({width: global.stage.width, height: global.stage.height,
+      style: 'background-color: #00ff00;', reactive: false});
+    Main.layoutManager.addTopChrome(backdrop);
+    try {
+      await desktop.settle();
+      const picker = await open(desktop, true);
+      for (const end of [false, true]) {
+        await desktop.move(end ? global.stage.width - 2 : 1, end ? global.stage.height - 2 : 1);
+        await desktop.key(end ? Clutter.KEY_Right : Clutter.KEY_Left, [Clutter.KEY_Control_L]);
+        await desktop.key(end ? Clutter.KEY_Down : Clutter.KEY_Up, [Clutter.KEY_Control_L]);
+        const expected = end ? [(picker._texture.get_width() - 1) / picker._scale,
+          (picker._texture.get_height() - 1) / picker._scale] : [0, 0];
+        await until(() => !picker._sampling && picker._coords.every((value, index) => Math.abs(value - expected[index]) < 0.01),
+          'native arrow sampling clamps at the actual screenshot edge');
+        assert(picker._rgb?.join() === '0,255,0', 'Clipped lens must still sample the exact background pixel');
+        const sample = picker._lens._sample;
+        assert(sample && sample.centerX >= 0 && sample.centerX < sample.width
+          && sample.centerY >= 0 && sample.centerY < sample.height,
+        'Edge clipping must retain a valid center pixel within the smaller real sample');
+        await desktop.settle();
+        const box = rect(picker._preview);
+        assert(box.x >= 0 && box.y >= 0 && box.x + box.width <= global.stage.width + 1
+          && box.y + box.height <= global.stage.height + 1, 'Lens preview must remain inside the actual stage at both corners');
+      }
+      await desktop.key(Clutter.KEY_Return);
+      await until(() => !desktop.app._colorPicker, 'edge sample confirmed and released');
+      assert((await target.clipboard()).text === '#00FF00', 'Real edge sampling must reach the clipboard');
+    } finally {
+      desktop.app._colorPicker?.close();
+      Main.layoutManager.removeChrome(backdrop);
+      backdrop.destroy();
+      await target.close();
+    }
+  },
+
   'COLOR-01': desktop => fixture(desktop, async target => {
     for (const method of ['click', 'enter', 'space', 'escape', 'right-click']) {
       await target.offer(`color sentinel ${method}`);

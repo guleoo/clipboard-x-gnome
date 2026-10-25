@@ -1,18 +1,54 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {assert, pause, until} from '../helpers/desktop.js';
+import {getInputSourceManager} from 'resource:///org/gnome/shell/ui/status/keyboard.js';
+import {assert, block, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
+import {systemdSample} from './samples.js';
 
-async function trigger(desktop, target, text, key, {replaceClipboard = false} = {}) {
+async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false} = {}) {
   const item = await capture(desktop, target, text);
   if (replaceClipboard) await target.offer('Independent clipboard sentinel before action');
   await desktop.open();
   if (replaceClipboard) await desktop.search(text);
   await desktop.key(Clutter.KEY_Down);
   assert(desktop.focus === desktop.history._itemRows.get(item.id).focusActors[0], 'Native action targets the copied row');
-  await desktop.key(key);
+  if (pointer) {
+    desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
+    try {
+      await pause(25);
+      await desktop.click(desktop.history._itemRows.get(item.id).focusActors[0]);
+    } finally {
+      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
+      await pause(25);
+    }
+  } else await desktop.key(key);
+}
+
+async function exactTyping(desktop, target, source, speed, {pointer = false} = {}) {
+  desktop.settings.set_string('simulated-input-speed', speed);
+  await target.focus();
+  await target.call('clear');
+  const previous = desktop.app._terminalInput._queue;
+  await trigger(desktop, target, source, Clutter.KEY_apostrophe, {pointer});
+  await until(() => !desktop.indicator.menu.isOpen && desktop.app._terminalInput._queue !== previous,
+    'native typing action actually enqueued and closed the panel');
+  await desktop.app._terminalInput._queue;
+  // Periodic receiver snapshots must settle after the final queued key event.
+  try {
+    await until(() => target.state.text === source, speed + ': exact ' + source.length + '-character target content', 5000);
+  } catch (error) {
+    const actual = target.state.text ?? '';
+    let difference = 0;
+    while (difference < Math.min(actual.length, source.length) && actual[difference] === source[difference]) difference++;
+    const hash = text => GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, new TextEncoder().encode(text));
+    printerr(`[simulation] Typing mismatch: expectedLength=${source.length}; actualLength=${actual.length}; firstDifference=${difference}; expectedCodepoint=${source.codePointAt(difference)}; actualCodepoint=${actual.codePointAt(difference)}; expectedSha256=${hash(source)}; actualSha256=${hash(actual)}; modifiers=${global.get_pointer()[2]}; layout=${getInputSourceManager().currentSource?.id}`);
+    throw error;
+  }
+  await pause(100);
+  assert(target.state.text === source, speed + ': no delayed duplicated or reordered characters');
 }
 
 export const cases = {
@@ -33,19 +69,65 @@ export const cases = {
 
   async 'TYPE-03'(desktop) {
     const target = await Target.open(desktop);
-    const source = '[Unit]\n# 服务描述 日本語 한국어 🙂\nDescription=frp client\n\tline two\n';
+    const sources = ['[Unit]\n# 服务描述 日本語 한국어 🙂\nDescription=frp client\n\tline two\n', systemdSample];
     try {
       for (const speed of ['standard', 'slow']) {
-        desktop.settings.set_string('simulated-input-speed', speed);
-        await target.focus();
-        await target.call('clear');
-        await trigger(desktop, target, source, Clutter.KEY_apostrophe);
-        await until(() => target.state.text === source, `${speed}: exact mixed-language target content`, 20000);
-        await desktop.app._terminalInput._queue;
-        await pause(60);
-        assert(target.state.text === source, `${speed}: no late duplicated or reordered characters`);
+        for (const source of sources) await exactTyping(desktop, target, source, speed);
       }
     } finally { await target.close(); }
+  },
+
+  async 'TYPE-03-user-sample'(desktop) {
+    const root = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_parent();
+    const file = root.get_child('tools').get_child('simulate-input-sample.txt');
+    if (!file.query_exists(null)) block('Optional local tools/simulate-input-sample.txt is not present');
+    const [, bytes] = file.load_contents(null);
+    const source = new TextDecoder('utf-8', {fatal: true}).decode(bytes);
+    assert(source.length > 0 && source.length < 20000, 'Local sample must be nonempty and bounded to 20,000 characters');
+    const target = await Target.open(desktop);
+    try {
+      for (const speed of ['standard', 'slow']) await exactTyping(desktop, target, source, speed);
+    } finally { await target.close(); }
+  },
+
+  async 'TYPE-08-capslock'(desktop) {
+    const target = await Target.open(desktop);
+    const mask = Clutter.ModifierType.LOCK_MASK;
+    const initial = Boolean(global.get_pointer()[2] & mask);
+    try {
+      if (!initial) await desktop.key(Clutter.KEY_Caps_Lock);
+      await until(() => Boolean(global.get_pointer()[2] & mask), 'actual backend CapsLock is enabled');
+      await exactTyping(desktop, target, 'AbCdEf 123 !? 中文 🙂\n', 'standard', {pointer: true});
+    } finally {
+      if (Boolean(global.get_pointer()[2] & mask) !== initial) await desktop.key(Clutter.KEY_Caps_Lock);
+      await target.close();
+    }
+  },
+
+  async 'TYPE-08-layout'(desktop) {
+    const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.input-sources'});
+    const sources = settings.get_value('sources');
+    const manager = getInputSourceManager();
+    const originalId = manager.currentSource?.id;
+    const target = await Target.open(desktop);
+    try {
+      settings.set_value('sources', new GLib.Variant('a(ss)', [['xkb', 'us'], ['xkb', 'de']]));
+      for (const id of ['us', 'de']) {
+        await until(() => Object.values(manager.inputSources).some(source => source.type === 'xkb' && source.id === id),
+          'actual private input source available: ' + id);
+        Object.values(manager.inputSources).find(source => source.type === 'xkb' && source.id === id).activate(true);
+        await until(() => manager.currentSource?.type === 'xkb' && manager.currentSource.id === id,
+          'actual active XKB source: ' + id);
+        await pause(100);
+        await exactTyping(desktop, target, 'AzYz []{} @! 123 中文\n', 'standard', {pointer: true});
+      }
+      print('[simulation] Actual US/German XKB sources tested; this is not physical scancode or IME coverage');
+    } finally {
+      settings.set_value('sources', sources);
+      await pause(100);
+      Object.values(manager.inputSources).find(source => source.id === originalId)?.activate(true);
+      await target.close();
+    }
   },
 
   async 'TYPE-05'(desktop) {

@@ -181,6 +181,46 @@ opens another over the same data. ENV-02/06 restore history/pins, phrases, Devic
 destination-bound upload queue. Without `--previous`, the same artifact is reinstalled; do not call
 that a version-migration test. Logs and `report.json` are written to `build/lifecycle-tests/`.
 
+### Extended local coverage
+
+The native registry has 126 selectable cases, not 126 certified features. New checks reuse existing
+owners for malformed-image recovery, missing originals, phrase IO failure, selection gestures,
+settings persistence/layout, actual editor processes and destination-bound sync recovery.
+See the [observed snapshot](acceptance-status.md) for retained failures.
+
+```sh
+# Real virtual displays, not mocked monitor objects:
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
+# 120,002-word import/index/cache measurement and untrusted TLS rejection:
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09,DICT-06-https --language zh_CN --isolate-cases
+# Real two-Shell dictionary persistence, with a local HTTP request counter:
+python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
+# Independent browser textarea / GTK3-VTE PTY targets:
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-09-firefox,TYPE-09-chromium,TYPE-02-vte --isolate-cases
+```
+
+Display cases are BLOCKED without the requested profile. Fractional testing applies a backend-advertised
+125% mode through Mutter DisplayConfig. VTE requires Python GI for Gtk 3/VTE 2.91; Chromium accepts
+the `chromium` or `chromium-browser` executable. Browser targets use private profiles and an owned
+loopback receiver, not external sites. The VTE fixture first verifies native ASCII and real clipboard
+paste independently, then tests the plugin's natural-paste path; raw PTYs are not universal terminal apps.
+
+`TYPE-03-user-sample` optionally reads `tools/simulate-input-sample.txt` (fewer than 20,000 characters).
+It does not create, edit or commit that user file; absence is BLOCKED. Mismatch diagnostics record
+lengths, first differing code points and hashes, not the complete sample. Standard TYPE-03 always
+includes the maintained 460-character sample at both speeds.
+
+Dictionary GUI tests need a normal desktop user and installed file manager/editor; Nautilus refuses
+root sessions. `DICT-06-https` additionally needs `openssl` and checks rejection of an owned self-signed
+certificate—not trusted HTTPS success. Cold dictionary checks need a generated non-C UTF-8 locale.
+No test changes host certificate stores or disables certificate verification.
+
+The Docker wrapper changes only its disposable server config to 20,000 requests/60 seconds so real
+205-item publication/pagination does not exhaust the default 600-request budget. It neither changes
+production defaults nor hides rate-limit errors with retries. Custom server images with conflicting
+root HTTP configuration are rejected instead of silently merged.
+
 ## Adding tests
 
 - Choose the category by runtime requirements, not `.test.js`, `.smoke.js` or `.integration.js` alone.

@@ -6,12 +6,14 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {assert, block, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
+import {restart} from '../helpers/restart.js';
 
 async function fixture(desktop, run) {
   const target = await Target.open(desktop);
   const processes = [];
-  const launch = desktop.app._launchEditor;
-  desktop.app._launchEditor = async function (...args) {
+  const app = desktop.app;
+  const launch = app._launchEditor;
+  app._launchEditor = async function (...args) {
     const process = await launch.apply(this, args);
     if (process) processes.push(process);
     return process;
@@ -37,7 +39,7 @@ async function fixture(desktop, run) {
     await desktop.app._controller.persist();
     await run({target, item, processes});
   } finally {
-    desktop.app._launchEditor = launch;
+    app._launchEditor = launch;
     for (const process of processes) {
       process.force_exit();
       await new Promise(resolve => process.wait_async(null, (object, result) => { object.wait_finish(result); resolve(); }));
@@ -121,6 +123,24 @@ async function gradia(desktop, command) {
 }
 
 export const cases = {
+  'EDIT-07-lifetime': desktop => fixture(desktop, async ({item, processes}) => {
+    const helper = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent()
+      .get_child('fixtures').get_child('editor-receiver.py').get_path();
+    const output = `${GLib.get_tmp_dir()}/persistent-editor.json`;
+    desktop.settings.set_string('editor-command', ['python3', helper, output, 'stay']
+      .map(value => GLib.shell_quote(value)).join(' ') + ' %f');
+    await edit(desktop, item);
+    await until(() => processes.length === 1 && Gio.File.new_for_path(output).query_exists(null),
+      'external editor has consumed its image and remains running');
+    const pid = processes[0].get_identifier();
+    let alive;
+    await restart(desktop, async () => {
+      const [, state] = Gio.File.new_for_path(`/proc/${pid}/status`).load_contents(null);
+      alive = !/^State:\s+[ZX]/m.test(new TextDecoder().decode(state));
+    });
+    assert(alive, 'Disabling the extension must not kill the already launched external editor');
+  }),
+
   'EDIT-01': desktop => fixture(desktop, async ({item, processes}) => {
     desktop.settings.set_string('editor-command', '');
     let reads = 0;

@@ -30,4 +30,8 @@ subprocess.run(['dbus-update-activation-environment',
                 *[key for key in ['XDG_DATA_HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME',
                                   'XDG_STATE_HOME', 'XDG_RUNTIME_DIR', 'GSETTINGS_BACKEND',
                                   'LANGUAGE', 'LANG', 'LC_ALL', 'GTK_A11Y', 'NO_AT_BRIDGE'] if key in os.environ]], check=True)
-os.execvp(sys.argv[1], sys.argv[1:])
+command = sys.argv[1:]
+if os.environ.get('CBX_SIMULATION_DISPLAY') == 'dual':
+    # Reuse the panel suite's real second virtual monitor, not a mocked layout.
+    command += ['--virtual-monitor', '1024x768']
+os.execvp(command[0], command)

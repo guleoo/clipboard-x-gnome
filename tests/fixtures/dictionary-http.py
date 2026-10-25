@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import ssl
 import threading
 import time
 
@@ -49,6 +50,10 @@ class Handler(BaseHTTPRequestHandler):
 
 
 server = HTTPServer(('127.0.0.1', 0), Handler)
+if '--tls' in sys.argv[2:]:
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(directory / 'cert.pem', directory / 'key.pem')
+    server.socket = context.wrap_socket(server.socket, server_side=True)
 state['port'] = server.server_port
 save()
 server.serve_forever()

@@ -228,8 +228,9 @@ export class Desktop {
         print(`[${this.tag}] BLOCKED ${id}: ${error.message}`);
         return;
       }
-      const box = rect(this.indicator.menu.actor);
-      printerr(`[${this.tag}] FAIL ${id}: ${error.message}; panel=${this.manager.currentName}; focus=${this.focus?.accessible_name ?? this.focus}; popup=${box.x},${box.y},${box.width},${box.height}; actionMode=${Main.actionMode}; overview=${Main.overview.visible}`);
+      const active = Main.panel.statusArea['clipboard-x-gnome'] === this.indicator;
+      const box = active ? rect(this.indicator.menu.actor) : {};
+      printerr(`[${this.tag}] FAIL ${id}: ${error.message}; panel=${active ? this.manager.currentName : 'disabled'}; focus=${this.focus?.accessible_name ?? this.focus}; popup=${box.x},${box.y},${box.width},${box.height}; actionMode=${Main.actionMode}; overview=${Main.overview.visible}`);
       try { await screenshot(id); } catch (diagnostic) { printerr(`[${this.tag}] Screenshot unavailable: ${diagnostic.message}`); }
       throw error;
     } finally {
@@ -238,6 +239,10 @@ export class Desktop {
   }
 
   async destroy() {
+    if (Main.extensionManager.lookup(UUID).state === ExtensionState.INACTIVE) {
+      await this.app._shutdown;
+      return;
+    }
     const input = this.indicator._inputMode;
     const tooltip = this.indicator._tooltip;
     Main.extensionManager.disableExtension(UUID);

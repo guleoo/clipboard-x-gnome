@@ -2,10 +2,11 @@ import Clutter from 'gi://Clutter';
 import GdkPixbuf from 'gi://GdkPixbuf';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import Gio from 'gi://Gio';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 
-async function capture(desktop, {shortcut = false, cancel = false} = {}) {
+export async function capture(desktop, {shortcut = false, cancel = false} = {}) {
   const app = desktop.app;
   const original = app._takeScreenshot;
   let started = false;
@@ -71,6 +72,76 @@ async function baseline(desktop, target, text) {
 }
 
 export const cases = {
+  async 'SHOT-03-editor'(desktop) {
+    const target = await Target.open(desktop);
+    const processes = [];
+    const launch = desktop.app._launchEditor;
+    desktop.app._launchEditor = async function (...args) {
+      const process = await launch.apply(this, args);
+      if (process) processes.push(process);
+      return process;
+    };
+    const script = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent()
+      .get_child('fixtures').get_child('editor-receiver.py').get_path();
+    desktop.settings.set_string('screenshot-target', 'screen');
+    desktop.settings.set_boolean('screenshot-open-editor', true);
+    try {
+      for (const [history, clipboard] of [[false, false], [true, false], [false, true], [true, true]]) {
+        const output = `${GLib.get_tmp_dir()}/screenshot-editor-${GLib.uuid_string_random()}.json`;
+        desktop.settings.set_string('editor-command', ['python3', script, output, 'file']
+          .map(value => GLib.shell_quote(value)).join(' ') + ' %f');
+        for (const item of [...desktop.app._controller.items]) desktop.app._controller.remove(item.id);
+        await baseline(desktop, target, 'clipboard before screenshot editor');
+        desktop.settings.set_boolean('screenshot-add-history', history);
+        desktop.settings.set_boolean('screenshot-write-clipboard', clipboard);
+        const revision = desktop.app._controller.selectionRevision;
+        const count = processes.length;
+        await capture(desktop);
+        await until(() => Gio.File.new_for_path(output).query_exists(null), 'real custom screenshot editor read original');
+        assert(processes.length === count + 1, 'One screenshot must launch exactly one real editor process');
+        const [, data] = Gio.File.new_for_path(output).load_contents(null);
+        const received = JSON.parse(new TextDecoder().decode(data));
+        const actual = await target.clipboard(clipboard ? 'image/png' : 'text/plain;charset=utf-8');
+        await until(() => (!clipboard || desktop.app._controller.selectionRevision > revision)
+          && !desktop.app._controller._captureInProgress && !desktop.app._controller._captureQueued,
+        'editor screenshot clipboard capture settled');
+        const images = desktop.app._controller.items.filter(item => item.isImage);
+        assert(images.length === (history ? 1 : 0), 'Opening an editor must not change the history option');
+        const image = GdkPixbuf.Pixbuf.new_from_file(received.source);
+        assert(image.width === global.stage.width && image.height === global.stage.height && received.size > 100,
+          'The editor must receive the complete real screenshot, not a thumbnail');
+        if (history) assert(images[0].primary.sha256 === received.sha256, 'Editor and history must reference the same screenshot');
+        assert(clipboard ? actual.sha256 === received.sha256 : actual.text === 'clipboard before screenshot editor',
+          'Editor launch must preserve independent screenshot clipboard policy');
+      }
+    } finally {
+      desktop.app._launchEditor = launch;
+      for (const process of processes) {
+        process.force_exit();
+        await new Promise(resolve => process.wait_async(null, (object, result) => { object.wait_finish(result); resolve(); }));
+      }
+      await target.close();
+    }
+  },
+
+  async 'SHOT-07'(desktop) {
+    const target = await Target.open(desktop);
+    desktop.settings.set_string('screenshot-target', 'interactive');
+    try {
+      await baseline(desktop, target, 'cancel and immediately retry');
+      await capture(desktop, {cancel: true});
+      assert(!Main.screenshotUI.visible && !desktop.app._portal._request, 'Actual cancel must fully release before retry');
+      desktop.settings.set_string('screenshot-target', 'screen');
+      desktop.settings.set_boolean('screenshot-add-history', true);
+      desktop.settings.set_boolean('screenshot-write-clipboard', true);
+      desktop.settings.set_boolean('screenshot-open-editor', false);
+      await capture(desktop, {shortcut: true});
+      const images = desktop.app._controller.items.filter(item => item.isImage);
+      assert(images.length === 1 && (await target.clipboard('image/png')).sha256 === images[0].primary.sha256,
+        'Immediate retry must produce a complete new screenshot and actual clipboard bytes');
+    } finally { await target.close(); }
+  },
+
   async 'SHOT-03'(desktop) {
     const directory = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES);
     assert(directory?.startsWith(`${GLib.getenv('CBX_SIMULATION_RUNTIME')}/`),

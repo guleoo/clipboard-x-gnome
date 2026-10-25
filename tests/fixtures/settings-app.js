@@ -31,16 +31,33 @@ function id(widget) {
 function walk(widget, root, row = '') {
   const type = GObject.type_name(widget.constructor.$gtype);
   if (widget instanceof Adw.PreferencesRow) row = widget.get_title();
+  else if (widget instanceof Gtk.ListBoxRow) {
+    // Layout rows are plain ListBoxRows, not Adw.PreferencesRows. Expose the
+    // same visible label a user uses to distinguish their native controls.
+    const firstLabel = child => {
+      if (child instanceof Gtk.Label) return child.label;
+      for (let current = child.get_first_child(); current; current = current.get_next_sibling()) {
+        const label = firstLabel(current);
+        if (label) return label;
+      }
+      return '';
+    };
+    row = firstLabel(widget) || row;
+  }
   const record = {id: id(widget), type, row, page: widget._clipboardXGnomePageName ?? null,
     mapped: widget.get_mapped(), sensitive: widget.is_sensitive()};
   record.tooltip = widget.get_tooltip_text();
-  if (widget instanceof Gtk.Button) record.icon = widget.icon_name;
+  if (widget instanceof Gtk.Button || widget instanceof Gtk.Image) record.icon = widget.icon_name;
   if (widget instanceof Adw.ActionRow) record.subtitle = widget.subtitle;
   if (widget instanceof Gtk.Button || widget instanceof Gtk.Label) record.label = widget.label;
   if (widget instanceof Gtk.Entry || widget instanceof Gtk.Text || widget instanceof Adw.EntryRow) record.text = widget.get_text();
   if (widget instanceof Adw.SwitchRow || widget instanceof Gtk.Switch) record.active = widget.active;
   if (widget instanceof Adw.SpinRow) record.value = widget.value;
-  if (widget instanceof Adw.ComboRow) record.selected = widget.selected;
+  if (widget instanceof Adw.ComboRow) {
+    record.selected = widget.selected;
+    record.choices = Array.from({length: widget.model?.get_n_items() ?? 0}, (_, index) =>
+      widget.model.get_item(index)?.get_string?.() ?? '');
+  }
   if (widget instanceof Gtk.Stack) record.visibleChild = widget.visible_child_name;
   if (widget instanceof Adw.ShortcutLabel) record.accelerator = widget.accelerator;
   const [valid, bounds] = widget.compute_bounds(root);

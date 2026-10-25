@@ -2,57 +2,75 @@
 
 > [English](acceptance-status.md) · 简体中文
 
-日期：2026-10-25。这是实际运行结果，不代表[功能清单](functional-inventory_CN.md)中的每项要求均已通过。
+日期：2026-10-25。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
-## 环境与证据
+## 范围
 
-- 构建包：`clipboard-x-gnome_1.1.0.zip`，SHA-256 为
+- 构建包：`clipboard-x-gnome_1.1.0.zip`，SHA-256：
   `9d7c1453af80df946c3ad2eb038323e6347588e76f1c41656cd77492c4820d17`。
-- 隔离 GNOME Shell 50.6 / 51.1，软件渲染；使用独立 GTK 剪切板来源和输入接收窗口。
-  不覆盖安装宿主机插件，不注销宿主机。
-- 同步使用相邻 `clipboard-x-server` 源码构建的临时 Docker 服务、测试认证信息、真实 HTTP
-  及独立来源客户端，不等同于两个完整桌面。
-- 逻辑测试：`dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs`，
-  **51/51 通过**；未运行可选压力测试。
-- 剪切板/隐私策略、快捷语句、模拟输入、取色的原生操作 **32 项在两个版本均整组通过**。
-  设置、截图/取消、编辑器 stdin、冷 Shell 恢复和下述成功同步场景另外按入口验证。
-- 原生注册表提供 84 个可选用例，另有现有面板/兼容性及冷启动入口。
-  这个数字不代表 84 项全绿，也不代表 173 个功能 ID 全部覆盖。
-- 51 的实际 Firefox/Chromium 富文本和原图复制通过；可用 LibreOffice 是 headless 构建，
-  不具备图形文档来源，标记 BLOCKED。
-- 实际翻译目录：51 验证英文、中文、日文、韩文；50 验证英文和中文，不代表全部翻译的语言质量审查。
-- 51 的本地/网络词库导入、多来源开关、刷新保留、默认编辑器修改、打开目录通过；
-  50 的网络词库通过，本地导入/编辑缺所需桌面应用。
-- 51 的原生 Gradia 实际显示了测试图片。缺少 Flatpak Gradia，标记 BLOCKED；50 镜像还缺原生 Gradia。
+- 实际隔离 GNOME 50.6 / 51.1、软件渲染、独立 GTK 来源/接收端及原生虚拟输入。
+  未安装宿主插件、未注销宿主、未修改生产代码或扩大 CI。
+- 原生注册表 **84 → 126 个用例，新增 42 个**，并强化已有用例；词库冷恢复另有可选生命周期入口。
+  数量不是通过数，也不能与清单的 173 个功能要求相减计算覆盖率。
+- 新增 42 项均已分批执行到目标：**50 为 34 通过 / 8 失败；51 为 33 通过 / 9 失败**。
+  仅指新增集合，不代表全部 126 项或 173 个功能要求。
+- 同步使用临时 Docker 服务、合成认证、真实 HTTP 和独立来源客户端，不是两个完整桌面。
+  为容纳真实 205 条分页，私有服务夹具设为每 60 秒 20,000 请求，不改变生产限流。
+- 之前 32 项核心整组通过；强化后的长文模拟输入在 50 失败，不能拿旧短样本宣称当前整组全绿。
+- 普通逻辑回归 `dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs`
+  **51/51 通过**，未运行可选压力测试。
 
-真实服务端已通过的场景包括：原生测试连接/应用/失败重试、手动/自动发布、表示开关、阈值边界、
-来源 → 服务端 → 接收端懒加载、上传下载精确字节进度、重复下载、完成响应丢失恢复、远端删除和重启恢复。
-活跃同步下快捷语句/隐私的本地边界在 50/51 均通过。不能把多个分批通过的子集写成整套全绿。
+## 新增证据
 
-## 已复现失败，不豁免
+以下来自分批专项运行，不等于一轮整套全绿：
 
-| 用例 | 实际结果 | 结论边界 |
-| --- | --- | --- |
-| WORD-07 | 10 万字符 URL 约阻塞 5 秒，20 万无空白字符约 20 秒，超过 1 秒主循环预算 | 50/51 均复现；普通 2000 词未出现同量级阻塞 |
-| SEND-04 | 首次发布被门控暂停时关闭同步，隔离 Shell 异常退出 | 51 确认 SIGSEGV；50 为异常退出。后续队列恢复断言无法执行 |
-| SEND-08 | 发布被暂停时删除条目，隔离 Shell 同样异常退出 | 版本证据同上，后续服务端完成状态断言无法执行 |
-| RECV-08 | 迟到的远端激活下载覆盖了用户新复制的内容 | 50/51 均复现；后续“手动选择其他条目”分支尚未执行到 |
+| 领域 | 新增证据 |
+| --- | --- |
+| 捕获/隐私/快捷语句/分词 | 畸形图片后恢复、重启后原文丢失、在途捕获期间排除应用、删除 IO 失败及坏语句文件、Space/Enter、按住 Shift 跨行与按住拖选时禁用；50/51 通过 |
+| 设置 | 实际开关/枚举/整数/阈值/命令写入、条目上限、隐藏/重排后快捷键仍有效、发现/手输排除、恢复默认保留数据、系统 URI handler 交接；50/51 通过，不代表每项配置全部组合 |
+| 截图/编辑 | 实际门户与自定义编辑进程组合、取消后立即重试、插件禁用不杀编辑进程、远端 lazy 原图下载→编辑器精确字节→离线缓存编辑；50/51 通过 |
+| 同步 | 图片发送及文本/图片接收阈值、205 条分页与持久游标、两个地址/Channel 的队列经真实重启恢复、无 Channel 恢复、设备/key 拒绝后恢复、连接拒绝后恢复；50/51 通过 |
+| 词库 | 随语言筛选多来源、刷新失败保留、声明变化、设置/插件重启不隐式 GET、默认编辑器/文件管理器及自签名 HTTPS 拒绝；不等于可信 HTTPS 成功 |
+| 词库冷恢复 | 本地 HTTP 词库主动导入一次，跨两个 Shell 保留自定义切词结果，并检查没有额外 HTTP 请求 |
+| 捕获响应度 | 760,000 字节文本、2,881,318 字节 PNG 的真实捕获/缩略图/保存；两版通过。51 最大定时器间隙约 26ms/21ms |
+| 大词库 | 120,002 词实际 UI 导入/索引/缓存两版通过：50 导入 8,563ms、冷/热 560ms/434ms、最大间隙 53ms；51 导入 7,001ms、冷/热 566ms/423ms、最大间隙 39ms。导入时间含原生路径输入 |
+| 实际应用 | Firefox/Chromium 富文本与原图；准备好的 50 镜像中 GUI LibreOffice 来源通过。51 的 Office 只有 headless，阻塞 |
+| 输入目标 | 完整 460 字符 systemd 样本、可选用户样本、CapsLock、US/German 布局、Firefox/Chromium textarea、GTK3/VTE PTY；结果存在差异，见下表 |
+| 显示 | 实际虚拟双屏/125% Mutter 缩放、取色及方向键一个物理截图像素；不是物理显示器认证 |
 
-这些是保留的失败回归场景，本次未修改插件功能修复它们。HTTP 门控只控制真实请求的时序，不伪造协议结果。
+51 原生 Gradia 实际显示测试图片；50 缺原生 Gradia，两版缺 Flatpak Gradia，自定义编辑器通过不能填平这些应用缺口。
+翻译实显仍为 50 EN/ZH、51 EN/ZH/JA/KO，不是全部语言质量审查。
 
-独立复现，单项崩溃后仍继续其他项：
+## 保留失败与待归因目标
+
+| 用例 | 实际结果 / 结论边界 |
+| --- | --- |
+| WORD-07 | 50/51：10 万字符 URL 约阻塞 5 秒，20 万无空白字符约 20 秒，超过 1 秒预算 |
+| ENV-05-screenshot / SHOT-06 | 50/51：共享 ScreenshotUI 活跃时禁用后仍有显示/模态；夹具在观察缺陷后才清理 |
+| SEND-04 / SEND-08 | 前期真实发布中断/删除使隔离 Shell 异常退出，51 确认 SIGSEGV；不宣称后续恢复已验 |
+| CONN-08-revoked | 活跃轮询时撤销 Channel 成员资格使隔离 Shell 异常退出；51 另查确认 SIGSEGV |
+| XFER-05-disable-download / XFER-06-cancel-download | 下载响应被暂停时关闭同步或取消该任务，50/51 隔离 Shell 异常退出 |
+| RECV-08 / RECV-08-manual | 50/51：迟到激活覆盖新外部复制及手动选择的本地条目；两个分支现已独立执行 |
+| XFER-09-sha256sum | 50/51：可选原生校验路径拒绝真实服务端无 Content-Length 的 chunked 响应；默认 GLib 路径通过 |
+| TYPE-03 / TYPE-03-user-sample | 强化长样本在 50 精确回读失败，51 通过；短样本通过不能抵消 |
+| TYPE-08-capslock | 50/51：CapsLock 开启后实际输出不一致；US/German 布局通过，不代表绕过 IME |
+| TYPE-09-chromium | 51 ASCII 通过，CJK/emoji 输出不同；相同选定用例在 50 通过，不能泛化为所有 Chromium 都有问题 |
+| TYPE-02-vte | 原生 ASCII 与真实剪切板粘贴正控均成功。插件自然粘贴在 50 通过，51 没有额外 PTY 字节（捕获 purpose 为 0）；这是 GTK3/VTE 目标/版本失败，不代表所有终端失败 |
+
+HTTP gate 流式转发真实请求，只控制时序。崩溃记 FAIL，后续未进入记 NOT_RUN；
+不自动重试、放宽断言或修改生产代码换取绿色。
 
 ```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.1.0.zip --case WORD-07 --isolate-cases
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.1.0.zip --case SEND-04,SEND-08,RECV-08 --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,ENV-05-screenshot,TYPE-08-capslock --isolate-cases
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual,XFER-09-sha256sum --isolate-cases
 ```
 
-## 仍受条件限制或需人工验收
+## 剩余边界
 
-缺应用、有效非 C locale、所需 GVfs 后端时标记 BLOCKED，不算通过。物理键盘熔断、真实输入法、
-已安装来源之外的应用/XWayland 互操作、双桌面激活竞态、全部门户/显示后端及视觉质量仍需独立证据。
-已归属逻辑测试的数据矩阵不重复搬进 Shell。
+物理输入、真实 IME 组字、全部 toolkit/XWayland/门户后端、可信 HTTPS、Flatpak Gradia、
+两个完整桌面的激活竞态、长期 soak、视觉仍需准备环境或人工证据，并非断言无法自动化。
+逻辑层已负责的数据/安全矩阵不重复搬进 Shell。
 
-报告保存在被忽略的 `build/simulation-tests/`、`build/lifecycle-tests/`：日志、逐项结果、构建包 hash、
-测试源码指纹，以及合成器仍存活时的失败截图。不要直接公开未经检查的桌面日志。
-[测试指南](README_CN.md)说明入口与隔离方式，本次没有扩大 GitHub CI。
+依赖、显示 profile、冷启动命令见[测试指南](README_CN.md)。被忽略的
+`build/simulation-tests/`、`build/lifecycle-tests/` 保留日志、逐项结果、包 hash、源码指纹和合成器存活时的截图。
+分享日志前先检查内容。

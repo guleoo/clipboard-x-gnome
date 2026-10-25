@@ -16,10 +16,12 @@ function write(path, contents) {
 }
 function uri(path) { return Gio.File.new_for_path(path).get_uri(); }
 
-class Application {
-  static async open(desktop, kind) {
+export class Application {
+  static async open(desktop, kind, {allowLoopback = false} = {}) {
     requireIsolation();
-    if (!GLib.find_program_in_path(kind)) block(`External application ${kind} is not installed`);
+    const executable = GLib.find_program_in_path(kind)
+      ?? (kind === 'chromium' ? GLib.find_program_in_path('chromium-browser') : null);
+    if (!executable) block(`External application ${kind} is not installed`);
     if (!GLib.find_program_in_path('python3')) block('External application cleanup requires python3');
     const app = new Application(desktop, kind);
     const profile = `${app.directory}/profile`;
@@ -59,7 +61,8 @@ class Application {
           'datareporting.policy.dataSubmissionEnabled': false, 'toolkit.telemetry.enabled': false,
           'app.update.auto': false, 'extensions.update.enabled': false,
           'network.proxy.type': 1, 'network.proxy.http': '127.0.0.1', 'network.proxy.http_port': 9,
-          'network.proxy.ssl': '127.0.0.1', 'network.proxy.ssl_port': 9, 'network.proxy.no_proxies_on': '',
+          'network.proxy.ssl': '127.0.0.1', 'network.proxy.ssl_port': 9,
+          'network.proxy.no_proxies_on': allowLoopback ? '127.0.0.1' : '',
           'network.trr.mode': 5, 'network.dns.disablePrefetch': true, 'network.prefetch-next': false,
           'network.http.speculative-parallel-limit': 0,
         };
@@ -67,11 +70,11 @@ class Application {
           .map(([key, value]) => `user_pref(${JSON.stringify(key)}, ${JSON.stringify(value)});`).join('\n'));
         command = [kind, '--no-remote', '--new-instance', '--profile', profile, '--new-window', uri(document)];
       } else {
-        command = [kind, `--user-data-dir=${profile}`, '--ozone-platform=wayland', '--no-first-run',
+        command = [executable, `--user-data-dir=${profile}`, '--ozone-platform=wayland', '--no-first-run',
           '--no-default-browser-check', '--disable-background-networking', '--disable-component-update',
           '--disable-default-apps', '--disable-extensions', '--disable-sync', '--password-store=basic',
-          '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=<-loopback>',
-          '--host-resolver-rules=MAP * ~NOTFOUND', '--new-window', uri(document)];
+          '--proxy-server=http://127.0.0.1:9', `--proxy-bypass-list=${allowLoopback ? '127.0.0.1' : '<-loopback>'}`,
+          `--host-resolver-rules=MAP * ~NOTFOUND${allowLoopback ? ', EXCLUDE 127.0.0.1' : ''}`, '--new-window', uri(document)];
         if (GLib.get_user_name() === 'root') command.splice(1, 0, '--no-sandbox');
       }
     }

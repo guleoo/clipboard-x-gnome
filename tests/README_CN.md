@@ -161,6 +161,40 @@ python3 tools/test-lifecycle.py CURRENT.zip --previous PREVIOUS.zip
 ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离线上传队列。未指定 `--previous`
 是重装同一个包，不可视为旧版本数据迁移测试。日志和 `report.json` 位于 `build/lifecycle-tests/`。
 
+### 扩展本地覆盖
+
+原生注册表有 126 个可选用例，不代表 126 项功能已全部通过。新检查复用原有归属，补齐畸形图片恢复、
+原文丢失、语句 IO 故障、选择手势、设置持久化/布局、实际编辑进程及按目的地恢复同步队列。
+保留失败见[实际结果](acceptance-status_CN.md)。
+
+```sh
+# 实际虚拟显示器，不伪造 monitor 对象：
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
+# 120,002 词导入/索引/缓存测量，以及不可信 TLS 拒绝：
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09,DICT-06-https --language zh_CN --isolate-cases
+# 两个真实 Shell 之间恢复词库，本地 HTTP 独立计数：
+python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
+# 独立浏览器 textarea / GTK3-VTE PTY 输入目标：
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-09-firefox,TYPE-09-chromium,TYPE-02-vte --isolate-cases
+```
+
+显示用例缺所需 profile 时为 BLOCKED。分数缩放通过 Mutter DisplayConfig 应用后端实际支持的 125%。
+VTE 需要 Python GI 的 Gtk 3 / VTE 2.91；Chromium 支持 `chromium` / `chromium-browser` 命令。
+浏览器目标使用私有 profile 和自有 loopback 接收器，不访问外站。VTE 先独立验证原生 ASCII 输入与
+真实剪切板粘贴，再测插件自然粘贴；raw PTY 嵌入目标不等于所有终端应用。
+
+`TYPE-03-user-sample` 可选读取 `tools/simulate-input-sample.txt`（少于 20,000 字符）；不创建、修改或
+提交该用户文件，缺文件为 BLOCKED。差异日志只记录长度、首个不同码点和 hash，不输出整个样本。
+普通 TYPE-03 始终在两档速度下检查维护中的 460 字符样本。
+
+词库 GUI 用例需要普通桌面用户及文件管理器/编辑器，Nautilus 不支持 root 会话。
+`DICT-06-https` 还需 `openssl`，验证自有自签名证书被拒绝，不代表可信 HTTPS 成功。
+词库冷恢复需要已生成的非 C UTF-8 locale；不改宿主证书库，不关闭证书验证。
+
+Docker wrapper 只把临时服务配置改为每 60 秒 20,000 请求，避免真实 205 条发布/分页消耗默认 600 次预算。
+不改生产默认，不自动重试掩盖限流。自定义镜像已有冲突的根 HTTP 配置时直接拒绝，不静默合并。
+
 ## 新增测试的归属
 
 - 根据运行环境分类，不仅根据 `.test.js`、`.smoke.js`、`.integration.js` 后缀判断。

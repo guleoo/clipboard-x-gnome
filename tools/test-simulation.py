@@ -26,6 +26,7 @@ def main():
     parser.add_argument('--group', help='Comma-separated domain names')
     parser.add_argument('--shell', choices=['50', '51'])
     parser.add_argument('--language', default='en_US', help='Gettext language for the isolated processes')
+    parser.add_argument('--display', choices=['standard', 'dual', 'fractional'], default='standard')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/simulation-tests')
     parser.add_argument('--timeout', type=int, default=300)
     parser.add_argument('--list', action='store_true')
@@ -47,6 +48,7 @@ def main():
             module, case = available[key]
             requirements = [*case.get('commands', []), *(['isolated server'] if case.get('server') else [])]
             if case.get('languages'): requirements.append('--language ' + '/'.join(case['languages']))
+            if case.get('displays'): requirements.append('--display ' + '/'.join(case['displays']))
             print(f'{key}: {module}' + (f"; requires {', '.join(requirements)}" if requirements else ''))
         return 0
     if not args.archive or not args.archive.is_file():
@@ -91,6 +93,8 @@ def main():
             missing.append('a generated non-C UTF-8 locale (for example en_US.UTF-8)')
         if case.get('languages') and args.language.split('_')[0] not in case['languages']:
             missing.append('--language ' + '/'.join(case['languages']))
+        if case.get('displays') and args.display not in case['displays']:
+            missing.append('--display ' + '/'.join(case['displays']))
         if case.get('server') and not os.environ.get('CBX_SIMULATION_SERVER'):
             missing.append('isolated server (use tools/test-sync-server.py)')
         if missing:
@@ -116,6 +120,7 @@ def main():
             env = dict(os.environ, XDG_RUNTIME_DIR=str(session), TMPDIR=str(session),
                        XDG_STATE_HOME=str(session / 'state'),
                        CBX_SIMULATION_RUNTIME=str(session), CBX_SIMULATION_MODULE=module,
+                       CBX_SIMULATION_DISPLAY=args.display,
                        CBX_SIMULATION_CASES=','.join(cases), LIBGL_ALWAYS_SOFTWARE='1',
                        CBX_SIMULATION_ARTIFACTS=str(artifacts),
                        GTK_A11Y='none', NO_AT_BRIDGE='1', SHELL_BACKGROUND_IMAGE=str(background),
@@ -152,7 +157,7 @@ def main():
         results['RUNNER:sources'] = {'status': 'FAIL', 'reason': 'Test sources changed during this run; repeat against a stable snapshot'}
     document = {'shell': shell, 'archive': str(args.archive.resolve()), 'testsRevision': revision,
                 'testsFingerprint': source_hash, 'preparedSha256': prepared_hash,
-                'sha256': archive_hash, 'language': args.language,
+                'sha256': archive_hash, 'language': args.language, 'display': args.display,
                 'messageLocale': message_locale,
                 'serverImage': os.environ.get('CBX_SIMULATION_SERVER_IMAGE'),
                 'results': results}

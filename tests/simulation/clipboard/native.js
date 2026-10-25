@@ -1,9 +1,11 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GdkPixbuf from 'gi://GdkPixbuf';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
+import {restart} from '../helpers/restart.js';
 
 export async function capture(desktop, target, text) {
   await target.offer(text);
@@ -25,6 +27,66 @@ export async function activate(desktop, item, method) {
 }
 
 export const cases = {
+  async 'CLIP-04-recovery'(desktop) {
+    const target = await Target.open(desktop);
+    try {
+      const controller = desktop.app._controller;
+      // A failed thumbnail is not grounds to drop a nonempty representation.
+      // Exercise the actual decoder failure, then ensure it cannot poison capture.
+      for (const mime of ['image/png', 'image/jpeg', 'image/webp', 'image/gif']) {
+        const bytes = new TextEncoder().encode(`not a valid ${mime} payload`);
+        const hash = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes);
+        await target.offerBytes({[mime]: bytes});
+        await until(() => controller.items.some(item => item.primary.sha256 === hash)
+          && !controller._captureInProgress, 'malformed image decoder completed');
+        const item = controller.items.find(value => value.primary.sha256 === hash);
+        assert(!item.preview?.path && item.primary.size === bytes.length,
+          'Decoder failure must not invent a successful thumbnail or truncate the original');
+        await activate(desktop, item, 'click');
+        assert((await target.clipboard(mime)).sha256 === hash, 'Preserved representation must remain byte-exact');
+        await capture(desktop, target, `normal text after malformed ${mime}`);
+      }
+      const image = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, false, 8, 80, 20);
+      image.fill(0x669933ff);
+      await target.offerBytes({'image/png': image.save_to_bufferv('png', [], [])[1]});
+      await until(() => controller.items.some(item => item.preview?.path), 'valid image decoder recovers after malformed sources');
+    } finally { await target.close(); }
+  },
+
+  async 'CLIP-09-missing'(desktop) {
+    const target = await Target.open(desktop);
+    const errors = [];
+    let actions;
+    let reportError;
+    try {
+      const saved = await capture(desktop, target, 'original object which will disappear');
+      await desktop.app._controller.persist();
+      await restart(desktop);
+      const item = desktop.app._controller.items.find(value => value.id === saved.id);
+      assert(item?.primary.path && !item.primary.bytes, 'Restart must load a disk-backed object, not leave cached bytes');
+      const sentinel = 'independent clipboard before missing content activation';
+      await capture(desktop, target, sentinel);
+      Gio.File.new_for_path(item.primary.path).delete(null);
+      actions = desktop.indicator._actions;
+      reportError = actions.reportError;
+      actions.reportError = error => { errors.push(error); reportError(error); };
+      for (const method of ['click', 'enter']) {
+        await desktop.open();
+        await desktop.search(item.text);
+        await until(() => desktop.history._itemRows.size === 1, 'missing object row located');
+        const count = errors.length;
+        if (method === 'click') await desktop.click(desktop.history._itemRows.get(item.id).focusActors[0]);
+        else { await desktop.key(Clutter.KEY_Down); await desktop.key(Clutter.KEY_Return); }
+        await until(() => errors.length > count, `${method}: missing object reports failure`);
+        assert((await target.clipboard()).text === sentinel, `${method}: failed activation must preserve the clipboard`);
+      }
+      await capture(desktop, target, 'valid capture after missing object activation');
+    } finally {
+      if (actions) actions.reportError = reportError;
+      await target.close();
+    }
+  },
+
   async 'CLIP-01'(desktop) {
     const target = await Target.open(desktop);
     try {
