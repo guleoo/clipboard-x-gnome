@@ -3,7 +3,7 @@
 > 简体中文 · [English](functional-inventory.md)
 
 这是长期维护的**验收范围和归属**，不是通过报告。入口存在只代表覆盖部分边界，不代表已在
-GNOME 50/51 通过。旧 .codex 报告仅是对应版本证据，不再作为当前功能清单的维护入口。
+GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)；单个用例通过不等于整个功能 ID 的全部边界通过。
 
 ## 证据与运行规则
 
@@ -21,7 +21,16 @@ GNOME 50/51 通过。旧 .codex 报告仅是对应版本证据，不再作为当
 
 ### 安装、启动与生命周期 — ENV-01…08
 
-新装、冷覆盖；空目录和已有数据启动；连续启停；初始化、保存、下载、分词、截图、模拟输入中禁用；关闭再打开独立 Shell 后恢复历史和绑定目的地的队列；资源释放；设置使用独立 GTK 进程。不要求热更新或真实注销。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| ENV-01 | 从当前 ZIP 新装，metadata、Schema、翻译和资源完整，扩展系统识别正确；不要求第三方扩展管理器图形列表。 |
+| ENV-02 | 覆盖安装后，在重新启动的独立 Shell 中加载新版代码；同一 Shell 内不要求热更新。 |
+| ENV-03 | 全新数据目录、已有正常数据目录分别启动，不用空启动快照覆盖原数据。 |
+| ENV-04 | 启用、禁用、立即重新启用、连续启停；无重复入口、失效快捷键或重复捕获。 |
+| ENV-05 | 初始化、保存、下载、分词、截图或模拟输入中禁用，取消任务并拒绝迟到回调。 |
+| ENV-06 | 关闭独立Shell后重新打开，恢复历史和上传队列；不将损坏状态当成功。不要求真实注销/登录、物理断电或未落盘数据的崩溃恢复。 |
+| ENV-07 | 禁用后信号、定时器、modal grab、虚拟设备、HTTP 会话与等待消费者正确释放。 |
+| ENV-08 | 设置进程与 Shell 进程独立运行，无 Meta/Adw 导入错误；设置关闭后无悬挂操作。 |
 
 长期模拟入口：[lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -32,7 +41,18 @@ DeviceId 及绑定目的地的离线上传队列。不指定 `--previous` 仅代
 
 ### 面板入口、导航与现场 — PANEL-01…10
 
-点击和快捷键开关；隐藏入口锚点及偏移；通用尺寸和单面板覆盖；保留现场、动画关闭、快速重开；第 11 条返回保留搜索、焦点和滚动；初始目标、焦点矩阵、边界限制、键盘滚动和键鼠接续。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| PANEL-01 | 顶栏点击打开/关闭，全局快捷键打开/再次按下关闭，桌面空白处关闭。 |
+| PANEL-02 | 隐藏顶栏入口后仍可通过快捷键打开，九宫格锚点和正负偏移落在有效工作区。 |
+| PANEL-03 | 主面板、分词、快捷语句按配置正常变更宽高；单面板尺寸覆盖不影响其他面板。不要求自动限制为工作区大小。 |
+| PANEL-04 | 保留现场开/关时正确恢复或重置当前面板；关闭动画不先闪回历史面板。 |
+| PANEL-05 | 从历史第 N 条进入分词后返回，搜索、滚动、条目及按钮焦点不跳回顶部。 |
+| PANEL-06 | 首次导航目标正确：历史搜索框、首个分词、首个快捷语句或空列表的加号。 |
+| PANEL-07 | 方向键按焦点矩阵移动，跳过隐藏控件；不等长行、首尾、返回和底部按钮正确。 |
+| PANEL-08 | 焦点限制开/关符合配置；面板外或其他插件不被本插件局部快捷键拦截。 |
+| PANEL-09 | 导航到不可见条目会滚动；用户鼠标滚动不被旧的异步恢复覆盖。 |
+| PANEL-10 | 键鼠高亮及tooltip跟随最近实际输入，不被静止hover或迟到提示干扰；实际移动到有效控件后，方向键及激活操作从该控件接续。悬停不打断输入框编辑，滚轮不重定位焦点；业务选中状态不变，切面板、关闭和禁用时正确清理。 |
 
 长期模拟入口：[panels/navigation.smoke.js](simulation/panels/navigation.smoke.js), [panels/monitors.smoke.js](simulation/panels/monitors.smoke.js), [panels/restoration.smoke.js](simulation/panels/restoration.smoke.js), [panels/search.smoke.js](simulation/panels/search.smoke.js), [panels/escape.smoke.js](simulation/panels/escape.smoke.js).
 
@@ -40,7 +60,20 @@ DeviceId 及绑定目的地的离线上传队列。不指定 `--previous` 仅代
 
 ### 文本与图片捕获、复用 — CLIP-01…12
 
-外部文本、HTML、图片，多语言、多行、Tab、emoji；表示去重，拒绝空和无效内容；捕获大小边界；缩略图等比且复制编辑用原图；延迟、快速和退出的 owner、回流抑制；实际复制回读；操作按钮不误触、Ctrl+点击、可选纯文本去空白。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| CLIP-01 | 独立应用复制短文本、多行、Tab、长文本、中文/英文、emoji、组合字符；记录与复制回读一致。 |
+| CLIP-02 | 浏览器/办公应用同时提供纯文本和 HTML，表示去重正确，优先正文与预览正确。 |
+| CLIP-03 | 空 HTML、仅 meta/标签、空白与无效表示不会制造伪条目；有效富文本不误删。 |
+| CLIP-04 | PNG/JPEG/WebP/GIF/SVG 等实际可提供的图像表示可捕获；失败有反馈，不永久卡在捕获中。 |
+| CLIP-05 | 宽图、长图、大分辨率图片缩略图等比；复制/编辑使用原图，不使用缩略图。 |
+| CLIP-06 | 捕获大小在阈值前、等于、超过边界时行为正确，截断数据不能冒充完整正文。 |
+| CLIP-07 | 快速连续复制、延迟提供内容、来源应用退出或 owner 变化，不混合来源、不接受旧结果。 |
+| CLIP-08 | 重复复制、选择自身历史、远端写回剪切板不循环增加记录；不丢固定状态。 |
+| CLIP-09 | 点击条目或 Enter 真正把原内容写回系统剪切板；失败和已失效条目不能伪装成功。 |
+| CLIP-10 | 条目的 Pin/Delete/分词/编辑/同步按钮不误触内容复制；删除后后续内容仍可捕获。 |
+| CLIP-11 | Ctrl+点击只对文本执行模拟输入，不意外复制或触发系统组合键。 |
+| CLIP-12 | 去首尾空白开/关仅作用于新纯文本，内部空白不变，HTML 原始格式不被重写。 |
 
 长期模拟入口：[clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js), [clipboard/entries.smoke.js](simulation/clipboard/entries.smoke.js), [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
@@ -55,7 +88,18 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 搜索、排序、保留与持久化 — HIST-01…10
 
-固定重启后置顶；数量、容量、天数及清空保留固定项（含全固定）；preview.text 搜索、上限、无结果；加载保存禁用竞态；按设备分目录、共享引用、staging 采用；损坏、缺失、hash、越界、写入失败及临时文件清理。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| HIST-01 | Pin/unpin、重启、多来源混合后固定项仍置顶；其余排序及重复项行为一致。 |
+| HIST-02 | 历史数量、存储容量、保留天数限制只淘汰应淘汰的普通项；全为固定项时保留策略明确。 |
+| HIST-03 | 清空历史保留固定项；修改限额及 lazy 原文下载后重新执行容量策略。 |
+| HIST-04 | 搜索空串、大小写、中文、emoji、前后空白、无匹配与结果上限。 |
+| HIST-05 | 搜索范围按当前实现的 preview.text 验收，不把它宣传或测试成全文检索。 |
+| HIST-06 | 启动读取中复制、保存中增删/固定、禁用后立即启用，最终磁盘状态不回退。 |
+| HIST-07 | 按来源 DeviceId 分目录；共享对象删一条不误删另一条，最后引用释放后回收。 |
+| HIST-08 | staging 到稳定对象的采用、删除和读取交错，不丢原图、不越出受管目录。 |
+| HIST-09 | 坏索引、单项损坏、缺对象、hash 错、符号链接或越界路径安全处理，其余有效数据可恢复。 |
+| HIST-10 | 不可写、空间不足、写中断时不破坏旧文件；错误不被隐藏，临时文件得到清理。 |
 
 长期模拟入口：[clipboard/history/startup.smoke.js](simulation/clipboard/history/startup.smoke.js).
 
@@ -63,7 +107,16 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 隐私与应用排除 — PRIV-01…08
 
-隐私模式暂停记录；敏感 MIME 默认不记录或仅内存；正文、缩略图不落盘、不上传；发现和手输排除应用；owner、隐私、排除策略变化拒绝旧捕获；删除和敏感重复制清理上传；固定、清空、重启不突破本地边界；日志和队列不泄露正文或 API Key。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| PRIV-01 | 隐私模式默认状态与切换即时生效，隐私模式开启期间新复制不进入历史。 |
+| PRIV-02 | 密码管理器敏感 MIME 默认不记录；改为仅内存后只在本次扩展生命周期可用。 |
+| PRIV-03 | 内存敏感项不写正文、索引或缩略图，不进入同步队列，不出现上传入口。 |
+| PRIV-04 | 排除运行中的应用和手动 window class 均正确；空值、重复值、大小写策略明确。 |
+| PRIV-05 | 捕获/缩略图处理中开启隐私或更改排除策略，旧内容不能晚到泄漏。 |
+| PRIV-06 | 条目删除或变为敏感后，待上传引用与冻结清单被清理，不继续发送。 |
+| PRIV-07 | 私密内容不因 Pin、清空、重启、错误重试或多表示而突破仅本地边界。 |
+| PRIV-08 | 日志、通知、上传队列不泄露正文或 API Key；sync.json 按当前设计保存连接信息，不误声称加密存储。 |
 
 长期模拟入口：[clipboard/privacy.smoke.js](simulation/clipboard/privacy.smoke.js), [clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js).
 
@@ -71,7 +124,16 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 分词算法与限制 — WORD-01…08
 
-各语言保留位置、标点、空白；缩写、相邻句、链接、邮箱、数字、路径、emoji、混合文字；按原文顺序重建；复制粘贴模拟输入结果一致，空选择不误操作；默认 2000 词及可配置边界；长文响应度；切面板、词库和生命周期后拒绝旧结果。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| WORD-01 | 中/英/日/韩及其余支持语言的基本切分不丢字符、标点、空白，原文位置正确。 |
+| WORD-02 | 英文缩写 can't、相邻句 that.I、链接、邮箱、数字、路径和混合语种被正确识别。 |
+| WORD-03 | emoji、组合字符、全角符号、换行与连续空白不损坏。 |
+| WORD-04 | 相邻和不相邻词按原文顺序重建，标点及间隔规则符合当前设计。 |
+| WORD-05 | 复制、粘贴、模拟输入使用同一选择结果；空选择时底部复制按钮不可用，快捷键按聚焦词回退规则处理，不误操作。 |
+| WORD-06 | 默认 2000 项、恰好等于、超过及配置调整，超限明确拒绝、不静默截断。 |
+| WORD-07 | 超长无空白文本、大量 URL/符号在限制前停止处理，不创建海量控件或冻结主循环。 |
+| WORD-08 | 分词中更换条目、返回、关闭、改词库或禁用，旧结果不覆盖后来面板。 |
 
 长期模拟入口：[word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
@@ -79,7 +141,15 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 分词鼠标与键盘 — SELECT-01…07
 
-单击一次切换；按住 A→C 选 ABC，退回 B 仅 AB，从已选起点反选；反向、跨行、裁剪和外部释放；Shift+方向、Space/Enter；原文预览、词区滚动、结果和 footer；切换关闭禁用终止拖选。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| SELECT-01 | 单击选中/取消；鼠标松开后仅悬停不继续连选。 |
+| SELECT-02 | 按住 A→C 选 ABC，仍按住退回 B 只保留 AB；从已选起点开始连续反选。 |
+| SELECT-03 | 反向拖动、跨行、滚动、裁剪区域、面板外释放不会选错或卡在拖选状态。 |
+| SELECT-04 | Shift+方向键按起始项状态连选/反选，跨行和首尾行为正确。 |
+| SELECT-05 | Space/Enter、返回、复制按钮和焦点边界走实际事件分发。 |
+| SELECT-06 | 原文预览开/关；词区滚动、结果固定底部，不显示主面板 footer。 |
+| SELECT-07 | 拖选中切换、关闭或禁用，立即释放选择会话，重开不沿用按住状态。 |
 
 长期模拟入口：[word-selection/drag.smoke.js](simulation/word-selection/drag.smoke.js), [word-selection/viewport.smoke.js](simulation/word-selection/viewport.smoke.js), [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
@@ -87,7 +157,17 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 词库与降级 — DICT-01…09
 
-语言区域匹配、系统降级、多词库启用；UTF-8、词频、重复、空文件、错误格式和有效语言声明；归属以导入时为准；大小数量边界；仅主动网络添加刷新，失败保留旧版本；编辑目录删除、原子替换、缓存失效、并发复用、取消、建索引耗时。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| DICT-01 | 无匹配词库时使用系统分词器；按当前语言及区域匹配，不混用其他语言缓存。 |
+| DICT-02 | 系统分词器和多个词库可分别启用；列表随语言变化，至少有可用来源或明确降级。 |
+| DICT-03 | 本地合法 UTF-8 文件、词频、重复词、空文件和格式错误；缺少/非法 locale 声明拒绝导入。 |
+| DICT-04 | 词库语言以导入时确定的归属为准，编辑文件头不会悄悄改归属。 |
+| DICT-05 | 文件大小/词条数量在当前实现限制的前、等于、超过边界，失败不留半文件。 |
+| DICT-06 | 添加 HTTP/HTTPS 网络词库及主动刷新，失败、语言变化、非法内容保留原可用版本。 |
+| DICT-07 | 安装、启动、打开设置或分词不会偷偷下载；只有主动添加/刷新访问网络。 |
+| DICT-08 | 默认编辑器、打开目录、删除入口可用；编辑器原子替换后重新分词加载新内容。 |
+| DICT-09 | 并发加载复用、缓存失效、revision 改变和取消正确；大词库解析/建索引保持响应。 |
 
 长期模拟入口：[settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -98,7 +178,16 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 快捷语句 — PHRASE-01…08
 
-真实加号聚焦、主和小键盘 Enter、保存按钮；再次加号或 Esc 取消；输入不触发条目快捷键；空白重复长度数量排序；配置复制粘贴模拟输入删除及复制后关闭；并发延迟失败保存保留新草稿和焦点；重启恢复、仅本地存储，不受清空历史或同步影响。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| PHRASE-01 | 真实点击加号展开并聚焦，实际输入后主 Enter/小键盘 Enter 或确认按钮保存、清空、收起。 |
+| PHRASE-02 | 再次加号和 Esc 取消不保存；输入框普通文字不触发历史快捷动作。 |
+| PHRASE-03 | 空白、trim、重复内容、最大长度、emoji、数量限制、新旧排序均符合当前策略。 |
+| PHRASE-04 | 点击或 Enter 复制，v 粘贴、撇号模拟输入、Delete 删除；跟随对应快捷键配置。 |
+| PHRASE-05 | 复制后关闭面板开/关，两种状态下实际剪切板内容正确。 |
+| PHRASE-06 | 快速提交、延迟保存中改文/取消/切面板，不清掉新草稿、不抢回焦点。 |
+| PHRASE-07 | 保存/删除失败、坏文件、重启恢复；不把写入失败显示为保存成功。 |
+| PHRASE-08 | 仅本地保存；清空剪切板、切换同步配置不删除或上传快捷语句。 |
 
 长期模拟入口：[phrases/form.smoke.js](simulation/phrases/form.smoke.js), [phrases/integration.smoke.js](simulation/phrases/integration.smoke.js).
 
@@ -106,7 +195,17 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 粘贴与模拟输入 — TYPE-01…09
 
-复制粘贴模拟输入的剪切板作用区分；原目标在两档速度收到逐字一致的 ASCII、中日韩、emoji、Tab、多行长文；等待修饰键和超时、运行熔断、通知一次、取消队列、释放按键；输入法、CapsLock、布局、焦点、toolkit 及物理输入限制。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| TYPE-01 | 复制、粘贴、模拟输入三种动作分离，只有应修改系统剪切板的动作修改它。 |
+| TYPE-02 | 粘贴回打开面板前的目标，普通应用和终端分别验收；实际收到内容而非只验证组合键序列。 |
+| TYPE-03 | ASCII、中英混排、emoji、多行、Tab、长配置文本，目标收到的字符串逐字一致。 |
+| TYPE-04 | 标准/慢速两档在实际目标应用生效；不丢字符、不乱序。 |
+| TYPE-05 | 启动时等待触发修饰键释放；超时不输出；Ctrl+点击不变成系统快捷键。 |
+| TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；物理键盘效果另需实测。 |
+| TYPE-07 | 关闭/禁用/注销时停止并释放虚拟按键；旧任务不在新实例继续运行。 |
+| TYPE-08 | 输入法中/英文模式、CapsLock、键盘布局、目标应用切换分别测试，不能假定可绕过输入法。 |
+| TYPE-09 | 不同 toolkit、浏览器和终端验收；普通物理按键在 Wayland 下不可可靠感知的限制明确披露。 |
 
 长期模拟入口：[terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/guard.smoke.js](simulation/terminal/guard.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
 
@@ -114,7 +213,15 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 系统截图 — SHOT-01…07
 
-按钮快捷键及后端支持的目标；历史复制编辑选项组合；取消无通知无副作用；拒绝超时不可用缺 URI 的错误及重试；重复请求和禁用清理；真实图像及空格中文路径。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| SHOT-01 | 按钮和全局快捷键启动真实 Screenshot Portal。 |
+| SHOT-02 | 交互/全屏/窗口/区域/活动窗口按后端支持能力工作，不把不支持误报成功。 |
+| SHOT-03 | 加入历史、写剪切板、打开编辑器相关配置分别及必要组合正确。 |
+| SHOT-04 | 用户主动取消无“截图失败”通知，不写历史、不复制、不启动编辑器。 |
+| SHOT-05 | 拒绝、超时、门户不可用、无 URI 时有可理解错误，并能再次截图。 |
+| SHOT-06 | 连续点击、能力查询或截图期间取消/禁用，清理请求、订阅、超时，不复活旧请求。 |
+| SHOT-07 | 真实结果图像和 URI、空格/中文路径、取消后立即重试均正确。 |
 
 长期模拟入口：[screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
 
@@ -125,7 +232,15 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 图片编辑 — EDIT-01…07
 
-空命令不取原图；%u/%f/%i/%%、引号和路径；非法占位符命令文件 URI；本地缓存 lazy 原图和离线边界；慢启动不读 stdin 提前退出不卡 Shell；真实原生和 Flatpak Gradia，面板关闭和编辑器生命周期。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| EDIT-01 | 未配置命令只提示配置，不取原文、不启动无关应用。 |
+| EDIT-02 | %u、%f、%i、%%、无占位符、引号、空格和非 ASCII 路径按 argv 正确传递。 |
+| EDIT-03 | 非法占位符、命令不存在、原文件不存在、非本地 URI 不适用占位符时清楚失败。 |
+| EDIT-04 | 本地、已下载远端、仅预览远端分别编辑；不得把缩略图当原图。 |
+| EDIT-05 | 关闭同步时 lazy 图片不能请求原文；开启后可重新获取并编辑。 |
+| EDIT-06 | 编辑器启动慢、不读 stdin、提前退出、持续运行，Shell 都持续响应。 |
+| EDIT-07 | 真实 Gradia 原生/Flatpak 读取完整图片；面板关闭时机正确，外部编辑器不因插件关闭被误杀。 |
 
 长期模拟入口：[clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
@@ -136,7 +251,15 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 取色器 — COLOR-01…07
 
-真实采样、鼠标键盘确认取消、最新像素仅提交一次；方向键一物理像素、Ctrl 及连按；颜色格式色块；边缘负坐标分数多屏；在途采样 grab 失败、关闭禁用重开，释放 modal 信号并恢复输入。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| COLOR-01 | 按钮/快捷键打开，真实屏幕采样、放大镜、鼠标移动，结果进入系统剪切板及正常历史。 |
+| COLOR-02 | 左键/Enter/Space 确认，右键/Esc 取消；确认使用最后采样点，不使用迟到旧样本。 |
+| COLOR-03 | 方向键和当前支持的其他方向键每次一物理像素，Ctrl 步长及快速连按累加正确。 |
+| COLOR-04 | HEX/RGB/HSL/OKLCH 输出及颜色条目小方块一致。 |
+| COLOR-05 | 屏幕边缘、分数缩放、多显示器和负坐标采样正确。 |
+| COLOR-06 | 初始化失败、grab 失败、采样中关闭/禁用，释放 modal 与信号。 |
+| COLOR-07 | 重复打开和退出后桌面、其他快捷键恢复正常，没有残留覆盖层。 |
 
 长期模拟入口：[color-picker/sampling.smoke.js](simulation/color-picker/sampling.smoke.js), [color-picker/movement.smoke.js](simulation/color-picker/movement.smoke.js), [color-picker/lifecycle.smoke.js](simulation/color-picker/lifecycle.smoke.js).
 
@@ -144,7 +267,18 @@ profile、本地 HTML / LibreOffice RTF，原生复制后由独立 GTK 回读文
 
 ### 同步连接、设备与 Channel — CONN-01…10
 
-IP/HTTP/HTTPS/子路径/认证/非法地址；测试未保存输入不重启同步；快速测试应用重试关闭不重入；应用保存并立即更新设备和 Channel；稳定 DeviceId、Tag 和自由 icon/回退/本机不显示；缺失无权限移除 Channel 不串游标目的地。离线、慢服务、失效撤销和协议不兼容提供本地化错误；设置与 Shell 并发读写不丢字段、不泄露 Key。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| CONN-01 | IP:端口、HTTP、HTTPS、代理子路径和非法地址；设备/API Key 认证头正确。 |
+| CONN-02 | 测试连接只检查当前输入，不保存、不重启正在运行的同步。 |
+| CONN-03 | 快速连点测试/应用/刷新、失败后重试、设置关闭时请求在途，不重入或卡 Shell。 |
+| CONN-04 | 应用保存连接，立即同步设备 Tag/icon 并加载 Channel；完成前禁用重复提交。 |
+| CONN-05 | 应用请求失败时本地保存结果、错误与按钮状态一致，不显示虚假成功。 |
+| CONN-06 | DeviceId 首次生成、重启后稳定，Tag/icon 修改不改变身份。 |
+| CONN-07 | 自带设备/操作系统图标、未知自由 icon 字符串回退；本机条目不展示远端标记。 |
+| CONN-08 | 无 Channel、无权限、Channel 被撤销/切换；游标和出站目的地不能串用。 |
+| CONN-09 | 离线、慢服务器、认证失效、设备撤销、协议不兼容均有可本地化反馈。 |
+| CONN-10 | 设置进程与 Shell 并发读写连接配置，不丢字段、不泄露 API Key。 |
 
 长期模拟入口：[settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -156,7 +290,18 @@ URL、认证和并发配置的数据组合仍归现有逻辑测试。
 
 ### 发布策略与持久化队列 — SEND-01…10
 
-发送模式仅固定、文本图片阈值；请求前冻结清单；按服务器 Channel 设备恢复；关闭暂停且不为新复制入队；丢响应确认；删除隐私缺原文不回流；坏队列保存失败退避永久错误、确认关闭交错落盘。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| SEND-01 | 关闭、手动、自动及仅固定项的发送策略实际生效；Pin 不导致不该发送的内容外传。 |
+| SEND-02 | 纯文本、附加富文本格式、图片开关仅影响对应表示；不会误改变本地捕获。 |
+| SEND-03 | 文本/图片阈值前、等于、超过，清单 delivery、预览和实际上传字节一致。 |
+| SEND-04 | 首次请求前持久化冻结清单；断网、重启、阈值变化后重试复用原清单。 |
+| SEND-05 | 按服务器保存队列并绑定 Channel/DeviceId，切换不串发，切回正确恢复。 |
+| SEND-06 | 关闭同步暂停已有任务；关闭期间复制不入队，开启后不自动补传。 |
+| SEND-07 | 服务端已提交但响应丢失时复用/确认同一发布，不重复上传完整内容。 |
+| SEND-08 | 条目删除、变隐私、原文丢失后停止或安全失败；远端条目不回流发布。 |
+| SEND-09 | 保存失败、队列损坏、重试退避、永久错误、退出中断不丢应保留的任务。 |
+| SEND-10 | 本次发布确认后 delivery 落盘；停用与保存交错仍有关闭快照，不依赖历史事件重放保存。 |
 
 长期模拟入口：[sync/toggle.smoke.js](simulation/sync/toggle.smoke.js), [sync/status.smoke.js](simulation/sync/status.smoke.js).
 
@@ -168,7 +313,18 @@ URL、认证和并发配置的数据组合仍归现有逻辑测试。
 
 ### 接收、增量与懒加载 — RECV-01…10
 
-关闭历史激活模式；中途加入分页重放游标；本机获取阈值；直接下载或请求来源等待下载；并发复用，来源离线删除隐私过期和取消；全部表示完整；拒绝迟到覆盖；本地与 Channel 删除区分及校验后的设备缓存。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| RECV-01 | 接收关闭/仅历史/自动激活三种模式；仅预览不能冒充完整原文写入剪切板。 |
+| RECV-02 | 新设备中途加入 Channel，从保留变化获取历史；分页、重复页、游标推进和保存正确。 |
+| RECV-03 | 接收按本机文本/图片阈值决定自动获取，不错误沿用发送端阈值。 |
+| RECV-04 | 服务端已有原文时直接下载；仅 lazy 时请求来源上传、等待、服务端就绪后再下载。 |
+| RECV-05 | 多个点击、自动获取与手动请求并发复用任务，不重复请求或相互覆盖。 |
+| RECV-06 | 来源离线/删除原文/变隐私，服务端过期/拒绝/超时，等待可取消且能明确失败。 |
+| RECV-07 | 多表示条目所有必要原文就绪后才显示本地完整；重启后状态仍正确。 |
+| RECV-08 | 用户新复制或手动选别项后，晚到远端结果不覆盖更新选择。 |
+| RECV-09 | 本地删除只删本机副本，服务端删除事件再按协议移除；不误传播全 Channel 删除。 |
+| RECV-10 | 远端对象按来源设备落盘，哈希/路径校验后采用；离线时已缓存原文仍可使用。 |
 
 长期模拟入口：[sync/receive.smoke.js](simulation/sync/receive.smoke.js).
 
@@ -179,7 +335,17 @@ URL、认证和并发配置的数据组合仍归现有逻辑测试。
 
 ### 传输状态、恢复与错误 — XFER-01…09
 
-未发送等待传输校验快照完成原文完整失败区分；字节精确单调和迟到保护；恢复不逐项保存重建；会话取消等待者清理；非法过大中断响应；长度 hash 和 part 清理；GLib 与可选 sha256sum 及缺依赖。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| XFER-01 | 未发送、传输中、等待来源、校验、快照发布完成、本地原文完整、失败/取消图标与实际动作一致。 |
+| XFER-02 | 上传/下载字节精确、单调、最终值正确；等待阶段不能显示假的下载百分比。 |
+| XFER-03 | 迟到进度和服务器时钟差异不能将完成状态降级或错误覆盖新任务。 |
+| XFER-04 | 开启同步恢复大量已完成状态，只更新对应同步显示，不逐条保存或全量重建历史。 |
+| XFER-05 | 关闭、快速切换、配置改变和插件禁用取消旧会话，晚到结果不污染新会话。 |
+| XFER-06 | 单任务取消、状态缓存淘汰、等待消费者、超时后重试均能正确结束，不无限挂起。 |
+| XFER-07 | JSON/HTTP 错误、非法 MIME/标识/计数/长度、过大响应、响应体中断安全拒绝。 |
+| XFER-08 | 长度/hash 错误不覆盖旧目标，失败/取消清理 .part，不使用未校验原文。 |
+| XFER-09 | 默认 GLib 与可选 sha256sum 各自验收；依赖缺失/失效/失败不跳过校验，framing 限制清楚。 |
 
 长期模拟入口：[sync/status.smoke.js](simulation/sync/status.smoke.js), [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js).
 
@@ -190,7 +356,17 @@ persist、save。它们补充而非重复 logic/sync/{transfers,http-failures,fi
 
 ### 设置、快捷键与恢复默认 — SET-01…09
 
-当前页面配置及边界，区分内部停用键；强调色前景文字图标、尺寸布局隐藏（不禁用快捷键）；组合键录制取消清空冲突重绑；发现和手输排除；恢复默认二次确认，保留用户数据连接身份且后续可保存；关于版本链接。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| SET-01 | 从插件或扩展管理器打开设置，全部当前导航可访问；关闭重开、运行中修改生效时机正确。 |
+| SET-02 | 所有 schema 键逐个归类：当前用户配置、内部状态、已停用项；当前配置的读写和合法边界都要覆盖。 |
+| SET-03 | 强调色跟随系统、内置色、自定义色；普通文字与图标可跟随系统或自定义前景色，取消/保存及系统主题变化正确，强调色与前景色不混用。 |
+| SET-04 | 面板参数、最大显示条目、现场与焦点限制、文字偏移配置正确保存并生效。 |
+| SET-05 | 顶部/footer/条目按钮的排序和隐藏正确，空/重复/异常配置规整；隐藏图标不禁用快捷键。 |
+| SET-06 | 快捷键录制完整组合，单独修饰键不误保存；取消、清空、非法组合/冲突反馈和实际重新绑定。 |
+| SET-07 | 运行应用发现与手输排除列表；Shell 不可用或列表变化时不卡设置进程。 |
+| SET-08 | 恢复默认二次确认；取消无副作用，确认不删除历史/语句/词库/连接/DeviceId，恢复后后续设置仍可保存。 |
+| SET-09 | 关于页版本、项目/问题/许可证链接可打开；外部程序不可用不造成设置崩溃。 |
 
 长期模拟入口：[settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/foreground.smoke.js](simulation/settings/foreground.smoke.js), [settings/layout.smoke.js](simulation/settings/layout.smoke.js), [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -200,7 +376,15 @@ GTK 中录制、取消、清空组合键；SET-08 操作恢复默认的两个确
 
 ### 多语言、通知与视觉 — LANG-01…07
 
-目录提取编译占位符安全；菜单设置错误通知对话框实显语言；英中日韩 RTL 长译文；基线光标偏移、主题对比 hover 选中、省略缩略图图标分割滚动条；通知适量不泄密，截图取消复用 SHOT。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| LANG-01 | 英文及 po/LINGUAS 中全部翻译目录完整提取、编译，格式占位符安全。 |
+| LANG-02 | 菜单、设置、通知、错误、依赖提示、确认弹窗按钮实际使用所选系统语言，不残留英文回退。 |
+| LANG-03 | 英文/中文/日文/韩文代表性实显；RTL、长译文、CJK 字体和 emoji 无功能性溢出。 |
+| LANG-04 | 搜索 placeholder、输入文字、光标、分词标题基线及文字偏移，人工验收。 |
+| LANG-05 | 深浅/高对比主题、强调色、选中/非选中/hover/禁用图标反馈一致，人工验收。 |
+| LANG-06 | 内容左对齐、文本省略、图像比例、设备图标、分割线、边距、细滚动条和窄窗口，人工验收。 |
+| LANG-07 | 错误/取消通知次数适当；主动截图取消无错误提示；通知不泄露正文或认证信息。 |
 
 长期模拟入口：[shell.smoke.js](simulation/shell.smoke.js).
 
@@ -211,7 +395,16 @@ logic/i18n/coverage.sh；翻译质量、RTL/长文本布局和视觉效果仍人
 
 ### 响应度、资源、打包与工具 — OPS-01…08
 
-测完整操作主循环停顿而非只测回调返回；区分网络等待，跟踪内存 FD source 及各校验路径预算；可选十倍压力；运行包无多余内容敏感信息；开发桌面构建隔离语言退出日志。
+| ID | 要测什么 / 预期结果 |
+| --- | --- |
+| OPS-01 | 复制大内容、缩略图、词库加载、分词、同步初始化/恢复/传输、启动编辑器期间测主循环最大停顿。 |
+| OPS-02 | 区分异步网络等待与连续主线程阻塞，保留阶段和时间线，不只测按钮回调同步返回。 |
+| OPS-03 | 长期启停、连续开关/刷新/轮询后内存、FD、定时器、会话与临时文件不持续增长。 |
+| OPS-04 | 默认 GLib 与可选 sha256sum 分开记录内存预算；不能把可选路径的低内存结果套给默认路径。 |
+| OPS-05 | 现有十倍压力负载独立运行，不能替代真实 Shell 和真实服务器；不重新加入每次 GitHub CI。 |
+| OPS-06 | ZIP 仅含运行时资源、元数据/Schema/翻译一致，安装后可加载；无测试、词库、服务端或凭据误打包。 |
+| OPS-07 | run-dev-shell 构建打包、隔离设置/数据、指定语言、退出和系统日志/终端输出正常。 |
+| OPS-08 | 日志可定位操作阶段、不重复/吞错、不输出敏感信息；发布和安装配置用现有校验/临时验证，不新增格式锁定型测试。 |
 
 验证边界 / 缺口：使用现有 logic/sync 测量压力、logic/common 检查和 tools/check_release.py；压力显式选跑，不加普通 CI。打包复用 ENV-01 证据；异步 API 或单次成功不证明 Shell 永不卡顿。
 

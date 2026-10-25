@@ -3,8 +3,8 @@
 > English · [简体中文](functional-inventory_CN.md)
 
 This maintained inventory defines **acceptance scope and ownership**, not pass status. A listed entry
-covers selected boundaries, not a claim of passing on GNOME 50/51. Historical .codex reports remain
-revision-specific evidence, not the maintenance entry for current requirements.
+covers selected boundaries, not a claim of passing on GNOME 50/51. Execution results remain separate
+in the [acceptance snapshot](acceptance-status.md); a case's PASS does not certify all boundaries of an ID.
 
 ## Evidence and execution rules
 
@@ -22,7 +22,16 @@ revision-specific evidence, not the maintenance entry for current requirements.
 
 ### Lifecycle — ENV-01…08
 
-Fresh/cold-overwrite installation; empty/existing storage; repeated enable/disable; cancel in-flight initialization/save/download/segmentation/screenshot/typing; recover history and destination-bound queues after closing/reopening an isolated Shell; release owned resources; preferences stay in a separate GTK process. No hot-update or physical logout requirement.
+| ID | What to test / expected result |
+| --- | --- |
+| ENV-01 | Install the current ZIP into an empty profile; verify metadata, schemas, translations/resources and recognition by the extension system. |
+| ENV-02 | Overwrite an installed package, then start a different Shell process and verify the installed code and preserved data; hot reloading is not required. |
+| ENV-03 | Start with empty and existing storage; merge copies arriving during initialization without replacing valid history with an empty snapshot. |
+| ENV-04 | Enable, disable, immediately re-enable and repeat; keep one indicator, one shortcut response and one capture per clipboard change. |
+| ENV-05 | Disable during initialization, save, download, word processing, screenshot or typing; cancel owned work and reject late results. |
+| ENV-06 | Close and reopen an isolated Shell; restore history and destination-bound upload queues, and explicitly reject corrupt state. Physical logout/power-loss recovery is not required. |
+| ENV-07 | After disable, release signals, timers, modal grabs, virtual devices, HTTP sessions and waiting consumers. |
+| ENV-08 | Run preferences in a separate GTK process without Meta/Adw import errors; closing it must end owned UI and pending follow-up work. |
 
 Maintained simulation entries: [lifecycle/compatibility.smoke.js](simulation/lifecycle/compatibility.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js), [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -34,7 +43,18 @@ retains its own cancellation checkpoint; CI scope is unchanged.
 
 ### Panels — PANEL-01…10
 
-Entrance/shortcut toggles; hidden indicator anchors/offsets; shared dimensions and per-panel overrides; retention/animated close/rapid reopen; return from history item 11 with query/focus/scroll intact; initial targets, focus matrices, confinement, keyboard scroll and pointer/keyboard handoff.
+| ID | What to test / expected result |
+| --- | --- |
+| PANEL-01 | Open/close from the indicator and global shortcut; a second shortcut or a desktop-background click closes the popup. |
+| PANEL-02 | With the indicator hidden, open by shortcut; verify all nine anchors and positive/negative offsets in supported work areas. |
+| PANEL-03 | Apply configured width/height to history, word selection and phrases; explicit per-panel overrides do not affect other panels. Automatic work-area shrinking is not required. |
+| PANEL-04 | Retain or reset the active panel according to configuration; animated closing must not flash the history panel, including rapid reopen. |
+| PANEL-05 | Enter word selection from a later history row and return with query, row/action focus and scroll position preserved. |
+| PANEL-06 | On first navigation, target history search, the first word, the first phrase, or Add when phrases are empty. |
+| PANEL-07 | Navigate the focus matrix with arrows; skip hidden controls and handle unequal rows, endpoints, Back and footer actions. |
+| PANEL-08 | Respect focus-confinement configuration; local shortcuts must not intercept input outside the popup or in another extension. |
+| PANEL-09 | Scroll a keyboard-focused offscreen item into view; stale asynchronous restoration must not undo the user's wheel scrolling. |
+| PANEL-10 | Use the latest real pointer/keyboard input for focus/highlight and tooltip handoff; protect text editing, ignore stationary hover/wheel for retargeting, preserve selection and clean up on panel changes/close/disable. |
 
 Maintained simulation entries: [panels/navigation.smoke.js](simulation/panels/navigation.smoke.js), [panels/monitors.smoke.js](simulation/panels/monitors.smoke.js), [panels/restoration.smoke.js](simulation/panels/restoration.smoke.js), [panels/search.smoke.js](simulation/panels/search.smoke.js), [panels/escape.smoke.js](simulation/panels/escape.smoke.js).
 
@@ -42,7 +62,20 @@ Evidence / remaining boundary: Use tools/test-panels.sh. Restoration adds queued
 
 ### Capture and reuse — CLIP-01…12
 
-External text/HTML/image sources, multilingual/multiline/tab/emoji content, representation deduplication, invalid HTML/empty content rejection; capture-size boundaries; thumbnail aspect ratio versus original data; delayed/rapid/exited owners and loop suppression; actual copy readback; independent row actions, Ctrl+click typing and optional plain-text trimming.
+| ID | What to test / expected result |
+| --- | --- |
+| CLIP-01 | Capture and copy back short/long, multiline and tabbed text, CJK/English, emoji and combining characters from an independent application. |
+| CLIP-02 | Copy real browser/office rich text offering plain and HTML representations; deduplicate aliases and verify primary text and preview. |
+| CLIP-03 | Reject empty HTML, metadata-only/tags-only, blank and invalid representations without discarding valid rich text. |
+| CLIP-04 | Capture actual PNG/JPEG/WebP/GIF/SVG offers; failed formats must not leave capture permanently busy. |
+| CLIP-05 | Preserve thumbnail aspect ratio for wide/tall/high-resolution images; copy/edit the original, never the thumbnail. |
+| CLIP-06 | Test below/equal/above the capture-size limit; truncated bytes must not be accepted as complete content. |
+| CLIP-07 | Handle rapid copies, delayed providers, provider exit and owner changes without mixing owners or accepting stale bytes. |
+| CLIP-08 | Deduplicate external recopy, history activation and remote writeback without loops or loss of pinned state. |
+| CLIP-09 | Actual row click/Enter writes original bytes to the system clipboard; invalid or failed items must not appear successful. |
+| CLIP-10 | Pin/Delete/word-selection/editor/sync actions must not activate content copy; capture remains usable after deletion. |
+| CLIP-11 | Ctrl+click types text only, without unintended clipboard writes or system modifier shortcuts. |
+| CLIP-12 | Optional trimming applies only to newly captured plain text; preserve internal whitespace and original HTML. |
 
 Maintained simulation entries: [clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js), [clipboard/entries.smoke.js](simulation/clipboard/entries.smoke.js), [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
@@ -61,7 +94,18 @@ multi-MIME fixture alone does not establish browser/office compatibility.
 
 ### History — HIST-01…10
 
-Pinned-first ordering after restart; count/bytes/age and clear policies preserve pins (including all-pinned cases); preview.text search, limits and no matches; load/save/disable races; device directories, shared references and staging adoption; corrupt/missing/hash/escaped files, failed writes and temporary-file cleanup.
+| ID | What to test / expected result |
+| --- | --- |
+| HIST-01 | Keep pinned items first after pin/unpin, restart and mixed-device history; preserve remaining order and deduplication. |
+| HIST-02 | Enforce count, storage-byte and age limits on eligible ordinary items; define and test the all-pinned case. |
+| HIST-03 | Clear history while preserving pins; reapply retention after limit changes and lazy-original downloads. |
+| HIST-04 | Search empty/case-varied/CJK/emoji/whitespace/no-match queries and enforce the displayed-result limit. |
+| HIST-05 | Search preview.text as implemented; do not treat preview search as full-text search. |
+| HIST-06 | Interleave startup reads, new copies, saves, deletion/pinning and immediate re-enable without reverting durable state. |
+| HIST-07 | Store originals by source DeviceId; retain shared objects until their last reference is released. |
+| HIST-08 | Interleave staging adoption, reads and deletion without losing originals or escaping managed storage. |
+| HIST-09 | Handle corrupt indexes/items, missing objects, bad hashes, symlinks and escaped paths while recovering valid records. |
+| HIST-10 | On unwritable/full storage or interrupted writes, preserve the old file, report errors and clean temporary files. |
 
 Maintained simulation entries: [clipboard/history/startup.smoke.js](simulation/clipboard/history/startup.smoke.js).
 
@@ -69,7 +113,16 @@ Evidence / remaining boundary: Also use logic/clipboard/history. Search is not f
 
 ### Privacy — PRIV-01…08
 
-Private mode pauses capture; sensitive MIME defaults to discard or remains memory-only; no disk/thumbnail/upload leakage; discovered/manual excluded apps; owner/privacy/exclusion changes invalidate old captures; delete/sensitive recopy cleans uploads; pin/clear/restart cannot escape local-only rules; no body/API key in logs or queue metadata.
+| ID | What to test / expected result |
+| --- | --- |
+| PRIV-01 | Verify default private-mode state and immediate toggling; copies made while paused never enter history. |
+| PRIV-02 | Discard sensitive password-manager MIME by default; memory-only mode lasts only for the current extension lifecycle. |
+| PRIV-03 | Keep memory-only sensitive text, indexes and thumbnails off disk/outbox; expose no upload action. |
+| PRIV-04 | Exclude discovered applications and manually entered window classes; define empty, duplicate and case handling. |
+| PRIV-05 | Changing privacy/exclusion policy during capture or thumbnail generation rejects the old pending result. |
+| PRIV-06 | Deletion or sensitive recopy removes pending upload references/frozen manifests and prevents further sending. |
+| PRIV-07 | Pin, clear, restart, retry and multiple representations never bypass the sensitive-content local-only boundary. |
+| PRIV-08 | Logs, notifications and outbox files must not expose content or API keys; do not claim sync.json is encrypted. |
 
 Maintained simulation entries: [clipboard/privacy.smoke.js](simulation/clipboard/privacy.smoke.js), [clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js).
 
@@ -77,7 +130,16 @@ Evidence / remaining boundary: privacy owns sensitive recopy/disk cleanup/manual
 
 ### Word algorithm — WORD-01…08
 
-All languages preserve positions/punctuation/whitespace; contractions, adjacent sentences, URL/email/number/path, emoji and mixed scripts; source-order reconstruction; identical copy/paste/type result, empty selection; configurable default 2000-word limit and exact boundaries; long-input responsiveness; stale results after panel/dictionary/lifecycle changes.
+| ID | What to test / expected result |
+| --- | --- |
+| WORD-01 | Segment supported languages without losing characters, punctuation, whitespace or original source positions. |
+| WORD-02 | Recognize contractions such as can't, adjacent sentences such as that.I, URLs, email, numbers, paths and mixed scripts. |
+| WORD-03 | Preserve emoji, combining characters, full-width symbols, newlines and repeated whitespace. |
+| WORD-04 | Reconstruct adjacent/nonadjacent selections in source order with the intended punctuation and spacing. |
+| WORD-05 | Copy/paste/type the same selected result; handle empty selection according to the focused-word fallback without accidental actions. |
+| WORD-06 | Enforce the default 2,000-word limit, equality/overflow and configured limits; reject explicitly rather than silently truncate. |
+| WORD-07 | Keep long unbroken text and URL/symbol-heavy input responsive before widget creation; measure main-loop stalls. |
+| WORD-08 | Reject stale word results after changing item/panel, closing, editing dictionaries or disabling the extension. |
 
 Maintained simulation entries: [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
@@ -85,7 +147,15 @@ Evidence / remaining boundary: Algorithm/data boundaries belong to logic/clipboa
 
 ### Word interaction — SELECT-01…07
 
-Click toggles once; held A→C selects ABC, backtracking to B leaves AB, selected anchors invert; reverse/cross-row/clipped/outside releases; Shift+arrows and Space/Enter; source preview, scroll/result/footer layout; leaving/closing/disabling ends dragging.
+| ID | What to test / expected result |
+| --- | --- |
+| SELECT-01 | Click toggles once; after mouse release, hovering over other words must not keep selecting. |
+| SELECT-02 | Hold A→C to select ABC, backtrack to B to leave AB; start on a selected word to invert the range. |
+| SELECT-03 | Reverse/cross-row/scroll/clipped dragging and release outside the panel must not select wrong words or leave dragging active. |
+| SELECT-04 | Shift+arrows select/invert from the anchor's initial state, including cross-row movement and endpoints. |
+| SELECT-05 | Dispatch real Space/Enter, Back and Copy actions through the focus boundary. |
+| SELECT-06 | Toggle source preview; scroll words while keeping the result at the bottom and omitting the history footer. |
+| SELECT-07 | Changing panel, closing or disabling during a drag ends the session; reopening must not inherit a held gesture. |
 
 Maintained simulation entries: [word-selection/drag.smoke.js](simulation/word-selection/drag.smoke.js), [word-selection/viewport.smoke.js](simulation/word-selection/viewport.smoke.js), [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
@@ -93,7 +163,17 @@ Evidence / remaining boundary: drag uses native dispatch; keyboard also directly
 
 ### Dictionaries — DICT-01…09
 
-Locale/region matching and system fallback; multiple enabled dictionaries; UTF-8/frequency/duplicates/empty/bad data and valid language declaration; import-time language ownership; size/count boundaries; explicit network add/refresh only with old-version retention; editor/directory/delete, atomic replacement, cache invalidation, shared loads, cancellation and indexing latency.
+| ID | What to test / expected result |
+| --- | --- |
+| DICT-01 | Match dictionary language/region and use the system segmenter when needed; never reuse another language's cache. |
+| DICT-02 | Enable system segmentation and multiple dictionaries independently; follow the selected list language and retain a usable source/fallback. |
+| DICT-03 | Import valid UTF-8/frequency entries and test duplicates/empty/bad files; reject missing or invalid locale declarations. |
+| DICT-04 | Retain import-time language ownership when the file header is edited. |
+| DICT-05 | Test below/equal/above dictionary byte/entry limits; failed imports leave no partial file. |
+| DICT-06 | Explicitly add/refresh HTTP/HTTPS sources; handle invalid responses, failures and changed language without losing a usable dictionary. |
+| DICT-07 | Installation, startup, preferences and word selection do not download dictionaries implicitly; only explicit Add/Refresh may fetch. |
+| DICT-08 | Open the default editor/directory, delete dictionaries and reload after atomic editor replacement. |
+| DICT-09 | Share concurrent loads, invalidate caches/revisions and cancel safely; keep large parsing/indexing responsive. |
 
 Maintained simulation entries: [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -106,7 +186,16 @@ timing and every backend variant remain separate boundaries.
 
 ### Quick phrases — PHRASE-01…08
 
-Real Add focus, main/keypad Enter and save button; repeated Add/Escape cancel; no entry-edit shortcut interception; whitespace/duplicates/length/count/order; configured copy/paste/type/delete and close-after-copy; concurrent/delayed/failed saves preserve newer draft/focus; restart and local-only persistence independent of clipboard clear/sync.
+| ID | What to test / expected result |
+| --- | --- |
+| PHRASE-01 | Native Add focuses the form; actual text input and main/keypad Enter or Save persists, clears and collapses it. |
+| PHRASE-02 | Add again or Escape cancels without saving; ordinary form typing must not trigger clipboard actions. |
+| PHRASE-03 | Enforce whitespace/trim, duplicates, length/count limits, emoji and insertion order. |
+| PHRASE-04 | Click/Enter copies, v pastes, apostrophe types and Delete removes; follow configured shortcuts. |
+| PHRASE-05 | Both close-after-copy settings produce the right system clipboard content. |
+| PHRASE-06 | Rapid/delayed submissions, edits, cancellation and panel changes preserve the newer draft and focus. |
+| PHRASE-07 | Handle save/delete failure, corrupt files and restart restoration without reporting failed writes as success. |
+| PHRASE-08 | Phrases remain local and survive clipboard clear or sync-destination changes without being published. |
 
 Maintained simulation entries: [phrases/form.smoke.js](simulation/phrases/form.smoke.js), [phrases/integration.smoke.js](simulation/phrases/integration.smoke.js).
 
@@ -114,7 +203,17 @@ Evidence / remaining boundary: form owns native submission; integration owns act
 
 ### Paste and typing — TYPE-01…09
 
-Distinct clipboard effects for copy/paste/type; original target receives exact ASCII/CJK/emoji/tab/multiline/long content at both speeds; trigger-modifier wait/timeout, active modifier fuse, one notification, queued cancellation and key release; IME/CapsLock/layout/focus/toolkit variations and documented physical-input limits.
+| ID | What to test / expected result |
+| --- | --- |
+| TYPE-01 | Separate copy, paste and simulated typing; only the intended operations modify the system clipboard. |
+| TYPE-02 | Paste into the target active before opening the panel; verify received bytes in an ordinary app and a terminal. |
+| TYPE-03 | Receive exact ASCII, mixed CJK, emoji, multiline, Tab and long configuration text in the actual target. |
+| TYPE-04 | Apply standard/slow speed in the actual target without missing or reordered characters. |
+| TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
+| TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; hardware evidence remains separate. |
+| TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |
+| TYPE-08 | Test real IME language modes, CapsLock, keyboard layouts and target changes; do not assume IME bypass. |
+| TYPE-09 | Test multiple toolkits, browsers and terminals; document the Wayland limits on observing ordinary physical input. |
 
 Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/guard.smoke.js](simulation/terminal/guard.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
 
@@ -122,7 +221,15 @@ Evidence / remaining boundary: typing compares a real GTK Wayland target. guard 
 
 ### Screenshots — SHOT-01…07
 
-Button/shortcut and supported portal targets; history/copy/editor option combinations; cancel without notification/side effects; denial/timeout/unavailable/missing URI errors and retry; repeated requests and disable cleanup; real images with spaced/non-ASCII paths.
+| ID | What to test / expected result |
+| --- | --- |
+| SHOT-01 | Open the real Screenshot Portal from both the button and global shortcut. |
+| SHOT-02 | Exercise interactive/screen/window/area/active-window targets supported by the backend; unsupported targets must not report success. |
+| SHOT-03 | Verify history, clipboard and editor options independently and in necessary combinations. |
+| SHOT-04 | User cancellation emits no screenshot-failed notification and causes no history/copy/editor side effects. |
+| SHOT-05 | Report denial, timeout, unavailable portal and missing URI clearly, then allow retry. |
+| SHOT-06 | Repeated requests, capability lookup, cancellation and disable release requests/subscriptions/timers and reject old results. |
+| SHOT-07 | Use real image/URI results, spaced/non-ASCII paths and immediate retry after cancellation. |
 
 Maintained simulation entries: [screenshot/pipeline.smoke.js](simulation/screenshot/pipeline.smoke.js), [screenshot/cancel.smoke.js](simulation/screenshot/cancel.smoke.js).
 
@@ -134,7 +241,15 @@ and induced protocol failures retain separate pipeline/logic ownership.
 
 ### Image editor — EDIT-01…07
 
-Empty command does not fetch; argv %u/%f/%i/%%, quoting and paths; invalid placeholders/commands/files/URIs; local/cached/lazy originals and offline rules; slow/non-reading/early-exit editor must not block Shell; real native/Flatpak Gradia, correct popup close and editor lifetime.
+| ID | What to test / expected result |
+| --- | --- |
+| EDIT-01 | With no command, ask for configuration without fetching an original or launching another app. |
+| EDIT-02 | Pass %u/%f/%i/%%, no-placeholder commands, quotes and spaced/non-ASCII paths as the intended argv/stdin. |
+| EDIT-03 | Clearly reject invalid placeholders, missing commands/files and incompatible nonlocal URIs. |
+| EDIT-04 | Edit local, cached-remote and preview-only remote images using the actual original. |
+| EDIT-05 | With sync disabled, a lazy image cannot fetch an original; re-enable and retry successfully. |
+| EDIT-06 | Keep Shell responsive when the editor starts slowly, never reads stdin, exits early or stays open. |
+| EDIT-07 | Native/Flatpak Gradia receives the full image; close the popup at the right time without killing the editor on extension shutdown. |
 
 Maintained simulation entries: [clipboard/images.smoke.js](simulation/clipboard/images.smoke.js).
 
@@ -146,7 +261,15 @@ not merely the CLI. Argument/data rules remain in logic tests.
 
 ### Color picker — COLOR-01…07
 
-Real sampling, pointer/key confirm/cancel, latest pixel once; one physical pixel per arrow, Ctrl and rapid steps; color formats/swatches; edges, negative coordinates, fractional/multiple monitors; pending samples/grab failures, close/disable/reopen release modal/signals and restore input.
+| ID | What to test / expected result |
+| --- | --- |
+| COLOR-01 | Open by button/shortcut, sample actual screen pixels with pointer/magnifier and publish into clipboard/history. |
+| COLOR-02 | Confirm with left click/Enter/Space and cancel with right click/Escape; use the latest valid sample once. |
+| COLOR-03 | Move exactly one physical pixel per supported arrow; verify Ctrl steps and cumulative rapid presses. |
+| COLOR-04 | Verify HEX/RGB/HSL/OKLCH output and the corresponding item color swatch. |
+| COLOR-05 | Sample screen edges, negative coordinates and fractional/multiple displays accurately. |
+| COLOR-06 | Initialization/grab failure or close/disable during sampling releases modal state and signals. |
+| COLOR-07 | Repeated open/exit restores desktop shortcuts with no remaining overlay. |
 
 Maintained simulation entries: [color-picker/sampling.smoke.js](simulation/color-picker/sampling.smoke.js), [color-picker/movement.smoke.js](simulation/color-picker/movement.smoke.js), [color-picker/lifecycle.smoke.js](simulation/color-picker/lifecycle.smoke.js).
 
@@ -154,7 +277,18 @@ Evidence / remaining boundary: sampling dispatches native events on real swatche
 
 ### Connection and devices — CONN-01…10
 
-IP/HTTP/HTTPS/subpaths/authentication/invalid URLs; test unsaved inputs without restarting sync; non-reentrant rapid test/apply/retry/close; apply persists and immediately updates device/channels; stable DeviceId, editable tag/free icon string/fallback/local omission; missing/forbidden/removed channels without cursor/destination leakage. Offline, slow, expired/revoked or incompatible servers have localizable errors; concurrent settings/Shell writes preserve configuration fields without leaking keys.
+| ID | What to test / expected result |
+| --- | --- |
+| CONN-01 | Accept bare IP:port, HTTP/HTTPS and proxy subpaths; reject invalid addresses and send the right DeviceId/API-key headers. |
+| CONN-02 | Test the current unsaved inputs without saving or restarting active sync. |
+| CONN-03 | Rapid Test/Apply/Refresh, failure/retry and closing in flight are non-reentrant and do not freeze Shell. |
+| CONN-04 | Apply persists the connection and immediately updates tag/icon and channels; block duplicate submission until completion. |
+| CONN-05 | After failed Apply, local persistence, error feedback and button state agree; show no false success. |
+| CONN-06 | Generate DeviceId once and retain it across restart and tag/icon edits. |
+| CONN-07 | Render bundled device/OS icons, fall back for unknown free-form strings and omit a local-source marker. |
+| CONN-08 | Handle missing/forbidden/revoked/switched channels without mixing cursors or outgoing destinations. |
+| CONN-09 | Localize offline/slow/auth-expired/revoked/incompatible-server feedback. |
+| CONN-10 | Concurrent settings/Shell connection writes preserve unrelated fields and never expose the API key. |
 
 Maintained simulation entries: [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -167,7 +301,18 @@ combinations retain their existing logic ownership.
 
 ### Upload queues — SEND-01…10
 
-Send modes/favorites-only, exact text/image thresholds; freeze manifest before request; per-server/channel/device recovery; disabled sync pauses without enqueueing new copies; lost-response confirmation; deletion/sensitivity/missing originals, no remote echo; corrupt queues/save failures/backoff/permanent errors and confirmation/shutdown persistence.
+| ID | What to test / expected result |
+| --- | --- |
+| SEND-01 | Enforce disabled/manual/automatic and pinned-only publication policies without leaking unpinned content. |
+| SEND-02 | Plain-text, additional rich-text and image switches affect only their corresponding representations, not local capture. |
+| SEND-03 | At below/equal/above text and image thresholds, manifest delivery, preview and actual uploaded bytes agree. |
+| SEND-04 | Durably freeze the manifest before the first request; reuse it after network interruption, restart and threshold changes. |
+| SEND-05 | Bind per-server queues to Channel/DeviceId; changing destinations cannot misroute work and switching back restores it. |
+| SEND-06 | Disabling sync pauses queued work; copies made while disabled are not enqueued or backfilled after re-enable. |
+| SEND-07 | If the server commits but the response is lost, confirm/reuse the same publication instead of reuploading full data. |
+| SEND-08 | Delete/sensitive/missing-original items stop or fail safely; received items are never republished as local echoes. |
+| SEND-09 | Preserve valid work through failed writes, corrupt queues, backoff/permanent errors and exit interruption. |
+| SEND-10 | Persist confirmed delivery and the shutdown snapshot despite save/disable interleaving, without relying on replayed history events. |
 
 Maintained simulation entries: [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js), [sync/status.smoke.js](simulation/sync/status.smoke.js).
 
@@ -180,7 +325,18 @@ It never replaces SyncClient results. Corruption, backoff and full destination m
 
 ### Receive and lazy content — RECV-01…10
 
-Off/history/activate modes; late join, pagination, replay and cursor persistence; local fetch thresholds; direct download or request-origin/wait/download; concurrent reuse, offline/deleted/private/expired sources, cancellation; all representations complete; late-result protection; local versus channel removal and verified device cache.
+| ID | What to test / expected result |
+| --- | --- |
+| RECV-01 | Enforce off/history-only/automatic-activation modes; never activate preview bytes as if they were originals. |
+| RECV-02 | A new device joins retained channel history; pagination, replay, cursor advancement and persistence are correct. |
+| RECV-03 | Use the receiver's text/image thresholds rather than the sender's thresholds to decide automatic fetch. |
+| RECV-04 | Download cached originals directly; otherwise request the source, wait for server availability and then download. |
+| RECV-05 | Share repeated manual/automatic fetches without duplicate work or overwriting each other. |
+| RECV-06 | Handle offline/deleted/private sources and expired/rejected/timed-out server work with explicit failure and cancellation. |
+| RECV-07 | Mark local completeness only after all required representations are ready; preserve the state across restart. |
+| RECV-08 | After a new user copy or another manual activation, a late remote result must not replace the newer choice. |
+| RECV-09 | Local deletion removes only the local copy; channel deletion follows the server event and is not broadcast accidentally. |
+| RECV-10 | Verify hash/path and adopt objects under the source device; cached originals remain usable offline. |
 
 Maintained simulation entries: [sync/receive.smoke.js](simulation/sync/receive.smoke.js).
 
@@ -193,7 +349,17 @@ desktops or every pagination boundary.
 
 ### Transfers and errors — XFER-01…09
 
-Distinct unsent/wait/transfer/verify/snapshot-complete/original-complete/error states; exact monotonic bytes and stale-result protection; restore without per-item saves/rebuild; session/cancel/waiter cleanup; malformed/oversized/interrupted responses; length/hash and part cleanup; GLib versus optional sha256sum, including missing dependency.
+| ID | What to test / expected result |
+| --- | --- |
+| XFER-01 | Match unsent/transferring/waiting/verifying/snapshot-complete/original-complete/error/cancel UI to the real state and available action. |
+| XFER-02 | Report precise, bounded, monotonic upload/download bytes and exact totals; waiting must not show fake download percentages. |
+| XFER-03 | Late progress and server clock differences cannot downgrade completion or overwrite a newer task. |
+| XFER-04 | Restore many completed states by updating sync UI only, without per-item history saves or whole-list rebuilds. |
+| XFER-05 | Close/toggle/configuration changes/disable cancel the old session and reject its late results. |
+| XFER-06 | Task cancellation, cache eviction, waiting consumers and timeout/retry terminate correctly without hanging. |
+| XFER-07 | Reject malformed JSON/HTTP, invalid MIME/IDs/counts/lengths, oversized responses and interrupted bodies. |
+| XFER-08 | Length/hash errors preserve the old target; cancellation/failure removes .part files and never adopts unverified originals. |
+| XFER-09 | Validate default GLib and optional sha256sum separately, including absent/broken dependencies, failures and framing limits. |
 
 Maintained simulation entries: [sync/status.smoke.js](simulation/sync/status.smoke.js), [sync/toggle.smoke.js](simulation/sync/toggle.smoke.js).
 
@@ -205,7 +371,17 @@ stress/verifier memory benchmarks remain separate explicit runs, not ordinary CI
 
 ### Settings — SET-01…09
 
-Current pages/options and valid boundaries; classify internal/inactive keys; accent/foreground text+icons, geometry, layout/hiding (shortcuts remain); full chord capture/cancel/clear/conflicts/rebind; discovered/manual exclusions; reset confirmation preserves user data/connection/identity and later saves; About version/links.
+| ID | What to test / expected result |
+| --- | --- |
+| SET-01 | Open/reopen preferences and reach every current page; verify when runtime changes take effect. |
+| SET-02 | Classify every schema key as user configuration, internal state or inactive; cover supported reads/writes and boundaries. |
+| SET-03 | Follow system accent or save built-in/custom colors; configure ordinary text/icons to follow the system or a custom foreground, and test cancellation/theme changes without confusing foreground and accent. |
+| SET-04 | Persist/apply panel dimensions, item limit, retention/focus policy and vertical text offset. |
+| SET-05 | Order/hide top/footer/item actions, normalize empty/duplicate/invalid layouts and retain hidden-action shortcuts. |
+| SET-06 | Record complete chords without accepting lone modifiers; cancel/clear, report invalid/conflicting bindings and verify actual rebinding. |
+| SET-07 | Discover running applications and support manual exclusions; unavailable Shell or changing lists must not hang preferences. |
+| SET-08 | Cancel/confirm reset with two-step protection; preserve history/phrases/dictionaries/connection/DeviceId and allow subsequent saves. |
+| SET-09 | Open project/issue/license links from About and show the correct version; missing external apps must not crash preferences. |
 
 Maintained simulation entries: [settings/window.smoke.js](simulation/settings/window.smoke.js), [settings/foreground.smoke.js](simulation/settings/foreground.smoke.js), [settings/layout.smoke.js](simulation/settings/layout.smoke.js), [settings/icon.integration.js](simulation/settings/icon.integration.js), [settings/lifecycle.integration.js](simulation/settings/lifecycle.integration.js).
 
@@ -216,7 +392,15 @@ retain their component/data ownership, not blanket GUI certification.
 
 ### Languages and visuals — LANG-01…07
 
-Catalog extraction/compilation and safe placeholders; actual menu/settings/error/notification/dialog language; EN/ZH/JA/KO, RTL/long strings; baseline/caret/offset, themes/contrast/hover/selection, ellipsis/thumbnails/icons/separators/scrollbars. Bounded, non-sensitive notifications; screenshot cancellation reuses SHOT.
+| ID | What to test / expected result |
+| --- | --- |
+| LANG-01 | Extract/compile English and every po/LINGUAS catalog with complete messages and safe formatting placeholders. |
+| LANG-02 | Use the selected language in menus, settings, notifications/errors, dependency hints and confirmation buttons. |
+| LANG-03 | Display EN/ZH/JA/KO plus RTL/long strings without functional overflow, including CJK fonts and emoji. |
+| LANG-04 | Manually verify placeholder/text/caret/title baselines and configurable vertical offset. |
+| LANG-05 | Manually verify dark/light/high-contrast themes and accent/selected/unselected/hover/disabled icon feedback. |
+| LANG-06 | Manually verify left alignment, ellipsis, image proportions, device icons, separators, padding, thin scrollbars and narrow windows. |
+| LANG-07 | Bound notification counts, suppress errors on intentional screenshot cancel and never expose content/credentials. |
 
 Maintained simulation entries: [shell.smoke.js](simulation/shell.smoke.js).
 
@@ -228,7 +412,16 @@ linguistic quality, RTL/long-string layout and visual polish remain manual.
 
 ### Responsiveness and tooling — OPS-01…08
 
-Measure main-loop stalls across complete operations, not only callback return; distinguish network waits, track memory/FD/source growth and verifier-specific budgets; optional ten-times-daily stress; runtime-only packages/no secrets; dev-shell build/isolation/language/exit/logs.
+| ID | What to test / expected result |
+| --- | --- |
+| OPS-01 | Measure main-loop stalls during capture, thumbnails, dictionary/word processing, sync initialization/restoration/transfer and editor launch. |
+| OPS-02 | Distinguish network wait from uninterrupted main-thread blocking with complete-operation phase/timeline measurements. |
+| OPS-03 | Soak repeated lifecycle/toggles/refresh/polling; memory, FDs, timers, sessions and temporary files must not grow continuously. |
+| OPS-04 | Measure memory budgets for default GLib and optional sha256sum separately; do not apply optional-path results to the default. |
+| OPS-05 | Run optional ten-times-daily stress separately from real Shell/server acceptance; keep it out of routine CI. |
+| OPS-06 | Package only runtime resources with consistent metadata/schemas/catalogs; exclude tests, dictionaries, server and credentials. |
+| OPS-07 | Verify dev-shell build/package, XDG isolation, language selection, exit and journal/terminal logs. |
+| OPS-08 | Make logs locate operation stages without duplication, swallowed errors or secrets; validate release/install configuration without source-format snapshot tests. |
 
 Evidence / remaining boundary: Use existing logic/sync measurements/stress, logic/common checks and tools/check_release.py. Stress remains opt-in/outside ordinary CI. Packaging reuses ENV-01 evidence. Async APIs or one successful run do not prove the Shell never blocks.
 
