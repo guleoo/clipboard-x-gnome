@@ -11,11 +11,9 @@ const thresholds = {
     'image-full-threshold': 1024 * 1024,
   })[key],
 };
-assert(delivery(thresholds, 'text/plain;charset=utf-8', 64 * 1024) === 'eager',
-  'small text must use eager delivery');
-assert(delivery(thresholds, 'text/plain;charset=utf-8', 64 * 1024 + 1) === 'on-demand',
-  'large text must use on-demand delivery');
-assert(delivery(thresholds, 'image/png', 1024 * 1024) === 'eager',
-  'small image must use eager delivery');
-assert(delivery(thresholds, 'image/png', 1024 * 1024 + 1) === 'on-demand',
-  'large image must use on-demand delivery');
+for (const [mime, boundary] of [['text/plain;charset=utf-8', 64 * 1024], ['image/png', 1024 * 1024]]) {
+  for (const delta of [-1, 0, 1]) {
+    assert(delivery(thresholds, mime, boundary + delta) === (delta <= 0 ? 'eager' : 'on-demand'),
+      `${mime} delivery must apply exact byte limits, including equality (${delta})`);
+  }
+}

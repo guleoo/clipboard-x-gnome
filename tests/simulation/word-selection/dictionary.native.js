@@ -76,24 +76,15 @@ async function fixture(desktop, run) {
 }
 
 class Endpoint {
-  static async open({tls = false} = {}) {
+  static async open() {
     const endpoint = new Endpoint();
     endpoint.set(dictionary('Network Native', first));
-    if (tls) {
-      const certificate = Gio.Subprocess.new(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes',
-        '-keyout', `${endpoint.directory}/key.pem`, '-out', `${endpoint.directory}/cert.pem`, '-days', '1',
-        '-subj', '/CN=127.0.0.1', '-addext', 'subjectAltName=IP:127.0.0.1'],
-      Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
-      await new Promise((resolve, reject) => certificate.wait_check_async(null, (source, result) => {
-        try { source.wait_check_finish(result); resolve(); } catch (error) { reject(error); }
-      }));
-    }
     const file = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent()
       .get_child('fixtures').get_child('dictionary-http.py');
-    endpoint.process = Gio.Subprocess.new(['python3', file.get_path(), endpoint.directory, ...(tls ? ['--tls'] : [])], Gio.SubprocessFlags.NONE);
+    endpoint.process = Gio.Subprocess.new(['python3', file.get_path(), endpoint.directory], Gio.SubprocessFlags.NONE);
     try {
       await until(() => endpoint.state.port, 'owned dictionary endpoint');
-      endpoint.address = `${tls ? 'https' : 'http'}://127.0.0.1:${endpoint.state.port}/native.dict`;
+      endpoint.address = `http://127.0.0.1:${endpoint.state.port}/native.dict`;
       return endpoint;
     } catch (error) { await endpoint.close(); throw error; }
   }
@@ -257,37 +248,6 @@ export const cases = {
       await preferences.click({type: 'GtkButton', label: 'Close'});
       const [, current] = store.getFile(entry.fileName).load_contents(null);
       assert(GLib.base64_encode(previous) === GLib.base64_encode(current), 'Invalid refresh must preserve the previous actual dictionary file');
-      endpoint.set('temporary endpoint failure', 503);
-      await preferences.click({type: 'GtkButton', row: 'Network Native', tooltip: 'Refresh dictionary'});
-      await preferences.scrollTo({type: 'GtkButton', label: 'Close'});
-      await preferences.click({type: 'GtkButton', label: 'Close'});
-      assert(GLib.base64_encode(previous) === GLib.base64_encode(store.getFile(entry.fileName).load_contents(null)[1]),
-        'A real HTTP failure must preserve the last downloaded dictionary bytes');
-      endpoint.set(dictionary('Network Native Japanese', '青空機械海豚', 'ja'));
-      await preferences.click({type: 'GtkButton', row: 'Network Native', tooltip: 'Refresh dictionary'});
-      let changed;
-      for (let attempt = 0; attempt < 200; attempt++) {
-        changed = (await store.list()).find(value => value.source === endpoint.address && value.locale === 'ja');
-        if (changed) break;
-        await pause(25);
-      }
-      assert(changed && !store.getFile(entry.fileName).query_exists(null),
-        'A real refresh changing declared language must replace, rather than duplicate, its managed file');
-      const selector = await preferences.translate({row: 'Dictionary language'});
-      const originalLocale = (await preferences.inspect()).windows[0].widgets
-        .find(widget => widget.type === 'AdwComboRow' && widget.row === selector.row).selected;
-      await preferences.choice('Dictionary language', originalLocale === 0 ? 1 : 0);
-      await preferences.scrollTo({type: 'GtkButton', row: 'Network Native Japanese', tooltip: 'Refresh dictionary'});
-      endpoint.set(dictionary('Network Native', second));
-      await preferences.click({type: 'GtkButton', row: 'Network Native Japanese', tooltip: 'Refresh dictionary'});
-      for (let attempt = 0; attempt < 200; attempt++) {
-        changed = (await store.list()).find(value => value.source === endpoint.address && value.locale === 'zh_cn');
-        if (changed) break;
-        await pause(25);
-      }
-      assert(changed, 'Refreshing from another list language must restore the declared Chinese dictionary');
-      await preferences.choice('Dictionary language', originalLocale);
-      await preferences.scrollTo({type: 'GtkButton', row: 'Network Native', tooltip: 'Refresh dictionary'});
       const count = endpoint.state.requests;
       assert((await words(desktop, target, second)).includes(second), 'Previous dictionary remains usable after failed refresh');
       await focus(preferences);
@@ -307,34 +267,9 @@ export const cases = {
         await focus(reopened);
         await reopened.scrollTo({type: 'GtkButton', row: 'Network Native', tooltip: 'Remove dictionary'});
         await reopened.click({type: 'GtkButton', row: 'Network Native', tooltip: 'Remove dictionary'});
-        for (let attempt = 0; attempt < 100 && store.getFile(changed.fileName).query_exists(null); attempt++) await pause(20);
-        assert(!store.getFile(changed.fileName).query_exists(null), 'Native removal must delete the actual imported network file');
+        for (let attempt = 0; attempt < 100 && store.getFile(entry.fileName).query_exists(null); attempt++) await pause(20);
+        assert(!store.getFile(entry.fileName).query_exists(null), 'Native removal must delete the actual imported network file');
       } finally { await reopened.close(); }
-    } finally { await endpoint.close(); }
-  }),
-
-  'DICT-06-https': desktop => fixture(desktop, async ({preferences, store}) => {
-    const endpoint = await Endpoint.open({tls: true});
-    const before = (await store.list()).map(entry => entry.fileName).sort().join();
-    try {
-      const failure = await new Promise(resolve => Gio.File.new_for_uri(endpoint.address).query_info_async(
-        'standard::size', Gio.FileQueryInfoFlags.NONE, GLib.PRIORITY_DEFAULT, null, (source, result) => {
-          try { source.query_info_finish(result); resolve(null); } catch (error) { resolve(error); }
-        }));
-      if (failure?.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_SUPPORTED))
-        block('The isolated desktop has no GVfs HTTPS backend');
-      assert(failure && (/TLS|SSL|certificate|证书|証明書|인증서/iu.test(failure.message)
-        || failure.matches?.(Gio.TlsError, Gio.TlsError.BAD_CERTIFICATE)),
-      `The actual HTTPS backend must reject the untrusted certificate, not fail for an unrelated reason (${failure?.message})`);
-      await preferences.scrollTo({type: 'GtkButton', label: 'Add network location'});
-      await preferences.click({type: 'GtkButton', label: 'Add network location'});
-      await preferences.input('HTTP(S) URL', endpoint.address);
-      await preferences.click({type: 'GtkButton', label: 'Add'});
-      await preferences.scrollTo({type: 'GtkButton', label: 'Close'});
-      await preferences.click({type: 'GtkButton', label: 'Close'});
-      assert((await store.list()).map(entry => entry.fileName).sort().join() === before,
-        'Untrusted HTTPS must report its actual TLS failure without creating a dictionary or silently falling back to HTTP');
-      assert(endpoint.state.requests === 0, 'An untrusted TLS peer must not receive a plaintext dictionary request');
     } finally { await endpoint.close(); }
   }),
 

@@ -2,15 +2,33 @@
 
 > [English](acceptance-status.md) · 简体中文
 
-日期：2026-10-25。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
+更新日期：2026-10-26。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
-## 范围
+## 2026-10-26：逻辑验收下沉
+
+以行为保持的依赖解耦重新构建 1.1.0，SHA-256：
+`098de39e3c390bd5869e2280422e814f1c5158a6cafb3a5b16f8e016699fb741`。
+
+| 验证 | 本次实际结果 |
+| --- | --- |
+| 默认无图形 Meson 回归 | 51/51 通过；未加入额外桌面、Docker 或压力 CI |
+| 本地无图形验收入口 | 7/7 通过：捕获、历史控制器、输入保护、截图流程、草稿、真实 HTTP 与不可信 TLS |
+| 无图形真实服务端集成 | 10 通过、1 失败；覆盖 11 项发布/接收/队列/分页/连接/校验用例 |
+| 保留的真实桌面接线 | GNOME 50/51 各 19 项通过：捕获/owner、Pin 重启、表单/草稿/失败、分词提示、取色、截图/禁用、词库刷新、同步发送/重启恢复、输入熔断/禁用清理 |
+| 构建与静态检查 | ZIP 构建及 release 校验、JS 语法、脚本语法、diff 检查通过 |
+
+唯一的 HTTP 失败仍为 `XFER-09-sha256sum`：真实服务端无 Content-Length 响应被拒绝，
+默认 GLib 通过。失败随用例迁移到逻辑层，没有放宽断言或修复生产同步行为。
+详细归属见[功能清单](functional-inventory_CN.md#由模拟桌面下沉的逻辑验收)。
+本轮不重跑下方所有已有失败，不把旧问题视为已修复；没有安装宿主插件。
+
+## 2026-10-25 历史快照范围
 
 - 构建包：`clipboard-x-gnome_1.1.0.zip`，SHA-256：
   `9d7c1453af80df946c3ad2eb038323e6347588e76f1c41656cd77492c4820d17`。
 - 实际隔离 GNOME 50.6 / 51.1、软件渲染、独立 GTK 来源/接收端及原生虚拟输入。
   未安装宿主插件、未注销宿主、未修改生产代码或扩大 CI。
-- 原生注册表目前有 **133 个用例**：前两批新增 42 + 9 个，并按确认范围移除两个复制来源；词库冷恢复另有可选生命周期入口。
+- 当时原生注册表有 **133 个用例**：前两批新增 42 + 9 个，并按确认范围移除两个复制来源；词库冷恢复另有可选生命周期入口。
   数量不是通过数，也不能与清单的 173 个功能要求相减计算覆盖率。
 - 第一批 42 项最初记录为 **50：34 通过 / 8 失败；51：33 通过 / 9 失败**。
   按下述确认后的 ENV-05 截图边界复验后，该集合为 **50：35 通过 / 7 失败；51：34 通过 / 8 失败**。
@@ -92,7 +110,8 @@ HTTP gate 流式转发真实请求，只控制时序。崩溃记 FAIL，后续�
 
 ```sh
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual,XFER-09-sha256sum --isolate-cases
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual --isolate-cases
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless --case XFER-09-sha256sum
 ```
 
 ## 剩余边界

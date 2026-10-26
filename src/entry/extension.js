@@ -8,6 +8,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
+import {createPlatform} from '../clipboard/platform.js';
 import {Content} from '../clipboard/content.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
@@ -25,6 +26,7 @@ import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
 import {Indicator} from '../ui/indicator.js';
 import {ScreenshotPortal} from '../screenshot/portal.js';
 import {observeCancellation} from '../screenshot/cancellation.js';
+import {capture as captureScreenshot} from '../screenshot/pipeline.js';
 
 const SHORTCUT_KEYS = Object.freeze([
   'panel-shortcut',
@@ -40,7 +42,7 @@ export default class ClipboardXGnomeExtension extends Extension {
   enable() {
     logger.info('enable');
     this._settings = this.getSettings();
-    this._controller = new ClipboardController(this._settings);
+    this._controller = new ClipboardController(this._settings, {platform: createPlatform()});
     const controller = this._controller;
     const settings = this._settings;
     this._portal = new ScreenshotPortal({observeCancellation});
@@ -288,30 +290,8 @@ export default class ClipboardXGnomeExtension extends Extension {
 
   async _takeScreenshot() {
     const controller = this._controller;
-    const settings = this._settings;
-    const portal = this._portal;
-    const check = () => {
-      if (!controller || this._controller !== controller)
-        throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Screenshot operation was stopped'});
-    };
-    check();
-    const uri = await portal.capture(settings.get_string('screenshot-target'));
-    check();
-    if (uri === null)
-      return;
-    const addToHistory = settings.get_boolean('screenshot-add-history');
-    const item = addToHistory
-      ? await controller.addFromUri(uri, 'screenshot')
-      : await controller.createFromUri(uri);
-    check();
-    if (settings.get_boolean('screenshot-write-clipboard')) {
-      await controller.writeScreenshot(item);
-      check();
-    }
-    if (settings.get_boolean('screenshot-open-editor')) {
-      await this._launchEditor(uri);
-      check();
-    }
+    return captureScreenshot({controller, settings: this._settings, portal: this._portal,
+      isCurrent: () => this._controller === controller, openEditor: uri => this._launchEditor(uri)});
   }
 
   _pickColor() {

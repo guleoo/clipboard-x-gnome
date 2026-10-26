@@ -14,6 +14,7 @@ import {PanelHeader} from '../../controls/panel-header.js';
 import {SearchEntry} from '../../controls/search-entry.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
+import {Draft} from './draft.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;
 
@@ -36,9 +37,7 @@ export class QuickPhrasesPanel {
       if (!this._destroyed)
         reportError(error);
     };
-    this._formVisible = false;
-    this._formRevision = 0;
-    this._saveRequest = 0;
+    this._draft = new Draft();
     this._buttons = [];
     this._rows = [];
     this._focusIdleId = 0;
@@ -85,7 +84,7 @@ export class QuickPhrasesPanel {
       iconName: null,
       placeholderOffset: OPTICAL_BASELINE_OFFSET,
       placeholderMargin: 0,
-      onChanged: () => this._formRevision++,
+      onChanged: entry => this._draft.change(entry.get_text()),
       onActivate: () => this.save().catch(error => this._reportError(error)),
       onKeyPress: event => {
         const key = event.get_key_symbol();
@@ -147,14 +146,14 @@ export class QuickPhrasesPanel {
   }
 
   get formVisible() {
-    return this._formVisible;
+    return this._draft.visible;
   }
 
   render() {
     this._section.removeAll();
     this._buttons = [];
     this._rows = [];
-    this.form.visible = this._formVisible;
+    this.form.visible = this._draft.visible;
     const focusRows = [];
     for (const phrase of this._store.all) {
       const row = new ContentItem();
@@ -201,7 +200,7 @@ export class QuickPhrasesPanel {
     }
     this.focusGrid.setRows([
       [this.backButton, this.addButton],
-      ...(this._formVisible ? [[this.entry.clutter_text, this.saveButton]] : []),
+      ...(this._draft.visible ? [[this.entry.clutter_text, this.saveButton]] : []),
       ...focusRows,
     ]);
   }
@@ -210,7 +209,7 @@ export class QuickPhrasesPanel {
     this._cancelFocus();
     if (this._destroyed || !this._isActive())
       return;
-    const target = this._formVisible ? this.entry.clutter_text : this.addButton;
+    const target = this._draft.visible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
   }
 
@@ -298,6 +297,7 @@ export class QuickPhrasesPanel {
 
   destroy() {
     this._destroyed = true;
+    this._draft.destroy();
     this.leave();
     this.focusGrid.clear();
     this._buttons = [];
@@ -330,24 +330,22 @@ export class QuickPhrasesPanel {
   }
 
   toggleForm() {
-    if (this._formVisible)
+    if (this._draft.visible)
       this.hideForm();
     else
       this.showForm();
   }
 
   async save() {
-    const text = this.entry.get_text();
-    if (!text.trim())
+    const submission = this._draft.submit();
+    if (!submission)
       return false;
-    const revision = this._formRevision;
-    const request = ++this._saveRequest;
-    await this._store.add(text);
+    await this._store.add(submission.text);
     if (this._destroyed)
       return true;
-    const current = this._formVisible && revision === this._formRevision && request === this._saveRequest;
+    const current = this._draft.complete(submission);
     if (current)
-      this._setFormVisible(false);
+      this.entry.set_text('');
     this._refresh();
     if (current)
       this.focus();
@@ -377,8 +375,7 @@ export class QuickPhrasesPanel {
   }
 
   _setFormVisible(visible) {
-    this._formRevision++;
-    this._formVisible = visible;
+    this._draft.setVisible(visible);
     this.entry.set_text('');
   }
 }

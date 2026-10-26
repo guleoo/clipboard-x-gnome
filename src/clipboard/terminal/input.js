@@ -4,6 +4,7 @@ import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {typingDelay, typingSequence, typingTiming} from './sequence.js';
+import {cancel, shouldCancel} from './guard.js';
 
 const INPUT_POLL_MILLISECONDS = 20;
 const INPUT_WAIT_TIMEOUT_MILLISECONDS = 10_000;
@@ -165,8 +166,8 @@ export class TerminalInput {
   _filterEvent(event) {
     if (!this._monitoring || this._emitting)
       return Clutter.EVENT_PROPAGATE;
-    const type = event.type();
-    if (type !== Clutter.EventType.KEY_PRESS)
+    if (!shouldCancel({monitoring: this._monitoring, emitting: this._emitting,
+      keyPress: event.type() === Clutter.EventType.KEY_PRESS}))
       return Clutter.EVENT_PROPAGATE;
     // VirtualInputDevice events bypass this filter, while physical events may
     // use a logical input device without a device node.
@@ -188,9 +189,8 @@ export class TerminalInput {
   }
 
   _cancelTyping() {
-    if (!this._typing || this._typing.cancelled)
+    if (!cancel(this._typing))
       return false;
-    this._typing.cancelled = true;
     this._typingRevision++;
     return true;
   }

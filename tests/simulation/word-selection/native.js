@@ -168,13 +168,13 @@ export const cases = {
     const errors = [];
     desktop.indicator._actions.reportError = error => { errors.push(error); original(error); };
     try {
-      assert(desktop.settings.get_uint('tokenizer-word-limit') === 2000, 'Default interactive limit must be 2000');
-      for (const count of [1999, 2000, 2001]) {
+      desktop.settings.set_uint('tokenizer-word-limit', 4);
+      for (const count of [4, 5]) {
         const source = Array.from({length: count}, (_, index) => `word${index}`).join(' ');
         const item = await capture(desktop, target, source);
         const previousErrors = errors.length;
         await request(desktop, item);
-        if (count <= 2000) {
+        if (count <= 4) {
           await until(() => desktop.manager.is('tokenizer') && desktop.words.buttons.length === count, `render ${count} words`, 15000);
         } else {
           await until(() => errors.length > previousErrors, 'over-limit notification');
@@ -183,9 +183,6 @@ export const cases = {
         await desktop.close();
         desktop.manager.reset();
       }
-      desktop.settings.set_uint('tokenizer-word-limit', 4);
-      await openWords(desktop, target, 'one two three four');
-      assert(desktop.words.buttons.length === 4, 'Configured limit must apply to actual panel');
     } finally {
       desktop.indicator._actions.reportError = original;
       await target.close();

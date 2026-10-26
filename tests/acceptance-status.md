@@ -2,16 +2,34 @@
 
 > English · [简体中文](acceptance-status_CN.md)
 
-Date: 2026-10-25. These are observed results, not certification of all requirements in the
+Updated: 2026-10-26. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
-## Scope
+## 2026-10-26: headless acceptance migration
+
+Rebuilt 1.1.0 after behavior-preserving dependency extraction, SHA-256:
+`098de39e3c390bd5869e2280422e814f1c5158a6cafb3a5b16f8e016699fb741`.
+
+| Verification | Observed result |
+| --- | --- |
+| Default headless Meson regression | 51/51 passed; no additional desktop, Docker or stress CI |
+| Local headless acceptance entry | 7/7 passed: capture, history controller, input guard, screenshot pipeline, draft, real HTTP and untrusted TLS |
+| Headless real-backend integration | 10 passed, 1 failed across 11 publication/receive/queue/pagination/connection/verification cases |
+| Retained real-desktop wiring | 19 passed on each of GNOME 50/51: capture/owner, pin/restart, forms/drafts/failure, word limit notification, color, screenshot/disable, dictionary refresh, sync publication/restoration and input fuse/disable cleanup |
+| Build/static checks | ZIP build/release validation, JS/script syntax and diff checks passed |
+
+The sole HTTP failure remains `XFER-09-sha256sum`: the actual backend response without
+Content-Length is rejected; default GLib passes. The failure moved to logic without weaker
+assertions or a production sync fix. See the [ownership table](functional-inventory.md#acceptance-moved-out-of-desktop-simulation).
+This run does not rerun or resolve every historical failure below, and does not install the host extension.
+
+## 2026-10-25 historical scope
 
 - Artifact: `clipboard-x-gnome_1.1.0.zip`, SHA-256
   `9d7c1453af80df946c3ad2eb038323e6347588e76f1c41656cd77492c4820d17`.
 - Real isolated GNOME 50.6 / 51.1 with software rendering, independent GTK sources/receivers and
   native virtual input. No host installation/logout, production changes or CI expansion.
-- Native registry: **133 cases** after the agreed removal of two copy sources; previous batches
+- The native registry then had **133 cases** after the agreed removal of two copy sources; previous batches
   added **42 + 9 cases**, plus strengthened existing checks.
   Cold dictionary restoration is a separate opt-in lifecycle check. Counts are not passing totals,
   nor can they be subtracted from the inventory's 173 requirements to calculate coverage.
@@ -102,7 +120,8 @@ cases NOT_RUN; no silent retry, relaxed assertions or production fixes make thes
 
 ```sh
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual,XFER-09-sha256sum --isolate-cases
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual --isolate-cases
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless --case XFER-09-sha256sum
 ```
 
 ## Remaining boundaries

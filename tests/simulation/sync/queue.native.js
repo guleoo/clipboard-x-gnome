@@ -1,5 +1,4 @@
 import Gio from 'gi://Gio';
-import GLib from 'gi://GLib';
 import {assert, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {Server} from '../helpers/server.js';
@@ -64,18 +63,6 @@ export const cases = {
       'Retry must honor the original eager manifest even after the configured threshold changes');
   }),
 
-  'SEND-07': desktop => fixture(desktop, async ({server, gate, target}) => {
-    const item = await capture(desktop, target, 'Committed publication with a deliberately lost HTTP response');
-    gate.set({path: '/uploads/[^/]+/complete$', dropOnce: GLib.uuid_string_random()});
-    await submit(desktop, item);
-    await until(() => gate.state.requests.some(value => value.stage === 'response-dropped'), 'real server completion response deliberately dropped', 15000);
-    assert((await server.item(item.id)).id === item.id, 'Server really committed before the response was lost');
-    gate.set({});
-    await confirmed(desktop, item.id);
-    const uploads = gate.state.requests.filter(value => value.method === 'PUT' && value.path.includes('/contents/'));
-    assert(uploads.length === 1 && (await server.items()).items.filter(value => value.id === item.id).length === 1,
-      'Lost response recovery must confirm the existing item without re-uploading original bytes');
-  }),
 
   'SEND-08': desktop => fixture(desktop, async ({server, gate, target}) => {
     const item = await capture(desktop, target, 'Deleted local item cannot finish its queued publication');

@@ -18,7 +18,22 @@ in the [acceptance snapshot](acceptance-status.md); a case's PASS does not certi
   verifiers are not duplicate implementations. Never delete failures or weaken expectations to pass.
 - Commands: [test organization](README.md); stable PANEL reproduction: [panel guide](../docs/panel-testing.md).
 
-## Functional points and simulation ownership
+## Acceptance layers
+
+Not every requirement needs a desktop. Ordering, retention, capture cancellation state, draft
+revisions, word limits, dictionary file rules, upload queues, pagination and verification are
+primarily accepted through headless logic/filesystem/HTTP integration. A real backend does not
+make a test a desktop simulation. Passing rule tests are not marked partial simply because the
+same data matrix was not repeated inside Shell.
+
+Where UI wiring matters, retain a representative interaction: pin and restart, visible results
+after a dictionary refresh, focus preservation during an asynchronous form save, real owner
+changes, progress actors or system screenshot cancellation. Focus, dragging, modal ownership,
+actual clipboard ownership, Shell main-loop responsiveness and crash regressions still require
+desktop simulation. Model tests cannot replace them. A moved failure remains a failure; changing
+layers is not evidence of testing disk exhaustion or physical power loss.
+
+## Functional points and test ownership
 
 ### Lifecycle — ENV-01…08
 
@@ -107,9 +122,12 @@ multi-MIME fixture alone does not establish browser compatibility.
 | HIST-09 | Handle corrupt indexes/items, missing objects, bad hashes, symlinks and escaped paths while recovering valid records. |
 | HIST-10 | On unwritable/full storage or interrupted writes, preserve the old file, report errors and clean temporary files. |
 
-Maintained simulation entries: [clipboard/history/startup.smoke.js](simulation/clipboard/history/startup.smoke.js).
-
-Evidence / remaining boundary: Also use logic/clipboard/history. Search is not full-text. Startup covers controller/store pruning and immediate shutdown, not every cold Shell recovery, disk-full or permission fault.
+Logic entries: [history/order.test.js](logic/clipboard/history/order.test.js),
+[history/storage.test.js](logic/clipboard/history/storage.test.js) and
+[history/controller.test.js](logic/clipboard/history/controller.test.js). Accept ordering, pruning,
+save interleavings and actual filesystem errors at this layer. Desktop checks retain HIST-01's
+pin → save → restart → unpin interaction and HIST-04's search interaction. Cold-Shell recovery
+reuses ENV-02/06. A real replacement error is not evidence of disk exhaustion or power-loss testing.
 
 ### Privacy — PRIV-01…08
 
@@ -201,6 +219,10 @@ Maintained simulation entries: [phrases/form.smoke.js](simulation/phrases/form.s
 
 Evidence / remaining boundary: form owns native submission; integration owns action routing and controlled save races; logic/clipboard/phrases owns storage. These do not prove IME input or external target delivery (TYPE).
 
+The complete draft revision/edit-back/reopen/overlapping-save/failure matrix belongs to
+[phrase-draft.test.js](logic/ui/phrase-draft.test.js). Native PHRASE-06 retains the wiring check
+that delayed saves preserve new input and focus.
+
 ### Paste and typing — TYPE-01…09
 
 | ID | What to test / expected result |
@@ -215,9 +237,12 @@ Evidence / remaining boundary: form owns native submission; integration owns act
 | TYPE-08 | Test real IME language modes, CapsLock, keyboard layouts and target changes; do not assume IME bypass. |
 | TYPE-09 | Test multiple toolkits, browsers and terminals; document the Wayland limits on observing ordinary physical input. |
 
-Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/guard.smoke.js](simulation/terminal/guard.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
+Logic guard entry: [terminal/guard.test.js](logic/clipboard/terminal/guard.test.js).
+Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
 
-Evidence / remaining boundary: typing compares a real GTK Wayland target. guard constructs events; lifecycle controls modifier state and suppresses characters. Neither proves hardware interruption or IME bypass. Physical tests remain mandatory for those claims.
+Evidence / remaining boundary: the logic guard checks cancellation decisions and repeated cancellation;
+typing compares a real GTK Wayland target. Lifecycle controls modifier state and suppresses characters.
+Neither proves hardware interruption or IME bypass. Physical tests remain mandatory for those claims.
 
 ### Screenshots — SHOT-01…07
 
@@ -271,9 +296,12 @@ not merely the CLI. Argument/data rules remain in logic tests.
 | COLOR-06 | Initialization/grab failure or close/disable during sampling releases modal state and signals. |
 | COLOR-07 | Repeated open/exit restores desktop shortcuts with no remaining overlay. |
 
-Maintained simulation entries: [color-picker/sampling.smoke.js](simulation/color-picker/sampling.smoke.js), [color-picker/movement.smoke.js](simulation/color-picker/movement.smoke.js), [color-picker/lifecycle.smoke.js](simulation/color-picker/lifecycle.smoke.js).
+Maintained simulation entries: [color-picker/sampling.smoke.js](simulation/color-picker/sampling.smoke.js), COLOR-03/04 in [color-picker/native.js](simulation/color-picker/native.js), and [color-picker/lifecycle.smoke.js](simulation/color-picker/lifecycle.smoke.js).
 
-Evidence / remaining boundary: sampling dispatches native events on real swatches; movement injects picker scales/handler events, NOT actual fractional-display evidence. lifecycle gates pending captures and checks lock/resume integration. Real hardware geometry remains separate.
+Evidence / remaining boundary: sampling dispatches native events on real swatches; movement uses the
+backend's actual scale and virtual keyboard, while logic owns scale/rounding matrices. DisplayConfig
+owns fractional-display evidence. Lifecycle gates pending captures and checks lock/resume integration.
+Real hardware geometry remains separate.
 
 ### Connection and devices — CONN-01…10
 
@@ -318,10 +346,11 @@ Maintained simulation entries: [sync/toggle.smoke.js](simulation/sync/toggle.smo
 
 Native entries: [sync/native.js](simulation/sync/native.js), [sync/queue.native.js](simulation/sync/queue.native.js)
 and [sync/local-boundary.native.js](simulation/sync/local-boundary.native.js). The real server receives
-manual/automatic/pinned-only publications, independent MIME policy, exact thresholds, disabled-copy
-exclusion and durable delivery confirmation. A separate streaming HTTP gate holds actual requests or
-drops one real completion response for frozen-manifest/interruption/deletion/idempotency checks.
-It never replaces SyncClient results. Corruption, backoff and full destination matrices remain logic-owned.
+manual/automatic/pinned-only publications, representative rich-text/images, disabled-copy exclusion
+and durable delivery confirmation. Full MIME/threshold/destination matrices and lost completion
+responses belong to headless real-HTTP integration. A separate streaming gate still holds actual
+desktop requests to reproduce frozen manifests and interruption/deletion without replacing
+SyncClient results. Corruption and backoff continue to reuse logic tests.
 
 ### Receive and lazy content — RECV-01…10
 
@@ -433,14 +462,14 @@ These are coverage boundaries, not certification of every requirement within an 
 | Module | IDs | Actual evidence and boundary |
 | --- | --- | --- |
 | `clipboard/applications.native.js` | CLIP-02-chromium | Real local HTML, private Chromium profile, native copy and independent MIME readback |
-| `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04/10 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pinned-first restart, Unicode search and real replace errors; not password-manager or disk-full interoperability |
+| `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pin/restart and Unicode search; filesystem errors belong to logic |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
-| `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, 2000-word/configured limits, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup |
+| `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, small configured limits/notification, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup; logic owns the 2000-word algorithm boundary |
 | `terminal/native.js` | TYPE-01/03/05/06/07 | Independent GTK target, exact mixed-language output at both speeds, real backend modifier wait/fuse, one notification/queued cancellation, no old typing after actual disable/re-enable |
-| `sync/native.js` | CONN-06-profile, SEND-01/01-pinned/02/03/06/10, RECV-01/03/04/09, XFER-02/04 | Real server/source, durable state and actual transport |
+| `sync/native.js` | CONN-06-profile, SEND-01/01-pinned/02/06/10, RECV-01/03/04/09, XFER-02/04 | Real server/source, durable state and actual transport; SEND-02 retains representative rich-text wiring |
 | `sync/connection.native.js` | CONN-02/03/04/05 | Complete GTK Test/Apply/failure/retry and in-flight close |
 | `sync/network.native.js` | RECV-05/06/07/08, XFER-02-download | Real gated downloads, source failure, stale choices and exact progress |
-| `sync/queue.native.js` | SEND-04/07/08 | Frozen disk manifests, interrupted/deleted work and lost responses |
+| `sync/queue.native.js` | SEND-04/08 | Frozen disk manifests and interrupted/deleted work; lost responses move to headless real-HTTP integration |
 | `sync/local-boundary.native.js` | PHRASE-08, PRIV-08 | Active-server local-only data boundaries; not a log-redaction audit |
 | `settings/native.js`, `settings/language.native.js` | SET-01/06/08, LANG-02 | Complete independent preferences, native recording/reset and actual catalogs |
 | `word-selection/dictionary.native.js` | DICT-02/06/08 (also DICT-07) | Local/network import, multiple sources, refresh/retention, editor/file manager |
@@ -458,7 +487,7 @@ fuse proves neither physical input delivery nor input-method bypass. CI scope is
 
 ### Extended native owners
 
-The registry now contains 133 cases (42 additions in the first batch, 9 in the next, two copy sources removed by scope agreement), not 133 passing requirements. The following
+Use `--list` for the current native registry; moving data rules out changes its previous total. The following
 entries extend the owners above rather than duplicate their happy paths. Failures belong in the
 [result snapshot](acceptance-status.md), not weaker expected results in this inventory.
 
@@ -471,9 +500,9 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 | `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
 | `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Complete/cancel the actual system screenshot UI after disable, verify released modal and native external input, no old plugin side effects, then normal re-enable; large capture/thumbnail/save main-loop gaps |
 | `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |
-| `word-selection/dictionary.native.js`, `lifecycle/cold.smoke.js` | DICT-02/06/06-https/07/08/09 | Language lists, multiple sources, refresh failure/declaration change, actual editor, 120,002-word indexing, two-Shell no-implicit-download proof; TLS case is rejection, not trusted-CA success |
-| `sync/scenarios.native.js` | SEND-03-image, SEND-05-destinations, RECV-02-pages/03-boundaries | Actual image/send and text-image/receive boundaries, 205-item production pagination, durable cursor and per-address/Channel queues across restart |
-| `sync/scenarios.native.js`, `sync/network.native.js` | CONN-08-empty/revoked, CONN-09-device/offline, XFER-05-disable-download/06-cancel-download/09-glib/09-sha256sum, RECV-08-manual | Real missing/revoked access, refused connection, session/task cancel, both checksum paths and independently executed newer-choice branches |
+| `word-selection/dictionary.native.js`, `lifecycle/cold.smoke.js` | DICT-02/06/07/08/09 | Language lists, multiple sources, representative refresh failure, actual editor, 120,002-word indexing, two-Shell no-implicit-download proof; HTTP rules and TLS rejection belong to logic |
+| `sync/scenarios.native.js` | SEND-03-image, SEND-05-restore, RECV-02-restore | Single real image capture/publication and small-history cursor/destination restoration across extension restart; logic owns the full matrices |
+| `sync/scenarios.native.js`, `sync/network.native.js` | CONN-08-empty/revoked, XFER-05-disable-download/06-cancel-download, RECV-08-manual | Real missing/revoked access, session/task cancellation and newer choices; Shell crash/overwrite regressions remain |
 | `screenshot/native.js`, `screenshot/editor.native.js`, `screenshot/remote.native.js` | SHOT-03-editor/07, EDIT-05-remote/07-lifetime | Actual screenshot/edit combinations, cancel/retry, remote original to a real custom editor, offline cache and editor surviving extension disable |
 | `color-picker/native.js`, `color-picker/displays.native.js` | COLOR-05-edges/displays | Corners/clamping, actual dual virtual displays and 125% scaling; coordinates, clipboard and physical screenshot-pixel step |
 
@@ -497,6 +526,23 @@ handler invocation. Decoder-internal cancellation, physical input and every depl
 
 ## Duplicate-test review
 
+### Acceptance moved out of desktop simulation
+
+| Behavior | Headless owner | Retained desktop evidence |
+| --- | --- | --- |
+| HIST-01/06/10, capture cancellation/recovery | `logic/clipboard/{capture,history/controller}.test.js`: real temporary files/errors/recovery, controller state and signals | Pin and real restart; external owner and privacy-policy changes |
+| WORD-06 | 1999/2000/2001 in `logic/clipboard/tokenizer/processors.test.js`; existing default-settings tests | Small configured limit and notification; WORD-07's actual large-panel responsiveness stays |
+| DICT-06 | `logic/clipboard/tokenizer/network.test.js`: real HTTP, failure retention/declarations, `--tls` certificate rejection | Actual GTK Add/Refresh, reloaded result and one error-feedback path |
+| PHRASE-06, typing cancellation, screenshot policy | `logic/ui/phrase-draft.test.js`, `logic/clipboard/terminal/guard.test.js`, `logic/screenshot/pipeline.test.js` | Form focus/new draft, actual input devices, real portal cancellation/disable |
+| COLOR-03/04 | Existing scale/rounding/format checks in `logic/color-picker/color.test.js` | Actual pixel movement, non-default format to clipboard, dual displays/125% |
+| SEND-02/03, RECV-03 | `logic/sync/integration/backend.test.js`: switch and text/image threshold matrices with production clients and real backend | Single rich-text/PNG capture-publication and automatic lazy receive |
+| SEND-05/07, RECV-02 | Same HTTP integration: destination queues, committed-but-lost ACK idempotence, actual 205-item pagination/cursor | Small-history extension restarts in SEND-05-restore / RECV-02-restore |
+| CONN-09-device/offline, XFER-09-glib/sha256sum | Same HTTP integration: real device revocation/new key, refusal/recovery, actual verifier paths and framing | No repeated Shell matrix; independent GTK feedback and actual Shell cancellation/crash cases remain |
+
+See [logic verification](README.md#logic-verification) for commands. This HTTP integration is not a
+second GNOME desktop and does not establish rendering or clipboard-owner behavior. The known
+sha256sum framing failure remains subject to actual observed results.
+
 | Previous overlap | Disposition |
 | --- | --- |
 | Panel dimensions | PANEL-03 owns the full matrix/overrides; remove the smaller aggregate copy. |
@@ -506,7 +552,7 @@ handler invocation. Decoder-internal cancellation, physical input and every depl
 | Phrase Enter and basic direct save | phrases/form owns main/keypad Enter and button; retain distinct draft/failure races in integration. |
 | Sync toggle inside image editing | sync/toggle owns state/focus/row identity; images owns original/editor behavior. |
 | Sensitive refusal in image and privacy tests | clipboard/privacy owns manual refusal/disk boundary; sync/status keeps automatic policy and progress/session retry. |
-| Modifier-release wait and duplicate direct pin | terminal/lifecycle owns wait/release/cleanup; retain guard's distinct filter check. Keep row pin shortcut, remove extra direct toggles. |
+| Modifier-release wait and duplicate direct pin | terminal/lifecycle owns wait/release/cleanup; logic guard owns cancellation decisions. Keep row pin shortcut, remove extra direct toggles. |
 | Similar names, different failure boundaries | Keep round-trip versus queued restoration, normal versus clipped dragging, sampling versus delayed capture. |
 | Compatibility, PANEL-10 and input-mode | Call one verifier, not duplicate implementations; repeated explicit suite runs are not extra feature coverage. |
 

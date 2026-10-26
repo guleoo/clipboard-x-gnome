@@ -60,6 +60,34 @@ unchanged. `meson test -C build` still includes stress tests; ordinary CI still 
 This reorganization does not add checks to CI. See the [transfer stress guide](../docs/sync-performance-testing.md)
 for optional stress runs.
 
+Capture state, history-controller, draft, input-guard, screenshot-pipeline and network-dictionary
+acceptance extracted from desktop tests has an explicit local entry point:
+
+```sh
+bash tools/test-logic-acceptance.sh
+# Or bun run test:logic:acceptance
+```
+
+It clears display variables and uses private session buses without starting Shell or GTK. It
+complements rather than reruns the default Meson suite and is not automatically added to CI.
+Existing algorithm matrices continue to reuse Meson's word, color, storage and sync tests.
+Filesystem/HTTP integration is logic verification too; data rules do not require a desktop.
+Network dictionaries need a GVfs HTTP(S) backend; TLS rejection also needs `openssl`. Missing
+dependencies are BLOCKED, not passes.
+
+Run logic acceptance against the real sync backend separately:
+
+```sh
+python3 tools/test-sync-http.py --list
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless
+```
+
+This reuses the owned Docker backend and cleanup boundaries, exercising production clients,
+storage, queues and a real HTTP gate without a graphical desktop or a GNOME version dependency.
+Select publishing idempotence, device revocation, pagination, destinations or verification with
+`--case`. Results go to `build/sync-http-tests/`. Known failures move with their cases rather than
+being rewritten as expected successes.
+
 ## Simulated desktop verification
 
 `simulation` runs the real Shell/GTK implementation in a prepared graphical or isolated headless
@@ -181,7 +209,7 @@ that a version-migration test. Logs and `report.json` are written to `build/life
 
 ### Extended local coverage
 
-The native registry has 133 selectable cases, not 133 certified features. New checks reuse existing
+Use `--list` for the current native registry, not as a count of certified features. Checks reuse existing
 owners for malformed-image recovery, missing originals, phrase IO failure, selection gestures,
 settings persistence/layout, actual editor processes and destination-bound sync recovery.
 See the [observed snapshot](acceptance-status.md) for retained failures.
@@ -190,8 +218,8 @@ See the [observed snapshot](acceptance-status.md) for retained failures.
 # Real virtual displays, not mocked monitor objects:
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
-# 120,002-word import/index/cache measurement and untrusted TLS rejection:
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09,DICT-06-https --language zh_CN --isolate-cases
+# 120,002-word import/index/cache measurement (TLS rejection is headless above):
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09 --language zh_CN
 # Real two-Shell dictionary persistence, with a local HTTP request counter:
 python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
 # Independent browser textarea / GTK3-VTE PTY targets:
@@ -210,7 +238,7 @@ lengths, first differing code points and hashes, not the complete sample. Standa
 includes the maintained 460-character sample at both speeds.
 
 Dictionary GUI tests need a normal desktop user and installed file manager/editor; Nautilus refuses
-root sessions. `DICT-06-https` additionally needs `openssl` and checks rejection of an owned self-signed
+root sessions. The headless dictionary TLS case additionally needs `openssl` and checks rejection of an owned self-signed
 certificate—not trusted HTTPS success. Cold dictionary checks need a generated non-C UTF-8 locale.
 No test changes host certificate stores or disables certificate verification.
 

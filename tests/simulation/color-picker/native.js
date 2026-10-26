@@ -111,16 +111,16 @@ export const cases = {
   }),
 
   'COLOR-04': desktop => fixture(desktop, async target => {
-    for (const [format, expected] of [['hex', '#FF0000'], ['rgb', 'rgb(255, 0, 0)'],
-      ['hsl', 'hsl(0 100% 50%)'], ['oklch', 'oklch(62.80% 0.2577 29.23)']]) {
-      desktop.settings.set_string('color-format', format);
-      const picker = await open(desktop);
-      await desktop.move(240, 240);
-      await until(() => !picker._sampling && picker._rgb?.join() === '255,0,0', 'format sample ready');
-      await desktop.key(Clutter.KEY_Return);
-      await until(() => !desktop.app._colorPicker, 'format confirmation closed');
-      assert((await target.clipboard()).text === expected, 'Configured color format must reach clipboard through plugin entry');
-    }
+    // Default HEX is already exercised by COLOR-01. One non-default format
+    // proves the live setting-to-clipboard path; format math belongs to logic.
+    desktop.settings.set_string('color-format', 'oklch');
+    const picker = await open(desktop);
+    await desktop.move(240, 240);
+    await until(() => !picker._sampling && picker._rgb?.join() === '255,0,0', 'format sample ready');
+    await desktop.key(Clutter.KEY_Return);
+    await until(() => !desktop.app._colorPicker, 'format confirmation closed');
+    assert((await target.clipboard()).text === 'oklch(62.80% 0.2577 29.23)',
+      'Configured non-default color format must reach clipboard through plugin entry');
   }),
 
   'COLOR-07': desktop => fixture(desktop, async () => {

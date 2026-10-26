@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run native sync acceptance against an owned, disposable clipboard-x-server."""
+"""Run desktop or headless sync acceptance against an owned, disposable backend."""
 import argparse
 import json
 import os
@@ -23,6 +23,7 @@ def main():
     parser.add_argument('--source', type=Path, default=ROOT.parent / 'clipboard-x-server')
     parser.add_argument('--image', help='Use an already-built server image instead of building')
     parser.add_argument('--shell-container', help='Run the Shell in this GNOME test image, sharing only the owned server network')
+    parser.add_argument('--headless', action='store_true', help='Run GJS HTTP integration only; no Shell, GTK or session bus')
     args, options = parser.parse_known_args()
     if not args.archive.is_file() or not args.image and not (args.source / 'docker/Dockerfile').is_file():
         parser.error('An extension ZIP and server source/image are required')
@@ -93,19 +94,21 @@ def main():
             for key in ['CBX_SIMULATION_SERVER', 'CBX_SIMULATION_ADMIN', 'CBX_SIMULATION_PASSWORD', 'CBX_SIMULATION_SERVER_IMAGE', 'CBX_SIMULATION_TEST_REVISION']:
                 command += ['-e', key]
             # Start a system bus only inside the disposable GNOME container.
-            bootstrap = ('import os,pathlib,subprocess,sys;pathlib.Path("/run/dbus").mkdir(parents=True,exist_ok=True);'
-                         'subprocess.run(["dbus-daemon","--system","--fork","--nopidfile"],check=True);'
-                         'os.execvp("python3",["python3",*sys.argv[1:]])')
+            bootstrap = ('import os,sys;' if args.headless else
+                         'import os,pathlib,subprocess,sys;pathlib.Path("/run/dbus").mkdir(parents=True,exist_ok=True);'
+                         'subprocess.run(["dbus-daemon","--system","--fork","--nopidfile"],check=True);')
+            bootstrap += 'os.execvp("python3",["python3",*sys.argv[1:]])'
             if any(option == '--output' or option.startswith('--output=') for option in options):
                 parser.error('--output is managed by the container runner')
             command += [args.shell_container, 'python3', '-c', bootstrap,
-                        '/workspace/tools/test-simulation.py', f'/workspace/{archive}',
-                        '--group', 'sync', '--output', '/tmp/cbx-simulation-reports', *options]
+                        '/workspace/tools/test-sync-http.py' if args.headless else '/workspace/tools/test-simulation.py',
+                        f'/workspace/{archive}', *([] if args.headless else ['--group', 'sync']),
+                        '--output', '/tmp/cbx-simulation-reports', *options]
             run(command, env=env, stdout=subprocess.DEVNULL)
             created_shell = True
             subprocess.run(['docker', 'start', '-a', shell_name])
             status = int(json.loads(subprocess.check_output(['docker', 'inspect', shell_name]))[0]['State']['ExitCode'])
-            reports = ROOT / 'build/simulation-tests' / shell_name
+            reports = ROOT / 'build' / ('sync-http-tests' if args.headless else 'simulation-tests') / shell_name
             reports.mkdir(parents=True)
             copied = subprocess.run(['docker', 'cp', f'{shell_name}:/tmp/cbx-simulation-reports/.', str(reports)])
             with (reports / 'server.log').open('w') as output:
@@ -115,8 +118,9 @@ def main():
                 print('Container report export failed; the run cannot be accepted', file=sys.stderr)
                 return status or 1
             return status
-        return subprocess.run([sys.executable, str(ROOT / 'tools/test-simulation.py'),
-                               str(args.archive), '--group', 'sync', *options], env=env).returncode
+        runner = ROOT / 'tools' / ('test-sync-http.py' if args.headless else 'test-simulation.py')
+        return subprocess.run([sys.executable, str(runner), str(args.archive),
+                               *([] if args.headless else ['--group', 'sync']), *options], env=env).returncode
     finally:
         # Exact resources created by this invocation only; never prune Docker.
         if created_shell:

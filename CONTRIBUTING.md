@@ -27,7 +27,10 @@ Tests are separated into [headless logic and desktop simulation](tests/README.md
 Use the [functional inventory](tests/functional-inventory.md) to choose the owning check and identify
 unverified external/manual boundaries; avoid running copied scenarios as extra coverage.
 For the ordinary logic suite, use `bun run test:logic` or run Meson with `--no-suite stress` inside
-`dbus-run-session`. Shell interaction and preferences checks run separately, in an isolated test desktop:
+`dbus-run-session`. Run extracted local headless acceptance with `bun run test:logic:acceptance`;
+real-backend headless integration uses `tools/test-sync-server.py ZIP --headless` (Docker required).
+Both are opt-in; see the test guide for dependencies. Shell interaction and preferences checks run
+separately in an isolated test desktop.
 
 For repeatable panel entrance, focus navigation, scene restoration, animated close, and real
 multi-monitor/scaling checks, use the [local panel suite](docs/panel-testing.md). It supports individual
@@ -52,7 +55,7 @@ run_shell_check tests/simulation/shell.smoke.js
 run_shell_check tests/simulation/settings/window.smoke.js
 ```
 
-For privacy boundaries, entry keyboard navigation / submission, color-picker movement, sync toggles, screenshot cancellation,
+For privacy boundaries, entry keyboard navigation / submission, color sampling, sync toggles, screenshot cancellation,
 or press-and-drag word selection,
 run the corresponding focused check using the same helper:
 
@@ -61,12 +64,17 @@ run_shell_check tests/simulation/clipboard/privacy.smoke.js
 run_shell_check tests/simulation/panels/search.smoke.js
 run_shell_check tests/simulation/panels/escape.smoke.js
 run_shell_check tests/simulation/phrases/form.smoke.js
-run_shell_check tests/simulation/color-picker/movement.smoke.js
 run_shell_check tests/simulation/color-picker/sampling.smoke.js
 run_shell_check tests/simulation/settings/foreground.smoke.js
 run_shell_check tests/simulation/sync/toggle.smoke.js
 run_shell_check tests/simulation/screenshot/cancel.smoke.js
 run_shell_check tests/simulation/word-selection/drag.smoke.js
+```
+
+Pixel movement uses the native `COLOR-03` case; headless color tests own scale/rounding matrices:
+
+```sh
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-03
 ```
 
 The device-icon chooser has a separate GTK integration check. It requires a graphical display and

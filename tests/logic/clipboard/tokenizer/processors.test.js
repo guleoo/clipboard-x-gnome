@@ -72,3 +72,16 @@ assertWordLimit(() => tokenizeText('alpha beta gamma delta epsilon', {
   segmentWordRun: word => { segmentedRuns++; return [word]; },
 }));
 assert(segmentedRuns === 3, 'Processing must stop at the first excess token, not segment the remaining text');
+
+// The default threshold matrix belongs to the processor. Native acceptance
+// checks one small configured boundary; WORD-07 owns actual 2,000-button layout.
+for (const count of [1999, 2000, 2001]) {
+  const source = Array.from({length: count}, (_value, index) => 'word' + index).join(' ');
+  if (count <= 2000) {
+    const result = tokenizeText(source, {maximumTokens: 2000});
+    assert(result.length === count && result.every((word, index) => word.text === 'word' + index),
+      'Default-limit processing must retain every word up to and including 2000');
+  } else {
+    assertWordLimit(() => tokenizeText(source, {maximumTokens: 2000}));
+  }
+}

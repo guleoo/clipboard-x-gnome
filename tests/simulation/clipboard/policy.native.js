@@ -253,23 +253,4 @@ export const cases = {
     } finally { await target.close(); }
   },
 
-  async 'HIST-10'(desktop) {
-    const target = await Target.open(desktop);
-    try {
-      await capture(desktop, target, 'durable history before IO failure');
-      await desktop.app._controller.persist();
-      const index = Gio.File.new_for_path(desktop.app._controller._store.directory().index);
-      const [, before] = index.load_contents(null);
-      // Inject a genuine filesystem error at the store boundary, not fake success.
-      const store = desktop.app._controller._store;
-      const original = store.directory.bind(store);
-      store.directory = deviceId => ({...original(deviceId), index: original(deviceId).objects});
-      let failed = false;
-      try { await desktop.app._controller.persist(); } catch { failed = true; }
-      finally { store.directory = original; }
-      const [, after] = index.load_contents(null);
-      assert(failed && new TextDecoder().decode(before) === new TextDecoder().decode(after),
-        'A real replace failure must be reported and preserve the previous durable index');
-    } finally { await target.close(); }
-  },
 };

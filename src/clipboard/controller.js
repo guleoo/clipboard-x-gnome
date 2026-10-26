@@ -1,8 +1,5 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import Meta from 'gi://Meta';
-import Shell from 'gi://Shell';
-import St from 'gi://St';
 
 import {ClipboardItem} from './item.js';
 import {ABSOLUTE_ITEM_LIMIT_BYTES, ClipboardMimeTypes, SensitiveClipboardMimeTypes} from './constants.js';
@@ -17,14 +14,14 @@ import {createLogger} from '../common/logger.js';
 import {loadFile, writeFile} from '../common/files.js';
 import {ensureDeviceIdentity} from '../sync/device.js';
 
-const CLIPBOARD = St.ClipboardType.CLIPBOARD;
 const logger = createLogger('clipboard');
 
 export class ClipboardController extends EventEmitter {
-  constructor(settings) {
+  constructor(settings, {platform}) {
     super();
     this._settings = settings;
-    this._clipboard = St.Clipboard.get_default();
+    this._platform = platform;
+    this._clipboard = platform.clipboard;
     const {deviceId} = ensureDeviceIdentity(settings);
     this._store = new HistoryStore({deviceId, items: () => this._items});
     this._items = [];
@@ -105,11 +102,11 @@ export class ClipboardController extends EventEmitter {
     if (this._savePending)
       this._scheduleSave();
 
-    this._selection = Shell.Global.get().display.get_selection();
+    this._selection = this._platform.selection;
     this._selectionSignal = this._selection.connect(
       'owner-changed',
       (_selection, selectionType) => {
-        if (selectionType === Meta.SelectionType.SELECTION_CLIPBOARD)
+        if (selectionType === this._platform.selectionType)
           this._requestCapture();
       },
     );
@@ -145,8 +142,7 @@ export class ClipboardController extends EventEmitter {
     if (this._destroyed || this._captureInProgress || this._settings.get_boolean('private-mode'))
       return null;
 
-    const focusedWindow = Shell.Global.get().display.focusWindow;
-    const appName = focusedWindow?.get_wm_class?.();
+    const appName = this._platform.focusedApp();
     if (appName && this._isExcludedApp(appName))
       return null;
 
@@ -158,7 +154,7 @@ export class ClipboardController extends EventEmitter {
     let item = null;
     let committed = false;
     try {
-      const availableMimeTypes = this._selection.get_mimetypes(Meta.SelectionType.SELECTION_CLIPBOARD);
+      const availableMimeTypes = this._selection.get_mimetypes(this._platform.selectionType);
       const sensitive = SensitiveClipboardMimeTypes.some(mimeType => availableMimeTypes.includes(mimeType));
       const sensitiveMode = this._settings.get_string('sensitive-content-mode');
       if (sensitive && sensitiveMode === 'discard')
@@ -348,7 +344,7 @@ export class ClipboardController extends EventEmitter {
       throw new Error('Clipboard content is not materialized');
 
     this._suppressedHash = {hash: item.primary.sha256, until: Date.now() + 2000};
-    this._clipboard.set_content(CLIPBOARD, item.primary.mimeType, item.primary.bytes);
+    this._clipboard.set_content(this._platform.clipboardType, item.primary.mimeType, item.primary.bytes);
   }
 
   async writeScreenshot(item) {
@@ -428,7 +424,7 @@ export class ClipboardController extends EventEmitter {
     return new Promise((resolve, reject) => {
       const output = Gio.MemoryOutputStream.new_resizable();
       this._selection.transfer_async(
-        Meta.SelectionType.SELECTION_CLIPBOARD,
+        this._platform.selectionType,
         mimeType,
         maximumBytes + 1,
         output,

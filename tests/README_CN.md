@@ -57,6 +57,29 @@ Meson 只注册这一类测试，原有测试名称和可选的 `stress` 分组�
 `meson test -C build` 仍包含压力测试，普通 CI 仍将其排除；本次整理不增加 CI 测试范围。
 可选压力测试见[传输压力测试指南](../docs/sync-performance-testing_CN.md)。
 
+从桌面测试下沉的捕获状态、历史控制器、草稿、输入保护、截图编排和网络词库验收，使用显式本地入口：
+
+```sh
+bash tools/test-logic-acceptance.sh
+# 或 bun run test:logic:acceptance
+```
+
+该入口不启动 Shell/GTK，并清除图形显示环境；各项使用私有 Session Bus。它补充而不重复执行默认
+Meson 套件，也不自动加入 CI。原有纯算法矩阵仍复用 Meson 中的分词、颜色、存储和同步领域测试。
+文件/HTTP 集成同样属于逻辑测试，不必为了验收数据规则启动桌面。
+网络词库用例需要 GVfs HTTP(S) 后端，TLS 拒绝还需 `openssl`；缺依赖标为 BLOCKED，不算通过。
+
+需要真实同步服务端的逻辑验收单独运行：
+
+```sh
+python3 tools/test-sync-http.py --list
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless
+```
+
+沿用 Docker 的独占后端与清理边界，执行生产客户端、存储、队列和真实 HTTP gate，但不创建图形
+桌面，也不依赖 GNOME 版本。可用 `--case` 选择发布幂等、设备撤销、分页、目的地和校验用例；
+结果保存在 `build/sync-http-tests/`。已知失败随用例迁移，不改成预期成功。
+
 ## 模拟桌面验证
 
 `simulation` 在准备好的图形环境或隔离 headless 桌面中运行真实 Shell/GTK，不是伪造控件模型。
@@ -162,7 +185,7 @@ ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离
 
 ### 扩展本地覆盖
 
-原生注册表有 133 个可选用例，不代表 133 项功能已全部通过。新检查复用原有归属，补齐畸形图片恢复、
+原生注册表的当前用例以 `--list` 为准，不代表同等数量的功能已全部通过。检查复用原有归属，补齐畸形图片恢复、
 原文丢失、语句 IO 故障、选择手势、设置持久化/布局、实际编辑进程及按目的地恢复同步队列。
 保留失败见[实际结果](acceptance-status_CN.md)。
 
@@ -170,8 +193,8 @@ ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离
 # 实际虚拟显示器，不伪造 monitor 对象：
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
-# 120,002 词导入/索引/缓存测量，以及不可信 TLS 拒绝：
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09,DICT-06-https --language zh_CN --isolate-cases
+# 120,002 词导入/索引/缓存测量（TLS 拒绝归上方无图形入口）：
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09 --language zh_CN
 # 两个真实 Shell 之间恢复词库，本地 HTTP 独立计数：
 python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
 # 独立浏览器 textarea / GTK3-VTE PTY 输入目标：
@@ -188,7 +211,7 @@ VTE 需要 Python GI 的 Gtk 3 / VTE 2.91；Chromium 支持 `chromium` / `chromi
 普通 TYPE-03 始终在两档速度下检查维护中的 460 字符样本。
 
 词库 GUI 用例需要普通桌面用户及文件管理器/编辑器，Nautilus 不支持 root 会话。
-`DICT-06-https` 还需 `openssl`，验证自有自签名证书被拒绝，不代表可信 HTTPS 成功。
+无图形词库 TLS 用例还需 `openssl`，验证自有自签名证书被拒绝，不代表可信 HTTPS 成功。
 词库冷恢复需要已生成的非 C UTF-8 locale；不改宿主证书库，不关闭证书验证。
 
 其他并发入口 `RECV-05-automatic-manual`、`CLIP-08-remote-loop`、`CONN-03-refresh`、

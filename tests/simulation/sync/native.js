@@ -92,45 +92,17 @@ export const cases = {
   }),
 
   'SEND-02': desktop => fixture(desktop, async ({server, target}) => {
-    for (const [plain, html] of [[true, false], [false, true], [true, true]]) {
-      desktop.settings.set_boolean('sync-text', plain);
-      desktop.settings.set_boolean('sync-html', html);
-      const text = `Local rich-text capture ${plain}-${html}`;
-      await target.offer(text, {'text/html': new TextEncoder().encode(`<p><strong>${text}</strong></p>`)});
-      await until(() => desktop.app._controller.items.some(item => item.text === text), 'actual rich text capture');
-      const item = desktop.app._controller.items.find(item => item.text === text);
-      assert(item.representations.length === 2, 'Sending switches must not discard local representations');
-      await publish(desktop, item);
-      const remote = await server.item(item.id);
-      assert(remote.contents.some(value => value.mimeType.startsWith('text/plain')) === plain
-        && remote.contents.some(value => value.mimeType === 'text/html') === html,
-      'Server representations must match independent plain/rich-text switches');
-    }
-    desktop.settings.set_string('sync-send-mode', 'automatic');
-    for (const enabled of [false, true]) {
-      desktop.settings.set_boolean('sync-images', enabled);
-      const image = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, false, 8, 40, 20);
-      image.fill(enabled ? 0x336699ff : 0x669933ff);
-      const bytes = image.save_to_bufferv('png', [], [])[1];
-      const hash = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes);
-      await target.offerBytes({'image/png': bytes});
-      await until(() => desktop.app._controller.items.some(item => item.primary.sha256 === hash), 'image remains locally captured');
-      const item = desktop.app._controller.items.find(item => item.primary.sha256 === hash);
-      await polls(desktop);
-      assert((await server.items()).items.some(value => value.id === item.id) === enabled,
-        'Image switch must affect sending, not local capture');
-    }
-  }),
-
-  'SEND-03': desktop => fixture(desktop, async ({server, target}) => {
-    desktop.settings.set_uint('text-full-threshold', 32);
-    for (const length of [31, 32, 33]) {
-      const item = await capture(desktop, target, `${length}`.padEnd(length, 'x'));
-      await publish(desktop, item);
-      const remote = await server.item(item.id);
-      assert(remote.contents[0].delivery === (length <= 32 ? 'eager' : 'on-demand'), 'Actual manifest delivery must honor exact threshold');
-      assert(remote.contents[0].availability === (length <= 32 ? 'available' : 'source-required'), 'Snapshot completion must not pretend lazy original was uploaded');
-    }
+    desktop.settings.set_boolean('sync-text', true);
+    desktop.settings.set_boolean('sync-html', true);
+    const text = 'Real rich-text capture reaches the configured backend';
+    await target.offer(text, {'text/html': new TextEncoder().encode(`<p><strong>${text}</strong></p>`)});
+    await until(() => desktop.app._controller.items.some(item => item.text === text), 'actual rich text capture');
+    const item = desktop.app._controller.items.find(value => value.text === text);
+    assert(item.representations.length === 2, 'The actual owner capture preserves both rich-text formats');
+    await publish(desktop, item);
+    const remote = await server.item(item.id);
+    assert(remote.contents.some(value => value.mimeType.startsWith('text/plain'))
+      && remote.contents.some(value => value.mimeType === 'text/html'), 'Native upload action preserves both captured formats');
   }),
 
   'SEND-06': desktop => fixture(desktop, async ({server, target}) => {

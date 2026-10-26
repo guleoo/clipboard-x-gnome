@@ -33,7 +33,6 @@ export async function run() {
   const notifications = [];
   let sideEffects = 0;
   try {
-    app._portal = {capture: async () => null};
     app._reportError = error => notifications.push(error);
     for (const name of controllerMethods) {
       app._controller[name] = async () => {
@@ -44,22 +43,8 @@ export async function run() {
     app._launchEditor = async () => sideEffects++;
     for (const key of keys)
       app._settings.set_boolean(key, true);
-    // The toolbar action and global shortcut both use this same screenshot path.
-    await indicator._actions.screenshot().catch(error => app._reportError(error));
-    app._settings.set_boolean('screenshot-add-history', false);
-    await app._takeScreenshot().catch(error => app._reportError(error));
-    assert(notifications.length === 0, 'Cancelled screenshot displayed an error notification');
-    assert(sideEffects === 0, 'Cancelled screenshot changed clipboard/history or launched an editor');
-
-    const failure = new Error('Screenshot request timed out');
-    app._portal = {capture: async () => { throw failure; }};
-    await indicator._actions.screenshot().catch(error => app._reportError(error));
-    assert(notifications.length === 1 && notifications[0] === failure,
-      'Real screenshot failures must still be reported');
-
     // Exercise the real GNOME portal: its backend maps closing ScreenshotUI
     // to response 2, unlike the specification's cancellation response 1.
-    app._portal = portal;
     app._settings.set_string('screenshot-target', 'interactive');
     notifications.length = 0;
     const seat = global.stage.context.get_backend().get_default_seat();

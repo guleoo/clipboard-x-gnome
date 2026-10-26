@@ -12,6 +12,7 @@
   "scripts": {
     "test": "meson test -C build --print-errorlogs",
     "test:logic": "dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs",
+    "test:logic:acceptance": "bash tools/test-logic-acceptance.sh",
     "test:simulation:panels": "bash tools/test-panels.sh build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip",
     "build": "meson compile -C build",
     "test:shell": "gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip tests/simulation/shell.smoke.js",

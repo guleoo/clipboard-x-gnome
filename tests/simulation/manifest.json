@@ -43,7 +43,6 @@
       {"id": "DICT-02", "languages": ["zh"], "commands": ["nautilus"]},
       {"id": "DICT-06", "languages": ["zh"], "commands": ["python3"]},
       {"id": "DICT-08", "languages": ["zh"], "commands": ["gnome-text-editor", "nautilus"]},
-      {"id": "DICT-06-https", "languages": ["zh"], "commands": ["python3", "openssl"]},
       {"id": "DICT-09", "languages": ["zh"], "commands": ["python3", "nautilus"]}
     ]
   },
@@ -52,7 +51,7 @@
     "cases": [
       {"id": "PRIV-01"}, {"id": "PRIV-03"}, {"id": "PRIV-04"},
       {"id": "PRIV-05"}, {"id": "PRIV-07"},
-      {"id": "HIST-01"}, {"id": "HIST-04"}, {"id": "HIST-10"},
+      {"id": "HIST-01"}, {"id": "HIST-04"},
       {"id": "PRIV-05-exclusion", "commands": ["python3"]}, {"id": "PRIV-05-thumbnail"}
     ]
   },
@@ -79,7 +78,7 @@
     "module": "sync/native.js",
     "cases": [
       {"id": "CONN-06-profile", "server": true}, {"id": "SEND-01", "server": true},
-      {"id": "SEND-01-pinned", "server": true}, {"id": "SEND-02", "server": true}, {"id": "SEND-03", "server": true},
+      {"id": "SEND-01-pinned", "server": true}, {"id": "SEND-02", "server": true},
       {"id": "SEND-06", "server": true}, {"id": "SEND-10", "server": true},
       {"id": "RECV-01", "server": true}, {"id": "RECV-03", "server": true},
       {"id": "RECV-04", "server": true}, {"id": "RECV-09", "server": true},
@@ -113,21 +112,17 @@
     "module": "sync/scenarios.native.js",
     "cases": [
       {"id": "SEND-03-image", "server": true},
-      {"id": "SEND-05-destinations", "server": true, "commands": ["python3"]},
-      {"id": "RECV-02-pages", "server": true, "commands": ["python3"]},
-      {"id": "RECV-03-boundaries", "server": true},
+      {"id": "SEND-05-restore", "server": true, "commands": ["python3"]},
+      {"id": "RECV-02-restore", "server": true, "commands": ["python3"]},
       {"id": "CONN-08-empty", "server": true}, {"id": "CONN-08-revoked", "server": true},
-      {"id": "CONN-09-device", "server": true}, {"id": "CONN-09-offline", "server": true},
       {"id": "XFER-05-disable-download", "server": true, "commands": ["python3"]},
-      {"id": "XFER-06-cancel-download", "server": true, "commands": ["python3"]},
-      {"id": "XFER-09-glib", "server": true}, {"id": "XFER-09-sha256sum", "server": true, "commands": ["sha256sum"]}
+      {"id": "XFER-06-cancel-download", "server": true, "commands": ["python3"]}
     ]
   },
   {
     "module": "sync/queue.native.js",
     "cases": [
       {"id": "SEND-04", "server": true, "commands": ["python3"]},
-      {"id": "SEND-07", "server": true, "commands": ["python3"]},
       {"id": "SEND-08", "server": true, "commands": ["python3"]}
     ]
   },

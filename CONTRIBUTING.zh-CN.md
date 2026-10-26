@@ -25,7 +25,9 @@ meson install -C build
 对应入口、覆盖缺口和重复测试处理见[功能测试清单](tests/functional-inventory_CN.md)，不要把重复执行
 当作新增功能覆盖。普通逻辑验证使用
 `bun run test:logic`，或在 `dbus-run-session` 中执行带 `--no-suite stress` 的 Meson 命令。
-Shell 交互和设置窗口检查仍在隔离测试桌面中单独运行：
+下沉的本地无图形验收使用 `bun run test:logic:acceptance`；真实后端无图形集成使用
+`tools/test-sync-server.py ZIP --headless`（需要 Docker）。两者显式选跑，依赖见测试说明。
+Shell 交互和设置窗口检查仍在隔离测试桌面中单独运行。
 
 面板入口、焦点导航、现场恢复、关闭动画以及真实多屏和缩放，使用[本地面板测试](docs/panel-testing_CN.md)。
 支持单独运行 PANEL-01～10 及全新会话重复执行，不自动加入 CI：
@@ -49,19 +51,24 @@ run_shell_check tests/simulation/shell.smoke.js
 run_shell_check tests/simulation/settings/window.smoke.js
 ```
 
-隐私边界、输入框键盘导航/提交、取色器移动、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
+隐私边界、输入框键盘导航/提交、取色采样、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
 
 ```sh
 run_shell_check tests/simulation/clipboard/privacy.smoke.js
 run_shell_check tests/simulation/panels/search.smoke.js
 run_shell_check tests/simulation/panels/escape.smoke.js
 run_shell_check tests/simulation/phrases/form.smoke.js
-run_shell_check tests/simulation/color-picker/movement.smoke.js
 run_shell_check tests/simulation/color-picker/sampling.smoke.js
 run_shell_check tests/simulation/settings/foreground.smoke.js
 run_shell_check tests/simulation/sync/toggle.smoke.js
 run_shell_check tests/simulation/screenshot/cancel.smoke.js
 run_shell_check tests/simulation/word-selection/drag.smoke.js
+```
+
+像素移动统一使用原生 `COLOR-03`，缩放和舍入矩阵由无桌面颜色测试负责：
+
+```sh
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-03
 ```
 
 设备图标选择器另有 GTK 集成测试，需要图形显示环境和已经配置的打包构建目录。

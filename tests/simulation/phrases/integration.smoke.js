@@ -105,7 +105,6 @@ export async function phrases(indicator) {
       quickPhrases._store.add = addPhrase;
     }
     indicator._openPhrases();
-    await phraseDrafts(quickPhrases);
     await indicator._quickPhrases.replace(originalPhrases);
     indicator._closePhrases();
     assert(indicator._panelManager.is('history'),
@@ -124,80 +123,6 @@ export async function phrases(indicator) {
     indicator._quickPhrases.hideForm();
     indicator._closePhrases();
     indicator.menu.close();
-  }
-}
-
-async function phraseDrafts(panel) {
-  const originalAdd = panel._store.add;
-  const operations = [];
-  panel._store.add = async text => {
-    let release;
-    const gate = new Promise(resolve => { release = resolve; });
-    const operation = {text, release, error: null};
-    operations.push(operation);
-    await gate;
-    if (operation.error)
-      throw operation.error;
-    return originalAdd.call(panel._store, text);
-  };
-  const submit = () => {
-    const promise = panel.save();
-    const operation = operations.at(-1);
-    operation.promise = promise;
-    return operation;
-  };
-  try {
-    for (const change of ['edit', 'edit-back', 'reopen']) {
-      panel.showForm();
-      const original = `Submitted phrase ${change}`;
-      panel.entry.set_text(original);
-      const saving = submit();
-      if (change === 'reopen') {
-        panel.hideForm();
-        panel.showForm();
-      }
-      panel.entry.set_text(`Newer draft ${change}`);
-      if (change === 'edit-back')
-        panel.entry.set_text(original);
-      const draft = panel.entry.get_text();
-      saving.release();
-      await saving.promise;
-      assert(panel.phrases.includes(original) && panel.formVisible && panel.entry.get_text() === draft,
-        `Completing an old save must persist its phrase without clearing a newer ${change} draft`);
-    }
-    for (const edit of [false, true]) {
-      panel.showForm();
-      panel.entry.set_text(`Overlapping phrase ${edit}`);
-      const first = submit();
-      if (edit)
-        panel.entry.set_text('Latest overlapping draft');
-      const draft = panel.entry.get_text();
-      const latest = submit();
-      first.release();
-      await first.promise;
-      assert(panel.formVisible && panel.entry.get_text() === draft,
-        'An earlier overlapping save must not close the latest submitted form');
-      latest.release();
-      await latest.promise;
-      assert(panel.phrases.includes(draft) && !panel.formVisible && panel.entry.get_text() === '',
-        'The latest unchanged successful save must close and clear its own form');
-    }
-    panel.showForm();
-    panel.entry.set_text('Draft retained after failed persistence');
-    const failed = submit();
-    failed.error = new Error('Injected phrase save failure');
-    failed.release();
-    let error;
-    try { await failed.promise; } catch (caught) { error = caught; }
-    assert(error === failed.error && panel.formVisible
-        && panel.entry.get_text() === 'Draft retained after failed persistence',
-      'A failed save must leave the submitted draft visible for retry');
-  } finally {
-    for (const operation of operations)
-      operation.release();
-    await Promise.allSettled(operations.map(operation => operation.promise));
-    panel._store.add = originalAdd;
-    panel.hideForm();
   }
 }
 
