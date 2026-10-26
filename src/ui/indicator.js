@@ -15,6 +15,7 @@ import {HistoryPanel} from './panels/history/panel.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases/panel.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
 import {matches as matchesShortcut} from './shortcut.js';
+import {checkInput} from '../clipboard/tokenizer/processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
@@ -167,7 +168,8 @@ class Indicator extends PanelMenu.Button {
     this._wordLimitSignal = settings.connect('changed::tokenizer-word-limit', () => {
       this._tokenizerRequest++;
       if (this._panelManager.is('tokenizer')
-          && this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit'))
+          && (this._panelManager.state.loading
+            || this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit')))
         this._panelManager.reset();
     });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
@@ -214,9 +216,12 @@ class Indicator extends PanelMenu.Button {
       } else {
         this._inputMode.close();
         this._tokenizerRequest++;
+        if (this._panelManager.is('tokenizer'))
+          this._tokenizer.leave();
         this._tooltip.hide();
         this._panelManager.close({
-          preserve: this._settings.get_boolean('preserve-panel-state'),
+          preserve: this._settings.get_boolean('preserve-panel-state')
+            && !(this._panelManager.is('tokenizer') && this._panelManager.state.loading),
         });
         if (!this.menu.actor.visible)
           this._panelManager.hidden();
@@ -332,22 +337,37 @@ class Indicator extends PanelMenu.Button {
   }
 
   async _openTokenizer(item) {
-    const request = ++this._tokenizerRequest;
-    const current = () => request === this._tokenizerRequest && this.menu.isOpen;
+    let request = ++this._tokenizerRequest;
+    let state = null;
+    const current = () => request === this._tokenizerRequest && this.menu.isOpen
+      && (!state || (this._panelManager.is('tokenizer') && this._panelManager.state === state));
     try {
+      if (!item.isText)
+        return;
       if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
         throw new Error(_('This text is too large for interactive processing'));
+      checkInput(item.text);
+      state = this._tokenizer.createLoadingState(item, item.text);
+      this._panelManager.show('tokenizer', state);
+      request = this._tokenizerRequest;
+      this._tokenizer.focusStart();
+      await this._tokenizer.waitForPaint();
+      if (!current())
+        return;
       await this._actions.readItem(item);
       if (!current())
         return;
       const source = item.text;
-      const state = await this._tokenizer.createState(item, source);
+      checkInput(source);
+      const completed = await this._tokenizer.createState(item, source);
       if (!current())
         return;
-      this._panelManager.show('tokenizer', state);
-      this._tokenizer.focusStart();
+      Object.assign(state, completed);
+      this._panelManager.refresh('tokenizer');
     } catch (error) {
       if (current()) {
+        if (state)
+          this._panelManager.reset();
         if (error.code === 'word_limit_exceeded')
           error = new Error(_('Too many words. Use less text or increase the limit in Preferences.'));
         else if (error.code === 'text_limit_exceeded')
@@ -469,7 +489,8 @@ class Indicator extends PanelMenu.Button {
   }
 
   _updatePanelStateRetention() {
-    if (this._settings.get_boolean('preserve-panel-state')) {
+    if (this._settings.get_boolean('preserve-panel-state')
+      && !(this._panelManager.is('tokenizer') && this._panelManager.state.loading)) {
       this._panelManager.preservePendingState();
       return;
     }

@@ -36,6 +36,7 @@ export class TokenizerPanel {
     this._dragSourceId = 0;
     this._focusIdleId = 0;
     this._pendingViewState = null;
+    this._finishPaint = null;
 
     this.item = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
     this.item.add_style_class_name('cbx-panel-host');
@@ -129,14 +130,50 @@ export class TokenizerPanel {
     return this._buttons;
   }
 
-  async createState(item, source) {
+  createLoadingState(item, source) {
     return {
       item,
       source,
-      tokens: await this._tokenize(source),
+      loading: true,
+      tokens: [],
       selected: new Set(),
       keyboardSelection: null,
     };
+  }
+
+  async createState(item, source) {
+    return {...this.createLoadingState(item, source), loading: false, tokens: await this._tokenize(source)};
+  }
+
+  waitForPaint() {
+    this._finishPaint?.();
+    return new Promise(resolve => {
+      let signal = 0;
+      let source = 0;
+      const finish = () => {
+        if (signal)
+          global.stage.disconnect(signal);
+        if (source)
+          GLib.Source.remove(source);
+        signal = 0;
+        source = 0;
+        if (this._finishPaint === finish)
+          this._finishPaint = null;
+        resolve();
+      };
+      this._finishPaint = finish;
+      signal = global.stage.connect('after-paint', () => {
+        global.stage.disconnect(signal);
+        signal = 0;
+        // Finish the frame before synchronous segmentation can occupy the loop.
+        source = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+          source = 0;
+          finish();
+          return GLib.SOURCE_REMOVE;
+        });
+      });
+      global.stage.queue_redraw();
+    });
   }
 
   render(state) {
@@ -222,7 +259,7 @@ export class TokenizerPanel {
     }
     if (state.tokens.length === 0) {
       this.tokenBox.add_child(new St.Label({
-        text: _('No words found'),
+        text: state.loading ? _('Loading…') : _('No words found'),
         style_class: 'cbx-empty',
       }));
     }
@@ -235,6 +272,7 @@ export class TokenizerPanel {
   }
 
   leave() {
+    this._finishPaint?.();
     this._cancelFocus();
     this.focusAnchor.cancel();
     this.endSelectionDrag();
@@ -296,6 +334,8 @@ export class TokenizerPanel {
   }
 
   _focusFirstToken() {
+    if (this._state?.loading)
+      return this.focusGrid.focusAt(this.focusGrid.location(this.backButton));
     for (const button of this._buttons) {
       const focused = this.focusGrid.focusAt(this.focusGrid.location(button));
       if (focused)

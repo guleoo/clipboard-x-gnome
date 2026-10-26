@@ -168,7 +168,7 @@ does not block acceptance of the pause toggle.
 | WORD-05 | Copy/paste/type the same selected result; handle empty selection according to the focused-word fallback without accidental actions. |
 | WORD-06 | Enforce the default 2,000-word limit, equality/overflow and configured limits; reject explicitly rather than silently truncate. |
 | WORD-07 | Enforce a built-in 20,000-Unicode-character input limit, independent of bytes/word count: accept equality, reject excess before dictionary/segmentation work without truncation/widgets, recover on later valid input and keep the main loop responsive. |
-| WORD-08 | Reject stale word results after changing item/panel, closing, editing dictionaries or disabling the extension. |
+| WORD-08 | Open the loading panel before showing words. Going back, closing, choosing another entry or disabling while waiting must prevent the earlier task from reopening the panel or replacing the new entry's words. |
 
 Maintained simulation entries: [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
 
@@ -534,7 +534,10 @@ materialization and remote clipboard feedback (`RECV-05-automatic-manual`, `CLIP
 addresses/Channels of one test backend (`PHRASE-08-destinations`). `clipboard/policy.native.js` gates
 real thumbnail staging before commit (`PRIV-05-thumbnail`) and strengthens existing HIST-04 with emoji
 and filtered-result limits. `word-selection/native.js` observes complete top-level handlers after close,
-disable and a newer row request (`WORD-08-close/disable/newer`). `screenshot/native.js` verifies real
+disable and a newer row request (`WORD-08-close/disable/newer`). First assert the loading panel has
+painted without word buttons, then actually go back, close, disable or return and select another
+entry. Reuse DICT-09 logic for dictionary file changes rather than another desktop combination.
+`screenshot/native.js` verifies real
 unsupported capabilities and supported retry (`SHOT-05-unsupported`), not fabricated portal replies.
 These are distinct failure boundaries, not copies of basic capture, repeated manual clicks or direct
 handler invocation. Decoder-internal cancellation, physical input and every deployment remain separate.

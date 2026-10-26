@@ -16,7 +16,8 @@ async function request(desktop, item) {
 async function openWords(desktop, target, text) {
   const item = await capture(desktop, target, text);
   await request(desktop, item);
-  await until(() => desktop.manager.is('tokenizer') && desktop.words.state?.source === text, 'native word panel opens');
+  await until(() => desktop.manager.is('tokenizer') && desktop.words.state?.source === text
+    && !desktop.words.state.loading, 'native word panel finishes loading');
   await desktop.settle();
   return desktop.words.state;
 }
@@ -37,8 +38,11 @@ async function lateWords(desktop, exit) {
   const requests = new Map();
   const panel = desktop.words;
   const tokenize = panel._tokenize;
-  const previousState = panel.state;
-  const previousButtons = [...panel.buttons];
+  const readItem = indicator._actions.readItem;
+  const escapeAction = desktop.settings.get_string('panel-escape-action');
+  const preserveState = desktop.settings.get_boolean('preserve-panel-state');
+  let closeSignal = 0;
+  let loadingState;
   let release;
   let pending;
   let calls = 0;
@@ -48,6 +52,12 @@ async function lateWords(desktop, exit) {
     const result = openTokenizer.call(this, item);
     requests.set(item.id, result);
     return result;
+  };
+  indicator._actions.readItem = async item => {
+    assert(desktop.manager.is('tokenizer') && panel.state?.loading && panel.state.item === item
+      && panel.actor.mapped && panel.buttons.length === 0 && !panel.copyButton.reactive && !panel._finishPaint,
+    'The loading panel must be painted before reading content or creating word buttons');
+    return readItem(item);
   };
   panel._tokenize = text => {
     if (calls++ > 0)
@@ -68,15 +78,30 @@ async function lateWords(desktop, exit) {
       : null;
     await request(desktop, item);
     await until(() => Boolean(release), 'native row action reaches delayed real word result');
+    loadingState = panel.state;
+    assert(desktop.manager.is('tokenizer') && loadingState.loading && panel.buttons.length === 0,
+      'A pending result must leave the visible panel in its loading state');
     if (exit === 'phrases') {
+      await desktop.click(panel.backButton);
+      await until(() => desktop.manager.is('history'), 'Back leaves the loading panel');
       await desktop.click(desktop.history.phrasesButton);
       await until(() => desktop.manager.is('phrases'), 'switch away while word result is pending');
     } else if (exit === 'close') {
+      desktop.settings.set_string('panel-escape-action', 'close');
+      desktop.settings.set_boolean('preserve-panel-state', false);
+      // Change retention after the close handler, but before the hide animation
+      // completes: an invalidated loading page must still be discarded.
+      closeSignal = indicator.menu.connect('open-state-changed', (_menu, open) => {
+        if (!open)
+          desktop.settings.set_boolean('preserve-panel-state', true);
+      });
       await desktop.key(Clutter.KEY_Escape);
       await until(() => !desktop.indicator.menu.isOpen, 'native Escape closes pending word request');
     } else if (exit === 'newer') {
+      await desktop.click(panel.backButton);
+      await until(() => desktop.manager.is('history'), 'return to choose another entry while the old result is pending');
       assert(desktop.manager.is('history') && desktop.indicator.menu.isOpen,
-        'Second request must start in the same open history, not cancel the first via popup close');
+        'The popup must remain open when choosing another entry');
       await desktop.click(desktop.history._itemRows.get(newer.id).focusActors
         .find(actor => actor._clipboardXGnomeEntryAction === 'tokenize'));
       await until(() => requests.has(newer.id), 'second native row click reaches the real request handler');
@@ -111,9 +136,9 @@ async function lateWords(desktop, exit) {
         assert(panel.state === null && panel.buttons.length === 0,
           'Destroyed pending word request must not populate the old panel');
       else
-        assert(panel.state === previousState && panel.buttons.length === previousButtons.length
-          && panel.buttons.every((button, index) => button === previousButtons[index]),
-        'Closed pending request must not replace a previously retained word result');
+        assert(panel.state === loadingState && panel.state.loading && panel.buttons.length === 0,
+          'A closed pending request must not populate words or retain an active paint wait');
+      assert(!panel._finishPaint, 'Leaving the loading panel must release its paint wait');
       await desktop.open();
       assert(desktop.manager.is('history'), 'Next native open must not resurrect the cancelled result');
     }
@@ -124,6 +149,11 @@ async function lateWords(desktop, exit) {
       await Promise.all(requests.values());
     } finally {
       indicator._openTokenizer = openTokenizer;
+      indicator._actions.readItem = readItem;
+      if (closeSignal)
+        indicator.menu.disconnect(closeSignal);
+      desktop.settings.set_string('panel-escape-action', escapeAction);
+      desktop.settings.set_boolean('preserve-panel-state', preserveState);
       panel._tokenize = tokenize;
       await target.close();
     }

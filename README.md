@@ -147,6 +147,7 @@ This changes the typing interval; it cannot guarantee that another application a
 Press the word selection button on a text entry. Move with the arrow keys, click or drag across words to select
 them, and use `Shift` + arrow keys for keyboard range selection. The default actions are `c` to copy,
 `v` to paste, and `'` to simulate typing the selected result.
+The panel opens with a loading state before the word buttons appear; you can go back or close it while waiting.
 
 **Preferences → Clipboard → Word Selection → Maximum words** limits selectable items to 2,000 by
 default. Longer results are rejected with a notification, not silently truncated. Links, numbers,

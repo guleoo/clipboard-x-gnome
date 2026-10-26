@@ -195,7 +195,7 @@ export class Desktop {
     await this.key(Clutter.KEY_Down);
     await this.key(Clutter.KEY_Right);
     await this.key(Clutter.KEY_Return);
-    await until(() => this.manager.is('tokenizer'), 'word action opens panel');
+    await until(() => this.manager.is('tokenizer') && !this.words.state?.loading, 'word action finishes loading');
     await this.settle();
   }
 

@@ -2,8 +2,26 @@
 
 > English · [简体中文](acceptance-status_CN.md)
 
-Updated: 2026-10-26. These are observed results, not certification of all requirements in the
+Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
+
+## WORD-08: open the panel before loading words
+
+After input checks, show the loading panel and finish its first paint before reading the full
+content or segmenting it. Fill the same panel when ready, without taking focus again. Back,
+close, another entry or disable prevents the old result from reopening or replacing the panel.
+An unfinished loading page is not retained on close, even if retention is enabled during the
+close animation; completed panels still follow the retention setting. Processing errors return
+to the main panel and notify the user. No segmentation algorithm or configuration changes.
+
+The rebuilt 1.1.0 ZIP SHA-256 is
+`67f6eb7855c09d560a0a461e9e4a484da11f7449590521f4c7d5646c61e8cb5f`.
+Default headless regression: 51/51 passed. Focused native tests on GNOME 50/51 each passed 10/10:
+WORD-05/06/07, WORD-08 and its close/disable/newer variants, SELECT-01/04/06. The request assertions
+check that the loading panel is painted with no word buttons before content is read, then await
+the full original request before checking the result. Dictionary invalidation belongs to DICT-09
+logic acceptance, not an additional desktop combination matrix. Build/release, syntax and diff
+checks passed; no host installation, stress or real-server run in this change.
 
 ## 2026-10-26: headless acceptance migration
 
@@ -116,8 +134,8 @@ Existing WORD-08 was rerun with full top-level request observation; HIST-04 adds
 and filtered-result limits, both passing on 50/51. The thumbnail check gates completed computation
 before commit, not decoder-internal abort. The phrase check uses two addresses/Channels of one
 owned backend, not two deployments. The screenshot check does not exhaust actual portal failures.
-Dictionary-change races and complete backend/error matrices therefore remain explicit gaps, not
-automatically covered by these passing cases.
+The complete backend/error matrices remain explicit gaps, not automatically covered by these
+passing cases. Dictionary invalidation is covered separately by DICT-09 logic acceptance.
 
 ### Revised ENV-05 screenshot boundary
 
