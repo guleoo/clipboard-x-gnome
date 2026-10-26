@@ -117,6 +117,22 @@ const createTokenizer = options => {
   return tokenizer;
 };
 
+// Reject before watching/loading dictionaries or resolving a language. This
+// also prevents oversized input from being held behind a pending dictionary.
+const bounded = new Tokenizer({
+  store: {
+    watch: () => { throw new Error('Oversized input must not start a dictionary watcher'); },
+    load: () => { throw new Error('Oversized input must not load a dictionary'); },
+  },
+  languageNames: () => { throw new Error('Oversized input must not resolve dictionary languages'); },
+});
+try {
+  for (const input of ['a'.repeat(20001), '😀'.repeat(20001)]) {
+    const failure = await bounded.tokenize(input).then(() => null, error => error);
+    assert(failure?.code === 'text_limit_exceeded', 'The input limit must precede all dictionary work');
+  }
+} finally { bounded.destroy(); }
+
 try {
   const store = new DictionaryStore({rootPath: storeRoot.get_path()});
   assert((await store.list()).length === 0,

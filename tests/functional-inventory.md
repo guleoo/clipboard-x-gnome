@@ -167,7 +167,7 @@ does not block acceptance of the pause toggle.
 | WORD-04 | Reconstruct adjacent/nonadjacent selections in source order with the intended punctuation and spacing. |
 | WORD-05 | Copy/paste/type the same selected result; handle empty selection according to the focused-word fallback without accidental actions. |
 | WORD-06 | Enforce the default 2,000-word limit, equality/overflow and configured limits; reject explicitly rather than silently truncate. |
-| WORD-07 | Keep long unbroken text and URL/symbol-heavy input responsive before widget creation; measure main-loop stalls. |
+| WORD-07 | Enforce a built-in 20,000-Unicode-character input limit, independent of bytes/word count: accept equality, reject excess before dictionary/segmentation work without truncation/widgets, recover on later valid input and keep the main loop responsive. |
 | WORD-08 | Reject stale word results after changing item/panel, closing, editing dictionaries or disabling the extension. |
 
 Maintained simulation entries: [word-selection/keyboard.smoke.js](simulation/word-selection/keyboard.smoke.js).
@@ -493,9 +493,11 @@ SELECT-01 reuses the existing drag implementation including SELECT-02 ranges; SE
 viewport. Form/Escape also share verifiers instead of copied scenarios. Native cases replace claims
 that invoking a handler alone establishes user interaction; logic tests still own data boundaries.
 
-WORD-07 measures ordinary 2000-word input, 100,000-character URLs and 200,000-character unbroken text
-against a 1000ms main-loop budget. Each sample logs length, word count and maximum gap. Do not enlarge
-budgets, skip failures or change production code just to make tests green. A virtual backend modifier
+WORD-07 processes ordinary 2000-word input and exactly 20,000 characters. Inputs of 20,001 characters,
+a 100,000-character URL and 200,000 unbroken characters must be rejected with feedback, preserving
+panel state and allowing later valid input. The 1000ms main-loop budget is unchanged; log sample
+lengths and maximum gaps. Count Unicode code points rather than UTF-16 units. Logic tests own
+the pre-dictionary rejection and Latin/CJK/emoji boundaries. A virtual backend modifier
 fuse proves neither physical input delivery nor input-method bypass. CI scope is unchanged.
 
 ### Extended native owners

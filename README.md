@@ -151,6 +151,8 @@ them, and use `Shift` + arrow keys for keyboard range selection. The default act
 **Preferences → Clipboard → Word Selection → Maximum words** limits selectable items to 2,000 by
 default. Longer results are rejected with a notification, not silently truncated. Links, numbers,
 punctuation and symbols each count as selectable items.
+An additional built-in input limit rejects text longer than 20,000 characters without truncation;
+exactly 20,000 characters is allowed.
 
 For Chinese or Japanese, open **Preferences → Clipboard → Dictionaries** to enable the system segmenter,
 import UTF-8 dictionaries, or add an HTTP/HTTPS dictionary location. A dictionary may contain one word

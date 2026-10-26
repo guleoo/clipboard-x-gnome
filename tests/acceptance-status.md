@@ -37,6 +37,23 @@ Capture/history-controller logic and the 6 related Meson checks passed. GNOME 50
 historical sync cancellation failures nor certifies all log/notification exits. This focused run
 does not rerun the complete suite, stress or the real backend.
 
+## WORD-07: built-in 20,000-character limit
+
+Add a fixed input limit counted in Unicode code points. Accept equality and reject excess before
+dictionary watching/loading and segmentation without truncation. Reuse the existing translated
+interactive-text-too-large message; the configurable word limit remains independent.
+Tested 1.1.0 ZIP SHA-256: `8b0b2f4e30f71aa7aedfdc0a0160f05a5c659dd16c04777b93215aa1d5ec26e5`.
+
+Ordinary logic regression passed 51/51, including Latin/CJK/emoji boundaries at 19,999/20,000/20,001
+characters and rejection before dictionary work. WORD-06/07 passed 2/2 on each of GNOME 50/51:
+normal 2000-word and 20,000-character input works, oversized input reports once without replacing
+panel state, and later short input still works. Maximum main-loop gaps were 510.8ms / 479.7ms;
+the 1000ms budget was not relaxed. Build/release validation and syntax/diff checks passed; no host installation.
+
+Previous failures (about 5 seconds for the 100,000-character URL and 20 seconds for 200,000 unbroken
+characters) remain historical evidence. The requested policy now rejects those inputs rather than
+claiming their complete segmentation algorithm was optimized.
+
 ## 2026-10-25 historical scope
 
 - Artifact: `clipboard-x-gnome_1.1.0.zip`, SHA-256
@@ -118,7 +135,6 @@ fix. Other sync interruption failures below remain unchanged. Use `--case ENV-05
 
 | Case | Observed result / limit |
 | --- | --- |
-| WORD-07 | 50/51: about 5 seconds for a 100,000-character URL and 20 seconds for 200,000 unbroken characters, above the 1-second main-loop budget |
 | SEND-04 / SEND-08 | Earlier actual publication interruption/deletion runs terminate the isolated Shell; SIGSEGV confirmed on 51. Later recovery is not claimed |
 | CONN-08-revoked | Revoking live Channel membership terminates the isolated Shell; 51 SIGSEGV independently confirmed |
 | XFER-05-disable-download / XFER-06-cancel-download | Disabling during a held download or canceling its task terminates the isolated Shell on 50/51 |

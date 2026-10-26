@@ -348,9 +348,11 @@ class Indicator extends PanelMenu.Button {
       this._tokenizer.focusStart();
     } catch (error) {
       if (current()) {
-        this._actions.reportError(error.code === 'word_limit_exceeded'
-          ? new Error(_('Too many words. Use less text or increase the limit in Preferences.'))
-          : error);
+        if (error.code === 'word_limit_exceeded')
+          error = new Error(_('Too many words. Use less text or increase the limit in Preferences.'));
+        else if (error.code === 'text_limit_exceeded')
+          error = new Error(_('This text is too large for interactive processing'));
+        this._actions.reportError(error);
       }
     }
   }

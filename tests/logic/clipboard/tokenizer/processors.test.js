@@ -1,5 +1,6 @@
 import {
   composeTokens,
+  checkInput,
   tokenizeText,
 } from '../../../../src/clipboard/tokenizer/processors.js';
 
@@ -15,6 +16,23 @@ function assertEqual(actual, expected, message) {
 
 const source = '打开 https://example.com/a，订单号 123-456 works';
 const tokens = tokenizeText(source);
+
+for (const character of ['a', '中', '😀']) {
+  for (const count of [19999, 20000, 20001]) {
+    const input = character.repeat(count);
+    if (count <= 20000) {
+      checkInput(input);
+    } else {
+      let failure;
+      try { tokenizeText(input); } catch (error) { failure = error; }
+      assert(failure?.code === 'text_limit_exceeded',
+        'Input beyond 20,000 Unicode characters must be rejected, including astral characters');
+    }
+  }
+}
+const boundaryUrl = 'https://example.test/'.padEnd(20000, 'a');
+assertEqual(tokenizeText(boundaryUrl).map(token => token.text), [boundaryUrl],
+  'Exactly 20,000 characters must still be processed without truncation');
 assertEqual(tokenizeText("I can't do that.").map(token => token.text),
   ['I', "can't", 'do', 'that', '.'],
   'tokenizer should segment the reported English sentence without dropping punctuation');

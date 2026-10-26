@@ -191,6 +191,9 @@ export const cases = {
 
   async 'WORD-07'(desktop) {
     const target = await Target.open(desktop);
+    const reportError = desktop.indicator._actions.reportError;
+    const errors = [];
+    desktop.indicator._actions.reportError = error => { errors.push(error); reportError(error); };
     let last = GLib.get_monotonic_time();
     let largestGap = 0;
     let phaseGap = 0;
@@ -205,7 +208,7 @@ export const cases = {
     });
     try {
       for (const source of [Array.from({length: 2000}, (_, index) => `word${index}`).join(' '),
-        `https://example.test/${'a'.repeat(100000)}`, 'x'.repeat(200000)]) {
+        'x'.repeat(20000)]) {
         phaseGap = 0;
         await openWords(desktop, target, source);
         await desktop.key(Clutter.KEY_Escape);
@@ -213,10 +216,28 @@ export const cases = {
         print(`[simulation] Word sample: length=${source.length}; words=${desktop.words.buttons.length}; maxGapMs=${phaseGap.toFixed(1)}`);
         assert(desktop.manager.is('history'), 'Large result must still respond to native Escape');
       }
+      for (const source of ['x'.repeat(20001), `https://example.test/${'a'.repeat(100000)}`, 'x'.repeat(200000)]) {
+        phaseGap = 0;
+        const item = await capture(desktop, target, source);
+        const previous = desktop.words.state;
+        const previousErrors = errors.length;
+        await request(desktop, item);
+        await until(() => errors.length > previousErrors, 'oversized text rejected with a notification');
+        await pause(30);
+        assert(errors.length === previousErrors + 1 && desktop.manager.is('history') && desktop.words.state === previous,
+          'Oversized text must fail once without replacing the panel state or rendering partial words');
+        print(`[simulation] Word rejection: length=${source.length}; maxGapMs=${phaseGap.toFixed(1)}`);
+      }
+      await openWords(desktop, target, 'normal words after rejection');
+      await desktop.key(Clutter.KEY_Escape);
       await pause(30);
       print(`[simulation] Word heartbeat: samples=${samples}; maxGapMs=${largestGap.toFixed(1)}; budgetMs=1000`);
       assert(samples > 5 && largestGap < 1000, 'Interactive word processing must not stall main loop for one second');
-    } finally { GLib.Source.remove(timer); await target.close(); }
+    } finally {
+      desktop.indicator._actions.reportError = reportError;
+      GLib.Source.remove(timer);
+      await target.close();
+    }
   },
 
   'WORD-08': desktop => lateWords(desktop, 'phrases'),
