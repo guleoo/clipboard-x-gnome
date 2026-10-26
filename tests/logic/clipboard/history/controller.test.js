@@ -160,6 +160,24 @@ async function lifecycleBoundaries() {
   } finally { removeTree(Gio.File.new_for_path(stopped.rootPath)); }
 }
 
+async function memoryReplacement() {
+  const {controller, rootPath} = fixture();
+  try {
+    await controller.start();
+    const original = controller.add(ClipboardItem.fromText('replaced history object'));
+    await controller.persist();
+    const previousFile = Gio.File.new_for_path(original.primary.path);
+    const memory = controller.add(ClipboardItem.fromText(original.text, {sensitive: true}));
+    await controller.persist();
+    assert(memory.sensitive && controller.items.includes(memory) && !controller.items.includes(original),
+      'A memory-only replacement must not retain its ordinary duplicate');
+    assert(!memory.primary.path && !previousFile.query_exists(null)
+      && !(await controller._store.load()).some(item => item.primary.sha256 === memory.primary.sha256),
+    'Replacing an existing record with memory-only content must release its durable object and index entry');
+  } finally { await controller.destroy(); removeTree(Gio.File.new_for_path(rootPath)); }
+}
+
 await orderingAndLimits();
+await memoryReplacement();
 await persistenceFailure();
 await lifecycleBoundaries();

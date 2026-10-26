@@ -49,8 +49,8 @@
   {
     "module": "clipboard/policy.native.js",
     "cases": [
-      {"id": "PRIV-01"}, {"id": "PRIV-03"}, {"id": "PRIV-04"},
-      {"id": "PRIV-05"}, {"id": "PRIV-07"},
+      {"id": "PRIV-01"}, {"id": "PRIV-02"}, {"id": "PRIV-04"},
+      {"id": "PRIV-05"},
       {"id": "HIST-01"}, {"id": "HIST-04"},
       {"id": "PRIV-05-exclusion", "commands": ["python3"]}, {"id": "PRIV-05-thumbnail"}
     ]

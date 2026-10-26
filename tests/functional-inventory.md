@@ -129,22 +129,33 @@ save interleavings and actual filesystem errors at this layer. Desktop checks re
 pin → save → restart → unpin interaction and HIST-04's search interaction. Cold-Shell recovery
 reuses ENV-02/06. A real replacement error is not evidence of disk exhaustion or power-loss testing.
 
-### Privacy — PRIV-01…08
+### Privacy recording boundaries — PRIV-01/02/05
 
 | ID | What to test / expected result |
 | --- | --- |
 | PRIV-01 | Verify default private-mode state and immediate toggling; copies made while paused never enter history. |
-| PRIV-02 | Discard sensitive password-manager MIME by default; memory-only mode lasts only for the current extension lifecycle. |
-| PRIV-03 | Keep memory-only sensitive text, indexes and thumbnails off disk/outbox; expose no upload action. |
-| PRIV-04 | Exclude discovered applications and manually entered window classes; define empty, duplicate and case handling. |
-| PRIV-05 | Changing privacy/exclusion policy during capture or thumbnail generation rejects the old pending result. |
-| PRIV-06 | Deletion or sensitive recopy removes pending upload references/frozen manifests and prevents further sending. |
-| PRIV-07 | Pin, clear, restart, retry and multiple representations never bypass the sensitive-content local-only boundary. |
-| PRIV-08 | Logs, notifications and outbox files must not expose content or API keys; do not claim sync.json is encrypted. |
+| PRIV-02 | Memory-only entries remain usable in the current lifecycle, never persist/upload and disappear after extension disable/restart. |
+| PRIV-05 | Pausing recording rejects pending old captures and cleans staged content; later normal captures recover correctly. |
 
-Maintained simulation entries: [clipboard/privacy.smoke.js](simulation/clipboard/privacy.smoke.js), [clipboard/capture.smoke.js](simulation/clipboard/capture.smoke.js).
+Entries: PRIV-01/02/05 in [clipboard/policy.native.js](simulation/clipboard/policy.native.js), plus
+cancellation rules in [capture.test.js](logic/clipboard/capture.test.js). PRIV-05-thumbnail retains
+actual temporary-image cleanup.
 
-Evidence / remaining boundary: privacy owns sensitive recopy/disk cleanup/manual refusal; capture owns actual clipboard changes while private mode is enabled. Application exclusion needs real focused applications. Queue cleanup and logging reuse logic evidence. sync.json is configuration, not encrypted storage.
+Only test no recording, memory-only retention and in-flight transitions here. Do not require real
+password managers or expand pin/clear/retry/multiple-format combinations. Memory-only uses the
+existing sensitive-content policy and one marked controlled source; this does not add a new
+private-mode option. The private-mode toggle still pauses automatic capture.
+Previous PRIV-03/07 are merged into PRIV-02 rather than retained as duplicate cases.
+
+### Application exclusion — PRIV-04
+
+| ID | What to test / expected result |
+| --- | --- |
+| PRIV-04 | Exclude discovered applications and manual window classes; restore normal capture after removal. Logic owns normalization rules. |
+
+PRIV-04 and PRIV-05-exclusion own actual focused-window wiring; SET-07 owns discovery/manual entry.
+This is separate from private mode: application discovery or password-manager interoperability
+does not block acceptance of the pause toggle.
 
 ### Word algorithm — WORD-01…08
 
@@ -339,6 +350,7 @@ combinations retain their existing logic ownership.
 | SEND-06 | Disabling sync pauses queued work; copies made while disabled are not enqueued or backfilled after re-enable. |
 | SEND-07 | If the server commits but the response is lost, confirm/reuse the same publication instead of reuploading full data. |
 | SEND-08 | Delete/sensitive/missing-original items stop or fail safely; received items are never republished as local echoes. |
+| PRIV-06 | Prune pending references and frozen manifests after deletion/sensitive replacement; actual in-flight cancellation belongs to sync, not private-mode acceptance. |
 | SEND-09 | Preserve valid work through failed writes, corrupt queues, backoff/permanent errors and exit interruption. |
 | SEND-10 | Persist confirmed delivery and the shutdown snapshot despite save/disable interleaving, without relying on replayed history events. |
 
@@ -451,6 +463,7 @@ linguistic quality, RTL/long-string layout and visual polish remain manual.
 | OPS-06 | Package only runtime resources with consistent metadata/schemas/catalogs; exclude tests, dictionaries, server and credentials. |
 | OPS-07 | Verify dev-shell build/package, XDG isolation, language selection, exit and journal/terminal logs. |
 | OPS-08 | Make logs locate operation stages without duplication, swallowed errors or secrets; validate release/install configuration without source-format snapshot tests. |
+| PRIV-08 | Logs, notifications and outbox files expose neither content nor API keys; sync.json is configuration, not encrypted storage. This belongs to operational/security review, not private-mode acceptance. |
 
 Evidence / remaining boundary: Use existing logic/sync measurements/stress, logic/common checks and tools/check_release.py. Stress remains opt-in/outside ordinary CI. Packaging reuses ENV-01 evidence. Async APIs or one successful run do not prove the Shell never blocks.
 
@@ -462,7 +475,7 @@ These are coverage boundaries, not certification of every requirement within an 
 | Module | IDs | Actual evidence and boundary |
 | --- | --- | --- |
 | `clipboard/applications.native.js` | CLIP-02-chromium | Real local HTML, private Chromium profile, native copy and independent MIME readback |
-| `clipboard/policy.native.js` | PRIV-01/03/04/05/07, HIST-01/04 | Actual GTK owners, sensitive MIME, focused-window exclusion, in-flight cancellation, pin/restart and Unicode search; filesystem errors belong to logic |
+| `clipboard/policy.native.js` | PRIV-01/02/04/05, HIST-01/04 | No recording, memory-only lifecycle, focused-window exclusion, in-flight cancellation, ordinary pin/restart and Unicode search; no expanded privacy combination matrix |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
 | `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, small configured limits/notification, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup; logic owns the 2000-word algorithm boundary |
 | `terminal/native.js` | TYPE-01/03/05/06/07 | Independent GTK target, exact mixed-language output at both speeds, real backend modifier wait/fuse, one notification/queued cancellation, no old typing after actual disable/re-enable |
@@ -551,7 +564,7 @@ sha256sum framing failure remains subject to actual observed results.
 | Initial focus, Ctrl+F, arrows, confinement | PANEL-06/07/08 own navigation; remove phrase/word handler copies, retain Unicode search. |
 | Phrase Enter and basic direct save | phrases/form owns main/keypad Enter and button; retain distinct draft/failure races in integration. |
 | Sync toggle inside image editing | sync/toggle owns state/focus/row identity; images owns original/editor behavior. |
-| Sensitive refusal in image and privacy tests | clipboard/privacy owns manual refusal/disk boundary; sync/status keeps automatic policy and progress/session retry. |
+| Sensitive refusal and pin/clear combinations | Delete old privacy.smoke; merge memory/restart into PRIV-02. Reuse owning logic/sync tests for upload refusal, queues and logging, not a private-mode combination matrix. |
 | Modifier-release wait and duplicate direct pin | terminal/lifecycle owns wait/release/cleanup; logic guard owns cancellation decisions. Keep row pin shortcut, remove extra direct toggles. |
 | Similar names, different failure boundaries | Keep round-trip versus queued restoration, normal versus clipped dragging, sampling versus delayed capture. |
 | Compatibility, PANEL-10 and input-mode | Call one verifier, not duplicate implementations; repeated explicit suite runs are not extra feature coverage. |

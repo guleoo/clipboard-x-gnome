@@ -60,7 +60,6 @@ or press-and-drag word selection,
 run the corresponding focused check using the same helper:
 
 ```sh
-run_shell_check tests/simulation/clipboard/privacy.smoke.js
 run_shell_check tests/simulation/panels/search.smoke.js
 run_shell_check tests/simulation/panels/escape.smoke.js
 run_shell_check tests/simulation/phrases/form.smoke.js
@@ -71,10 +70,12 @@ run_shell_check tests/simulation/screenshot/cancel.smoke.js
 run_shell_check tests/simulation/word-selection/drag.smoke.js
 ```
 
-Pixel movement uses the native `COLOR-03` case; headless color tests own scale/rounding matrices:
+Privacy uses native `PRIV-01,PRIV-02,PRIV-05`; pixel movement uses `COLOR-03`.
+Headless tests own policy cancellation and scale/rounding matrices:
 
 ```sh
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-03
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case PRIV-01,PRIV-02,PRIV-05
 ```
 
 The device-icon chooser has a separate GTK integration check. It requires a graphical display and

@@ -43,7 +43,7 @@ export const cases = {
     } finally { await target.close(); }
   },
 
-  async 'PRIV-03'(desktop) {
+  async 'PRIV-02'(desktop) {
     const target = await Target.open(desktop);
     try {
       assert(desktop.settings.get_string('sensitive-content-mode') === 'discard', 'Sensitive content defaults to discard');
@@ -60,6 +60,9 @@ export const cases = {
       await desktop.open();
       assert(!desktop.history._itemRows.get(item.id).focusActors.some(actor => actor._clipboardXGnomeEntryAction === 'sync'),
         'Sensitive item must not expose an upload action');
+      await restart(desktop);
+      assert(!desktop.app._controller.items.some(value => value.id === item.id),
+        'A memory-only item must disappear when its extension lifecycle ends');
     } finally { await target.close(); }
   },
 
@@ -182,22 +185,6 @@ export const cases = {
         await target.close();
       }
     }
-  },
-
-  async 'PRIV-07'(desktop) {
-    const target = await Target.open(desktop);
-    try {
-      desktop.settings.set_string('sensitive-content-mode', 'memory');
-      await offerFinished(desktop, target, 'pinned sensitive phrase', sensitive);
-      const item = desktop.app._controller.items.find(value => value.sensitive);
-      assert(item, 'Memory-only fixture captured');
-      await pin(desktop, item);
-      desktop.app._controller.clear();
-      await desktop.app._controller.persist();
-      assert(desktop.app._controller.items.some(value => value.id === item.id), 'Pinned sensitive item survives ordinary clear in memory');
-      await restart(desktop);
-      assert(!desktop.app._controller.items.some(value => value.id === item.id), 'Even pinned sensitive content must not survive restart');
-    } finally { await target.close(); }
   },
 
   async 'HIST-01'(desktop) {

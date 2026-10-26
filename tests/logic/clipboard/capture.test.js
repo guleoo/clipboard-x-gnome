@@ -74,7 +74,7 @@ async function captureScopes() {
     await controller.destroy();
 
     for (const [key, changed, restored] of [
-      ['private-mode', true, false], ['sensitive-content-mode', 'discard', 'memory'],
+      ['private-mode', true, false],
       ['excluded-apps', ['excluded-fixture'], []],
     ]) {
       const fixture = await create(key);

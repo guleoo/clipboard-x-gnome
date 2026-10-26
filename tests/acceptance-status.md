@@ -23,6 +23,20 @@ Content-Length is rejected; default GLib passes. The failure moved to logic with
 assertions or a production sync fix. See the [ownership table](functional-inventory.md#acceptance-moved-out-of-desktop-simulation).
 This run does not rerun or resolve every historical failure below, and does not install the host extension.
 
+## Simplified privacy acceptance
+
+Recording privacy now covers only PRIV-01/02/05: no recording, memory-only retention and cancellation
+of old pending captures. Merge previous PRIV-03/07 into PRIV-02; remove the old privacy smoke and
+pin/clear combinations. Retain existing storage-replacement rules in history logic tests.
+Application exclusion, sync queue cleanup and log redaction have separate ownership, without a
+real-password-manager requirement or a recording-enabled combination matrix. Production and the
+artifact are unchanged; the current inventory has 171 requirements and the native registry 123 cases.
+
+Capture/history-controller logic and the 6 related Meson checks passed. GNOME 50/51 each passed
+4/4: PRIV-01, PRIV-02, PRIV-05 and PRIV-05-thumbnail. Passing recording privacy neither resolves
+historical sync cancellation failures nor certifies all log/notification exits. This focused run
+does not rerun the complete suite, stress or the real backend.
+
 ## 2026-10-25 historical scope
 
 - Artifact: `clipboard-x-gnome_1.1.0.zip`, SHA-256
