@@ -55,7 +55,7 @@ def main():
         parser.error('A built release ZIP is required')
     if not 1 <= args.timeout <= 7200 or not re.fullmatch(r'[A-Za-z_0-9.@-]+', args.language):
         parser.error('Invalid timeout or language')
-    for dependency in ['gnome-shell', 'gnome-shell-test-tool', 'dbus-run-session', 'dbus-update-activation-environment', 'gsettings', 'timeout']:
+    for dependency in ['gnome-shell', 'gnome-shell-test-tool', 'dbus-run-session', 'dbus-update-activation-environment', 'gsettings', 'timeout', 'locale']:
         if not shutil.which(dependency):
             parser.error(f'Missing dependency: {dependency}')
     shell = subprocess.check_output(['gnome-shell', '--version'], text=True).strip()
@@ -63,11 +63,17 @@ def main():
     if not match or args.shell and args.shell != match[1]:
         parser.error(f'Unsupported or unexpected runtime: {shell}')
     # gettext ignores LANGUAGE in a C message locale, including C.UTF-8.
-    # A real non-C base activates the installed catalogs; it need not be the
-    # requested translation language (e.g. Japanese catalogs on en_US.UTF-8).
+    # Prefer a real requested locale: LANGUAGE alone selects translations, but
+    # cannot establish all Shell/GTK locale-dependent layout behavior (RTL).
+    # A non-C fallback still permits catalog smoke tests on minimal systems.
     message_locale = 'C.UTF-8'
-    for candidate in ['en_US.UTF-8', os.environ.get('LC_ALL'), os.environ.get('LANG')]:
-        if not candidate or candidate in ['C', 'POSIX'] or candidate.upper().startswith('C.'):
+    requested = args.language.split('.')[0].split('@')[0].lower()
+    installed = subprocess.check_output(['locale', '-a'], text=True).splitlines()
+    matching = [name for name in installed if name.split('.')[0].lower() == requested
+                or '_' not in requested and name.lower().startswith(requested + '_')]
+    for candidate in [args.language + '.UTF-8', *sorted(matching),
+                      'en_US.UTF-8', os.environ.get('LC_ALL'), os.environ.get('LANG')]:
+        if not candidate or candidate.upper().startswith('C.') or 'utf8' not in candidate.lower().replace('-', ''):
             continue
         try:
             locale.setlocale(locale.LC_MESSAGES, candidate)

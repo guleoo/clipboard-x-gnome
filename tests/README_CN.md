@@ -62,6 +62,12 @@ GNOME 50 使用 `tests/environments/gnome50/Dockerfile`，GNOME 51 使用
 `tests/environments/gnome51/Dockerfile`，各自固定 Fedora 基础镜像 digest 和 Shell 版本，
 可以独立调整依赖，仅共享会话启动脚本。构建上下文为 `tests/environments/`，入口自动选择
 对应的 Dockerfile。环境定义 hash 也按版本独立计算，修改其中一份不会使另一版镜像失效。
+安装包前取消 Fedora 基础镜像的英文翻译过滤，保留 GNOME/GTK 系统语言资源，并提供阿拉伯语和
+德语 locale；仅打包插件译文不足以验证 RTL 桌面。`LANG-03 --language ar/de` 读取实际 Shell/GTK
+方向并操作窄面板长文本；不强制控件 RTL 来换取通过。`LANG-07-dictionary --language zh_CN`
+验证实际词库错误正文，已知未本地化也应报告失败。
+语言入口优先实际已安装的匹配 UTF-8 locale，不选择 ISO-8859/EUC 等同名前缀候选；报告记录实际
+`messageLocale`，缺目标 locale 时才回退非 C 的 UTF-8 基础语言，不据此宣称已验真实 RTL。
 每次启动全新容器，测试进程为 UID 1000 普通用户；系统 D-Bus 仅在容器内启动。
 宿主仅提供只读代码快照，不挂载 HOME、桌面/输入设备、D-Bus socket、Docker socket 或凭据，
 不传入宿主环境变量。`.git`、`.codex`、构建目录和用户输入样本不进入快照。GTK 输入模块固定

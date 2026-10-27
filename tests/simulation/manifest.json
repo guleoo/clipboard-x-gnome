@@ -150,13 +150,16 @@
   {
     "module": "settings/coverage.native.js",
     "cases": [
+      {"id": "SET-06-global-actions"},
       {"id": "SET-02"}, {"id": "SET-04"}, {"id": "SET-05"}, {"id": "SET-07"},
       {"id": "SET-09", "commands": ["python3"]}
     ]
   },
   {
     "module": "settings/language.native.js",
-    "cases": [{"id": "LANG-02", "languages": ["en", "zh", "ja", "ko"]}]
+    "cases": [{"id": "LANG-02", "languages": ["en", "zh", "ja", "ko"]},
+      {"id": "LANG-07-dictionary", "languages": ["zh"]},
+      {"id": "LANG-03", "languages": ["ar", "de"]}]
   },
   {
     "module": "color-picker/native.js",
@@ -194,5 +197,9 @@
   {
     "module": "lifecycle/responsiveness.native.js",
     "cases": [{"id": "OPS-01-capture"}]
+  },
+  {
+    "module": "lifecycle/resources.native.js",
+    "cases": [{"id": "OPS-03-bounded"}]
   }
 ]

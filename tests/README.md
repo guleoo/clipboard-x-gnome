@@ -65,6 +65,15 @@ GNOME 50 uses `tests/environments/gnome50/Dockerfile`; GNOME 51 uses
 so dependencies can evolve separately. Only the session bootstrap is shared. The build context is
 `tests/environments/`; the runner selects the matching Dockerfile automatically. Image definition
 hashes are independent: editing one Dockerfile does not invalidate the other version's image.
+Before package installation, both images remove Fedora's English-only catalog filter and retain
+GNOME/GTK translations, with Arabic and German locales available. Plugin catalogs alone do not
+provide a real RTL desktop. `LANG-03 --language ar/de` observes actual Shell/GTK direction and
+operates narrow panels containing long text; it never forces widget direction to obtain a pass.
+`LANG-07-dictionary --language zh_CN` checks actual dictionary error bodies; an untranslated
+diagnostic must remain a failure.
+The runner prefers an installed matching UTF-8 locale, never an ISO-8859/EUC candidate sharing
+the same language prefix. Reports record `messageLocale`; fallback to a non-C UTF-8 base permits
+catalog checks, but does not certify actual RTL behavior when the requested locale is unavailable.
 Every run creates a fresh container; test processes run as ordinary UID 1000. The system bus runs
 only inside that container. The host supplies a read-only source snapshot, not HOME, display/input
 devices, D-Bus/Docker sockets or credentials. Host environment variables are not forwarded.

@@ -46,7 +46,8 @@ function walk(widget, root, row = '') {
   }
   const record = {id: id(widget), parent: widget.get_parent() ? id(widget.get_parent()) : null,
     type, row, page: widget._clipboardXGnomePageName ?? null,
-    mapped: widget.get_mapped(), sensitive: widget.is_sensitive()};
+    mapped: widget.get_mapped(), sensitive: widget.is_sensitive(),
+    direction: widget.get_direction() === Gtk.TextDirection.RTL ? 'rtl' : 'ltr'};
   record.tooltip = widget.get_tooltip_text();
   if (root instanceof Gtk.Dialog && widget instanceof Gtk.Button)
     record.response = root.get_response_for_widget(widget);

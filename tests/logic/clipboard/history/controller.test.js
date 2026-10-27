@@ -88,6 +88,47 @@ async function orderingAndLimits() {
   } finally { await controller.destroy(); removeTree(Gio.File.new_for_path(rootPath)); }
 }
 
+async function storageBudgetChanges() {
+  const mib = 1024 * 1024;
+  const {controller, settings, rootPath} = fixture({values: {'cache-size-mib': 32}});
+  const local = (character, size, options = {}) => ClipboardItem.fromText(character.repeat(size * mib), options);
+  try {
+    await controller.start();
+    const now = Date.now();
+    const pinned = local('P', 8, {createdAt: now - 3000, favorite: true});
+    const older = local('O', 6, {createdAt: now - 2000});
+    const newer = local('N', 6, {createdAt: now - 1000});
+    const remote = ClipboardItem.fromText('Preview of an unavailable remote original', {
+      originDeviceId: GLib.uuid_string_random(), remote: true, availability: 'preview', createdAt: now,
+    });
+    remote.primary.bytes = null;
+    remote.primary.size = 24 * mib;
+    remote.primary.delivery = 'on-demand';
+    remote.preview.truncated = true;
+    for (const item of [pinned, older, newer, remote]) controller.add(item);
+    await controller.persist();
+    assert(controller.items.length === 4 && !remote.primary.path,
+      'A remote manifest must not consume its declared original size in the local 32 MB budget');
+    const olderFile = Gio.File.new_for_path(older.primary.path);
+    const newerFile = Gio.File.new_for_path(newer.primary.path);
+    const pinnedFile = Gio.File.new_for_path(pinned.primary.path);
+    assert(olderFile.query_exists(null) && newerFile.query_exists(null) && pinnedFile.query_exists(null),
+      'Storage-budget fixtures must begin with actual persisted local originals');
+
+    settings.set_int('cache-size-mib', 16);
+    assert(controller.items.length === 3 && !controller.items.includes(older)
+      && [pinned, newer, remote].every(item => controller.items.includes(item)),
+    'Reducing the budget from 32 to 16 MB must evict the oldest ordinary local item, preserving pins, newer content and remote metadata');
+    await controller.persist();
+    await until(() => !olderFile.query_exists(null), 'Budget eviction must collect the removed local original');
+    const restored = await controller._store.load();
+    assert(restored.length === 3 && [pinned, newer, remote].every(item => restored.some(value => value.id === item.id))
+      && pinnedFile.query_exists(null) && newerFile.query_exists(null)
+      && restored.find(item => item.id === remote.id).primary.path === null,
+    'The persisted index and retained files must agree after budget eviction without materializing remote content');
+  } finally { await controller.destroy(); removeTree(Gio.File.new_for_path(rootPath)); }
+}
+
 async function persistenceFailure() {
   const {controller, rootPath} = fixture();
   try {
@@ -178,6 +219,7 @@ async function memoryReplacement() {
 }
 
 await orderingAndLimits();
+await storageBudgetChanges();
 await memoryReplacement();
 await persistenceFailure();
 await lifecycleBoundaries();

@@ -1,9 +1,12 @@
 FROM fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80
 ARG SHELL_MAJOR=50
 LABEL io.github.guleoo.clipboard-x-gnome.test-environment="1"
+# Fedora's container base otherwise discards non-English system catalogs.
+# Plugin catalogs alone cannot provide a real RTL Shell/GTK environment.
+RUN sed -i 's/^%_install_langs.*/%_install_langs all/' /etc/rpm/macros.image-language-conf
 RUN dnf install -y --setopt=install_weak_deps=False \
       7zip dbus-daemon dbus-tools gettext git gjs glib2 glibc-langpack-en \
-      glibc-langpack-ja glibc-langpack-ko glibc-langpack-zh gnome-shell \
+      glibc-langpack-ar glibc-langpack-de glibc-langpack-ja glibc-langpack-ko glibc-langpack-zh gnome-shell \
       gnome-text-editor nautilus gtk3 gtk4 libadwaita libsoup3 meson ninja-build \
       nodejs python3 python3-gobject vte291 gvfs gvfs-client \
       xdg-desktop-portal-gnome xdg-desktop-portal-gtk gnome-keyring \

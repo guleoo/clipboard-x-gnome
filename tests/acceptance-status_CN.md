@@ -2,7 +2,70 @@
 
 > [English](acceptance-status.md) · 简体中文
 
-更新日期：2026-10-27。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
+更新日期：2026-10-28。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
+
+## 剩余缺口补测：设置、语言与来源故障（2026-10-28）
+
+| 验证 | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| SET-02：原生小数 KB/MB、重开、外部字节值刷新不误回写 | 通过 | 通过 |
+| SET-06-global-actions：隐私/清空真实全局绑定、解绑与重绑 | 通过 | 通过 |
+| LANG-02 + LANG-07-errors：EN/ZH/JA/KO 的界面与安全通知 | 四种语言各 2/2 通过 | 四种语言各 2/2 通过 |
+| OPS-03-bounded：2 轮预热后连续 10 轮实际启停 | 通过 | 通过 |
+| 真实 HTTP 来源关闭→等待→客户端超时/取消→恢复重试 | 通过 | 通过 |
+| 真实 HTTP 来源变敏感→拒绝原文→恢复后重新获取 | 通过 | 通过 |
+| 真实 HTTP 来源原文件被删→拒绝原文→恢复文件后重试 | 通过 | 通过 |
+| LANG-03：真实 Arabic RTL / German 长译文，窄面板操作和完整复制 | 两种语言通过 | 两种语言通过 |
+| LANG-07-dictionary：实际中文词库错误弹窗 | 失败：正文是英文原始诊断 | 同左 |
+| XFER-02 / XFER-02-download / XFER-04：实际字节与响应度 | 3/3 通过 | 3/3 通过 |
+
+真实 HTTP 继续使用已注明的后端镜像 `d8e3a43d15e6` 和既有插件 ZIP，非当前服务端重新构建。
+新增 `receive.test.js` 的客户端/文件边界覆盖请求拒绝、失败/过期/取消后的预览保留、无原文 I/O、
+等待所有权释放及同条目重试。32→16 MB 动态容量规则补在 `history/controller.test.js`，不再追加
+一套 Shell 排序测试。81 个 schema 键已分类；临时 memory backend 检查有 124 次合法写入和
+38 次越界/非法 choice 拒绝，仅证明 schema 约束，不替代消费行为，也不新增永久配置格式测试。
+
+OPS-03 检查 UI 唯一性、旧 actor 销毁、D-Bus 名称释放及快捷键不重复。十轮 active/disabled
+RSS 变化约 +14 MB，两版 FD 减少 10/13 个；仅记录趋势，不设任意“泄漏阈值”，不声称长期无泄漏，
+也不替代同步轮询/socket 或数小时 soak。
+
+证据：[SET-02](../build/environments-20261027T170332Z-8csbgtd9/report.json)、
+[全局绑定](../build/environments-20261027T171727Z-lo1177ip/report.json)、
+[英文](../build/environments-20261027T170437Z-r9nrze4m/report.json)、
+[中文](../build/environments-20261027T170456Z-y2f5xmdr/report.json)、
+[日文](../build/environments-20261027T170516Z-zmuc5hco/report.json)、
+[韩文](../build/environments-20261027T170537Z-5plvq0yr/report.json)、
+[资源趋势](../build/environments-20261027T170703Z-claieqhf/report.json)、
+[50 来源故障](../build/sync-http-tests/cbx-simulation-e6467c3637cb1953-shell/)、
+[51 来源故障](../build/sync-http-tests/cbx-simulation-1e233adb49b70a4c-shell/)。
+
+首轮来源测试误把服务端 `requesting` 当作已缓存，且错误期望敏感来源拒绝为 `failed`；查证服务端
+契约为 `expired + source_content_missing` 后修正测试假设，保留旧报告，不称为产品修复。
+RTL 首轮只加载了插件阿拉伯语资源：Fedora 的英文安装过滤导致系统 GNOME/GTK 翻译缺失，
+且 runner 固定英文基础 locale。这些是环境缺口；后续保留系统 catalog、优先实际 locale，再验方向。
+后续还发现按名称排序会选中 ISO-8859-6/EUC 系列 locale，导致设置观察器出现畸形 UTF-8；
+runner 已仅接受 UTF-8 候选。真正 RTL 下滚轮夹具的固定右侧坐标落在导航栏，已改为实际内容列，
+未直接改滚动值。最终 [Arabic](../build/environments-20261027T173343Z-7xz7yfv1/report.json) /
+[German](../build/environments-20261027T173405Z-w0kvqkd8/report.json) 两版均通过，报告分别为
+`ar_AE.utf8` / `de_AT.utf8`。不以旧环境失败给产品定性，也不强制控件方向换取通过。
+词库错误实际标题为中文，正文仍为 `Network dictionary location must use HTTP or HTTPS`；
+[两版真实弹窗报告](../build/environments-20261027T173230Z-twebl6nk/report.json) 保留失败，不修生产文案。
+新镜像[完整逻辑回归](../build/environments-20261027T173053Z-v8lpv00x/report.json) 各 51/51 + 7/7 通过，
+[设置与英文](../build/environments-20261027T173107Z-i3ens0p1/report.json) 各 5/5 通过。
+UTF-8 修正后的 [中文](../build/environments-20261027T173448Z-xnu_ezk8/report.json)、
+[日文](../build/environments-20261027T173507Z-v3du3g7x/report.json)、
+[韩文](../build/environments-20261027T173527Z-p3yjaars/report.json) 各两项、两版均通过。
+最终镜像的[有界资源复验](../build/environments-20261027T173642Z-a2wuvw2x/report.json) 也通过；此轮
+RSS 变化约 +18 MB、FD -10/-14，不用新结果覆盖前轮观测或声称没有长期增长。
+真实后端[50 三个来源分支](../build/sync-http-tests/cbx-simulation-d462d7a2a189a711-shell/) /
+[51 三个来源分支](../build/sync-http-tests/cbx-simulation-499971ce0225c526-shell/) 各 3/3 通过。
+原生[50 传输与恢复](../build/simulation-tests/cbx-simulation-a2a7620517f2825c-shell/) /
+[51 传输与恢复](../build/simulation-tests/cbx-simulation-b3e4eaf543f5189c-shell/) 各 3/3 通过：
+上传/下载/初始化恢复的最大主循环间隙分别为 29.2/60.6/31.8 ms、28.2/70.3/37.2 ms，
+同时保留精确字节、服务端大小和最终原文 hash 断言，预算仍为 1000 ms。
+UTF-8 中文词库错误[再次确认两版失败](../build/environments-20261027T173818Z-ji_qip7l/report.json)。
+当前原生注册 133 项；未改生产功能、宿主插件或 GitHub 工作流。
+仍未补齐的外部应用安装、输入法、长期趋势和其他操作出口不由本节替代。
 
 ## 剩余缺口补测：同步接线（2026-10-28）
 

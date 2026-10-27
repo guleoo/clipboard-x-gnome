@@ -2,8 +2,79 @@
 
 > English · [简体中文](acceptance-status_CN.md)
 
-Updated: 2026-10-27. These are observed results, not certification of all requirements in the
+Updated: 2026-10-28. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
+
+## Remaining-gap coverage: settings, languages and source failures (2026-10-28)
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| SET-02: fractional native KB/MB, reopen, external bytes without unintended writeback | Passed | Passed |
+| SET-06-global-actions: actual privacy/clear WM bindings, unbind and rebind | Passed | Passed |
+| LANG-02 + LANG-07-errors: EN/ZH/JA/KO interface and safe notifications | 2/2 per language passed | 2/2 per language passed |
+| OPS-03-bounded: two warm-up cycles, then ten actual restarts | Passed | Passed |
+| Real HTTP offline source → wait → client deadline/cancel → resume and retry | Passed | Passed |
+| Real HTTP sensitive source → reject original → restore and reacquire | Passed | Passed |
+| Real HTTP deleted source file → reject original → restore file and retry | Passed | Passed |
+| LANG-03: actual Arabic RTL / German long translations, narrow-panel actions and exact copy | Both languages passed | Both languages passed |
+| LANG-07-dictionary: actual Chinese dictionary error dialog | Failed: raw English body | Same |
+| XFER-02 / XFER-02-download / XFER-04: actual bytes and responsiveness | 3/3 passed | 3/3 passed |
+
+HTTP scenarios retain the documented backend image `d8e3a43d15e6` and supplied plugin ZIP, not a
+rebuild of current server sources. New `receive.test.js` client/file checks cover request rejection,
+failed/expired/cancelled waits, retained previews, no original I/O, released acquisition ownership
+and same-item retries. Dynamic 32→16 MB retention belongs to `history/controller.test.js`, not a
+duplicate Shell sorting matrix. All 81 schema keys are classified; temporary memory-backend checks
+performed 124 legal writes and 38 out-of-range/invalid-choice rejections. These prove schema
+constraints only, not all consumers, and add no permanent configuration-format tests.
+
+OPS-03 checks unique UI actors, destruction, D-Bus name release and single shortcut responses.
+Across ten active/disabled samples RSS increased by about 14 MB; FD counts decreased by 10/13.
+These are observations, not arbitrary leak thresholds, proof of no long-term leaks, socket/polling
+coverage or an hours-long soak.
+
+Evidence: [SET-02](../build/environments-20261027T170332Z-8csbgtd9/report.json),
+[global bindings](../build/environments-20261027T171727Z-lo1177ip/report.json),
+[English](../build/environments-20261027T170437Z-r9nrze4m/report.json),
+[Chinese](../build/environments-20261027T170456Z-y2f5xmdr/report.json),
+[Japanese](../build/environments-20261027T170516Z-zmuc5hco/report.json),
+[Korean](../build/environments-20261027T170537Z-5plvq0yr/report.json),
+[resource trends](../build/environments-20261027T170703Z-claieqhf/report.json),
+[50 source failures](../build/sync-http-tests/cbx-simulation-e6467c3637cb1953-shell/),
+[51 source failures](../build/sync-http-tests/cbx-simulation-1e233adb49b70a4c-shell/).
+
+Initial source tests incorrectly equated server `requesting` with a cached original and expected
+sensitive-source rejection to be `failed`. The actual server contract is `expired` with
+`source_content_missing`; fixture assumptions were corrected, old reports retained, no product
+fix claimed. Initial RTL runs loaded only plugin Arabic catalogs: Fedora's English-only filter
+removed system GNOME/GTK translations, and the runner forced an English base locale. Subsequent
+environment work retains system catalogs and prefers an installed requested locale before testing
+direction. Sorting locale names initially selected ISO-8859-6/EUC encodings, producing malformed
+UTF-8 in the preferences observer; the runner now accepts UTF-8 candidates only. The RTL scroll
+fixture also aimed at the right-hand navigation sidebar, corrected to the actual content column
+without directly changing adjustments. Final [Arabic](../build/environments-20261027T173343Z-7xz7yfv1/report.json)
+and [German](../build/environments-20261027T173405Z-w0kvqkd8/report.json) runs pass on both versions
+with `ar_AE.utf8` / `de_AT.utf8`, not forced widget directions or misclassified environment failures.
+The dictionary error has a translated title but still shows `Network dictionary location must use
+HTTP or HTTPS`; the [actual two-version dialog reports](../build/environments-20261027T173230Z-twebl6nk/report.json)
+retain failure, with no production text fix. New-image [full logic regression](../build/environments-20261027T173053Z-v8lpv00x/report.json)
+passes 51/51 + 7/7 per version; [settings/English](../build/environments-20261027T173107Z-i3ens0p1/report.json)
+passes 5/5 per version. External-app installations, actual IMEs, long-term trends and remaining error outlets
+remain separate gaps.
+After the UTF-8 correction, [Chinese](../build/environments-20261027T173448Z-xnu_ezk8/report.json),
+[Japanese](../build/environments-20261027T173507Z-v3du3g7x/report.json) and
+[Korean](../build/environments-20261027T173527Z-p3yjaars/report.json) each pass both cases on both versions.
+The final images also pass the [bounded resource rerun](../build/environments-20261027T173642Z-a2wuvw2x/report.json):
+about +18 MB RSS and -10/-14 FDs, recorded separately rather than replacing the previous observation
+or proving no long-term growth. Real backend [50 source scenarios](../build/sync-http-tests/cbx-simulation-d462d7a2a189a711-shell/)
+and [51 source scenarios](../build/sync-http-tests/cbx-simulation-499971ce0225c526-shell/) pass 3/3 each.
+Native [50 transfer/restore](../build/simulation-tests/cbx-simulation-a2a7620517f2825c-shell/) and
+[51 transfer/restore](../build/simulation-tests/cbx-simulation-b3e4eaf543f5189c-shell/) pass 3/3 each.
+Maximum upload/download/initialization-restore main-loop gaps are 29.2/60.6/31.8 ms and
+28.2/70.3/37.2 ms, retaining exact-byte, remote-size and final-original hash assertions against
+the existing 1000 ms budget. The UTF-8 Chinese dictionary error
+[still fails on both versions](../build/environments-20261027T173818Z-ji_qip7l/report.json).
+The native registry now has 133 cases; production, host installation and GitHub workflows are unchanged.
 
 ## Remaining-gap coverage: sync wiring (2026-10-28)
 

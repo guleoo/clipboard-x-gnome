@@ -33,6 +33,11 @@ Observed results remain in the acceptance snapshot.
 | SET-03 | `simulation/settings/colors.native.js`: native GTK accent/foreground selection, save/cancel and system reset, not shape/spacing assertions. |
 | LANG-07 / OPS-08 / PRIV-08 | `logic/sync/errors.test.js` covers translation and safe text for all stable codes; `LANG-07-errors` checks actual GNOME notifications, safe fallback, native Gio exceptions and silent cancellation. Other outlets remain separately scoped. |
 | CONN-07 / XFER-01 | `simulation/sync/presentation.native.js`: actual mixed-device history markers; real transfer controls, independent settings and native clicks for every state. Controlled actions verify UI wiring, not network transfer; existing backend cases remain their owner. |
+| HIST-03 / SET-02 | `logic/clipboard/history/controller.test.js`: actual files, a 32→16 MB budget change, oldest ordinary eviction, pin protection, uncached remote originals excluded, index/GC agreement. Native `SET-02` adds fractional KB/MB, reopening and external refresh without unintended writeback. |
+| RECV-06 / PRIV-06 | `logic/sync/receive.test.js`: request rejection and failed/expired/cancelled waits preserve previews and allow retries. Real HTTP `RECV-06-offline-source` / `RECV-06-sensitive-source` / `RECV-06-missing-source` cover offline deadline/cancel/resume and sensitive/missing-file source rejection/recovery. |
+| SET-06 | `SET-06-global-actions` exercises actual privacy/clear WM shortcuts with the panel closed, unbinding and rebinding; it does not duplicate the recorder matrix. |
+| LANG-02/03/07 | Existing `LANG-02` and `LANG-07-errors` run explicitly in four languages on both versions. `LANG-03 --language ar/de` checks actual direction, narrow-panel long-text actions/exact copy and reachable translated settings. `LANG-07-dictionary --language zh_CN` retains the actual dictionary-error localization assertion. Glyph/visual quality remains manual. |
+| OPS-01/02/03 | Existing `XFER-02` / `XFER-02-download` check exact bytes/content and maximum main-loop gaps across the operation. `OPS-03-bounded` warms up twice, then cycles ten times with UI/name/shortcut cleanup assertions and RSS/FD observations, not a claim of hours-long soak coverage. |
 
 ## Acceptance layers
 
@@ -451,6 +456,30 @@ Native entry: [settings/native.js](simulation/settings/native.js). SET-01 visits
 SET-06 records/cancels/clears a real chord in independent GTK; SET-08 operates both reset branches,
 preserves identity/phrases and verifies a later setting still saves. Theme/layout/exclusion/link cases
 retain their component/data ownership, not blanket GUI certification.
+
+SET-02 schema ownership currently accounts for all 81 keys: 74 user settings, four internal-state
+keys and three inactive features. Related keys share consumer tests and representative native wiring;
+there is no separate GUI test for every mature widget property. Temporary memory-backend checks
+can validate schema types/ranges, but cannot replace the functional behavior below.
+
+| Current user settings | Keys | Behavior owner |
+| --- | --- | --- |
+| Device (2) | `device-tag`, `device-icon-kind` | device/client logic, CONN-06-profile/07 |
+| General/panel (19) | `show-indicator`, `panel-anchor`, `panel-offset-x`, `panel-offset-y`, `theme-color`, `foreground-color`, `custom-theme-colors`, `panel-escape-action`, `panel-confine-focus`, `panel-visible-item-limit`, `panel-width`, `panel-height`, `panel-text-vertical-offset`, `panel-toolbar-actions`, `panel-footer-actions`, `panel-hidden-actions`, `entry-actions`, `entry-hidden-actions`, `preserve-panel-state` | panel-manager/focus-grid/actions, PANEL, SET-03/04/05; visual text offset belongs to LANG-04 |
+| Clipboard (9) | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-speed` | history-controller/capture/input logic, CLIP/PRIV/TYPE |
+| Words/dictionaries (3) | `tokenizer-show-source-preview`, `tokenizer-word-limit`, `tokenizer-dictionary-files` | processors/dictionary/selection logic, WORD/DICT |
+| Quick phrases (3) | `saved-phrase-limit`, `saved-phrase-newest-first`, `phrase-close-after-copy` | phrase-store logic, PHRASE |
+| Sync (15) | `sync-enabled`, `sync-use-sha256sum`, `sync-poll-interval-seconds`, `sync-send-mode`, `sync-receive-mode`, `sync-text`, `sync-html`, `sync-images`, `sync-favorites-only`, `text-full-threshold`, `text-preview-limit`, `image-full-threshold`, `thumbnail-size`, `thumbnail-byte-limit`, `sync-transfer-timeout-seconds` | client/lifecycle/queue/receive/policy/verifier/storage, CONN/SEND/RECV/XFER; unit wiring belongs to SET-02 |
+| Screenshot/editor (5) | `screenshot-target`, `screenshot-add-history`, `screenshot-write-clipboard`, `screenshot-open-editor`, `editor-command` | screenshot tools/pipeline, SHOT/EDIT |
+| Color (1) | `color-format` | color logic and COLOR-04 |
+| Global shortcuts (5) | `panel-shortcut`, `screenshot-shortcut`, `color-picker-shortcut`, `private-mode-shortcut`, `clear-history-shortcut` | Actual WM bindings in SET-06, SET-06-global-actions and SHOT/COLOR |
+| Clipboard-local shortcuts (5) | `history-search-shortcut`, `history-paste-shortcut`, `history-pin-shortcut`, `history-delete-shortcut`, `history-type-shortcut` | matcher/capture logic, PANEL/HIST/PHRASE/TYPE default actions and representative rebinding |
+| Word-local shortcuts (7) | `tokenizer-copy-shortcut`, `tokenizer-paste-shortcut`, `tokenizer-type-shortcut`, `tokenizer-select-previous-shortcut`, `tokenizer-select-next-shortcut`, `tokenizer-select-above-shortcut`, `tokenizer-select-below-shortcut` | matcher/capture logic, WORD/SELECT/TYPE |
+| Internal state (4, not user preferences) | `device-id`, `tokenizer-dictionary-revision`, `sync-configuration-revision`, `saved-phrases` | Identity/revisions and legacy phrase staging; current phrases still use separate JSON storage |
+| Inactive features (3) | `device-icon-color-light`, `device-icon-color-dark`, `device-icon-color-linked` | No settings UI or device profile fields; existing device logic verifies they are ignored |
+
+Server address, API key and Channel are stored in `sync.json`, not missing schema keys. Their reads,
+writes and application belong to CONN acceptance.
 
 ### Languages and visuals — LANG-01…07
 

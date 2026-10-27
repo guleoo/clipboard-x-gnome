@@ -2,6 +2,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Preferences} from '../helpers/preferences.js';
 import {Target} from '../helpers/target.js';
@@ -25,6 +26,70 @@ function frame(desktop, preferences) {
 }
 
 export const cases = {
+  async 'SET-06-global-actions'(desktop) {
+    const {ClipboardItem} = await import(`${desktop.app.dir.get_uri()}/clipboard/item.js`);
+    const controller = desktop.app._controller;
+    const settings = desktop.settings;
+    const owned = [];
+    const add = (text, favorite = false) => {
+      const item = controller.add(ClipboardItem.fromText(text, {favorite}));
+      owned.push(item);
+      return item;
+    };
+    const press = async symbol => {
+      assert(!desktop.indicator.menu.isOpen, 'Global shortcut must be exercised with the panel closed');
+      await desktop.key(symbol, [Clutter.KEY_Control_L, Clutter.KEY_Shift_L]);
+      await Scripting.waitLeisure();
+    };
+    const bind = async (privacy, clear) => {
+      settings.set_strv('private-mode-shortcut', privacy);
+      settings.set_strv('clear-history-shortcut', clear);
+      await until(() => desktop.app._boundShortcuts.includes('private-mode-shortcut') === Boolean(privacy.length)
+        && desktop.app._boundShortcuts.includes('clear-history-shortcut') === Boolean(clear.length),
+      'Both requested global WM bindings become active or are removed');
+    };
+    try {
+      await desktop.close();
+      settings.set_boolean('private-mode', false);
+      const pinned = add('Global shortcut keeps the pinned original', true);
+      add('Global shortcut removes the ordinary original');
+      await bind(['<Control><Shift>F6'], ['<Control><Shift>F7']);
+      await press(Clutter.KEY_F6);
+      await until(() => settings.get_boolean('private-mode'), 'Actual global shortcut enables privacy mode');
+      await press(Clutter.KEY_F6);
+      await until(() => !settings.get_boolean('private-mode'), 'The same global shortcut resumes capture');
+      await press(Clutter.KEY_F7);
+      await until(() => controller.items.length === 1 && controller.items[0] === pinned,
+        'Actual global clear removes ordinary history and retains the pin');
+
+      await bind([], []);
+      const ordinary = add('Unbound old shortcut must leave this ordinary original alone');
+      await press(Clutter.KEY_F6);
+      await press(Clutter.KEY_F7);
+      assert(!settings.get_boolean('private-mode') && controller.items.includes(ordinary),
+        'Clearing the configured global shortcuts must disable both old key combinations');
+
+      await bind(['<Control><Shift>F4'], ['<Control><Shift>F5']);
+      await press(Clutter.KEY_F6);
+      await press(Clutter.KEY_F7);
+      assert(!settings.get_boolean('private-mode') && controller.items.includes(ordinary),
+        'Rebinding global actions must not reactivate their old combinations');
+      await press(Clutter.KEY_F4);
+      await until(() => settings.get_boolean('private-mode'), 'Rebound global privacy shortcut takes effect');
+      await press(Clutter.KEY_F4);
+      await until(() => !settings.get_boolean('private-mode'), 'Rebound privacy shortcut toggles off again');
+      await press(Clutter.KEY_F5);
+      await until(() => controller.items.length === 1 && controller.items[0] === pinned,
+        'Rebound global clear acts on the live history without removing pinned content');
+      assert(!desktop.indicator.menu.isOpen, 'Global privacy and clear actions must not open the panel');
+    } finally {
+      settings.set_strv('private-mode-shortcut', []);
+      settings.set_strv('clear-history-shortcut', []);
+      settings.set_boolean('private-mode', false);
+      for (const item of owned) controller.remove(item.id);
+    }
+  },
+
   // Representative native write paths, not another copy of the schema's full
   // range matrix: bool, enum, integer, scaled size, validated string and reopen.
   'SET-02': desktop => withPreferences(desktop, async preferences => {
@@ -36,6 +101,8 @@ export const cases = {
     await spin(desktop, preferences, 'History entries', 17, 'history-size');
     await preferences.page('sync');
     await spin(desktop, preferences, 'Text full-transfer threshold', 3, 'text-full-threshold', 3072);
+    await spin(desktop, preferences, 'Large text preview', 0.25, 'text-preview-limit', 256);
+    await spin(desktop, preferences, 'Image full-transfer threshold', 0.25, 'image-full-threshold', 262144);
     await preferences.page('screenshot');
     await preferences.input('Command', 'python3 -c "print(1)" %f');
     await until(() => desktop.settings.get_string('editor-command') === 'python3 -c "print(1)" %f',
@@ -55,6 +122,43 @@ export const cases = {
       await reopened.scrollTo({type: 'AdwSpinRow', row: 'History entries'});
       assert((await reopened.find({type: 'AdwSpinRow', row: 'History entries'})).widget.value === 17,
         'A separate preferences process must read the saved native edit');
+      await reopened.page('sync');
+      for (const row of ['Large text preview', 'Image full-transfer threshold']) {
+        await reopened.scrollTo({type: 'AdwSpinRow', row});
+        assert((await reopened.find({type: 'AdwSpinRow', row})).widget.value === 0.25,
+          `${row} must restore the saved fractional display unit in a new preferences process`);
+      }
+      const previewRow = (await reopened.translate({row: 'Large text preview'})).row;
+      const imageRow = (await reopened.translate({row: 'Image full-transfer threshold'})).row;
+      const observed = async (row, value) => {
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const snapshot = await reopened.inspect();
+          if (snapshot.windows[0].widgets.some(widget => widget.type === 'AdwSpinRow'
+            && widget.row === row && widget.value === value)) return snapshot;
+          await pause(20);
+        }
+        throw new Error(`External settings update must refresh the native ${row} value to ${value}`);
+      };
+      desktop.settings.set_uint('text-preview-limit', 768);
+      let snapshot = await observed(previewRow, 0.75);
+      assert(snapshot.settings['text-preview-limit'] === 768
+        && snapshot.settings['image-full-threshold'] === 262144
+        && desktop.settings.get_uint('image-full-threshold') === 262144,
+      'External KB refresh must preserve the exact bytes and leave the MB setting unchanged');
+      // Preserve a valid non-rounded byte count rather than silently replacing
+      // it with the two-decimal display value during the external refresh.
+      const imageBytes = 524289;
+      desktop.settings.set_uint('image-full-threshold', imageBytes);
+      snapshot = await observed(imageRow, imageBytes / (1024 * 1024));
+      assert(snapshot.settings['image-full-threshold'] === imageBytes
+        && desktop.settings.get_uint('image-full-threshold') === imageBytes
+        && snapshot.settings['text-preview-limit'] === 768
+        && desktop.settings.get_uint('text-preview-limit') === 768
+        && snapshot.settings['text-full-threshold'] === 3072,
+      'External MB refresh must not round and write back its byte count or overwrite another size setting');
+      await spin(desktop, reopened, 'Image full-transfer threshold', 0.75, 'image-full-threshold', 786432);
+      assert(desktop.settings.get_uint('text-preview-limit') === 768,
+        'The refreshed size control must remain editable without changing the other setting');
     } finally { await reopened.close(); }
   }),
 

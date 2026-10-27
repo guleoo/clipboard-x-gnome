@@ -102,7 +102,10 @@ export class Preferences {
       const target = snapshot.windows.find(window => window.title === 'Clipboard X Gnome')?.widgets
         .find(widget => widget.mapped && widget.bounds && Object.entries(selector).every(([key, value]) => widget[key] === value));
       const frame = this.window('Clipboard X Gnome').get_frame_rect();
-      await this.desktop.move(frame.x + frame.width - 150, frame.y + frame.height / 2);
+      // Scroll over the actual content column. In RTL the sidebar is on the
+      // right, so a fixed right-hand coordinate only scrolls the navigation.
+      const column = target ? target.bounds.x + target.bounds.width / 2 : frame.width / 2;
+      await this.desktop.move(frame.x + Math.max(32, Math.min(frame.width - 32, column)), frame.y + frame.height / 2);
       this.desktop.pointer.notify_discrete_scroll(GLib.get_monotonic_time(), target?.bounds.y < 0
         ? Clutter.ScrollDirection.UP : Clutter.ScrollDirection.DOWN, Clutter.ScrollSource.WHEEL);
       await pause(40);

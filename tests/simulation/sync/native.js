@@ -216,6 +216,17 @@ export const cases = {
     const events = [];
     const sync = desktop.app._sync;
     const signal = sync.connect('transfer-changed', (_client, event) => events.push({...event}));
+    const start = GLib.get_monotonic_time();
+    let last = start;
+    let gap = 0;
+    let ticks = 0;
+    const sample = () => {
+      const now = GLib.get_monotonic_time();
+      gap = Math.max(gap, (now - last) / 1000); last = now;
+    };
+    const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
+      sample(); ticks++; return GLib.SOURCE_CONTINUE;
+    });
     try {
       const text = 'progress '.repeat(250000);
       const item = await capture(desktop, target, text);
@@ -239,7 +250,14 @@ export const cases = {
         .reduce((sum, value) => sum + value.size, 0), 'Progress total must equal the actual uploaded representations plus previews');
       assert(remote.contents[0].size === new TextEncoder().encode(text).length,
         'Progress must agree with the actual remote payload size');
-    } finally { sync.disconnect(signal); }
+      sample();
+      assert(ticks > 5 && gap < 1000, 'Actual capture and upload must keep the Shell main loop responsive');
+    } finally {
+      sample();
+      print(`[simulation] Upload responsiveness: durationMs=${((GLib.get_monotonic_time() - start) / 1000).toFixed(1)}; maxGapMs=${gap.toFixed(1)}; ticks=${ticks}; budgetMs=1000`);
+      GLib.Source.remove(timer);
+      sync.disconnect(signal);
+    }
   }),
 
   'XFER-04': desktop => fixture(desktop, async ({target, server}) => {

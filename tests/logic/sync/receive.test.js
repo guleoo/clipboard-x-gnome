@@ -43,11 +43,14 @@ let peakDownloads = 0;
 let pendingTransfer = null;
 let waitForSource = false;
 let failDownload = false;
+let requestFailure = null;
 const transport = {
   item: async (_channel, id) => manifests.get(id),
   preview: async (_channel, _item, id) => objects.get(id),
   requestContent: async (_channel, itemId, contentId) => {
     requests.push(contentId);
+    if (requestFailure)
+      throw requestFailure;
     const transfer = {
       id: GLib.uuid_string_random(), itemId, deviceId, kind: 'content', direction: 'download',
       state: waitForSource ? 'waiting-for-peer' : 'completed',
@@ -254,6 +257,46 @@ try {
   failDownload = false;
   await client.materialize(failed);
   assert(isComplete(failed), 'A failed automatic download must remain manually retryable');
+
+  // Exercise the client/store acquisition boundary, not another copy of the
+  // transfer-session terminal/timeout unit matrix. An unavailable original may
+  // never erase its usable preview or leave a shared acquisition stuck.
+  for (const state of ['failed', 'expired', 'cancelled']) {
+    const item = await client.getItem(manifest([['text/plain;charset=utf-8', `preview before ${state}`]], 'on-demand').id);
+    const before = downloads.length;
+    waitForSource = true;
+    const acquiring = client.materialize(item).then(() => null, error => error);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert(pendingTransfer.itemId === item.id && item.availability === 'waiting-for-peer',
+      'The real acquisition must reach the pending source before the terminal observation');
+    client._transfers.receive({...pendingTransfer, transferId: pendingTransfer.id,
+      state, updatedAt: 2, errorMessage: `Controlled source ${state}`});
+    assert(await acquiring instanceof Error, `${state}: acquisition must reject instead of pretending to finish`);
+    assert(item.availability === 'failed' && item.preview.text === `preview before ${state}`
+      && !item.primary.path && !item.primary.bytes && !isComplete(item)
+      && downloads.length === before && client._transfers._materializations.size === 0
+      && client._transfers._waiters.size === 0,
+    `${state}: preserve preview, avoid original I/O and release acquisition ownership`);
+    waitForSource = false;
+    await client.materialize(item);
+    assert(isComplete(item) && downloads.length === before + 1,
+      `${state}: a fresh source request must recover the same preview entry`);
+  }
+
+  for (const code of ['source_content_missing', 'channel_forbidden', 'transfer_expired', 'network_error']) {
+    const item = await client.getItem(manifest([['text/plain;charset=utf-8', `preview before ${code}`]]).id);
+    const before = downloads.length;
+    requestFailure = new SyncError(code, `Controlled request ${code}`);
+    let error;
+    try { await client.materialize(item); } catch (caught) { error = caught; }
+    assert(error === requestFailure && item.availability === 'failed' && !item.primary.path
+      && item.preview.text === `preview before ${code}` && downloads.length === before
+      && client._transfers._materializations.size === 0 && client._transfers._waiters.size === 0,
+    `${code}: request failure must retain the preview and finish without a partial original or waiter`);
+    requestFailure = null;
+    await client.materialize(item);
+    assert(isComplete(item), `${code}: retry after source/request recovery must succeed`);
+  }
 
   // The replacement joins before it has the first consumer's descriptor.
   // Cleanup must defer to the whole acquisition, then inspect live references.

@@ -240,8 +240,17 @@ export const cases = {
     const signal = sync.connect('transfer-changed', (_client, event) => {
       if (event.itemId === item.id && event.direction === 'download') events.push({...event});
     });
+    const start = GLib.get_monotonic_time();
+    let last = start;
+    let gap = 0;
     let heartbeat = 0;
-    const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 20, () => { heartbeat++; return GLib.SOURCE_CONTINUE; });
+    const sample = () => {
+      const now = GLib.get_monotonic_time();
+      gap = Math.max(gap, (now - last) / 1000); last = now;
+    };
+    const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 20, () => {
+      sample(); heartbeat++; return GLib.SOURCE_CONTINUE;
+    });
     try {
       gate.set({path: contentPath, direction: 'download', delay: 0.015});
       await click(desktop, item);
@@ -257,7 +266,14 @@ export const cases = {
       }
       assert(samples.at(-1)?.completedBytes === remote.primary.size && heartbeat > 10, 'Actual download completes all bytes while Shell keeps running');
       assert((await target.clipboard()).sha256 === remote.primary.sha256, 'Reported completion must match actual final clipboard content');
-    } finally { GLib.Source.remove(timer); sync.disconnect(signal); }
+      sample();
+      assert(gap < 1000, 'A slow network download must not hide a one-second Shell main-loop stall');
+    } finally {
+      sample();
+      print(`[simulation] Download responsiveness: durationMs=${((GLib.get_monotonic_time() - start) / 1000).toFixed(1)}; maxGapMs=${gap.toFixed(1)}; ticks=${heartbeat}; budgetMs=1000`);
+      GLib.Source.remove(timer);
+      sync.disconnect(signal);
+    }
   }),
 };
 

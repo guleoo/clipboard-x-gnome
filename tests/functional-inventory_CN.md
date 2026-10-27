@@ -31,6 +31,11 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | SET-03 | `simulation/settings/colors.native.js`：原生 GTK 内置/自定义强调色、前景色、确认/取消与恢复系统；不验圆形/间距等视觉属性。 |
 | LANG-07 / OPS-08 / PRIV-08 | `logic/sync/errors.test.js` 验证全部稳定错误码经过翻译且不暴露诊断；`LANG-07-errors` 验证真实 GNOME 通知、未知错误安全回退、原生 Gio 异常和取消零通知。其他出口的审计仍独立列出。 |
 | CONN-07 / XFER-01 | `simulation/sync/presentation.native.js`：真实混合设备历史标记；独立设置驱动真实传输控件，逐态原生点击。受控动作只验 UI 接线，不冒充真实传输，后端行为继续归原有服务端用例。 |
+| HIST-03 / SET-02 | `logic/clipboard/history/controller.test.js`：实际文件容量 32→16 MB，最旧普通项淘汰、Pin 保留、未下载原文不计本地预算，索引与 GC 一致；`SET-02` 原生补充小数 KB/MB、重开与外部刷新不误回写。 |
+| RECV-06 / PRIV-06 | `logic/sync/receive.test.js`：请求拒绝、等待失败/过期/取消后预览和重试；`logic/sync/integration/backend.test.js` 的 `RECV-06-offline-source` / `RECV-06-sensitive-source` / `RECV-06-missing-source` 运行真实来源关闭→超时取消→重开，以及来源改为敏感/原文件被删→拒绝原文→恢复重试。 |
+| SET-06 | `SET-06-global-actions` 在面板关闭时验证隐私/清空两个真实 WM 快捷键、解绑和重绑，不复制录制控件矩阵。 |
+| LANG-02/03/07 | 既有 `LANG-02` 与 `LANG-07-errors` 显式四语言双版本；`LANG-03 --language ar/de` 验证实际方向、窄面板长文本操作/完整复制及长译文设置可达；`LANG-07-dictionary --language zh_CN` 保留真实词库错误正文的本地化断言。字形和视觉质量仍人工。 |
+| OPS-01/02/03 | 既有 `XFER-02` / `XFER-02-download` 同时测精确字节、实际内容和全过程最大主循环间隙；`OPS-03-bounded` 预热 2 轮后启停 10 轮，断言 UI/名称/快捷键清理并记录 RSS/FD 趋势，不冒充数小时 soak。 |
 
 ## 验收层级
 
@@ -417,6 +422,28 @@ persist、save。它们补充而非重复 logic/sync/{transfers,http-failures,fi
 原生入口：[settings/native.js](simulation/settings/native.js)。SET-01 遍历八个真实页面；SET-06 在独立
 GTK 中录制、取消、清空组合键；SET-08 操作恢复默认的两个确认分支、保留身份/语句，并确认之后还能
 保存设置。主题、布局、排除和外链仍有各自的组件/数据归属，不声称所有 GUI 均已完整验收。
+
+SET-02 的当前 schema 责任清单如下。共 81 键：74 个用户配置、4 个内部状态、3 个暂停功能。
+同类配置复用消费逻辑和代表性原生接线；不为每个成熟控件属性建立一份 GUI 测试。
+Schema 类型/范围可临时用 memory backend 校验，不能用它代替下表的实际功能行为。
+
+| 当前用户配置 | 键名 | 行为归属 |
+| --- | --- | --- |
+| 设备（2） | `device-tag`, `device-icon-kind` | device/client 逻辑，CONN-06-profile/07 |
+| 常规与面板（19） | `show-indicator`, `panel-anchor`, `panel-offset-x`, `panel-offset-y`, `theme-color`, `foreground-color`, `custom-theme-colors`, `panel-escape-action`, `panel-confine-focus`, `panel-visible-item-limit`, `panel-width`, `panel-height`, `panel-text-vertical-offset`, `panel-toolbar-actions`, `panel-footer-actions`, `panel-hidden-actions`, `entry-actions`, `entry-hidden-actions`, `preserve-panel-state` | panel-manager/focus-grid/actions，PANEL、SET-03/04/05；文字视觉偏移归 LANG-04 |
+| 剪切板（9） | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-speed` | history-controller/capture/input 逻辑，CLIP/PRIV/TYPE |
+| 分词和词库（3） | `tokenizer-show-source-preview`, `tokenizer-word-limit`, `tokenizer-dictionary-files` | processors/dictionary/selection 逻辑，WORD/DICT |
+| 快捷语句（3） | `saved-phrase-limit`, `saved-phrase-newest-first`, `phrase-close-after-copy` | phrase-store 逻辑，PHRASE |
+| 同步（15） | `sync-enabled`, `sync-use-sha256sum`, `sync-poll-interval-seconds`, `sync-send-mode`, `sync-receive-mode`, `sync-text`, `sync-html`, `sync-images`, `sync-favorites-only`, `text-full-threshold`, `text-preview-limit`, `image-full-threshold`, `thumbnail-size`, `thumbnail-byte-limit`, `sync-transfer-timeout-seconds` | client/lifecycle/queue/receive/policy/verifier/storage，CONN/SEND/RECV/XFER；单位接线归 SET-02 |
+| 截图与编辑（5） | `screenshot-target`, `screenshot-add-history`, `screenshot-write-clipboard`, `screenshot-open-editor`, `editor-command` | screenshot tools/pipeline，SHOT/EDIT |
+| 取色（1） | `color-format` | color 逻辑与 COLOR-04 |
+| 全局快捷键（5） | `panel-shortcut`, `screenshot-shortcut`, `color-picker-shortcut`, `private-mode-shortcut`, `clear-history-shortcut` | SET-06、SET-06-global-actions、SHOT/COLOR 的真实 WM 绑定 |
+| 剪切板局部快捷键（5） | `history-search-shortcut`, `history-paste-shortcut`, `history-pin-shortcut`, `history-delete-shortcut`, `history-type-shortcut` | matcher/capture 逻辑，PANEL/HIST/PHRASE/TYPE 默认动作与代表性改键 |
+| 分词局部快捷键（7） | `tokenizer-copy-shortcut`, `tokenizer-paste-shortcut`, `tokenizer-type-shortcut`, `tokenizer-select-previous-shortcut`, `tokenizer-select-next-shortcut`, `tokenizer-select-above-shortcut`, `tokenizer-select-below-shortcut` | matcher/capture 逻辑，WORD/SELECT/TYPE |
+| 内部状态（4，不是用户配置） | `device-id`, `tokenizer-dictionary-revision`, `sync-configuration-revision`, `saved-phrases` | 身份、修订号和旧语句暂存；当前快捷语句存储仍为独立 JSON |
+| 暂停功能（3） | `device-icon-color-light`, `device-icon-color-dark`, `device-icon-color-linked` | 无设置入口，不进入设备 profile；现有 device 逻辑验证忽略 |
+
+服务器地址、API key、Channel 存于 `sync.json`，不属于遗漏的 schema 键，其读写和应用由 CONN 验收。
 
 ### 多语言、通知与视觉 — LANG-01…07
 

@@ -212,9 +212,87 @@ export const cases = {
     } finally { socket.close(); }
   }),
 
+  'RECV-06-offline-source': () => fixture(async ({backend, endpoint, gate}) => {
+    const source = await endpoint();
+    source.settings.set_string('sync-receive-mode', 'disabled');
+    source.settings.set_uint('text-full-threshold', 1);
+    const proxy = await gate();
+    const receiver = await endpoint({address: proxy.address});
+    receiver.settings.set_uint('text-full-threshold', 1);
+    receiver.settings.set_uint('sync-transfer-timeout-seconds', 5);
+    const remote = await source.publish({text: 'Original available only when its actual source resumes'});
+    const item = await received(receiver, remote.id);
+    source.settings.set_boolean('sync-enabled', false);
+    await source.client.restart();
+    assert(!source.client.ready && !item.primary.path,
+      'The source must really be stopped before requesting an uncached original');
+    const beginning = proxy.state.requests.length;
+    const acquiring = receiver.client.materialize(item).then(() => null, error => error);
+    await until(() => receiver.client.getTransferForItem(item.id)?.state === 'waiting-for-peer',
+      'the real server waits for the offline source');
+    assert(!proxy.state.requests.slice(beginning).some(request => request.method === 'GET'
+      && request.path.includes(`/items/${item.id}/contents/`)),
+    'Waiting for an offline source must not prematurely GET a nonexistent original');
+    const error = await acquiring;
+    assert(error && item.availability === 'failed' && !item.primary.path && item.preview.text === remote.text,
+      'A client deadline must finish the request while preserving its existing preview');
+    await until(() => receiver.client.getTransferForItem(item.id)?.state === 'cancelled',
+      'deadline cancellation reaches a terminal server observation');
+    const content = (await backend.item(item.id)).contents[0];
+    assert(content.delivery === 'on-demand' && ['source-required', 'requesting'].includes(content.availability),
+      `The offline failure must not claim that the server already cached the original (availability=${content.availability}; delivery=${content.delivery})`);
+    source.settings.set_boolean('sync-enabled', true);
+    await source.client.restart();
+    await receiver.client.materialize(item);
+    await original(item);
+    assert(item.availability === 'ready' && receiver.client.getTransferForItem(item.id)?.state === 'completed',
+      'A fresh request after the real source resumes must verify and adopt the original');
+  }),
+
+  'RECV-06-sensitive-source': () => unavailableSource('sensitive'),
+  'RECV-06-missing-source': () => unavailableSource('missing-file'),
+
   'XFER-09-glib': () => verify(false),
   'XFER-09-sha256sum': () => verify(true),
 };
+
+async function unavailableSource(reason) {
+  return fixture(async ({endpoint}) => {
+    const source = await endpoint();
+    source.settings.set_string('sync-receive-mode', 'disabled');
+    source.settings.set_uint('text-full-threshold', 1);
+    const receiver = await endpoint();
+    receiver.settings.set_uint('text-full-threshold', 1);
+    receiver.settings.set_uint('sync-transfer-timeout-seconds', 15);
+    const remote = await source.publish({text: 'A preview must never bypass the source privacy boundary'});
+    const item = await received(receiver, remote.id);
+    source.settings.set_boolean('sync-enabled', false);
+    await source.client.restart();
+    const path = remote.primary.path;
+    assert(path.startsWith(`${source.directory}/history/`), 'Only an owned fixture original may be changed');
+    if (reason === 'sensitive') remote.sensitive = true;
+    else Gio.File.new_for_path(path).delete(null);
+    const acquiring = receiver.client.materialize(item).then(() => null, error => error);
+    await until(() => receiver.client.getTransferForItem(item.id)?.state === 'waiting-for-peer',
+      'actual lazy request is queued while source is disabled');
+    source.settings.set_boolean('sync-enabled', true);
+    await source.client.restart();
+    const error = await acquiring;
+    const transfer = receiver.client.getTransferForItem(item.id);
+    // The server contract expires requests when their only source explicitly
+    // no longer has shareable content; this is distinct from an upload failure.
+    assert(error && transfer?.state === 'expired' && transfer.errorCode === 'source_content_missing'
+      && item.availability === 'failed' && item.preview.text === remote.text && !item.primary.path
+      && receiver.downloads.length === 0,
+    `${reason}: an unavailable source must reject actual backend work, preserve the preview and never deliver its original (state=${transfer?.state}; code=${transfer?.errorCode}; availability=${item.availability}; previewEqual=${item.preview.text === remote.text}; original=${Boolean(item.primary.path)}; downloads=${receiver.downloads.length})`);
+    if (reason === 'sensitive') remote.sensitive = false;
+    else Gio.File.new_for_path(path).replace_contents(encoder.encode(remote.text), null, false,
+      Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+    await receiver.client.materialize(item);
+    await original(item);
+    assert(item.availability === 'ready', 'A restored shareable original must allow a new verified acquisition');
+  });
+}
 
 async function verify(external) {
   return fixture(async ({endpoint}) => {
