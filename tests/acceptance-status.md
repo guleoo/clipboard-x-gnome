@@ -5,6 +5,10 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+Remove the CapsLock-specific case and failure entry as agreed, without changing simulated input or
+claiming the old differences are fixed. Preserve original reports. TYPE-08 retains layout checks;
+real IME coverage remains incomplete. The current native registry contains 122 cases.
+
 ## DICT-06: trusted GitHub HTTPS dictionary
 
 Closed the trusted-HTTPS gap using the public GitHub Raw
@@ -122,7 +126,7 @@ These are focused runs, not one uninterrupted passing suite:
 | Capture responsiveness | Actual 760,000-byte text and 2,881,318-byte PNG capture/thumbnail/persist; passed on both. On 51 maximum timer gaps were 26ms/21ms |
 | Large dictionary | 120,002-word UI import/index/cache passed on both: 50 import 8,563ms, cold/warm 560ms/434ms, max gap 53ms; 51 import 7,001ms, cold/warm 566ms/423ms, max gap 39ms. Import timings include native path entry |
 | Applications | Chromium rich text and original images passed on 50/51. CLIP-02 is scoped to Chromium only; other browser and office copy sources are not a coverage requirement |
-| Input targets | Full 460-character systemd sample, optional user sample, CapsLock, US/German layout, Firefox/Chromium textareas and a GTK3/VTE PTY; mixed results below |
+| Input targets | Full 460-character systemd sample, optional user sample, US/German layout, Firefox/Chromium textareas and a GTK3/VTE PTY; mixed results below |
 | Displays | Actual virtual dual monitors / 125% Mutter scaling, color sampling and one-physical-pixel arrow step; not physical-monitor certification |
 
 Native Gradia displayed the fixture on 51; native Gradia on 50 and Flatpak Gradia on both are absent.
@@ -172,7 +176,6 @@ fix. Other sync interruption failures below remain unchanged. Use `--case ENV-05
 | RECV-08 / RECV-08-manual | 50/51: late activation replaces a newer external copy and a manually chosen local item; both branches now execute independently |
 | XFER-09-sha256sum | 50/51: optional native verifier rejects real chunked responses without Content-Length; the default GLib path passes |
 | TYPE-03 / TYPE-03-user-sample | Expanded long samples fail exact readback on 50; pass on 51. Short mixed samples cannot cancel this result |
-| TYPE-08-capslock | 50/51: exact output differs with CapsLock enabled; US/German checks pass but do not establish IME bypass |
 | TYPE-09-chromium | 51: ASCII passes, CJK/emoji output differs. The same selected case passes on 50; not a universal Chromium diagnosis |
 | TYPE-02-vte | Native ASCII and real clipboard-paste positive controls succeed. Plugin natural paste passes on 50 but delivers zero extra PTY bytes on 51 (captured purpose 0). This is a GTK3/VTE target/version failure, not proof every terminal fails |
 
@@ -180,7 +183,7 @@ The HTTP gate streams real requests and changes only timing. Crashes are FAIL, l
 cases NOT_RUN; no silent retry, relaxed assertions or production fixes make these green.
 
 ```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-03,TYPE-08-layout --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless --case XFER-09-sha256sum
 ```

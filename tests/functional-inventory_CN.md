@@ -228,7 +228,7 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 | TYPE-05 | 启动时等待触发修饰键释放；超时不输出；Ctrl+点击不变成系统快捷键。 |
 | TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；物理键盘效果另需实测。 |
 | TYPE-07 | 关闭/禁用/注销时停止并释放虚拟按键；旧任务不在新实例继续运行。 |
-| TYPE-08 | 输入法中/英文模式、CapsLock、键盘布局、目标应用切换分别测试，不能假定可绕过输入法。 |
+| TYPE-08 | 输入法中/英文模式、键盘布局、目标应用切换分别测试，不能假定可绕过输入法。 |
 | TYPE-09 | 不同 toolkit、浏览器和终端验收；普通物理按键在 Wayland 下不可可靠感知的限制明确披露。 |
 
 逻辑保护入口：[terminal/guard.test.js](logic/clipboard/terminal/guard.test.js)。
@@ -495,7 +495,7 @@ WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字
 | `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05-exclusion | 解码失败后正常捕获；重启后原文缺失；真实 owner 暂停期间改变排除策略 |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | 实际删除 IO 失败/重试、损坏持久文件恢复 |
 | `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
-| `terminal/native.js` | TYPE-03/user-sample、TYPE-08-capslock/layout | 两档完整维护样本、可选用户文件、实际 CapsLock 与 US/German 输入源 |
+| `terminal/native.js` | TYPE-03/user-sample、TYPE-08-layout | 两档完整维护样本、可选用户文件、实际 US/German 输入源 |
 | `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
 | `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用后真正完成/取消系统截图，验证模态释放、外部窗口原生输入、旧插件无副作用及重新启用；大捕获/缩略图/保存主循环间隙 |
 | `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |

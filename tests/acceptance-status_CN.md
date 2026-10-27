@@ -4,6 +4,9 @@
 
 更新日期：2026-10-27。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
+按确认范围移除 CapsLock 专项用例及失败项，不修改模拟输入实现，也不将旧差异标为已修复。
+原始运行报告保留；TYPE-08 保留键盘布局等验证，真实 IME 仍未完整验证。当前原生注册用例为 122 项。
+
 ## DICT-06：GitHub 可信 HTTPS 词库
 
 使用公开 GitHub Raw [中文词库](https://raw.githubusercontent.com/guleoo/clipboard-x-gnome/main/src/clipboard/tokenizer/dictionary/seeds/zh--cppjieba-core.dict)
@@ -104,7 +107,7 @@ GNOME 50/51 的 WORD-06、WORD-07 各 2/2 通过：正常 2000 词和 20,000 字
 | 捕获响应度 | 760,000 字节文本、2,881,318 字节 PNG 的真实捕获/缩略图/保存；两版通过。51 最大定时器间隙约 26ms/21ms |
 | 大词库 | 120,002 词实际 UI 导入/索引/缓存两版通过：50 导入 8,563ms、冷/热 560ms/434ms、最大间隙 53ms；51 导入 7,001ms、冷/热 566ms/423ms、最大间隙 39ms。导入时间含原生路径输入 |
 | 实际应用 | Chromium 富文本与原图在 50/51 通过。CLIP-02 仅要求 Chromium，其他浏览器/办公应用复制不再作为覆盖要求 |
-| 输入目标 | 完整 460 字符 systemd 样本、可选用户样本、CapsLock、US/German 布局、Firefox/Chromium textarea、GTK3/VTE PTY；结果存在差异，见下表 |
+| 输入目标 | 完整 460 字符 systemd 样本、可选用户样本、US/German 布局、Firefox/Chromium textarea、GTK3/VTE PTY；结果存在差异，见下表 |
 | 显示 | 实际虚拟双屏/125% Mutter 缩放、取色及方向键一个物理截图像素；不是物理显示器认证 |
 
 51 原生 Gradia 实际显示测试图片；50 缺原生 Gradia，两版缺 Flatpak Gradia，自定义编辑器通过不能填平这些应用缺口。
@@ -149,7 +152,6 @@ GNOME 50/51 的 WORD-06、WORD-07 各 2/2 通过：正常 2000 词和 20,000 字
 | RECV-08 / RECV-08-manual | 50/51：迟到激活覆盖新外部复制及手动选择的本地条目；两个分支现已独立执行 |
 | XFER-09-sha256sum | 50/51：可选原生校验路径拒绝真实服务端无 Content-Length 的 chunked 响应；默认 GLib 路径通过 |
 | TYPE-03 / TYPE-03-user-sample | 强化长样本在 50 精确回读失败，51 通过；短样本通过不能抵消 |
-| TYPE-08-capslock | 50/51：CapsLock 开启后实际输出不一致；US/German 布局通过，不代表绕过 IME |
 | TYPE-09-chromium | 51 ASCII 通过，CJK/emoji 输出不同；相同选定用例在 50 通过，不能泛化为所有 Chromium 都有问题 |
 | TYPE-02-vte | 原生 ASCII 与真实剪切板粘贴正控均成功。插件自然粘贴在 50 通过，51 没有额外 PTY 字节（捕获 purpose 为 0）；这是 GTK3/VTE 目标/版本失败，不代表所有终端失败 |
 
@@ -157,7 +159,7 @@ HTTP gate 流式转发真实请求，只控制时序。崩溃记 FAIL，后续�
 不自动重试、放宽断言或修改生产代码换取绿色。
 
 ```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case WORD-07,TYPE-08-capslock --isolate-cases
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-03,TYPE-08-layout --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --case CONN-08-revoked,XFER-05-disable-download,XFER-06-cancel-download,RECV-08-manual --isolate-cases
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless --case XFER-09-sha256sum
 ```

@@ -60,7 +60,7 @@
     "cases": [
       {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-05"},
       {"id": "TYPE-06"}, {"id": "TYPE-07"}, {"id": "TYPE-03-user-sample"},
-      {"id": "TYPE-08-capslock"}, {"id": "TYPE-08-layout"}
+      {"id": "TYPE-08-layout"}
     ]
   },
   {

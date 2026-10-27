@@ -90,20 +90,6 @@ export const cases = {
     } finally { await target.close(); }
   },
 
-  async 'TYPE-08-capslock'(desktop) {
-    const target = await Target.open(desktop);
-    const mask = Clutter.ModifierType.LOCK_MASK;
-    const initial = Boolean(global.get_pointer()[2] & mask);
-    try {
-      if (!initial) await desktop.key(Clutter.KEY_Caps_Lock);
-      await until(() => Boolean(global.get_pointer()[2] & mask), 'actual backend CapsLock is enabled');
-      await exactTyping(desktop, target, 'AbCdEf 123 !? 中文 🙂\n', 'standard', {pointer: true});
-    } finally {
-      if (Boolean(global.get_pointer()[2] & mask) !== initial) await desktop.key(Clutter.KEY_Caps_Lock);
-      await target.close();
-    }
-  },
-
   async 'TYPE-08-layout'(desktop) {
     const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.input-sources'});
     const sources = settings.get_value('sources');
