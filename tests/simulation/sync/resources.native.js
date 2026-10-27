@@ -1,12 +1,13 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {assert, until} from '../helpers/desktop.js';
+import {assert, pause, until} from '../helpers/desktop.js';
 import {Server} from '../helpers/server.js';
 import {Peer} from '../helpers/peer.js';
 import {Target} from '../helpers/target.js';
 import {withCleanup} from '../helpers/resources.js';
 import {sample} from '../helpers/resource-snapshot.js';
 import {capture} from '../clipboard/native.js';
+import {restart} from '../helpers/restart.js';
 
 function children(path) {
   const directory = Gio.File.new_for_path(path);
@@ -38,8 +39,7 @@ function temporaryCount(path, staging = false) {
   }, 0);
 }
 
-export const cases = {
-  async 'OPS-03-sync'(desktop) {
+async function exercise(desktop, {seconds = 0} = {}) {
     let server;
     let peer;
     let target;
@@ -50,10 +50,14 @@ export const cases = {
       const port = Number(server.address.split(':').at(-1));
       // The admin fixture may keep its own connection; peer sockets belong to
       // another PID. Only new sockets owned by this Shell are plugin candidates.
-      const baseline = connections(port);
       const samples = [];
       let observedConnection = false;
-      for (let cycle = -2; cycle < 8; cycle++) {
+      let started = 0;
+      for (let cycle = -2; cycle < 8 || seconds && (!started
+        || GLib.get_monotonic_time() - started < seconds * 1_000_000); cycle++) {
+        if (cycle === 0) started = GLib.get_monotonic_time();
+        const cycleStarted = GLib.get_monotonic_time();
+        const baseline = connections(port);
         await server.enable();
         const sync = desktop.app._sync;
         const tasks = sync._transfers;
@@ -99,13 +103,43 @@ export const cases = {
           'Stopped generations must retain neither transfer consumers, I/O owners nor temporary content');
           if (cycle >= 0) samples.push(sample(cycle, 'sync-disabled'));
         } finally { for (const signal of signals) sync.disconnect(signal); }
+        if (seconds && cycle >= 0) {
+          // Keep the live data set fixed: legitimate history growth must not
+          // masquerade as a process leak. Exercise actual remote tombstones.
+          for (const item of [...desktop.app._controller.items]) {
+            desktop.app._controller.remove(item.id);
+            await server.request('DELETE', `/items/${item.id}`);
+          }
+          await desktop.app._controller.persist();
+          await desktop.app._uploadQueue.prune();
+          if ((cycle + 1) % 10 === 0) await restart(desktop);
+          print(`[simulation] Soak progress: cycles=${cycle + 1}; elapsedSeconds=${((GLib.get_monotonic_time() - started) / 1_000_000).toFixed(1)}; liveItems=${desktop.app._controller.items.length}`);
+          await pause(Math.max(0, 30_000 - (GLib.get_monotonic_time() - cycleStarted) / 1000));
+        }
       }
-      assert(observedConnection && samples.length === 16,
-        'Eight measured cycles must include real Shell TCP activity and both resource phases');
+      const elapsedSeconds = (GLib.get_monotonic_time() - started) / 1_000_000;
+      assert(observedConnection && (seconds ? elapsedSeconds >= seconds && samples.length >= 16 : samples.length === 16),
+        'Measured cycles must include real Shell TCP activity, both resource phases and the requested duration');
+      const trends = {};
       for (const phase of ['sync-active', 'sync-disabled']) {
         const values = samples.filter(value => value.phase === phase);
-        print(`[simulation] Bounded sync trend: phase=${phase}; cycles=${values.length}; rssDeltaKB=${values.at(-1).rssKB - values[0].rssKB}; fdDelta=${values.at(-1).openFDs - values[0].openFDs}; scope=bounded-real-sync-not-long-soak`);
+        const medians = Array.from({length: Math.min(6, values.length)}, (_, window) => {
+          const count = Math.min(6, values.length);
+          const sorted = values.slice(Math.floor(window * values.length / count), Math.floor((window + 1) * values.length / count))
+            .map(value => value.rssKB).sort((left, right) => left - right);
+          return sorted[Math.floor(sorted.length / 2)];
+        });
+        trends[phase] = {rssWindowMediansKB: medians, rssDeltaKB: values.at(-1).rssKB - values[0].rssKB,
+          fdDelta: values.at(-1).openFDs - values[0].openFDs, cycles: values.length};
+        print(`[simulation] Sync resource trend: phase=${phase}; cycles=${values.length}; rssDeltaKB=${trends[phase].rssDeltaKB}; fdDelta=${trends[phase].fdDelta}; rssWindowMediansKB=${medians.join(',')}; elapsedSeconds=${elapsedSeconds.toFixed(1)}; scope=${seconds ? 'two-hour-real-sync-with-restarts' : 'bounded-real-sync-not-long-soak'}`);
       }
+      if (seconds) Gio.File.new_for_path(`${GLib.getenv('CBX_SIMULATION_ARTIFACTS')}/OPS-03-soak-resources.json`)
+        .replace_contents(new TextEncoder().encode(JSON.stringify({elapsedSeconds, samples, trends}, null, 2)),
+          null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
     }, () => [peer, target, server]);
-  },
+}
+
+export const cases = {
+  'OPS-03-sync': desktop => exercise(desktop),
+  'OPS-03-soak': desktop => exercise(desktop, {seconds: 7200}),
 };

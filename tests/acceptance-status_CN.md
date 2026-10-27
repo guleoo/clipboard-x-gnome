@@ -4,6 +4,31 @@
 
 更新日期：2026-10-28。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
+## 剩余缺口补测：开发桌面完整链与长跑入口（2026-10-28）
+
+| 验证 | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| OPS-07-devkit：原样脚本实际重建/打包、显示嵌套桌面、独立配置/身份/总线、中文环境 | 通过 | 通过 |
+| 正常 Alt+F4 关窗、脚本 exit 0、内层 Shell 进程释放 | 通过 | 通过 |
+| 终端与容器自身真实用户 journal 的构建/启用/初始化日志各一次 | 通过 | 通过 |
+| 新启动器默认非压力逻辑＋无图形文件/HTTP 回归 | 51/51＋7/7 通过 | 51/51＋7/7 通过 |
+| OPS-03-sync 参数化后的短程资源回归 | 通过 | 通过 |
+| OPS-03-soak：两小时实际同步/刷新/重启、固定活跃数据集、资源趋势 | 进行中，未判通过 | 进行中，未判通过 |
+
+正式证据：[统一命令 Devkit 两版](../build/environments-20261027T185413Z-im4tqea_/report.json)、
+[默认逻辑两版](../build/environments-20261027T185421Z-dmwfuqi0/report.json)、
+[50 短程同步资源](../build/simulation-tests/cbx-simulation-95833a119605571a-shell/) /
+[51 短程同步资源](../build/simulation-tests/cbx-simulation-8103aedc28488ecf-shell/)。
+Devkit 报告同时保留实际 GUI 截图、终端输出和用户 journal 导出。没有接宿主桌面、日志或输入设备，
+也没有修改开发脚本。首次探测的错误来自测试观察器缺少 Gio callback、官方窗口过滤和缺失
+WirePlumber 会话策略，均非插件缺陷；修正后由各自 Dockerfile 重建，再经统一入口复跑。
+Devkit 的自然退出不保证调用扩展 disable，因此不人为调用 disable 凑日志：退出码、进程释放、
+原生 shutdown 记录和实际应发生的三个日志事件才是本场景断言。其他参数/失败/中断归原逻辑测试。
+
+两小时用例只允许显式 `--case OPS-03-soak --timeout 7500`，默认/分组选跑不会启动它，不进 CI。
+两个正在运行的任务使用各自的独立 Shell 和临时后端，完成前不把入口存在或短程通过算作长跑通过。
+当前注册 140 项原生用例；已有产品失败仍单独保留。
+
 ## 剩余缺口补测：真实编辑器与输入法（2026-10-28）
 
 | 验证 | GNOME 50 | GNOME 51 |
@@ -423,8 +448,8 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 ## 剩余边界
 
 物理输入、其他 toolkit/XWayland/门户部署、两个完整桌面的激活竞态、长期 soak、
-Devkit 完整启动链与视觉仍分别保留边界，并非断言无法自动化。真实 IME、可信 HTTPS、
-Gradia 两种安装方式已由上方最新记录补齐，不再当作缺依赖。
+视觉仍分别保留边界，并非断言无法自动化。真实 IME、可信 HTTPS、Gradia 两种安装方式及
+Devkit 完整启动链已由上方最新记录补齐，不再当作缺依赖。
 逻辑层已负责的数据/安全矩阵不重复搬进 Shell。
 
 依赖、显示 profile、冷启动命令见[测试指南](README_CN.md)。被忽略的

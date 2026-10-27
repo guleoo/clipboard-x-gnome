@@ -42,6 +42,7 @@ Observed results remain in the acceptance snapshot.
 | SET-03/09 | `SET-03-system` changes real desktop theme/accent settings with an independent theme probe, verifying custom-color isolation and system reset. `SET-09-failure` exercises one actual native Gio failure at the external URI boundary, translated feedback, dismissal and continued settings use. |
 | OPS-03 | `sync/resources.native.js` adds two warmups and eight actual upload/receive/poll/refresh/toggle cycles, Shell-owned TCP connection closure, transfer ownership and temporary-file cleanup; RSS/FD trends are observations, not a long-soak guarantee. |
 | TYPE-08 / EDIT-07 | Optional `applications` image: `TYPE-08-ime` uses real libpinyin and Gtk preedit with normal-key positive controls in Chinese/ASCII modes. Existing Gradia native/Flatpak cases verify the actual image canvas; dependency installation alone is not a pass. |
+| OPS-03/07 | Explicit-only `OPS-03-soak` reuses actual sync cleanup assertions for two hours with fixed live data, periodic extension restarts and exported trends. `OPS-07-devkit` runs the actual build/start/private-config/normal-close/journal chain; argument and injected-failure rules remain in logic tests. |
 
 ## Acceptance layers
 
@@ -503,7 +504,8 @@ Native entry: [settings/language.native.js](simulation/settings/language.native.
 `--language en_US`, `zh_CN`, `ja`, `ko`. Check installed catalogs in the actual menu, word panel,
 independent preferences and missing-editor notification. A generated non-C message locale is required:
 C.UTF-8 ignores gettext LANGUAGE selection. Catalog completeness remains logic/i18n/coverage.sh;
-linguistic quality, RTL/long-string layout and visual polish remain manual.
+linguistic quality, glyph appearance and visual polish remain manual. LANG-03 owns functional
+RTL/long-string layout checks; those are not deferred to manual testing.
 
 ### Responsiveness and tooling — OPS-01…08
 

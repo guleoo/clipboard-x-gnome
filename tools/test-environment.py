@@ -34,8 +34,8 @@ def main():
         parser.error('Specify --case; full-matrix/server orchestration is not implemented by this environment tool')
     if args.suite == 'logic' and args.case:
         parser.error('--case requires --suite simulation')
-    if not 1 <= args.timeout <= 7200:
-        parser.error('--timeout must be between 1 and 7200 seconds')
+    if not 1 <= args.timeout <= 86400:
+        parser.error('--timeout must be between 1 and 86400 seconds')
     if args.case:
         registry = json.loads((ROOT / 'tests/simulation/manifest.json').read_text())
         available = {case['id']: case for group in registry for case in group['cases']}

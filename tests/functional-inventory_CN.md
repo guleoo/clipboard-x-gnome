@@ -40,6 +40,7 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | SET-03/09 | `SET-03-system` 改真实桌面主题/强调色并用独立主题探针，验证自定义颜色隔离和恢复系统；`SET-09-failure` 只在外部 URI 边界注入一次真实原生 Gio 失败，验证中文提示、关闭和设置继续可用。 |
 | OPS-03 | `sync/resources.native.js` 补 2 轮预热＋8 轮真实上传/接收/轮询/刷新/开关，以 Shell 自有 TCP、任务所有权和暂存文件断言释放；RSS/FD 只记录趋势，不冒充长期无泄漏。 |
 | TYPE-08 / EDIT-07 | 可选 `applications` 镜像：`TYPE-08-ime` 使用实际 libpinyin、Gtk preedit 和中英文模式普通按键正控；既有 Gradia 原生/Flatpak 用例验证实际图片画布，安装依赖本身不算通过。 |
+| OPS-03/07 | 仅显式选择的 `OPS-03-soak` 复用真实同步清理断言，固定实际数据集、周期重启插件并记录两小时趋势；`OPS-07-devkit` 跑真实构建/启动/私有配置/正常关窗/journal 完整链，参数和注入失败规则继续归逻辑测试。 |
 
 ## 验收层级
 
@@ -466,7 +467,7 @@ Schema 类型/范围可临时用 memory backend 校验，不能用它代替下�
 原生入口：[settings/language.native.js](simulation/settings/language.native.js)，LANG-02 分别使用
 `--language en_US`、`zh_CN`、`ja`、`ko`，检查实际菜单、分词、独立设置窗口及空编辑命令通知。
 必须生成非 C 的基础消息 locale，C.UTF-8 会忽略 gettext 的 LANGUAGE 选择。目录完整性仍归
-logic/i18n/coverage.sh；翻译质量、RTL/长文本布局和视觉效果仍人工验收。
+logic/i18n/coverage.sh；翻译质量、字形和视觉效果仍人工验收，RTL/长文本的功能布局已归 LANG-03 自动验收。
 
 ### 响应度、资源、打包与工具 — OPS-01…08
 

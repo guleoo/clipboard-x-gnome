@@ -5,6 +5,33 @@
 Updated: 2026-10-28. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## Remaining-gap coverage: actual developer desktop and long-run entry (2026-10-28)
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| OPS-07-devkit: unmodified script rebuild/package, visible nested desktop, private config/identity/bus, Chinese environment | Passed | Passed |
+| Normal Alt+F4 close, script exit 0 and inner Shell process release | Passed | Passed |
+| Build/enable/initialization logs exactly once in terminal and real container user journal | Passed | Passed |
+| Default non-stress logic plus headless file/HTTP regression with the new bootstrap | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
+| OPS-03-sync short resource regression after parameterization | Passed | Passed |
+| OPS-03-soak: two hours of actual sync/refresh/restart with fixed live data and trends | Running, not passed yet | Running, not passed yet |
+
+Formal evidence: [both Devkit cases through the standard entry](../build/environments-20261027T185413Z-im4tqea_/report.json),
+[both default logic runs](../build/environments-20261027T185421Z-dmwfuqi0/report.json),
+[50 short sync resources](../build/simulation-tests/cbx-simulation-95833a119605571a-shell/) /
+[51 short sync resources](../build/simulation-tests/cbx-simulation-8103aedc28488ecf-shell/).
+Devkit artifacts include actual GUI screenshots, terminal output and exported user journal. No host
+desktop/journal/input devices or developer-script changes are involved. Initial probes exposed observer
+callback/filter mistakes and missing WirePlumber policy, not plugin defects. After correction, each
+Dockerfile was rebuilt and the standard entry rerun. Normal Devkit exit need not call extension disable;
+the test does not force disable to manufacture a log. Exit status, released process, native shutdown
+record and the three events actually promised by this scenario are asserted. Existing logic owns other
+arguments/failures/interruptions.
+
+Two-hour acceptance requires explicit `--case OPS-03-soak --timeout 7500`, never default/group selection
+or CI. Each running task has its own Shell/backend; neither an entry nor short-run success is a soak pass.
+There are 140 registered native cases. Existing product failures remain separate.
+
 ## Remaining-gap coverage: real editors and input method (2026-10-28)
 
 | Verification | GNOME 50 | GNOME 51 |
@@ -476,9 +503,9 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 ## Remaining boundaries
 
 Physical input, other toolkit/XWayland/portal deployments, two-full-desktop activation races,
-long soaks, full Devkit startup and visuals retain their separate boundaries—not a declaration
-that automation is impossible. Real IME, trusted HTTPS and both Gradia installation variants are
-covered by the latest records above, no longer missing dependencies. Logic-owned
+long soaks and visuals retain their separate boundaries—not a declaration
+that automation is impossible. Real IME, trusted HTTPS, both Gradia installation variants
+and full Devkit startup are covered by the latest records above, no longer missing dependencies. Logic-owned
 data/security matrices are not duplicated into Shell tests.
 
 See the [test guide](README.md) for dependencies and display/cold-run commands. Ignored

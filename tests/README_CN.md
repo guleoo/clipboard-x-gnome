@@ -88,6 +88,28 @@ runtime 提交和实际 RPM 版本。IME 用例观察 Gtk preedit，分别比较
 路径屏蔽（`systempaths=unconfined`），使其自身 bubblewrap 沙箱能创建嵌套 namespace；不挂载
 宿主路径/设备，不移除应用沙箱。Fedora Devkit 真实路径只在可选夹具里桥接到开发脚本目前探测的路径。
 
+开发桌面的真实完整链有独立入口：
+
+```sh
+python3 tools/test-environment.py --profile applications --suite simulation --case OPS-07-devkit --language zh_CN
+```
+
+只有该用例在一次性容器中启动真实持久化 journald，并授予测试用户读取该容器日志的权限。
+私有 PipeWire/WirePlumber 驱动真实嵌套 Devkit 窗口；原样开发脚本必须完成构建/打包、隔离
+XDG/总线/设备身份、沿用指定语言、正常关窗 exit 0，并让关键日志在终端和用户 journal 各出现一次。
+参数、失败、Ctrl+C 等继续归既有逻辑测试，不另复制 GUI 矩阵。不使用宿主日志或系统服务。
+
+两小时资源观察必须显式使用自有后端入口（另一版将 `:50` 换成 `:51`）：
+
+```sh
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image clipboard-x-server:verify-doc-copy --shell-container clipboard-x-gnome-test:50 --case OPS-03-soak --timeout 7500
+```
+
+可指定本地构建的服务端镜像，或省略 `--image` 从同级服务端源码构建；必要时指定 `DOCKER_CONTEXT`。
+该用例从默认/分组选择中排除，不加入 GitHub CI。复用短程资源断言，保持实际数据集固定，每 30 秒
+真实同步/刷新，每 10 轮重启插件。持续时间和资源释放是硬断言；RSS/FD 采样及分窗中位数导出供
+趋势审查，不凭空设内存阈值或宣称绝无泄漏。`7500` 秒留出启动/收尾余量，普通用例默认超时不变。
+
 运行时网络为 `none`，仅容器自身 loopback 可用；HTTP/TLS 逻辑夹具照常运行，不访问公网。
 同步后端仍用自有服务端专项入口；可选 profile 提供 IME/编辑器依赖，不声称编排全部模拟矩阵。
 未安装的 Gradia/Flatpak 等依赖会阻塞对应用例，不算通过。

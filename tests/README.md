@@ -98,6 +98,33 @@ container's system paths for its own nested bubblewrap sandbox (`systempaths=unc
 no host paths/devices are mounted and the app sandbox is retained. Fedora's Devkit path is bridged
 to the path currently probed by the development script inside this optional fixture only.
 
+The actual developer-shell chain has a separate acceptance entry:
+
+```sh
+python3 tools/test-environment.py --profile applications --suite simulation --case OPS-07-devkit --language zh_CN
+```
+
+Only this case starts a real persistent journald inside its disposable container and grants the test
+user access to that container's journal. Real private PipeWire/WirePlumber drive the nested Devkit
+window. The unmodified developer script must build/package, use separate XDG/bus/device identity,
+honor the requested language, close normally with exit 0 and forward key logs to terminal and user
+journal once. Existing logic tests retain argument, failure and interruption coverage; they are not
+duplicated into a GUI matrix. No host journal or system service is used.
+
+For a two-hour resource run, use the owned-backend runner explicitly (repeat with `:51`):
+
+```sh
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image clipboard-x-server:verify-doc-copy --shell-container clipboard-x-gnome-test:50 --case OPS-03-soak --timeout 7500
+```
+
+Use a locally built server image or omit `--image` to build from the sibling server source; set
+`DOCKER_CONTEXT` when needed. This case is excluded from default/group selection and never added
+to GitHub CI. It reuses the short resource verifier, keeps the live data set fixed, runs real sync
+and refresh cycles every 30 seconds and restarts the plugin every ten measured cycles. The duration
+and release assertions are gates; RSS/FD samples and window medians are exported for trend review,
+not an invented absolute memory threshold or proof of leak freedom. Allow 7,500 seconds including
+startup/cleanup; ordinary case timeouts stay unchanged.
+
 Runtime networking is `none`: only the container's loopback is available, including HTTP/TLS
 logic fixtures. Real sync servers retain their owned-server runner; the optional profile adds IME
 and editor dependencies, not orchestration of the full desktop matrix. Missing optional

@@ -34,7 +34,8 @@ def main():
     args = parser.parse_args()
     registry = json.loads((TESTS / 'manifest.json').read_text())
     available = {case['id']: (group['module'], case) for group in registry for case in group['cases']}
-    selected = args.case.split(',') if args.case else list(available)
+    selected = args.case.split(',') if args.case else [key for key, (_, case) in available.items()
+                                                     if args.list or not case.get('explicitOnly')]
     if args.group:
         groups = args.group.split(',')
         selected = [key for key in selected if available.get(key, ('',))[0].split('/')[0] in groups]
@@ -49,11 +50,12 @@ def main():
             requirements = [*case.get('commands', []), *(['isolated server'] if case.get('server') else [])]
             if case.get('languages'): requirements.append('--language ' + '/'.join(case['languages']))
             if case.get('displays'): requirements.append('--display ' + '/'.join(case['displays']))
+            if case.get('explicitOnly'): requirements.append('explicit --case ' + key)
             print(f'{key}: {module}' + (f"; requires {', '.join(requirements)}" if requirements else ''))
         return 0
     if not args.archive or not args.archive.is_file():
         parser.error('A built release ZIP is required')
-    if not 1 <= args.timeout <= 7200 or not re.fullmatch(r'[A-Za-z_0-9.@-]+', args.language):
+    if not 1 <= args.timeout <= 86400 or not re.fullmatch(r'[A-Za-z_0-9.@-]+', args.language):
         parser.error('Invalid timeout or language')
     for dependency in ['gnome-shell', 'gnome-shell-test-tool', 'dbus-run-session', 'dbus-update-activation-environment', 'gsettings', 'timeout', 'locale']:
         if not shutil.which(dependency):
@@ -138,7 +140,9 @@ def main():
             command = ['timeout', '--kill-after=10s', f'{args.timeout}s', 'dbus-run-session', '--',
                        'gnome-shell-test-tool', '--headless', '--disable-animations',
                        '--wrap', f'{sys.executable} {wrapper}',
-                       '--extra-filter', 'Gjs', '--extra-filter', 'gjs', '--extension', str(archive),
+                       '--extra-filter', 'Gjs', '--extra-filter', 'gjs',
+                       *(['--extra-filter', 'org.gnome.Mutter.Mdk'] if 'OPS-07-devkit' in cases else []),
+                       '--extension', str(archive),
                        str(TESTS / 'acceptance.smoke.js')]
             with log.open('w') as output:
                 status = subprocess.run(command, env=env, stdout=output, stderr=subprocess.STDOUT).returncode

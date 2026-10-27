@@ -95,7 +95,7 @@
   },
   {
     "module": "sync/resources.native.js",
-    "cases": [{"id": "OPS-03-sync", "server": true}]
+    "cases": [{"id": "OPS-03-sync", "server": true}, {"id": "OPS-03-soak", "server": true, "explicitOnly": true}]
   },
   {
     "module": "sync/connection.native.js",
@@ -207,6 +207,10 @@
   {
     "module": "lifecycle/responsiveness.native.js",
     "cases": [{"id": "OPS-01-capture"}]
+  },
+  {
+    "module": "lifecycle/devkit.native.js",
+    "cases": [{"id": "OPS-07-devkit", "commands": ["/usr/lib/mutter-devkit", "pipewire", "wireplumber", "journalctl", "systemd-cat"], "languages": ["zh"]}]
   },
   {
     "module": "lifecycle/resources.native.js",
