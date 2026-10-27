@@ -1,5 +1,7 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import {createLogger} from '../../../src/common/logger.js';
+import {loadFile} from '../../../src/common/files.js';
 
 function assert(condition, message) {
   if (!condition)
@@ -89,6 +91,64 @@ try {
   await broken.run('failure', () => { throw original; });
 } catch (error) {
   assert(error === original, 'sink errors must not replace application failures');
+}
+
+// Exercise errors actually thrown by Gio, not constructed GLib.Errors or JS mocks.
+// Meson runs this file in its own GJS process: a native crash cannot kill Shell.
+async function nativeFailure(operation, action, code) {
+  const before = records.length;
+  let native;
+  let caught;
+  try {
+    await logger.run(operation, scope => scope.step('read', async () => {
+      try {
+        return await action();
+      } catch (error) {
+        native = error;
+        time += 13;
+        throw error;
+      }
+    }), {quiet: true});
+  } catch (error) {
+    caught = error;
+  }
+  assert(native instanceof GLib.Error && native.matches(Gio.IOErrorEnum, code),
+    `${operation} must fail with the real expected Gio error`);
+  assert(caught === native, `${operation} must rethrow the original native error`);
+  assert(records.length === before + 1, `${operation} must log one summary`);
+  const record = records.at(-1);
+  assert(record.operation === operation && record.phase === 'read' && record.durationMs === 13,
+    `${operation} must preserve local operation context without caching the native error`);
+  const isCancelled = code === Gio.IOErrorEnum.CANCELLED;
+  assert(record.level === (isCancelled ? 'info' : 'error')
+    && record.outcome === (isCancelled ? 'cancelled' : 'failed') && record.error.code === code,
+  `${operation} must retain the error code and cancellation severity`);
+  logger.error('native-followup', caught);
+  assert(records.length === before + 2, 'Native follow-up diagnostics must remain safe without weak-key tracking');
+  return caught;
+}
+
+const directory = Gio.File.new_for_path(GLib.dir_make_tmp('cbx-logger-XXXXXX'));
+try {
+  const missing = directory.get_child('PRIVATE_USER-CLIPBOARD_SECRET-API_KEY_SECRET');
+  await nativeFailure('native-read', () => missing.load_contents(null), Gio.IOErrorEnum.NOT_FOUND);
+  const native = await nativeFailure('native-async-read', () => loadFile(missing), Gio.IOErrorEnum.NOT_FOUND);
+  try {
+    await logger.run('native-cause', () => { throw new Error('CLIPBOARD_SECRET', {cause: native}); });
+  } catch (_) {}
+  assert(records.at(-1).causes.length === 1 && records.at(-1).causes[0].code === Gio.IOErrorEnum.NOT_FOUND,
+    'A JavaScript error with a native cause must retain safe cause diagnostics');
+  const cancellable = new Gio.Cancellable();
+  await nativeFailure('native-cancel', () => {
+    const pendingRead = loadFile(Gio.File.new_for_uri(import.meta.url), cancellable);
+    cancellable.cancel();
+    return pendingRead;
+  }, Gio.IOErrorEnum.CANCELLED);
+  for (const secret of ['PRIVATE_USER', 'CLIPBOARD_SECRET', 'API_KEY_SECRET', directory.get_path()])
+    assert(!JSON.stringify(records).includes(secret), 'Native diagnostics must not expose paths or messages');
+  assert(await logger.run('after-cancel', () => 11) === 11, 'Logging must remain usable after native cancellation');
+} finally {
+  directory.delete(null);
 }
 
 // Inspect the production console writer in a real GJS process, not a mock serializer.

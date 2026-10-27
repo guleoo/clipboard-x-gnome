@@ -44,6 +44,10 @@ Normal background polls and byte-progress updates are silent. Poll failures iden
 work, or transfer-refresh stage; cancellation is informational rather than an error. User notifications
 remain translated and intentionally brief; journal diagnostics provide the technical context.
 
+Only JavaScript errors use weak-key tracking to suppress repeated reports across layers. Native
+GLib/Gio errors are never used as weak keys; each operation still records its stage and elapsed
+time and rethrows the original error. A caller may therefore log the same native error again.
+
 ## Development sessions
 
 The default terminal view shows build summaries, plugin messages and system warnings/errors. Long

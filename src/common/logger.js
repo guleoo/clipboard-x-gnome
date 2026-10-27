@@ -20,6 +20,12 @@ const types = new Set(['Error', 'SyncError', 'HttpError', 'TypeError', 'RangeErr
 const token = (value, fallback) => typeof value === 'string'
   && /^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$/u.test(value) ? value : fallback;
 
+function trackable(error) {
+  // API-thrown native error wrappers can crash GJS when used as weak keys.
+  // Only JavaScript errors participate in cross-layer log deduplication.
+  return error instanceof Error && !(error instanceof GLib.Error);
+}
+
 function read(object, key) {
   try {
     return object?.[key];
@@ -106,8 +112,8 @@ export function createLogger(module, {
       // A broken console/log sink is deliberately non-fatal.
     }
   };
-  const report = (level, operation, error) => {
-    const context = error && typeof error === 'object' ? failures.get(error) : null;
+  const report = (level, operation, error, context = null) => {
+    context ??= trackable(error) ? failures.get(error) : null;
     if (context?.reported)
       return;
     const isCancelled = cancelled(error);
@@ -140,10 +146,11 @@ export function createLogger(module, {
             durationMs: Math.max(0, Math.round(monotonic() - started))});
         return result;
       } catch (error) {
-        if (error && typeof error === 'object')
-          failures.set(error, {phase, reported: false,
-            durationMs: Math.max(0, Math.round(monotonic() - started))});
-        report('error', operation, error);
+        const context = {phase, reported: false,
+          durationMs: Math.max(0, Math.round(monotonic() - started))};
+        if (trackable(error))
+          failures.set(error, context);
+        report('error', operation, error, context);
         throw error;
       }
     },
