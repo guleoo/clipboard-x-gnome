@@ -9,6 +9,35 @@ Remove the CapsLock-specific case and failure entry as agreed, without changing 
 claiming the old differences are fixed. Preserve original reports. TYPE-08 retains layout checks;
 real IME coverage remains incomplete. The current native registry contains 122 cases.
 
+## 2026-10-27: input retest and accepted modifier scope
+
+TYPE-05/06 are passed using actual backend virtual Ctrl hold/release and cancellation results;
+duplicate physical-keyboard runs are no longer a prerequisite. This does not certify ordinary
+human keypress detection or real IME composition. No typing implementation or assertions changed.
+Test revision: `c58f49a`; 1.1.0 ZIP SHA-256:
+`c5f374d8962541772e075cd19121d64b3444a9c46a9bb8ed710a5e3da4de3a79`.
+
+| Retest | GNOME 50.6 | GNOME 51.1 |
+| --- | --- | --- |
+| TYPE-02-vte: actual terminal paste | PASS; captured purpose 12 and exact PTY bytes | FAIL; purpose 0, expected 42 bytes, received 0; native key and real Paste controls pass |
+| TYPE-03: maintained long sample | FAIL; standard speed, 460 received characters but first difference at UTF-16 offset 325; slow phase not reached | PASS; exact readback at both speeds |
+| TYPE-03-user-sample | FAIL; standard speed, expected 1,562 UTF-16 units, received 1,545; slow phase not reached | PASS; exact readback at both speeds |
+| TYPE-05: wait for trigger modifiers | PASS | PASS |
+| TYPE-06: cancel active/queued typing, notify once | PASS | PASS |
+| TYPE-09-chromium | ENVIRONMENT BLOCKED before the receiver opens; prior passing evidence is not a passing retest | FAIL; ASCII passes, mixed CJK/emoji expected 14 UTF-16 units, received 22 |
+
+Reports: [GNOME 50](../build/simulation-tests/input-retest-gnome50/gnome50-20261027T070326Z-7e646rbq/report.json),
+[GNOME 51](../build/simulation-tests/gnome51-20261027T070155Z-o6kpyg7t/report.json).
+The initial 50 session could not start because the container's system bus had not restarted with
+Docker; those cases were NOT_RUN, then rerun after starting the bus. Chromium on 50 aborted before
+typing: sandbox helper configuration first, then container namespace permission denial on the
+[targeted retry](../build/simulation-tests/input-retest-chromium-gnome50/gnome50-20261027T070542Z-6r9e0uts/report.json).
+The runner records this startup as FAIL; it is not evidence of plugin character corruption. Raw
+reports are unchanged and the temporary helper permission change was undone. The 51 Chromium log
+also contains IBusAttrList lifetime warnings; no root cause is attributed from those warnings alone.
+TYPE-04 shares TYPE-03 evidence: it remains failed on 50, not a claim that its unentered slow phase
+was measured. No CapsLock case, production changes, host installation or full-suite rerun.
+
 ## DICT-06: trusted GitHub HTTPS dictionary
 
 Closed the trusted-HTTPS gap using the public GitHub Raw

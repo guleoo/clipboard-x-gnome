@@ -7,6 +7,31 @@
 按确认范围移除 CapsLock 专项用例及失败项，不修改模拟输入实现，也不将旧差异标为已修复。
 原始运行报告保留；TYPE-08 保留键盘布局等验证，真实 IME 仍未完整验证。当前原生注册用例为 122 项。
 
+## 2026-10-27：模拟输入复测与修饰键验收口径
+
+TYPE-05/06 按真实 backend 虚拟 Ctrl 的按住、释放和熔断结果判为通过，不再要求重复物理键盘测试；
+不据此声称普通人为按键识别或真实 IME 组字已验。本次未改模拟输入实现或放宽断言。
+测试提交 `c58f49a`；1.1.0 ZIP SHA-256：
+`c5f374d8962541772e075cd19121d64b3444a9c46a9bb8ed710a5e3da4de3a79`。
+
+| 复测项目 | GNOME 50.6 | GNOME 51.1 |
+| --- | --- | --- |
+| TYPE-02-vte：实际终端粘贴 | 通过；purpose 12，PTY 字节完全一致 | 失败；purpose 0，预期 42 字节、收到 0；原生按键和终端自带粘贴正控通过 |
+| TYPE-03：维护的长样本 | 失败；标准档收到 460 字符，UTF-16 位置 325 起不同；未进入慢速阶段 | 通过；标准/慢速逐字一致 |
+| TYPE-03-user-sample：用户样本 | 失败；标准档预期 1,562 个 UTF-16 单元、收到 1,545；未进入慢速阶段 | 通过；标准/慢速逐字一致 |
+| TYPE-05：等待触发修饰键释放 | 通过 | 通过 |
+| TYPE-06：停止活动/排队输入、只通知一次 | 通过 | 通过 |
+| TYPE-09-chromium | 测试接收页面打开前环境阻塞，不能把旧通过当成本次通过 | 失败；ASCII 通过，中日韩/emoji 预期 14 个 UTF-16 单元、收到 22 |
+
+报告：[GNOME 50](../build/simulation-tests/input-retest-gnome50/gnome50-20261027T070326Z-7e646rbq/report.json)、
+[GNOME 51](../build/simulation-tests/gnome51-20261027T070155Z-o6kpyg7t/report.json)。
+50 首轮因容器随 Docker 重启后系统 D-Bus 未运行而未进入测试，启动总线后重跑；不算插件失败。
+50 Chromium 起初因 sandbox helper 配置退出，恢复要求的权限后[单项重跑](../build/simulation-tests/input-retest-chromium-gnome50/gnome50-20261027T070542Z-6r9e0uts/report.json)
+仍因容器 namespace 权限不足退出，未进入模拟输入；runner 原始记录为 FAIL，但人工归因为环境阻塞，
+报告未改写，临时 helper 权限变更已撤回。51 Chromium 同期有 IBusAttrList 生命周期警告，不仅凭警告认定根因。
+TYPE-04 复用 TYPE-03 证据，50 保持失败，不声称未进入的慢速阶段也已经测量。
+未测 CapsLock，未修改生产代码、安装宿主或重跑完整测试集。
+
 ## DICT-06：GitHub 可信 HTTPS 词库
 
 使用公开 GitHub Raw [中文词库](https://raw.githubusercontent.com/guleoo/clipboard-x-gnome/main/src/clipboard/tokenizer/dictionary/seeds/zh--cppjieba-core.dict)

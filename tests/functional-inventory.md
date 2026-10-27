@@ -243,7 +243,7 @@ that delayed saves preserve new input and focus.
 | TYPE-03 | Receive exact ASCII, mixed CJK, emoji, multiline, Tab and long configuration text in the actual target. |
 | TYPE-04 | Apply standard/slow speed in the actual target without missing or reordered characters. |
 | TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
-| TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; hardware evidence remains separate. |
+| TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; accept this state path using actual backend virtual input. |
 | TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |
 | TYPE-08 | Test real IME language modes, keyboard layouts and target changes; do not assume IME bypass. |
 | TYPE-09 | Test multiple toolkits, browsers and terminals; document the Wayland limits on observing ordinary physical input. |
@@ -251,9 +251,11 @@ that delayed saves preserve new input and focus.
 Logic guard entry: [terminal/guard.test.js](logic/clipboard/terminal/guard.test.js).
 Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
 
-Evidence / remaining boundary: the logic guard checks cancellation decisions and repeated cancellation;
+Acceptance scope: the logic guard checks cancellation decisions and repeated cancellation;
 typing compares a real GTK Wayland target. Lifecycle controls modifier state and suppresses characters.
-Neither proves hardware interruption or IME bypass. Physical tests remain mandatory for those claims.
+TYPE-05/06 accept actual backend virtual Ctrl hold/release/fuse results without requiring duplicate
+physical-keyboard runs. This does not equate every virtual and physical event path: ordinary human
+keypress detection, hardware-specific behavior and real IME composition remain separate boundaries.
 
 ### Screenshots — SHOT-01…07
 

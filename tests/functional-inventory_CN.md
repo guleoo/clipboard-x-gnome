@@ -226,7 +226,7 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 | TYPE-03 | ASCII、中英混排、emoji、多行、Tab、长配置文本，目标收到的字符串逐字一致。 |
 | TYPE-04 | 标准/慢速两档在实际目标应用生效；不丢字符、不乱序。 |
 | TYPE-05 | 启动时等待触发修饰键释放；超时不输出；Ctrl+点击不变成系统快捷键。 |
-| TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；物理键盘效果另需实测。 |
+| TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；以实际后端的虚拟按键验收该状态路径。 |
 | TYPE-07 | 关闭/禁用/注销时停止并释放虚拟按键；旧任务不在新实例继续运行。 |
 | TYPE-08 | 输入法中/英文模式、键盘布局、目标应用切换分别测试，不能假定可绕过输入法。 |
 | TYPE-09 | 不同 toolkit、浏览器和终端验收；普通物理按键在 Wayland 下不可可靠感知的限制明确披露。 |
@@ -234,7 +234,9 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 逻辑保护入口：[terminal/guard.test.js](logic/clipboard/terminal/guard.test.js)。
 长期模拟入口：[terminal/typing.smoke.js](simulation/terminal/typing.smoke.js)、[terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js)。
 
-验证边界 / 缺口：逻辑 guard 验证取消判定与重复取消，typing 比较真实 GTK Wayland 目标；lifecycle 控制修饰键且抑制字符。它们不能证明物理熔断或绕过输入法，此类结论必须人工实测。
+验收口径：逻辑 guard 验证取消判定与重复取消，typing 比较真实 GTK Wayland 目标；lifecycle 控制修饰键且抑制字符。
+TYPE-05/06 以真实后端的虚拟 Ctrl 按住、释放与熔断结果验收，不再因缺少物理键盘重复测试而标为部分通过。
+这不等于虚拟设备与物理设备的所有事件路径都相同；普通人为按键识别、物理设备特性和真实 IME 组字仍是独立边界。
 
 ### 系统截图 — SHOT-01…07
 
