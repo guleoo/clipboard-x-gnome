@@ -5,7 +5,38 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
-## Short-text typing acceptance
+## Independent GNOME environments (latest)
+
+The local Docker entry builds/reuses separate GNOME 50.6 / GJS 1.88.1 and GNOME 51.1 / GJS 1.90.1
+images. Every run uses a fresh ordinary-user container, private configuration/buses, software rendering
+and no external network. Host Fcitx variables are not inherited. Standard IBus is included, without
+adding a Pinyin engine. No production code or GitHub workflow changed.
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| Non-stress Meson logic | 51/51 passed | 51/51 passed |
+| Headless integration acceptance | 7/7 passed | 7/7 passed |
+| VTE paste, modifier wait/fuse, phrase form, close while loading | 5/5 passed | 5/5 passed |
+| Chromium copy and ASCII/CJK/emoji typing | 2/2 passed | 2/2 passed |
+| TYPE-03 short mixed text in the GTK target | Failed; 49/58 UTF-16 units in standard mode | Failed; 54/58 units in standard mode |
+
+Reports: [logic, both versions](../build/environments-20261027T155522Z-zi707oja/report.json),
+[six desktop cases, 50](../build/environments-20261027T155239Z-4ah86xjq/report.json),
+[six desktop cases, 51](../build/environments-20261027T155528Z-v_ssqkqo/report.json),
+[Chromium, both versions](../build/environments-20261027T155641Z-_qwn1wmk/report.json).
+The five passing desktop cases also passed a [second fresh-container run on both versions](../build/environments-20261027T155741Z-3i5cxspn/report.json);
+this is recorded separately, not an automatic retry that overwrites failures.
+Image IDs end in `d3ac8955da30` (50) and `bb7b61f65f` (51); full IDs, base digests, source hashes,
+package versions and logs are in the reports. Share the same built images for strict reproduction.
+
+The initial minimal image lacked `ibus-daemon`; adding it removed that missing-dependency error,
+but did not fix TYPE-03. Both forced Wayland and a temporary GTK-default comparison still differed.
+Its root cause is not established; the slow stage was not reached. Do not reuse earlier passes as
+current GTK acceptance, infer a GNOME-major regression, or silently retry/relax assertions.
+These runs are an environment baseline, not the full matrix. Real sync backend, public HTTPS,
+IME engines, external editor variants, stress and physical hardware were not run in this phase.
+
+## Earlier short-text typing acceptance
 
 TYPE-03/04 now accept only the shared 57-code-point mixed-language sample (58 UTF-16 units),
 including ASCII, CJK, emoji, multiple lines and Tab, with exact target readback at both speeds.

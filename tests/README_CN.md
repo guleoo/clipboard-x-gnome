@@ -11,6 +11,7 @@
 
 ```text
 tests/
+  environments/   # 独立 GNOME 50/51 容器定义
   logic/          # 不需要图形桌面
     clipboard/    # 历史、分词、词库、模拟输入序列
     color-picker/
@@ -36,6 +37,46 @@ tests/
     shell.smoke.js # 领域检查编排，不是全部模拟文件入口
   fixtures/       # 共享的外部剪切板、输入目标及进程辅助程序
 ```
+
+## 独立 GNOME 50 / 51 环境
+
+本地基线优先使用 Docker 环境，不依赖宿主安装的 GNOME。宿主只需 Python 3、Git 和运行中的
+Linux Docker 引擎；不安装宿主插件、不修改宿主输入法，也不新增 GitHub 工作流。
+
+```sh
+# 默认两版：构建/复用环境，运行非压力逻辑测试和本地无图形验收
+bun run test:environment
+# 等价入口；Docker Desktop 非默认 context 时显式指定
+python3 tools/test-environment.py --context desktop-linux
+# 只准备两份环境镜像
+python3 tools/test-environment.py --build-only
+# 只有必须经过真实 Shell 的结果才选择模拟用例；自动构建测试包
+python3 tools/test-environment.py --suite simulation --case TYPE-02-vte,TYPE-03
+# 语言/显示条件按需求显式选择；也可只跑一个版本
+python3 tools/test-environment.py --shell 51 --suite simulation --case DICT-02 --language zh_CN
+# 显式更新环境依赖；不在每次运行时自动升级
+python3 tools/test-environment.py --rebuild --build-only
+```
+
+两版使用 `tests/environments/` 的同一份环境定义和不同的 Fedora 基础镜像 digest。
+每次启动全新容器，测试进程为 UID 1000 普通用户；系统 D-Bus 仅在容器内启动。
+宿主仅提供只读代码快照，不挂载 HOME、桌面/输入设备、D-Bus socket、Docker socket 或凭据，
+不传入宿主环境变量。`.git`、`.codex`、构建目录和用户输入样本不进入快照。GTK 输入模块固定
+为 Wayland；包含 Shell Unicode/文本输入路径所需的标准 IBus daemon，不安装 Fcitx 或拼音
+引擎。基础框架可用不等于已验证真实中文输入法。
+
+运行时网络为 `none`，仅容器自身 loopback 可用；HTTP/TLS 逻辑夹具照常运行，不访问公网。
+同步后端、可信公网 HTTPS、真实 IME 和外部编辑器安装方式仍按专项入口验收；此阶段不声称已
+编排全部模拟矩阵。未安装的 Gradia/Flatpak 等依赖会阻塞对应用例，不算通过。
+浏览器用例为允许其内部 namespace 沙箱，只对这次容器设置 `seccomp=unconfined`，不使用
+`--privileged`、宿主网络或浏览器 `--no-sandbox`；内核不允许 user namespace 时应判为环境阻塞，
+不能据此认定插件输入失败。容器仍共享 Docker 引擎的内核，不是硬件/性能完全相同的虚拟机。
+
+结果位于 `build/environments-*/`：汇总状态、基础 digest、实际镜像内容 ID、环境定义/源码快照 hash、
+完整 RPM 版本及各层测试日志。容器结束后先导出结果，再删除本次容器；环境镜像保留供下次复用。
+环境定义变化会要求显式重建。首次构建从发行版仓库解析依赖，仓库会更新，**固定基础 digest 不等于
+未来重建依赖逐字节相同**；跨机器严格复现应通过 Docker image save/load 共享同一份已构建镜像，
+并核对报告的镜像 ID 和包清单。不要把不同镜像的差异直接归因为 GNOME 大版本。
 
 ## 逻辑验证
 

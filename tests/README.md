@@ -12,6 +12,7 @@ Observed results and retained failures are recorded separately in the
 
 ```text
 tests/
+  environments/   # Independent GNOME 50/51 container definitions
   logic/          # No graphical desktop required
     clipboard/    # History, word selection, dictionaries, terminal sequences
     color-picker/
@@ -37,6 +38,51 @@ tests/
     shell.smoke.js # Aggregate of domain checks, not all simulation files
   fixtures/       # Shared external clipboard, typing and process helpers
 ```
+
+## Independent GNOME 50 / 51 environments
+
+Prefer the local Docker baseline instead of the host's GNOME installation. The host only needs
+Python 3, Git and a running Linux Docker engine. No host extension installation, input-method
+change or new GitHub workflow is involved.
+
+```sh
+# Default: both versions, non-stress logic regression and local headless acceptance
+bun run test:environment
+# Equivalent entry; explicitly select Docker Desktop when it is not the default context
+python3 tools/test-environment.py --context desktop-linux
+# Build/reuse the two environment images without running tests
+python3 tools/test-environment.py --build-only
+# Select desktop cases only when actual Shell behavior is required; builds the ZIP inside
+python3 tools/test-environment.py --suite simulation --case TYPE-02-vte,TYPE-03
+# Explicit language/display profiles and single-version selection
+python3 tools/test-environment.py --shell 51 --suite simulation --case DICT-02 --language zh_CN
+# Explicitly update dependency layers, never during ordinary image reuse
+python3 tools/test-environment.py --rebuild --build-only
+```
+
+Both versions use the definition in `tests/environments/` with different Fedora base digests.
+Every run creates a fresh container; test processes run as ordinary UID 1000. The system bus runs
+only inside that container. The host supplies a read-only source snapshot, not HOME, display/input
+devices, D-Bus/Docker sockets or credentials. Host environment variables are not forwarded.
+The snapshot excludes `.git`, `.codex`, build directories and the user's typing sample. GTK's input
+module is explicitly Wayland. The standard IBus daemon is included because Shell's Unicode/text-input
+path needs it; no Fcitx or Pinyin engine is added. Framework availability is not real-IME coverage.
+
+Runtime networking is `none`: only the container's loopback is available, including HTTP/TLS
+logic fixtures. Real sync servers, public HTTPS, IME and editor installation variants retain their
+specialized runners; this phase does not orchestrate the full desktop matrix. Missing optional
+Gradia/Flatpak dependencies block their cases, not pass them. Browser cases set
+`seccomp=unconfined` for that container to permit the browser's own namespace sandbox; they never
+use privileged mode, host networking or browser `--no-sandbox`. A kernel denying user namespaces
+is an environment blockage, not a plugin input failure. Containers share the engine's kernel;
+they do not promise identical hardware or performance.
+
+`build/environments-*/` holds status, base digest, actual image ID, definition/source hashes, full
+RPM versions and test logs. Results are exported before deleting only the run's container; images
+remain for reuse. Changed definitions require explicit rebuild. Distribution repositories can
+change: **a pinned base does not make future dependency rebuilds byte-identical**. For strict
+cross-machine reproduction, share the built images with Docker image save/load and compare image
+IDs and package lists. Different images must not be treated as a GNOME-major-version-only comparison.
 
 ## Logic verification
 

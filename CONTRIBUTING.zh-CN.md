@@ -22,6 +22,8 @@ meson install -C build
 现有校验、临时脚本或隔离 dry-run 验证，不增加锁定配置格式的测试。
 
 测试已分为[无需图形桌面的逻辑验证与桌面模拟验证](tests/README_CN.md)。
+不依赖宿主 GNOME 的 50/51 基线使用 `bun run test:environment`（需要 Docker），默认运行逻辑验证；
+只有必要时按测试说明显式选择真实桌面用例。
 对应入口、覆盖缺口和重复测试处理见[功能测试清单](tests/functional-inventory_CN.md)，不要把重复执行
 当作新增功能覆盖。普通逻辑验证使用
 `bun run test:logic`，或在 `dbus-run-session` 中执行带 `--no-suite stress` 的 Meson 命令。

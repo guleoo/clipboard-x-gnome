@@ -24,6 +24,8 @@ names, or routine widget properties. Validate CI/release configuration with exis
 scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
 Tests are separated into [headless logic and desktop simulation](tests/README.md).
+For a host-independent GNOME 50/51 baseline, run `bun run test:environment` (Docker required).
+It defaults to logic checks; select real desktop cases explicitly as described in the test guide.
 Use the [functional inventory](tests/functional-inventory.md) to choose the owning check and identify
 unverified external/manual boundaries; avoid running copied scenarios as extra coverage.
 For the ordinary logic suite, use `bun run test:logic` or run Meson with `--no-suite stress` inside
