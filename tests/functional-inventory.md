@@ -523,8 +523,10 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 
 Select conditional displays with `--display dual` or `--display fractional`; use
 `tools/test-lifecycle.py --dictionary-cold` for a separate cold dictionary run. Application/locale
-dependencies are explicit. Prepared environments are still needed for real IME, trusted HTTPS,
+dependencies are explicit. Prepared environments are still needed for real IME,
 Flatpak Gradia and two-full-desktop races; those are not declared inherently untestable.
+Trusted HTTPS was verified in both environments using a public GitHub dictionary; see the
+[acceptance snapshot](acceptance-status.md).
 Do not duplicate logic-owned format, storage, policy or error-response data matrices into Shell.
 
 Further extensions reuse existing owners: `sync/network.native.js` owns automatic/manual concurrent

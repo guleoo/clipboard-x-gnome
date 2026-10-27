@@ -5,6 +5,19 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## DICT-06: trusted GitHub HTTPS dictionary
+
+Closed the trusted-HTTPS gap using the public GitHub Raw
+[Chinese dictionary](https://raw.githubusercontent.com/guleoo/clipboard-x-gnome/main/src/clipboard/tokenizer/dictionary/seeds/zh--cppjieba-core.dict),
+without a custom certificate setup. At source revision `2a3b7a7`, standalone GJS in both the GNOME
+50 container and GNOME 51 host environment passed production `DictionaryStore` download, refresh,
+listing and loading: 45,967 entries, declared locale `zh`, one saved entry after refresh and actual
+segmentation of `注销密钥` into `注销 / 密钥`. Normal TLS verification remained enabled.
+Each run used a private session bus and a temporary dictionary directory, cleaned afterward;
+neither modified the host dictionary configuration or trust store. No production change, full GUI
+rerun or permanent public-network CI test was added. Together with prior HTTP/failure and GTK
+evidence, DICT-06 is now passed within its defined scope, not every HTTPS/proxy deployment.
+
 ## WORD-08: open the panel before loading words
 
 After input checks, show the loading panel and finish its first paint before reading the full

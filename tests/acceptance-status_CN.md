@@ -4,6 +4,16 @@
 
 更新日期：2026-10-27。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
+## DICT-06：GitHub 可信 HTTPS 词库
+
+使用公开 GitHub Raw [中文词库](https://raw.githubusercontent.com/guleoo/clipboard-x-gnome/main/src/clipboard/tokenizer/dictionary/seeds/zh--cppjieba-core.dict)
+补齐可信 HTTPS 缺口，无需自建证书环境。源码 `2a3b7a7` 下，GNOME 50 容器与 GNOME 51
+宿主环境中的独立 GJS 均通过生产 `DictionaryStore` 下载、刷新、列表与实际加载：45,967 词条、
+声明语言 zh、刷新后仍只有一个词库，实际将“注销密钥”切成“注销 / 密钥”，未关闭正常证书校验。
+两次均使用私有 Session Bus 和独立临时目录，结束后清理；未修改宿主词库配置或证书库。
+不修改生产代码，不重跑完整 GUI，也不增加永久外网 CI 用例。结合既有 HTTP/失败保留及 GTK
+操作证据，DICT-06 按定义范围通过，不代表遍历全部 HTTPS/代理部署。
+
 ## WORD-08：先打开面板，再加载分词
 
 输入检查通过后先显示加载面板，等第一帧绘制完成，再读取完整内容和分词。完成后在原面板填充

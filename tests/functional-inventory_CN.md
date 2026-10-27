@@ -507,7 +507,8 @@ WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字
 
 显示条件用 `--display dual` / `--display fractional`；词库冷启动用独立
 `tools/test-lifecycle.py --dictionary-cold`。应用/locale 依赖显式登记。
-真实 IME、可信 HTTPS、Flatpak Gradia、两个完整桌面竞态仍需专门准备环境，不视为天然不可测。
+真实 IME、Flatpak Gradia、两个完整桌面竞态仍需专门准备环境，不视为天然不可测。
+可信 HTTPS 已通过公开 GitHub 词库在两环境补验，见[结果快照](acceptance-status_CN.md)。
 格式、存储、策略、错误响应等数据矩阵继续归逻辑测试，不复制到 Shell。
 
 后续补充继续复用已有归属：`sync/network.native.js` 负责自动/手动获取竞争、远端剪切板回流
