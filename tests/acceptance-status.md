@@ -5,7 +5,7 @@
 Updated: 2026-10-28. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
-## Remaining-gap coverage: actual developer desktop and long-run entry (2026-10-28)
+## Remaining-gap coverage: actual developer desktop and two-hour runs (2026-10-28)
 
 | Verification | GNOME 50 | GNOME 51 |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ Updated: 2026-10-28. These are observed results, not certification of all requir
 | Build/enable/initialization logs exactly once in terminal and real container user journal | Passed | Passed |
 | Default non-stress logic plus headless file/HTTP regression with the new bootstrap | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
 | OPS-03-sync short resource regression after parameterization | Passed | Passed |
-| OPS-03-soak: two hours of actual sync/refresh/restart with fixed live data and trends | Running, not passed yet | Running, not passed yet |
+| OPS-03-soak: two hours of actual sync/refresh/restart with fixed live data and trends | Cleanup passed; RSS growth unresolved | Cleanup passed; RSS growth unresolved |
 
 Formal evidence: [both Devkit cases through the standard entry](../build/environments-20261027T185413Z-im4tqea_/report.json),
 [both default logic runs](../build/environments-20261027T185421Z-dmwfuqi0/report.json),
@@ -29,8 +29,31 @@ record and the three events actually promised by this scenario are asserted. Exi
 arguments/failures/interruptions.
 
 Two-hour acceptance requires explicit `--case OPS-03-soak --timeout 7500`, never default/group selection
-or CI. Each running task has its own Shell/backend; neither an entry nor short-run success is a soak pass.
-There are 140 registered native cases. Existing product failures remain separate.
+or CI. Both independent Shell/backend runs have now finished with exit 0 and a case-level PASS for
+duration and owned-resource cleanup: two warmups, 240 measured cycles, 24 actual extension restarts,
+480 samples per Shell and 7,200.7 measured seconds. Polling/tasks/cancellables, staging/partial files
+and new Shell-owned sync TCP connections cleared after sync off. Each cycle removed its synthetic
+local/server items; the owned containers and volumes were automatically removed after report export.
+
+| Observed after sync off | GNOME 50.6 | GNOME 51.1 |
+| --- | --- | --- |
+| RSS first → last | 304,768 → 349,220 KiB | 322,452 → 373,076 KiB |
+| RSS net change | +43.4 MiB | +49.4 MiB |
+| First → last of six RSS window medians | 310,528 → 345,320 KiB | 323,608 → 366,472 KiB |
+| Open FDs first → last | 80 → 71 | 81 → 72 |
+
+All six RSS window medians rise in both runs. **OPS-03's overall no-continuous-growth requirement is
+not passed.** Growth is not yet attributed to plugin retention, Shell caches, the test observer or
+another component; process RSS alone does not prove a plugin leak. The runner deliberately asserts
+actual cleanup rather than inventing an RSS budget. This is now an observed risk, not missing long-run
+coverage; no production fix is included in this test-completion phase.
+
+Evidence: [50 report and logs](../build/simulation-tests/cbx-simulation-fc4ca7c3120cf751-shell/),
+[51 report and logs](../build/simulation-tests/cbx-simulation-cdd8ef292060a05a-shell/),
+[50 full samples](../build/simulation-tests/cbx-simulation-fc4ca7c3120cf751-shell/simulation/gnome50-20261027T183331Z-ngj206m0/artifacts-0/OPS-03-soak-resources.json),
+[51 full samples](../build/simulation-tests/cbx-simulation-cdd8ef292060a05a-shell/simulation/gnome51-20261027T183330Z-3zinfi2c/artifacts-0/OPS-03-soak-resources.json).
+Reports retain the exact immutable images and pre-commit test snapshot; the running resource-case
+source matches `7a5e29b`. There are 140 registered native cases. Existing product failures remain separate.
 
 ## Remaining-gap coverage: real editors and input method (2026-10-28)
 
@@ -503,9 +526,10 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 ## Remaining boundaries
 
 Physical input, other toolkit/XWayland/portal deployments, two-full-desktop activation races,
-long soaks and visuals retain their separate boundaries—not a declaration
+runs beyond the measured two hours and visuals retain their separate boundaries—not a declaration
 that automation is impossible. Real IME, trusted HTTPS, both Gradia installation variants
-and full Devkit startup are covered by the latest records above, no longer missing dependencies. Logic-owned
+and full Devkit startup are covered by the latest records above, no longer missing dependencies.
+Two-hour sync coverage is complete, but its rising RSS remains unresolved. Logic-owned
 data/security matrices are not duplicated into Shell tests.
 
 See the [test guide](README.md) for dependencies and display/cold-run commands. Ignored

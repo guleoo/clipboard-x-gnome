@@ -4,7 +4,7 @@
 
 更新日期：2026-10-28。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
-## 剩余缺口补测：开发桌面完整链与长跑入口（2026-10-28）
+## 剩余缺口补测：开发桌面完整链与两小时长跑（2026-10-28）
 
 | 验证 | GNOME 50 | GNOME 51 |
 | --- | --- | --- |
@@ -13,7 +13,7 @@
 | 终端与容器自身真实用户 journal 的构建/启用/初始化日志各一次 | 通过 | 通过 |
 | 新启动器默认非压力逻辑＋无图形文件/HTTP 回归 | 51/51＋7/7 通过 | 51/51＋7/7 通过 |
 | OPS-03-sync 参数化后的短程资源回归 | 通过 | 通过 |
-| OPS-03-soak：两小时实际同步/刷新/重启、固定活跃数据集、资源趋势 | 进行中，未判通过 | 进行中，未判通过 |
+| OPS-03-soak：两小时实际同步/刷新/重启、固定活跃数据集、资源趋势 | 清理通过；RSS 增长待归因 | 清理通过；RSS 增长待归因 |
 
 正式证据：[统一命令 Devkit 两版](../build/environments-20261027T185413Z-im4tqea_/report.json)、
 [默认逻辑两版](../build/environments-20261027T185421Z-dmwfuqi0/report.json)、
@@ -26,7 +26,28 @@ Devkit 的自然退出不保证调用扩展 disable，因此不人为调用 disa
 原生 shutdown 记录和实际应发生的三个日志事件才是本场景断言。其他参数/失败/中断归原逻辑测试。
 
 两小时用例只允许显式 `--case OPS-03-soak --timeout 7500`，默认/分组选跑不会启动它，不进 CI。
-两个正在运行的任务使用各自的独立 Shell 和临时后端，完成前不把入口存在或短程通过算作长跑通过。
+两个独立 Shell/后端任务现已正常结束，退出码均为 0；时长与资源所有权清理断言的用例结果为 PASS。
+每版预热 2 轮后实测 240 轮、真正重启插件 24 次、采样 480 次，测量时长均为 7,200.7 秒。
+关闭同步后轮询/任务/取消对象、暂存/部分文件及新增的 Shell 自有同步 TCP 连接均释放。
+每轮移除本地与服务端的测试条目；导出报告后，所属容器和卷已自动清理。
+
+| 关闭同步后实测 | GNOME 50.6 | GNOME 51.1 |
+| --- | --- | --- |
+| RSS 首次 → 最后 | 304,768 → 349,220 KiB | 322,452 → 373,076 KiB |
+| RSS 净增 | +43.4 MiB | +49.4 MiB |
+| 六个 RSS 时间窗中位数的首次 → 最后 | 310,528 → 345,320 KiB | 323,608 → 366,472 KiB |
+| FD 首次 → 最后 | 80 → 71 | 81 → 72 |
+
+两版的六个 RSS 时间窗中位数均持续上升，因此 **OPS-03 整体的“不持续增长”要求未判通过**。
+增长尚未归因到插件引用、Shell 缓存、测试观察器或其他组件；仅靠进程 RSS 不能确认插件泄漏。
+测试器断言真实资源清理，不人为设定 RSS 预算。现在这是已观测到的风险，不再是长跑覆盖缺口；
+本次补测试阶段不包含生产修复。
+
+证据：[50 报告与日志](../build/simulation-tests/cbx-simulation-fc4ca7c3120cf751-shell/)、
+[51 报告与日志](../build/simulation-tests/cbx-simulation-cdd8ef292060a05a-shell/)、
+[50 完整采样](../build/simulation-tests/cbx-simulation-fc4ca7c3120cf751-shell/simulation/gnome50-20261027T183331Z-ngj206m0/artifacts-0/OPS-03-soak-resources.json)、
+[51 完整采样](../build/simulation-tests/cbx-simulation-cdd8ef292060a05a-shell/simulation/gnome51-20261027T183330Z-3zinfi2c/artifacts-0/OPS-03-soak-resources.json)。
+报告保留实际不可变镜像和提交前的测试源码快照；运行中的资源用例源码与 `7a5e29b` 一致。
 当前注册 140 项原生用例；已有产品失败仍单独保留。
 
 ## 剩余缺口补测：真实编辑器与输入法（2026-10-28）
@@ -447,9 +468,10 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 
 ## 剩余边界
 
-物理输入、其他 toolkit/XWayland/门户部署、两个完整桌面的激活竞态、长期 soak、
+物理输入、其他 toolkit/XWayland/门户部署、两个完整桌面的激活竞态、超过本次两小时的运行、
 视觉仍分别保留边界，并非断言无法自动化。真实 IME、可信 HTTPS、Gradia 两种安装方式及
 Devkit 完整启动链已由上方最新记录补齐，不再当作缺依赖。
+两小时同步覆盖已完成，但 RSS 持续增长仍待归因。
 逻辑层已负责的数据/安全矩阵不重复搬进 Shell。
 
 依赖、显示 profile、冷启动命令见[测试指南](README_CN.md)。被忽略的
