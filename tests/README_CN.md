@@ -58,7 +58,10 @@ python3 tools/test-environment.py --shell 51 --suite simulation --case DICT-02 -
 python3 tools/test-environment.py --rebuild --build-only
 ```
 
-两版使用 `tests/environments/` 的同一份环境定义和不同的 Fedora 基础镜像 digest。
+GNOME 50 使用 `tests/environments/gnome50/Dockerfile`，GNOME 51 使用
+`tests/environments/gnome51/Dockerfile`，各自固定 Fedora 基础镜像 digest 和 Shell 版本，
+可以独立调整依赖，仅共享会话启动脚本。构建上下文为 `tests/environments/`，入口自动选择
+对应的 Dockerfile。环境定义 hash 也按版本独立计算，修改其中一份不会使另一版镜像失效。
 每次启动全新容器，测试进程为 UID 1000 普通用户；系统 D-Bus 仅在容器内启动。
 宿主仅提供只读代码快照，不挂载 HOME、桌面/输入设备、D-Bus socket、Docker socket 或凭据，
 不传入宿主环境变量。`.git`、`.codex`、构建目录和用户输入样本不进入快照。GTK 输入模块固定

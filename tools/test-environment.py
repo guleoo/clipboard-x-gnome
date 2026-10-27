@@ -72,11 +72,6 @@ def main():
         parser.error('Docker is required')
     docker = ['docker', *(['--context', args.context] if args.context else [])]
     subprocess.run([*docker, 'info'], check=True, stdout=subprocess.DEVNULL)
-    bases = json.loads((DEFINITION / 'images.json').read_text())
-    definition_hash = hashlib.sha256(b''.join(
-        name.encode() + b'\0' + (DEFINITION / name).read_bytes()
-        for name in ['Dockerfile', 'images.json', 'session.py']
-    )).hexdigest()
     majors = ['50', '51'] if args.shell == 'all' else [args.shell]
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     (ROOT / 'build').mkdir(exist_ok=True)
@@ -88,6 +83,14 @@ def main():
         source.chmod(0o755)
         source_hash = snapshot(source)
         for major in majors:
+            dockerfile = f'gnome{major}/Dockerfile'
+            definition_hash = hashlib.sha256(b''.join(
+                name.encode() + b'\0' + (DEFINITION / name).read_bytes()
+                for name in [dockerfile, 'session.py']
+            )).hexdigest()
+            base = next(line.removeprefix('FROM ').strip()
+                        for line in (DEFINITION / dockerfile).read_text().splitlines()
+                        if line.startswith('FROM '))
             tag = f'clipboard-x-gnome-test:{major}'
             inspected = subprocess.run([*docker, 'image', 'inspect', tag], capture_output=True, text=True)
             if inspected.returncode == 0:
@@ -98,8 +101,7 @@ def main():
                 if labels.get(LABEL + '.definition') != definition_hash and not args.rebuild:
                     raise ValueError(f'{tag} uses a different environment definition; rebuild explicitly with --rebuild')
             if inspected.returncode or args.rebuild:
-                command = [*docker, 'build', '--build-arg', f'BASE_IMAGE={bases[major]}',
-                           '--build-arg', f'SHELL_MAJOR={major}',
+                command = [*docker, 'build', '--file', str(DEFINITION / dockerfile),
                            '--label', f'{LABEL}.definition={definition_hash}', '-t', tag]
                 if args.rebuild:
                     command.append('--no-cache')
@@ -112,7 +114,7 @@ def main():
                     raise RuntimeError(f'GNOME {major} image build failed; see {log}')
             image = json.loads(subprocess.check_output([*docker, 'image', 'inspect', tag]))[0]
             image_id = image['Id']
-            results[major] = {'image': image_id, 'base': bases[major], 'sourceSha256': source_hash,
+            results[major] = {'image': image_id, 'base': base, 'sourceSha256': source_hash,
                               'definitionSha256': definition_hash}
             if args.build_only:
                 results[major]['status'] = 'BUILT'

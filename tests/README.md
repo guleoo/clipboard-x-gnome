@@ -60,7 +60,11 @@ python3 tools/test-environment.py --shell 51 --suite simulation --case DICT-02 -
 python3 tools/test-environment.py --rebuild --build-only
 ```
 
-Both versions use the definition in `tests/environments/` with different Fedora base digests.
+GNOME 50 uses `tests/environments/gnome50/Dockerfile`; GNOME 51 uses
+`tests/environments/gnome51/Dockerfile`. Each pins its own Fedora base digest and Shell version,
+so dependencies can evolve separately. Only the session bootstrap is shared. The build context is
+`tests/environments/`; the runner selects the matching Dockerfile automatically. Image definition
+hashes are independent: editing one Dockerfile does not invalidate the other version's image.
 Every run creates a fresh container; test processes run as ordinary UID 1000. The system bus runs
 only inside that container. The host supplies a read-only source snapshot, not HOME, display/input
 devices, D-Bus/Docker sockets or credentials. Host environment variables are not forwarded.
