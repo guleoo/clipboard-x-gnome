@@ -5,7 +5,39 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
-## Independent GNOME environments (latest)
+## Remaining-gap coverage: phase one (2026-10-28)
+
+Existing independent Docker environments were used; no production changes or new CI. The native
+registry now contains 127 cases.
+
+| Verification | GNOME 50.6 | GNOME 51.1 |
+| --- | --- | --- |
+| Non-stress logic and headless acceptance | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
+| Screenshot capability matrix, D-Bus exceptions, cleanup/retry | Logic passed | Logic passed |
+| All stable sync error codes/translation/redaction; shared terminal waits, timeout/cancel/retry | Logic passed | Logic passed |
+| SET-01-official: real settings entry, close/reopen | Passed | Passed |
+| SET-03: native palette, save/cancel, independent accent/foreground and system reset | Passed | Passed |
+| LANG-07-errors: safe actual notifications, native Gio exceptions and silent cancellation | Passed | Passed |
+| COLOR-06-initialize: failed initialization cleanup and successful reopen | Passed | Passed |
+| COLOR-06-grab: native grab exception cleanup | Failed: constructor failure leaves the overlay open | Failed: same result |
+| TYPE-04: independently executed slow short mixed text | Failed: 62/58 UTF-16 units | Failed: 66/58 units |
+
+Reports: [final logic](../build/environments-20261027T163033Z-h79wrb4y/report.json),
+[official entry/notifications/slow typing](../build/environments-20261027T162055Z-ikbs8l1t/report.json),
+[picker failures](../build/environments-20261027T162525Z-eru4ztqm/report.json),
+[50 colors](../build/environments-20261027T162828Z-_6kcwnfc/report.json),
+[51 colors](../build/environments-20261027T163024Z-acqij9v8/report.json).
+The first two color runs exposed fixture interaction errors: GTK starts with a palette, and Enter
+must not be followed by clicking an already-closing dialog. The fixture now uses the actual custom
+swatch and Select button. Earlier reports are retained. Picker assertions precede fixture cleanup;
+cleanup does not hide production residue. Separate speed cases no longer hide slow results after
+a standard-speed failure.
+
+Other partial requirements remain in progress. This phase does not establish complete coverage of
+real IME/Gradia installations, other notification outlets, device/transfer icons, resource trends
+or remaining sync wiring.
+
+## Independent GNOME environments (previous phase)
 
 The local Docker entry builds/reuses separate GNOME 50.6 / GJS 1.88.1 and GNOME 51.1 / GJS 1.90.1
 images. Every run uses a fresh ordinary-user container, private configuration/buses, software rendering

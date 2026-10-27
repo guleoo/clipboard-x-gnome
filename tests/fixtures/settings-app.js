@@ -44,9 +44,12 @@ function walk(widget, root, row = '') {
     };
     row = firstLabel(widget) || row;
   }
-  const record = {id: id(widget), type, row, page: widget._clipboardXGnomePageName ?? null,
+  const record = {id: id(widget), parent: widget.get_parent() ? id(widget.get_parent()) : null,
+    type, row, page: widget._clipboardXGnomePageName ?? null,
     mapped: widget.get_mapped(), sensitive: widget.is_sensitive()};
   record.tooltip = widget.get_tooltip_text();
+  if (root instanceof Gtk.Dialog && widget instanceof Gtk.Button)
+    record.response = root.get_response_for_widget(widget);
   if (widget instanceof Gtk.Button || widget instanceof Gtk.Image) record.icon = widget.icon_name;
   if (widget instanceof Adw.ActionRow) record.subtitle = widget.subtitle;
   if (widget instanceof Gtk.Button || widget instanceof Gtk.Label) record.label = widget.label;

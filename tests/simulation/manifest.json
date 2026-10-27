@@ -58,7 +58,7 @@
   {
     "module": "terminal/native.js",
     "cases": [
-      {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-05"},
+      {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-04"}, {"id": "TYPE-05"},
       {"id": "TYPE-06"}, {"id": "TYPE-07"},
       {"id": "TYPE-08-layout"}
     ]
@@ -133,7 +133,15 @@
   },
   {
     "module": "settings/native.js",
-    "cases": [{"id": "SET-01"}, {"id": "SET-06"}, {"id": "SET-08"}]
+    "cases": [{"id": "SET-01"}, {"id": "SET-01-official"}, {"id": "SET-06"}, {"id": "SET-08"}]
+  },
+  {
+    "module": "settings/colors.native.js",
+    "cases": [{"id": "SET-03"}]
+  },
+  {
+    "module": "lifecycle/diagnostics.native.js",
+    "cases": [{"id": "LANG-07-errors"}]
   },
   {
     "module": "settings/coverage.native.js",
@@ -149,6 +157,10 @@
   {
     "module": "color-picker/native.js",
     "cases": [{"id": "COLOR-01"}, {"id": "COLOR-03"}, {"id": "COLOR-04"}, {"id": "COLOR-07"}, {"id": "COLOR-05-edges"}]
+  },
+  {
+    "module": "color-picker/failures.native.js",
+    "cases": [{"id": "COLOR-06-initialize"}, {"id": "COLOR-06-grab"}]
   },
   {
     "module": "color-picker/displays.native.js",

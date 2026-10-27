@@ -13,6 +13,31 @@ async function fixture(desktop, run) {
 }
 
 export const cases = {
+  async 'SET-01-official'(desktop) {
+    const windows = () => global.get_window_actors().map(actor => actor.meta_window);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const before = new Set(windows());
+      await desktop.open();
+      await desktop.click(desktop.history.preferencesButton);
+      let window;
+      try {
+        await until(() => {
+          window = windows().find(candidate => !before.has(candidate)
+            && candidate.get_title() === 'Clipboard X Gnome');
+          return window;
+        }, 'production preferences entry opens the official GNOME preferences host', 15000);
+        assert(!desktop.indicator.menu.isOpen, 'Opening production preferences must close the panel');
+        assert(window.get_gtk_application_id() !== 'io.github.guleoo.CbxSettingsAcceptance',
+          'The real entry must not be satisfied by the test preferences fixture');
+        assert(/org\.gnome\.Shell\.Extensions/i.test(window.get_wm_class() ?? ''),
+          `Production preferences must belong to GNOME\u2019s host, not an error fixture (${window.get_wm_class()})`);
+      } finally {
+        window?.delete(global.get_current_time());
+      }
+      await until(() => !windows().includes(window), 'official preferences window closes before reopening');
+    }
+  },
+
   'SET-01': desktop => fixture(desktop, async preferences => {
     for (const page of ['clipboard', 'quick-phrases', 'sync', 'color-picker', 'screenshot', 'shortcuts', 'about', 'general'])
       await preferences.page(page);

@@ -1,59 +1,53 @@
 import {message, SyncError} from '../../../src/sync/errors.js';
 
-function assertEqual(actual, expected, description) {
-  if (actual !== expected)
-    throw new Error(`${description}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+function assert(value, description) {
+  if (!value) throw new Error(description);
 }
 
-const translations = new Map([
-  ['No active synchronization channel is configured', '尚未配置同步 Channel'],
-  ['Synchronization server is unavailable', '同步服务器不可用'],
-  ['Synchronization authentication failed', '同步认证失败'],
-  ['Synchronization request failed', '同步请求失败'],
-  ['Sensitive content', '敏感内容'],
-  ['The original image has not been downloaded. Enable synchronization first.',
-    '原图尚未下载，请先开启同步。'],
-]);
-const translate = value => translations.get(value) ?? value;
-
-assertEqual(
-  message(new SyncError('original_image_requires_sync', 'diagnostic only'), translate),
-  '原图尚未下载，请先开启同步。',
-  'editing an undownloaded original while sync is disabled must explain how to proceed',
-);
-
-assertEqual(
-  message(new SyncError('channel_required', 'diagnostic only'), translate),
-  '尚未配置同步 Channel',
-  'a client-side channel error must be translated by its stable code',
-);
-assertEqual(
-  message(new SyncError('server_unavailable', 'diagnostic only'), translate),
-  '同步服务器不可用',
-  'an unavailable server must have a localized user-facing message',
-);
-assertEqual(
-  message(new SyncError('sensitive_content', 'diagnostic only'), translate),
-  '敏感内容',
-  'sensitive content must expose a localized refusal instead of a diagnostic',
-);
-assertEqual(
-  message({code: 'invalid_key', message: 'server-controlled English'}, translate),
-  '同步认证失败',
-  'a server error must use its code instead of its untrusted message',
-);
-assertEqual(
-  message({code: 'request_failed', message: 'diagnostic only'}, translate),
-  '同步请求失败',
-  'a request failure must have a localized user-facing message',
-);
-assertEqual(
-  message({code: 'http_error', message: 'Bad Gateway'}, translate),
-  '同步请求失败',
-  'an HTTP gateway failure must not display its untranslated diagnostic',
-);
-assertEqual(
-  message(new Error('internal diagnostic'), translate),
-  '',
-  'an unknown internal error must not expose its diagnostic message to the UI',
-);
+// Stable codes, not server diagnostics, select translatable user-facing text.
+const groups = [
+  [['disabled'], 'Synchronization is disabled'],
+  [['original_image_requires_sync'], 'The original image has not been downloaded. Enable synchronization first.'],
+  [['sensitive_content'], 'Sensitive content'],
+  [['server_unavailable'], 'Synchronization server is unavailable'],
+  [['file_verifier_unavailable'], 'Install sha256sum (usually provided by coreutils) to enable external file verification.'],
+  [['file_verification_failed'], 'File verification with sha256sum failed'],
+  [['channel_required'], 'No active synchronization channel is configured'],
+  [['invalid_server_address'], 'Synchronization server address is invalid'],
+  [['invalid_key', 'not_authorized'], 'Synchronization authentication failed'],
+  [['device_disabled'], 'This device is disabled on the synchronization server'],
+  [['device_mismatch'], 'The API key does not belong to this device'],
+  [['channel_forbidden'], 'This device does not have access to the synchronization channel'],
+  [['item_conflict'], 'The clipboard item conflicts with an item on the synchronization server'],
+  [['content_not_ready'], 'The clipboard content is not ready on the source device'],
+  [['source_content_missing'], 'The source device no longer has this clipboard content'],
+  [['too_large', 'invalid_content_size'], 'The clipboard content exceeds the synchronization size limit'],
+  [['hash_mismatch', 'size_mismatch'], 'The synchronized content failed integrity verification'],
+  [['transfer_expired'], 'The synchronization transfer expired'],
+  [['rate_limited'], 'The synchronization server is busy. Try again later.'],
+  [['invalid_response', 'response_too_large'], 'The synchronization server returned an invalid response'],
+  [['upload_failed', 'source_upload_failed'], 'Synchronization upload failed'],
+  [['download_failed', 'write_failed'], 'Synchronization download failed'],
+  [['network_error', 'http_error', 'request_failed'], 'Synchronization request failed'],
+];
+const secret = 'clipboard-body-and-api-key-MUST-NOT-APPEAR';
+for (const [codes, expected] of groups) {
+  for (const code of codes) {
+    const calls = [];
+    const error = new SyncError(code, secret, {cause: new Error(secret)});
+    error.apiKey = secret;
+    error.content = secret;
+    const actual = message(error, text => { calls.push(text); return `translated:${text}`; });
+    assert(actual === `translated:${expected}` && calls.length === 1 && calls[0] === expected,
+      `${code}: the stable message must pass through gettext exactly once`);
+    assert(!actual.includes(secret), `${code}: diagnostic, content and credentials must not enter UI text`);
+  }
+}
+for (const error of [new Error(secret), new SyncError('unrecognized', secret),
+  {code: 'unrecognized', message: secret}, null]) {
+  let translated = false;
+  assert(message(error, () => { translated = true; return secret; }) === '' && !translated,
+    'Unknown errors must request a safe caller fallback, not translate arbitrary diagnostics');
+}
+assert(message({code: 'invalid_key', message: secret}, text => text)
+  === 'Synchronization authentication failed', 'Plain protocol error objects use the same safe mapping');

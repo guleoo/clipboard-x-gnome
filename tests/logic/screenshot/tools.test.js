@@ -74,11 +74,13 @@ try {
 assert(rejected, 'standard-input placeholder must be a separate argument');
 
 class FakePortalConnection {
-  constructor({mode = 'success', version = 3, targets = 15} = {}) {
+  constructor({mode = 'success', version = 3, targets = 15, failures = {}} = {}) {
     this.mode = mode;
     this.version = version;
     this.targets = targets;
     this.closeCount = 0;
+    this.calls = [];
+    this.failures = failures;
     this.lastOptions = null;
     this._subscriptions = new Map();
     this._nextSubscription = 1;
@@ -99,12 +101,17 @@ class FakePortalConnection {
   }
 
   call(_bus, path, interfaceName, method, parameters, _replyType, _flags, _timeout, _cancellable, callback) {
+    this.calls.push(method);
     if (method === 'Close') {
       this.closeCount++;
       return;
     }
 
     setTimeout(() => {
+      if (this.failures[method]) {
+        callback(this, {error: this.failures[method]});
+        return;
+      }
       if (method === 'GetAll') {
         callback(this, {reply: new GLib.Variant('(a{sv})', [{
           version: new GLib.Variant('u', this.version),
@@ -165,6 +172,68 @@ const uri = await successPortal.capture('area');
 assert(uri === 'file:///tmp/screenshot%20测试.png', 'Screenshot Portal must return the response URI');
 assert(successConnection.lastOptions.target === 4, 'Portal v3 target must be forwarded');
 assert(successConnection.lastOptions.interactive === false, 'fixed target must not be interactive');
+
+for (const [target, flag] of Object.entries({screen: 1, window: 2, area: 4, 'active-window': 8})) {
+  const connection = new FakePortalConnection({targets: flag});
+  const portal = new ScreenshotPortal({connection, timeoutMilliseconds: 100});
+  assert(await portal.capture(target) === uri, `${target}: its advertised capability must allow capture`);
+  assert(connection.lastOptions.target === flag && connection.lastOptions.interactive === false,
+    `${target}: forward exactly the selected target bit without enabling interactive selection`);
+
+  const unsupportedConnection = new FakePortalConnection({targets: 15 ^ flag});
+  const unsupportedPortal = new ScreenshotPortal({connection: unsupportedConnection, timeoutMilliseconds: 100});
+  await assertRejects(unsupportedPortal.capture(target), /does not advertise/u, `${target}: absent target capability`);
+  assert(unsupportedConnection.calls.join() === 'GetAll'
+    && unsupportedConnection._subscriptions.size === 0 && !unsupportedPortal._request,
+  `${target}: rejection must not issue a screenshot request or retain resources`);
+}
+
+for (const version of [2, 3]) {
+  for (const target of ['interactive', 'screen', 'window', 'area', 'active-window']) {
+    // Interactive selection is independent of advertised fixed targets. Older
+    // portals support only screen without a target option, not v3 target flags.
+    if (version === 3 && target !== 'interactive') continue;
+    const connection = new FakePortalConnection({version, targets: 0});
+    const portal = new ScreenshotPortal({connection, timeoutMilliseconds: 100});
+    if (target === 'interactive' || target === 'screen') {
+      assert(await portal.capture(target) === uri, `Portal v${version}: ${target} must remain supported`);
+      assert(!Object.hasOwn(connection.lastOptions, 'target')
+        && connection.lastOptions.interactive === (target === 'interactive'),
+      `Portal v${version}: ${target} must preserve the protocol's interaction and target options`);
+    } else {
+      await assertRejects(portal.capture(target), /does not support/u, `Portal v2: reject ${target}`);
+      assert(connection.calls.join() === 'GetAll' && !portal._request && !connection._subscriptions.size,
+        `Portal v2: unsupported ${target} must fail before subscribing or capturing`);
+    }
+  }
+}
+
+for (const unavailable of [false, true]) {
+  const failure = new GLib.Error(Gio.dbus_error_quark(),
+    unavailable ? Gio.DBusError.SERVICE_UNKNOWN : Gio.DBusError.NO_REPLY,
+    unavailable ? 'Screenshot portal is unavailable' : 'Screenshot D-Bus call did not reply');
+  const connection = new FakePortalConnection({failures: {
+    ...(unavailable ? {GetAll: failure} : {}), Screenshot: failure,
+  }});
+  let observers = 0;
+  const portal = new ScreenshotPortal({connection, timeoutMilliseconds: 100,
+    observeCancellation: () => { observers++; return () => { observers--; }; },
+  });
+  const capture = portal.capture('interactive');
+  const request = portal._request;
+  let observed;
+  try { await capture; } catch (error) { observed = error; }
+  assert(observed === failure, 'D-Bus capture failure must preserve the original native exception');
+  assert(!portal._request && !connection._subscriptions.size && observers === 0
+    && request.subscriptionId === 0 && request.timeoutId === 0 && request.stopObserving === null,
+  'D-Bus capture failure must release the active request, response subscription, timeout and cancellation observer');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert(connection.closeCount === 0, 'A failed D-Bus call must not leave a timeout that later closes a stale request');
+  connection.failures = {};
+  assert(await portal.capture('interactive') === uri && !portal._request
+    && !connection._subscriptions.size && observers === 0,
+  'The same portal must accept a successful retry after a D-Bus failure without retaining resources');
+}
 
 const deniedPortal = new ScreenshotPortal({
   connection: new FakePortalConnection({mode: 'denied'}),
@@ -256,12 +325,6 @@ await assertRejects(concurrentPortal.capture('screen'), /already active/u, 'conc
 await new Promise(resolve => setTimeout(resolve, 10));
 concurrentPortal.cancel();
 assert(await pendingCapture === null, 'Concurrent request cleanup must finish without an error');
-
-const oldPortal = new ScreenshotPortal({
-  connection: new FakePortalConnection({version: 2, targets: 0}),
-  timeoutMilliseconds: 100,
-});
-await assertRejects(oldPortal.capture('window'), /does not support/u, 'Portal v2 target negotiation');
 
 const editorProcess = await launchEditor({
   command: "/usr/bin/test %f = '/tmp/截图 editor test.png'",

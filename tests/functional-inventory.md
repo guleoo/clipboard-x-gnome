@@ -18,6 +18,21 @@ in the [acceptance snapshot](acceptance-status.md); a case's PASS does not certi
   verifiers are not duplicate implementations. Never delete failures or weaken expectations to pass.
 - Commands: [test organization](README.md); stable PANEL reproduction: [panel guide](../docs/panel-testing.md).
 
+## Added gap coverage (2026-10-28)
+
+These are additional automated owners, not a claim that every remaining gap is covered.
+Observed results remain in the acceptance snapshot.
+
+| Requirements | Owning entry and boundary |
+| --- | --- |
+| SHOT-02/05 | `logic/screenshot/tools.test.js`: v2/v3 target capabilities/rejections, native-typed D-Bus exceptions, cleanup and retry on the same portal; not every deployed backend. |
+| RECV-06 / XFER-06 | `logic/sync/transfer-session.test.js`: terminal failure/expiry/cancellation settles all consumers; actual short deadline, one remote cancellation and a fresh retry. Controlled transport, not a real offline source. |
+| TYPE-03/04 | `simulation/terminal/native.js`: separate standard/slow cases preserve exact readback and allow the slow case to run after a standard failure. |
+| COLOR-06 | `simulation/color-picker/failures.native.js`: actual picker initialization rejection and native-grab boundary exception, modal/chrome/subscription cleanup and reopening; assertions precede fixture cleanup. |
+| SET-01 | `SET-01-official` uses the production entry and reopens GNOME's official host; existing SET-01 remains the owner of eight-page navigation. |
+| SET-03 | `simulation/settings/colors.native.js`: native GTK accent/foreground selection, save/cancel and system reset, not shape/spacing assertions. |
+| LANG-07 / OPS-08 / PRIV-08 | `logic/sync/errors.test.js` covers translation and safe text for all stable codes; `LANG-07-errors` checks actual GNOME notifications, safe fallback, native Gio exceptions and silent cancellation. Other outlets remain separately scoped. |
+
 ## Acceptance layers
 
 Not every requirement needs a desktop. Ordering, retention, capture cancellation state, draft
@@ -241,7 +256,7 @@ that delayed saves preserve new input and focus.
 | TYPE-01 | Separate copy, paste and simulated typing; only the intended operations modify the system clipboard. |
 | TYPE-02 | Paste into the target active before opening the panel; verify received bytes in an ordinary app and a terminal. |
 | TYPE-03 | Receive an exact short sample containing ASCII, mixed CJK, emoji, multiple lines and Tab in the actual target; long-text reliability is not an acceptance gate. |
-| TYPE-04 | Reuse the TYPE-03 short sample at standard/slow speed in the actual target without missing or reordered characters. |
+| TYPE-04 | Run the TYPE-03 short sample independently at standard/slow speed; failure in one must not hide the other's readback, missing or reordered characters. |
 | TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
 | TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; accept this state path using actual backend virtual input. |
 | TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |

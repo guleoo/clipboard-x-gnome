@@ -46,6 +46,88 @@ try {
       && session.get(transfer.transferId).state === 'completed',
     'receiving server completion must settle consumers and release polling ownership together');
 
+  // RECV-06: every consumer of the same remote original must finish when the
+  // source reports failure, expiry or cancellation, not wait for its own timer.
+  for (const [index, state] of ['failed', 'expired', 'cancelled'].entries()) {
+    const remote = {...transfer,
+      transferId: `88888888-8888-4888-8888-88888888888${index}`};
+    session.receive(remote);
+    const first = session.wait(remote.transferId);
+    const second = session.wait(remote.transferId);
+    assert(first === second, `${state}: consumers must share the remote wait`);
+    const consumers = [observe(first), observe(second)];
+    const errorMessage = `Source transfer ${state}`;
+    session.receive({...remote, state, errorMessage, updatedAt: 2});
+    const results = await bounded(Promise.all(consumers));
+    assert(results.every(result => result.error?.message === errorMessage)
+        && results[0].error === results[1].error,
+      `${state}: a confirmed remote terminal state must reject all waiting consumers`);
+    assert(!session.pendingIds().includes(remote.transferId),
+      `${state}: a confirmed remote terminal state must release polling ownership`);
+    const later = await bounded(observe(session.wait(remote.transferId)));
+    assert(later.error?.message === errorMessage
+        && !session.pendingIds().includes(remote.transferId),
+      `${state}: later consumers must receive the terminal failure without reopening a wait`);
+  }
+
+  // XFER-06: let the real wait deadline fire while the controlled transport is
+  // still cancelling. Consumers must finish even before the server replies;
+  // the remote task remains owned until that cancellation is acknowledged.
+  let acknowledgeCancel;
+  const cancellationGate = new Promise(resolve => { acknowledgeCancel = resolve; });
+  let cancellationRecorded;
+  const cancelled = new Promise(resolve => { cancellationRecorded = resolve; });
+  const timedCancellations = [];
+  let timeout = 40;
+  const timed = new TransferSession({
+    isCurrent: () => true,
+    transport: () => ({cancel: async id => {
+      timedCancellations.push(id);
+      await cancellationGate;
+    }}),
+    timeout: () => timeout,
+    onChange(value) {
+      if (value.state === 'cancelled')
+        cancellationRecorded();
+    },
+  });
+  try {
+    const remote = {...transfer, transferId: '99999999-9999-4999-8999-999999999999'};
+    timed.receive(remote);
+    const first = timed.wait(remote.transferId);
+    const second = timed.wait(remote.transferId);
+    assert(first === second, 'The timed transfer must have one wait shared by both consumers');
+    const results = await bounded(Promise.all([observe(first), observe(second)]));
+    assert(results.every(result => result.error?.message === 'Timed out waiting for synchronized content')
+        && results[0].error === results[1].error,
+      'The actual short deadline must reject every consumer without awaiting remote cancellation');
+    assert(timedCancellations.length === 1 && timedCancellations[0] === remote.transferId
+        && timed.pendingIds().includes(remote.transferId),
+      'A shared timeout must request remote cancellation once and retain ownership until acknowledgement');
+    acknowledgeCancel();
+    await bounded(cancelled);
+    assert(timed.get(remote.transferId).state === 'cancelled'
+        && !timed.pendingIds().includes(remote.transferId),
+      'Acknowledged timeout cancellation must release the old remote polling task');
+    const later = await bounded(observe(timed.wait(remote.transferId)));
+    assert(later.error?.message === 'Transfer cancelled'
+        && !timed.pendingIds().includes(remote.transferId),
+      'The cancelled transfer must reject later consumers without leaving a new wait');
+
+    timeout = 3000;
+    const retry = {...transfer, transferId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'};
+    timed.receive(retry);
+    const retries = [observe(timed.wait(retry.transferId)), observe(timed.wait(retry.transferId))];
+    timed.receive({...retry, state: 'completed', completedBytes: 4, updatedAt: 2});
+    const retried = await bounded(Promise.all(retries));
+    assert(retried.every(result => !result.error)
+        && timed.pendingIds().length === 0 && timedCancellations.length === 1,
+      'Both consumers must be able to retry the same item with a fresh transfer after a timeout');
+  } finally {
+    acknowledgeCancel();
+    timed.close(new Error('Timed transfer test cleanup'));
+  }
+
   let finish;
   const gate = new Promise(resolve => { finish = resolve; });
   let localOperation;

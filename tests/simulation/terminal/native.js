@@ -51,6 +51,12 @@ async function exactTyping(desktop, target, source, speed, {pointer = false} = {
   assert(target.state.text === source, speed + ': no delayed duplicated or reordered characters');
 }
 
+async function typing(desktop, speed) {
+  const target = await Target.open(desktop);
+  try { await exactTyping(desktop, target, typingSample, speed); }
+  finally { await target.close(); }
+}
+
 export const cases = {
   async 'TYPE-01'(desktop) {
     const target = await Target.open(desktop);
@@ -67,12 +73,8 @@ export const cases = {
     } finally { await target.close(); }
   },
 
-  async 'TYPE-03'(desktop) {
-    const target = await Target.open(desktop);
-    try {
-      for (const speed of ['standard', 'slow']) await exactTyping(desktop, target, typingSample, speed);
-    } finally { await target.close(); }
-  },
+  'TYPE-03': desktop => typing(desktop, 'standard'),
+  'TYPE-04': desktop => typing(desktop, 'slow'),
 
   async 'TYPE-08-layout'(desktop) {
     const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.input-sources'});
