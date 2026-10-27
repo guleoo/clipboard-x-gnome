@@ -79,11 +79,28 @@ only inside that container. The host supplies a read-only source snapshot, not H
 devices, D-Bus/Docker sockets or credentials. Host environment variables are not forwarded.
 The snapshot excludes `.git`, `.codex`, build directories and the user's typing sample. GTK's input
 module is explicitly Wayland. The standard IBus daemon is included because Shell's Unicode/text-input
-path needs it; no Fcitx or Pinyin engine is added. Framework availability is not real-IME coverage.
+path needs it; the default baseline adds no Fcitx or Pinyin engine. Framework availability is not real-IME coverage.
+
+For actual editor/IME acceptance, explicitly select the optional `applications` target in each
+version's Dockerfile. It installs pinned-source native Gradia, a pinned Flathub app/runtime,
+Fedora's libpinyin and the genuine Mutter Devkit helper **inside the image only**:
+
+```sh
+python3 tools/test-environment.py --profile applications --build-only
+python3 tools/test-environment.py --profile applications --suite simulation --case EDIT-07-native,EDIT-07-flatpak,TYPE-08-ime
+```
+
+These images use `:50-applications` / `:51-applications`; baseline images stay unchanged.
+Reports include app revisions/checksums, runtime commits and actual RPM versions. The real IME
+case observes Gtk preedit and compares ordinary virtual keys with plugin output in Chinese/ASCII
+modes, not merely an engine name or an IME-bypass claim. Only Flatpak cases also unmask the
+container's system paths for its own nested bubblewrap sandbox (`systempaths=unconfined`);
+no host paths/devices are mounted and the app sandbox is retained. Fedora's Devkit path is bridged
+to the path currently probed by the development script inside this optional fixture only.
 
 Runtime networking is `none`: only the container's loopback is available, including HTTP/TLS
-logic fixtures. Real sync servers, public HTTPS, IME and editor installation variants retain their
-specialized runners; this phase does not orchestrate the full desktop matrix. Missing optional
+logic fixtures. Real sync servers retain their owned-server runner; the optional profile adds IME
+and editor dependencies, not orchestration of the full desktop matrix. Missing optional
 Gradia/Flatpak dependencies block their cases, not pass them. Browser cases set
 `seccomp=unconfined` for that container to permit the browser's own namespace sandbox; they never
 use privileged mode, host networking or browser `--no-sandbox`. A kernel denying user namespaces

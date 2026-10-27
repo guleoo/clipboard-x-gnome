@@ -79,6 +79,39 @@ async function clickInsensitiveControl(desktop, preferences, observed, widget) {
 }
 
 export const cases = {
+  'CONN-09-protocol-feedback': desktop => fixture(desktop, async ({gate, preferences}) => {
+    assert(/^zh(?:_|$)/.test(GLib.getenv('LANGUAGE') ?? ''), 'Protocol feedback requires the actual Chinese catalog');
+    const previous = connectionFile();
+    const revision = desktop.settings.get_uint('sync-configuration-revision');
+    await preferences.input('Server address', gate.address);
+    gate.set({statusResponse: {apiVersion: 2, state: 'online'}});
+    await preferences.click(button('Test connection'));
+    await until(() => gate.state.requests.some(request => request.path === '/api/v1/status' && request.status === 200),
+      'the unsaved address returns an actual incompatible protocol response');
+    await ready(preferences);
+    const feedback = await status(preferences);
+    assert(feedback === '同步请求失败',
+      `Unsupported protocol must show the Chinese safe fallback, not its raw API-version diagnostic (${feedback})`);
+    assert((await connectionControls(preferences)).widgets.every(widget => widget.sensitive),
+      'Protocol rejection must release Test, Apply and Refresh controls');
+    assert(gate.state.requests.length === 1 && connectionFile() === previous
+      && desktop.settings.get_uint('sync-configuration-revision') === revision
+      && !desktop.settings.get_boolean('sync-enabled'),
+    'A rejected connection test must not save draft inputs, start synchronization or continue to Channel/profile work');
+
+    gate.set({});
+    await preferences.click(button('Test connection'));
+    await until(() => gate.state.requests.some(request => request.path === '/api/v1/channels' && request.status === 200),
+      'retry reaches the real compatible status and Channel endpoints');
+    await ready(preferences);
+    assert(await hasStatus(preferences, 'Online')
+      && (await connectionControls(preferences)).widgets.every(widget => widget.sensitive),
+    'The same native controls must allow a successful localized retry after protocol recovery');
+    assert(connectionFile() === previous && desktop.settings.get_uint('sync-configuration-revision') === revision
+      && !desktop.settings.get_boolean('sync-enabled'),
+    'Successful Test must also leave the unsaved address and enable preference untouched');
+  }),
+
   'CONN-02': desktop => fixture(desktop, async ({gate, preferences}) => {
     const previous = connectionFile();
     const revision = desktop.settings.get_uint('sync-configuration-revision');

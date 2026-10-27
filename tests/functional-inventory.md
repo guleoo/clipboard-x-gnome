@@ -38,6 +38,10 @@ Observed results remain in the acceptance snapshot.
 | SET-06 | `SET-06-global-actions` exercises actual privacy/clear WM shortcuts with the panel closed, unbinding and rebinding; it does not duplicate the recorder matrix. |
 | LANG-02/03/07 | Existing `LANG-02` and `LANG-07-errors` run explicitly in four languages on both versions. `LANG-03 --language ar/de` checks actual direction, narrow-panel long-text actions/exact copy and reachable translated settings. `LANG-07-dictionary --language zh_CN` retains the actual dictionary-error localization assertion. Glyph/visual quality remains manual. |
 | OPS-01/02/03 | Existing `XFER-02` / `XFER-02-download` check exact bytes/content and maximum main-loop gaps across the operation. `OPS-03-bounded` warms up twice, then cycles ten times with UI/name/shortcut cleanup assertions and RSS/FD observations, not a claim of hours-long soak coverage. |
+| CONN-01/09 | Headless `CONN-01-tls-prefix` and `CONN-09-protocol` use the real backend with private CA trust, proxy prefixes, request-header checks and protocol recovery. Native `CONN-09-protocol-feedback` owns the actual translated GTK feedback/busy-state wiring. |
+| SET-03/09 | `SET-03-system` changes real desktop theme/accent settings with an independent theme probe, verifying custom-color isolation and system reset. `SET-09-failure` exercises one actual native Gio failure at the external URI boundary, translated feedback, dismissal and continued settings use. |
+| OPS-03 | `sync/resources.native.js` adds two warmups and eight actual upload/receive/poll/refresh/toggle cycles, Shell-owned TCP connection closure, transfer ownership and temporary-file cleanup; RSS/FD trends are observations, not a long-soak guarantee. |
+| TYPE-08 / EDIT-07 | Optional `applications` image: `TYPE-08-ime` uses real libpinyin and Gtk preedit with normal-key positive controls in Chinese/ASCII modes. Existing Gradia native/Flatpak cases verify the actual image canvas; dependency installation alone is not a pass. |
 
 ## Acceptance layers
 

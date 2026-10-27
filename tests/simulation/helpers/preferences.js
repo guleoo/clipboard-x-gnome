@@ -5,9 +5,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {assert, pause, until} from './desktop.js';
 
 export class Preferences {
-  static async open(desktop) {
+  static async open(desktop, {uriFailure = false} = {}) {
     const prefs = new Preferences(desktop);
     const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
+    launcher.setenv('CBX_TEST_SETTINGS_URI_FAILURE', uriFailure ? '1' : '0', true);
     // GNOME's own preferences host exports the private Shew typelib/library.
     const libraries = ['/usr/lib/gnome-shell', '/usr/lib64/gnome-shell']
       .filter(path => GLib.file_test(path, GLib.FileTest.IS_DIR));

@@ -1,6 +1,7 @@
 import GdkPixbuf from 'gi://GdkPixbuf';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
 import {assert, fixture, json, until, SyncProgressStore} from './backend.js';
 
 const encoder = new TextEncoder();
@@ -179,6 +180,49 @@ export const cases = {
     await until(() => !json(queue.path).entries.some(value => value.itemId === item.id), 'confirmation removes actual durable intent');
     assert(proxy.state.requests.filter(value => value.method === 'PUT' && value.path.includes('/contents/')).length === 1
       && (await backend.items()).items.filter(value => value.id === item.id).length === 1, 'Lost ACK never uploads the original or creates the item twice');
+  }),
+
+  'CONN-01-tls-prefix': () => fixture(async ({backend, endpoint, gate}) => {
+    const proxy = await gate({tls: true, prefix: '/cbx'});
+    let database = null;
+    const source = await endpoint({start: false, address: proxy.address,
+      createSession: () => new Soup.Session({timeout: 10, ...(database ? {tls_database: database} : {})})});
+    proxy.set({authentication: {apiKey: source.identity.key, deviceId: source.identity.id}});
+    let rejected;
+    try { await source.client.start(); } catch (error) { rejected = error; }
+    assert(rejected?.code === 'server_unavailable' && !source.client.ready && proxy.state.requests.length === 0,
+      'Default trust must reject the private CA before sending authenticated HTTP requests');
+    database = Gio.TlsFileDatabase.new(proxy.caFile);
+    await source.client.restart();
+    assert(source.client.ready, 'Explicit per-session CA trust must permit real HTTPS initialization through the proxy prefix');
+    const item = await source.publish({text: 'Trusted HTTPS through an actual reverse-proxy subpath'});
+    assert((await backend.item(item.id)).id === item.id, 'Prefixed TLS traffic must reach and commit to the actual backend');
+    const requests = proxy.state.requests;
+    assert(requests.length > 3 && requests.every(request => request.path.startsWith('/cbx/api/v1/')
+      && request.authenticated && request.identified),
+    'Every proxy request must retain the configured prefix and exact device authentication headers');
+    assert(requests.some(request => request.path.endsWith('/status') && request.status === 200)
+      && requests.some(request => request.method === 'PUT' && request.path.endsWith('/device/profile') && request.status === 200),
+    'HTTPS success must include actual status and profile operations, not merely a TLS handshake');
+    assert(!JSON.stringify(proxy.state).includes(source.identity.key), 'Gate diagnostics must never contain the API key');
+  }),
+
+  'CONN-09-protocol': () => fixture(async ({endpoint, gate}) => {
+    const proxy = await gate();
+    proxy.set({statusResponse: {apiVersion: 2, state: 'online'}});
+    const receiver = await endpoint({start: false, address: proxy.address});
+    let rejected;
+    try { await receiver.client.start(); } catch (error) { rejected = error; }
+    assert(rejected && !receiver.client.ready && receiver.client._state === 'error'
+      && receiver.settings.get_boolean('sync-enabled'),
+    'Actual unsupported HTTP protocol status must fail initialization without changing the enable preference');
+    const requests = proxy.state.requests;
+    assert(requests.length === 1 && requests[0].path === '/api/v1/status' && requests[0].status === 200,
+      'Protocol rejection must happen on the real successful HTTP response before profile, Channel or content work');
+    proxy.set({});
+    await receiver.client.restart();
+    assert(receiver.client.ready && proxy.state.requests.some(request => request.path === '/api/v1/device/profile'),
+      'The same client must reconnect normally once compatible backend status is restored');
   }),
 
   'CONN-09-device': () => fixture(async ({backend, endpoint}) => {

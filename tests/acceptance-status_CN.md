@@ -4,6 +4,71 @@
 
 更新日期：2026-10-28。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
+## 剩余缺口补测：真实编辑器与输入法（2026-10-28）
+
+| 验证 | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| EDIT-07-native：原生 Gradia 真正显示测试图片，Shell 保持响应 | 通过，最大间隙 230.8 ms | 通过，208.8 ms |
+| EDIT-07-flatpak：保留应用沙箱，经 `%i` 收到图片并在画布显示 | 通过，226.1 ms | 通过，235.5 ms |
+| TYPE-08-ime：真实 libpinyin 中文组字/英文模式，普通按键与插件输入对照 | 通过 | 通过 |
+
+IME 先用普通虚拟按键产生真实 Gtk preedit，再用 Space 提交候选；插件 Ctrl+点击同样提交“你好”。
+切到英文模式后两条路径均为 `nihao ` 且无组字。没有强行切走 IME，也不声称绕过输入法。
+原生 Gradia 固定源码 1.13.0，Flatpak 应用和 GNOME runtime 固定提交，报告含实际包清单。
+首轮原生应用因缺 `pytesseract` 退出，已补镜像依赖后重跑；不算插件修复。
+构建也纠正了 BuildKit 不含 `/.dockerenv`、缺 blueprint-compiler，以及原先误写的 Flatpak runtime 50
+（该固定应用提交真实声明为 51）。这些环境失败报告保留，不据此给插件定性。
+
+证据：[50 最终三项](../build/environments-20261027T182243Z-wtt5iehr/report.json)、
+[51 最终三项](../build/environments-20261027T182552Z-vajbxdjt/report.json)、
+[最终镜像复用校验](../build/environments-20261027T182601Z-ppcvxqv1/report.json)、
+[共享 GTK 夹具与主题回归](../build/environments-20261027T182459Z-rf4m6prt/report.json)。
+当前注册 138 项原生用例；未改生产功能、宿主插件或 GitHub 工作流。
+尚需补的可自动验证项为 Devkit 实际完整链及长时间资源观察；视觉/物理硬件与已知失败另列。
+
+## 剩余缺口补测：真实连接、主题与同步资源（2026-10-28）
+
+| 验证 | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| CONN-01-tls-prefix：默认拒绝自签证书，私有 CA 信任后通过 HTTPS 子路径真实注册/上传 | 通过 | 通过 |
+| CONN-09-protocol：HTTP 200 但版本不兼容时拒绝初始化，恢复协议后可重试 | 通过 | 通过 |
+| CONN-09-protocol-feedback：原生测试连接显示中文安全提示，按钮恢复可用，不暗中应用配置 | 通过 | 通过 |
+| SET-03-system：真实系统深浅主题/强调色变化、自定义前景与强调色隔离、恢复系统颜色 | 通过 | 通过 |
+| OPS-03-sync：2 轮预热＋8 轮实际上传/接收/轮询/刷新/开关，资源释放 | 通过 | 通过 |
+| TYPE-09-firefox：实际私有浏览器 ASCII、CJK/emoji 精确回读 | 通过 | 通过 |
+| SET-09-failure：关于页原生 Gio 启动失败有中文提示，关闭后设置可继续操作 | 通过 | 通过 |
+| 完整非压力逻辑回归＋无图形文件/HTTP 验收 | 51/51＋7/7 通过 | 51/51＋7/7 通过 |
+
+HTTPS 仅给该测试的 Soup session 配置私有 CA，不改宿主信任、不跳过证书验证。
+代理逐请求检查前缀、认证和 DeviceId，只记录布尔结果而非 Key；既有 SEND-07 断线重试同时通过。
+资源用 Shell 自有 socket inode 验证连接在关闭同步后消失，任务所有权、轮询源、传输和暂存文件也须释放。
+八轮 RSS 约增加 20/24 MB，FD 减少 6/6；这是有限运行趋势，不用任意阈值伪装长期无泄漏证明。
+Firefox 通过不抵消既有 GTK 输入失败。
+
+关于页首次用例误把“显示任何原生诊断/路径”当成凭据泄漏；实际 Gio 文案已是中文，
+链接是固定公开地址，不含正文或 Key。已按 SET-09 改为中文提示、一次回调、可关闭且设置仍可用。
+保留首轮报告，不将不成立的额外断言包装成产品缺陷。词库错误正文未本地化的独立失败仍保留。
+
+证据：[50 HTTP](../build/sync-http-tests/cbx-simulation-272c4e8918e8fdc4-shell/) /
+[51 HTTP](../build/sync-http-tests/cbx-simulation-c0848037cbe2f95f-shell/)、
+[50 协议提示](../build/simulation-tests/cbx-simulation-636f3236069e8c6f-shell/) /
+[51 协议提示](../build/simulation-tests/cbx-simulation-fff1f6f7210cd447-shell/)、
+[系统主题](../build/environments-20261027T175230Z-l7uzupyk/report.json)、
+[50 同步资源](../build/simulation-tests/cbx-simulation-2c4b6c96a9d0d75f-shell/) /
+[51 同步资源](../build/simulation-tests/cbx-simulation-34b77122b4ef3aed-shell/)、
+[Firefox](../build/environments-20261027T180534Z-covg_gas/report.json)、
+[关于页失败恢复](../build/environments-20261027T181403Z-ekj16wpw/report.json)、
+[逻辑回归](../build/environments-20261027T181035Z-0qi4p7ne/report.json)。
+后端仍为此前记录的测试镜像 `d8e3a43d15e6`，不是当前服务端重新构建。
+
+操作出口审查（OPS-08/PRIV-08）：当前生产代码直接 console 输出仅在 `common/logger.js`，
+调用处模块/操作名是固定标签；既有 logger 测试验证消息、参数、响应正文和任意服务端 code 不进入
+诊断，包含真实 Gio 失败/取消、原因链和实际 console 输出。三个 Shell 通知出口分别由
+LANG-07-errors、TYPE-06、EDIT-01/SHOT-04 验证；设置同步/校验错误使用稳定翻译映射。
+关于页固定公开 URI 和词库导入错误会显示原生诊断，不能据此声称会泄漏同步 API Key；词库英文正文
+仍是本地化缺陷。队列只保存条目引用/冻结清单，不复制连接凭据；`sync.json` 本来就是用户配置。
+这是当前插件输出边界的有限审查，不保证 GNOME/GTK/应用自身日志，也不新增每个调用点的重复测试。
+
 ## 剩余缺口补测：设置、语言与来源故障（2026-10-28）
 
 | 验证 | GNOME 50 | GNOME 51 |
@@ -357,8 +422,9 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 
 ## 剩余边界
 
-物理输入、真实 IME 组字、全部 toolkit/XWayland/门户后端、可信 HTTPS、Flatpak Gradia、
-两个完整桌面的激活竞态、长期 soak、视觉仍需准备环境或人工证据，并非断言无法自动化。
+物理输入、其他 toolkit/XWayland/门户部署、两个完整桌面的激活竞态、长期 soak、
+Devkit 完整启动链与视觉仍分别保留边界，并非断言无法自动化。真实 IME、可信 HTTPS、
+Gradia 两种安装方式已由上方最新记录补齐，不再当作缺依赖。
 逻辑层已负责的数据/安全矩阵不重复搬进 Shell。
 
 依赖、显示 profile、冷启动命令见[测试指南](README_CN.md)。被忽略的

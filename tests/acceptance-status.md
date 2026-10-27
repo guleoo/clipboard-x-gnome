@@ -5,6 +5,76 @@
 Updated: 2026-10-28. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## Remaining-gap coverage: real editors and input method (2026-10-28)
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| EDIT-07-native: native Gradia displays the actual fixture while Shell remains responsive | Passed, max gap 230.8 ms | Passed, 208.8 ms |
+| EDIT-07-flatpak: sandbox retained, `%i` image visible on the actual canvas | Passed, 226.1 ms | Passed, 235.5 ms |
+| TYPE-08-ime: real libpinyin Chinese/ASCII modes, normal-key and plugin-input comparison | Passed | Passed |
+
+Ordinary virtual keys first produce actual Gtk preedit and Space commits the candidate; plugin Ctrl+click
+also commits “你好”. In ASCII mode both paths produce `nihao ` without composition. The test does not
+switch away from the IME or claim to bypass it. Native Gradia is pinned-source 1.13.0; Flathub app/runtime
+commits and actual packages are recorded. The first native launch lacked `pytesseract`; after correcting
+image dependencies all cases were rerun, not reported as a plugin fix. Build setup also corrected a
+BuildKit `/.dockerenv` assumption, missing blueprint-compiler and an incorrect runtime-50 expectation
+(the pinned app actually declares runtime 51). Environment-failure reports remain, not product diagnoses.
+
+Evidence: [50 final three cases](../build/environments-20261027T182243Z-wtt5iehr/report.json),
+[51 final three cases](../build/environments-20261027T182552Z-vajbxdjt/report.json),
+[final image reuse](../build/environments-20261027T182601Z-ppcvxqv1/report.json),
+[shared GTK fixture and theme regression](../build/environments-20261027T182459Z-rf4m6prt/report.json).
+There are now 138 registered native cases; production features, host extension and GitHub workflows are unchanged.
+Actual full Devkit startup and longer resource observation remain; visual/hardware boundaries and known failures stay separate.
+
+## Remaining-gap coverage: real connections, theme and sync resources (2026-10-28)
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| CONN-01-tls-prefix: reject untrusted TLS; register/publish through HTTPS subpath with a private CA | Passed | Passed |
+| CONN-09-protocol: reject incompatible protocol despite HTTP 200; retry after protocol recovery | Passed | Passed |
+| CONN-09-protocol-feedback: native Chinese safe feedback, buttons recover, no implicit Apply | Passed | Passed |
+| SET-03-system: actual light/dark and accent changes, custom-color isolation, restore system colors | Passed | Passed |
+| OPS-03-sync: two warmups plus eight actual upload/receive/poll/refresh/toggle resource cycles | Passed | Passed |
+| TYPE-09-firefox: exact ASCII and CJK/emoji readback in a private real browser | Passed | Passed |
+| SET-09-failure: native Gio launch failure has Chinese feedback; preferences remains usable | Passed | Passed |
+| Full non-stress logic regression plus headless file/HTTP acceptance | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
+
+Only the test Soup session trusts its private CA; host trust and certificate validation remain intact.
+The proxy checks prefixes, authentication and DeviceId per request, storing booleans rather than keys.
+Existing SEND-07 disconnect/retry also passes. Shell-owned socket inodes prove connections close on sync off;
+task ownership, polling sources, transports and temporary content must also clear. Eight cycles show roughly
++20/+24 MB RSS and -6/-6 FDs: bounded observations, not arbitrary leak thresholds or a long-soak guarantee.
+Firefox success does not override existing GTK typing failures.
+
+The first About test incorrectly equated any native diagnostic/path with credential disclosure. The actual
+Gio message is Chinese and About launches fixed public URLs without content/keys. The corrected SET-09
+asserts translated feedback, one callback, dismissal and continued preferences use. The first report remains;
+an unsupported extra assertion is not a product defect. The independent untranslated dictionary error still fails.
+
+Evidence: [50 HTTP](../build/sync-http-tests/cbx-simulation-272c4e8918e8fdc4-shell/) /
+[51 HTTP](../build/sync-http-tests/cbx-simulation-c0848037cbe2f95f-shell/),
+[50 protocol UI](../build/simulation-tests/cbx-simulation-636f3236069e8c6f-shell/) /
+[51 protocol UI](../build/simulation-tests/cbx-simulation-fff1f6f7210cd447-shell/),
+[system theme](../build/environments-20261027T175230Z-l7uzupyk/report.json),
+[50 sync resources](../build/simulation-tests/cbx-simulation-2c4b6c96a9d0d75f-shell/) /
+[51 sync resources](../build/simulation-tests/cbx-simulation-34b77122b4ef3aed-shell/),
+[Firefox](../build/environments-20261027T180534Z-covg_gas/report.json),
+[About failure recovery](../build/environments-20261027T181403Z-ekj16wpw/report.json),
+[logic regression](../build/environments-20261027T181035Z-0qi4p7ne/report.json).
+The backend remains the recorded test image `d8e3a43d15e6`, not a new build of current server sources.
+
+Outlet audit (OPS-08/PRIV-08): direct production console output exists only in `common/logger.js`,
+with fixed module/operation labels at call sites. Existing logger tests cover real Gio failures/cancellation,
+cause chains and the actual console sink without messages, arguments, response bodies or arbitrary server codes.
+The three Shell notification outlets are covered by LANG-07-errors, TYPE-06 and EDIT-01/SHOT-04;
+sync/verifier settings use stable translated mappings. About's fixed public URIs and dictionary imports can
+show native diagnostics; this does not establish sync API-key disclosure, while the English dictionary body
+remains a localization defect. Outboxes retain references/frozen manifests, not connection credentials;
+`sync.json` intentionally stores user configuration. This bounded audit covers current plugin outlets, not
+GNOME/GTK/external-app logging, and adds no per-call-site duplicate tests.
+
 ## Remaining-gap coverage: settings, languages and source failures (2026-10-28)
 
 | Verification | GNOME 50 | GNOME 51 |
@@ -405,9 +475,10 @@ python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless -
 
 ## Remaining boundaries
 
-Physical input, real IME composition, every toolkit/XWayland/portal backend, trusted HTTPS,
-Flatpak Gradia, two-full-desktop activation races, long soaks and visuals still require prepared
-environments or manual evidence—not a declaration that automation is impossible. Logic-owned
+Physical input, other toolkit/XWayland/portal deployments, two-full-desktop activation races,
+long soaks, full Devkit startup and visuals retain their separate boundaries—not a declaration
+that automation is impossible. Real IME, trusted HTTPS and both Gradia installation variants are
+covered by the latest records above, no longer missing dependencies. Logic-owned
 data/security matrices are not duplicated into Shell tests.
 
 See the [test guide](README.md) for dependencies and display/cold-run commands. Ignored

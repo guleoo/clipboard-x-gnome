@@ -1,4 +1,4 @@
-FROM fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80
+FROM fedora:44@sha256:43b29f65a41eb9c35e1cd5323e3bdf3b655c2357a9f4f1ff2f9c2798e5045d80 AS baseline
 ARG SHELL_MAJOR=50
 LABEL io.github.guleoo.clipboard-x-gnome.test-environment="1"
 # Fedora's container base otherwise discards non-English system catalogs.
@@ -20,10 +20,15 @@ RUN dnf install -y --setopt=install_weak_deps=False \
 RUN dnf install -y --setopt=install_weak_deps=False ibus \
     && dnf clean all \
     && rpm -qa | sort > /opt/test-packages.txt
-ENV CBX_TEST_SHELL=${SHELL_MAJOR} \
+ENV CBX_TEST_SHELL=${SHELL_MAJOR} CBX_TEST_PROFILE=baseline \
     LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LANGUAGE=en_US \
     GTK_IM_MODULE=wayland GTK_A11Y=none NO_AT_BRIDGE=1 \
     LIBGL_ALWAYS_SOFTWARE=1 GSK_RENDERER=cairo \
     XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_TYPE=wayland
 COPY session.py /opt/test-session.py
 ENTRYPOINT ["python3", "/opt/test-session.py"]
+
+FROM baseline AS applications
+ENV CBX_TEST_PROFILE=applications
+COPY applications.sh /opt/test-applications.sh
+RUN bash /opt/test-applications.sh

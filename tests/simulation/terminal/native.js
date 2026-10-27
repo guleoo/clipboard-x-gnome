@@ -8,7 +8,7 @@ import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 import {typingSample} from './samples.js';
 
-async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false} = {}) {
+export async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false} = {}) {
   const item = await capture(desktop, target, text);
   if (replaceClipboard) await target.offer('Independent clipboard sentinel before action');
   await desktop.open();

@@ -1,5 +1,8 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Preferences} from '../helpers/preferences.js';
 
@@ -46,6 +49,58 @@ async function choose(desktop, preferences, trigger, title, value, accept) {
 }
 
 export const cases = {
+  async 'SET-03-system'(desktop) {
+    const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+    const saved = new Map(['color-scheme', 'accent-color'].map(key => [key, settings.get_value(key)]));
+    const probe = new St.Widget({width: 1, height: 1, opacity: 0,
+      style: 'background-color: -st-accent-color;'});
+    const rgb = (actor, background = false) => {
+      const node = actor.get_theme_node();
+      const value = background ? node.get_background_color() : node.get_foreground_color();
+      return [value.red, value.green, value.blue].join(',');
+    };
+    Main.layoutManager.addTopChrome(probe);
+    try {
+      desktop.settings.set_string('foreground-color', '#654321');
+      desktop.settings.set_string('theme-color', '#123456');
+      await desktop.open();
+      const state = await desktop.words.createState(null, 'alpha beta');
+      desktop.manager.show('tokenizer', state);
+      await desktop.settle();
+      const word = desktop.words.buttons[0];
+      await desktop.click(word);
+      await until(() => word.checked, 'native selected word exposes the active accent');
+      const accents = settings.get_string('accent-color') === 'red' ? ['blue', 'red'] : ['red', 'blue'];
+      for (const [index, accent] of accents.entries()) {
+        const previous = rgb(probe, true);
+        settings.set_string('color-scheme', index === 0 ? 'prefer-light' : 'prefer-dark');
+        settings.set_string('accent-color', accent);
+        await until(() => rgb(probe, true) !== previous, 'actual system accent propagates through the Shell theme');
+        await Scripting.waitLeisure();
+        assert(rgb(desktop.words.titleLabel) === '101,67,33' && rgb(word, true) === '18,52,86',
+          'Changing the system scheme/accent must preserve the configured custom foreground and selection accent');
+        assert(desktop.settings.get_string('foreground-color') === '#654321'
+          && desktop.settings.get_string('theme-color') === '#123456' && desktop.words.buttons[0] === word,
+        'System theme updates must not overwrite custom preferences or rebuild the selected word');
+      }
+      desktop.settings.set_string('foreground-color', '');
+      desktop.settings.set_string('theme-color', 'system');
+      await Scripting.waitLeisure();
+      const previous = rgb(probe, true);
+      settings.set_string('accent-color', 'green');
+      await until(() => rgb(probe, true) !== previous && rgb(word, true) === rgb(probe, true),
+        'Restoring system mode must make the selected word follow a subsequent real system accent update');
+      assert(rgb(desktop.words.titleLabel) === rgb(desktop.indicator.menu.box)
+        && desktop.words.buttons[0] === word && word.checked,
+      'System mode must restore ordinary foreground inheritance without losing the live word selection');
+    } finally {
+      for (const [key, value] of saved) settings.set_value(key, value);
+      Main.layoutManager.removeChrome(probe);
+      probe.destroy();
+      await desktop.close();
+    }
+  },
+
   async 'SET-03'(desktop) {
     const preferences = await Preferences.open(desktop);
     const color = () => desktop.settings.get_string('foreground-color');

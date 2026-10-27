@@ -43,7 +43,12 @@ def main():
     versions = {'shell': subprocess.check_output(['gnome-shell', '--version'], text=True).strip(),
                 'gjs': subprocess.check_output(['gjs', '--version'], text=True).strip(),
                 'inputMethod': os.environ['GTK_IM_MODULE'],
+                'profile': os.environ['CBX_TEST_PROFILE'],
                 'uid': os.getuid(), 'suite': request['suite']}
+    if versions['profile'] == 'applications':
+        applications = Path('/opt/test-applications.json')
+        versions['applications'] = json.loads(applications.read_text())
+        shutil.copyfile(applications, results / 'applications.json')
     (results / 'environment.json').write_text(json.dumps(versions, indent=2) + '\n')
     shutil.copyfile('/opt/test-packages.txt', results / 'packages.txt')
     if versions['shell'].split()[-1].split('.')[0] != os.environ['CBX_TEST_SHELL']:

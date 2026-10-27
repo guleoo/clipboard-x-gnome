@@ -10,7 +10,8 @@ const application = new Gtk.Application({application_id: 'io.github.guleoo.CbxAc
   flags: Gio.ApplicationFlags.NON_UNIQUE});
 const stateFile = directory.get_child('state.json');
 const commandFile = directory.get_child('command.json');
-let state = {ready: false, command: 0, text: '', edits: 0, paused: false};
+let state = {ready: false, command: 0, text: '', edits: 0, paused: false,
+  preedit: '', preeditUpdates: 0};
 let provider = null;
 let busy = false;
 
@@ -54,6 +55,10 @@ application.connect('activate', app => {
   buffer.connect('changed', () => {
     state.edits++;
     state.text = buffer.get_text(...buffer.get_bounds(), true);
+  });
+  entry.connect('preedit-changed', (_view, preedit) => {
+    state.preedit = preedit;
+    if (preedit) state.preeditUpdates++;
   });
   window.present();
   entry.grab_focus();

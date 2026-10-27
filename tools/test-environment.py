@@ -19,6 +19,8 @@ LABEL = 'io.github.guleoo.clipboard-x-gnome.test-environment'
 def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('--shell', choices=['50', '51', 'all'], default='all')
+    parser.add_argument('--profile', choices=['baseline', 'applications'], default='baseline',
+                        help='Optional real Gradia, Flatpak, Pinyin and Devkit dependencies')
     parser.add_argument('--suite', choices=['logic', 'simulation'], default='logic')
     parser.add_argument('--case', help='Explicit desktop case IDs; required with --suite simulation')
     parser.add_argument('--language', default='en_US')
@@ -59,14 +61,18 @@ def main():
         definition = source / 'tests/environments'
         for major in majors:
             dockerfile = f'gnome{major}/Dockerfile'
+            definitions = [dockerfile, 'session.py']
+            if args.profile == 'applications':
+                definitions.append('applications.sh')
             definition_hash = hashlib.sha256(b''.join(
                 name.encode() + b'\0' + (definition / name).read_bytes()
-                for name in [dockerfile, 'session.py']
+                for name in definitions
             )).hexdigest()
-            base = next(line.removeprefix('FROM ').strip()
+            base = next(line.split()[1]
                         for line in (definition / dockerfile).read_text().splitlines()
                         if line.startswith('FROM '))
-            tag = f'clipboard-x-gnome-test:{major}'
+            suffix = '' if args.profile == 'baseline' else '-applications'
+            tag = f'clipboard-x-gnome-test:{major}{suffix}'
             inspected = subprocess.run([*docker, 'image', 'inspect', tag], capture_output=True, text=True)
             if inspected.returncode == 0:
                 existing = json.loads(inspected.stdout)[0]
@@ -77,10 +83,11 @@ def main():
                     raise ValueError(f'{tag} uses a different environment definition; rebuild explicitly with --rebuild')
             if inspected.returncode or args.rebuild:
                 command = [*docker, 'build', '--file', str(definition / dockerfile),
+                           '--target', args.profile,
                            '--label', f'{LABEL}.definition={definition_hash}', '-t', tag]
                 if args.rebuild:
                     command.append('--no-cache')
-                print(f'Building GNOME {major} environment...', flush=True)
+                print(f'Building GNOME {major} {args.profile} environment...', flush=True)
                 log = report / f'gnome{major}-image.log'
                 with log.open('w') as output:
                     built = subprocess.run([*command, str(definition)], stdout=output, stderr=subprocess.STDOUT)
@@ -89,7 +96,7 @@ def main():
                     raise RuntimeError(f'GNOME {major} image build failed; see {log}')
             image = json.loads(subprocess.check_output([*docker, 'image', 'inspect', tag]))[0]
             image_id = image['Id']
-            results[major] = {'image': image_id, 'base': base, 'sourceSha256': source_hash,
+            results[major] = {'image': image_id, 'base': base, 'profile': args.profile, 'sourceSha256': source_hash,
                               'definitionSha256': definition_hash}
             if args.build_only:
                 results[major]['status'] = 'BUILT'
@@ -102,11 +109,18 @@ def main():
                        '--shm-size', '512m', '--pids-limit', '2048', '--ulimit', 'core=0']
             browser = bool(args.case and {'CLIP-02-chromium', 'TYPE-09-chromium', 'TYPE-09-firefox'}
                            .intersection(args.case.split(',')))
-            if browser:
+            flatpak = bool(args.profile == 'applications' and args.case
+                           and 'EDIT-07-flatpak' in args.case.split(','))
+            if browser or flatpak:
                 # Chromium's own namespace sandbox needs clone/unshare denied by
                 # Docker's default seccomp. Never use privileged mode/no-sandbox.
                 command += ['--security-opt', 'seccomp=unconfined']
+            if flatpak:
+                # Nested bubblewrap must mount its own proc inside the user/pid
+                # namespaces; Docker's masked proc paths otherwise prevent it.
+                command += ['--security-opt', 'systempaths=unconfined']
             results[major]['browserNamespaces'] = browser
+            results[major]['flatpakNamespaces'] = flatpak
             command += [image_id, json.dumps(request)]
             try:
                 subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
@@ -125,7 +139,7 @@ def main():
                     subprocess.run([*docker, 'logs', name], stdout=output, stderr=subprocess.STDOUT)
             finally:
                 subprocess.run([*docker, 'rm', '-f', name], stdout=subprocess.DEVNULL)
-    (report / 'report.json').write_text(json.dumps({'suite': args.suite, 'revision': revision,
+    (report / 'report.json').write_text(json.dumps({'suite': args.suite, 'profile': args.profile, 'revision': revision,
                                                  'results': results}, indent=2) + '\n')
     print(f'Report: {report}')
     if any(item['status'] == 'FAIL' for item in results.values()):

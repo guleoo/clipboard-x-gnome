@@ -71,12 +71,26 @@ GNOME 50 使用 `tests/environments/gnome50/Dockerfile`，GNOME 51 使用
 每次启动全新容器，测试进程为 UID 1000 普通用户；系统 D-Bus 仅在容器内启动。
 宿主仅提供只读代码快照，不挂载 HOME、桌面/输入设备、D-Bus socket、Docker socket 或凭据，
 不传入宿主环境变量。`.git`、`.codex`、构建目录和用户输入样本不进入快照。GTK 输入模块固定
-为 Wayland；包含 Shell Unicode/文本输入路径所需的标准 IBus daemon，不安装 Fcitx 或拼音
+为 Wayland；包含 Shell Unicode/文本输入路径所需的标准 IBus daemon，默认基线不安装 Fcitx 或拼音
 引擎。基础框架可用不等于已验证真实中文输入法。
 
+实际编辑器/输入法验收显式选各版本 Dockerfile 的 `applications` 阶段：**仅在镜像内**安装
+固定源码的原生 Gradia、固定 Flathub 应用/runtime、Fedora libpinyin 和真实 Mutter Devkit：
+
+```sh
+python3 tools/test-environment.py --profile applications --build-only
+python3 tools/test-environment.py --profile applications --suite simulation --case EDIT-07-native,EDIT-07-flatpak,TYPE-08-ime
+```
+
+对应镜像为 `:50-applications` / `:51-applications`，不改变基础镜像。报告记录应用提交/hash、
+runtime 提交和实际 RPM 版本。IME 用例观察 Gtk preedit，分别比较中英文模式的普通虚拟按键与
+插件输出，不以引擎名称冒充组字正控，也不宣称绕过输入法。只有 Flatpak 用例额外取消容器系统
+路径屏蔽（`systempaths=unconfined`），使其自身 bubblewrap 沙箱能创建嵌套 namespace；不挂载
+宿主路径/设备，不移除应用沙箱。Fedora Devkit 真实路径只在可选夹具里桥接到开发脚本目前探测的路径。
+
 运行时网络为 `none`，仅容器自身 loopback 可用；HTTP/TLS 逻辑夹具照常运行，不访问公网。
-同步后端、可信公网 HTTPS、真实 IME 和外部编辑器安装方式仍按专项入口验收；此阶段不声称已
-编排全部模拟矩阵。未安装的 Gradia/Flatpak 等依赖会阻塞对应用例，不算通过。
+同步后端仍用自有服务端专项入口；可选 profile 提供 IME/编辑器依赖，不声称编排全部模拟矩阵。
+未安装的 Gradia/Flatpak 等依赖会阻塞对应用例，不算通过。
 浏览器用例为允许其内部 namespace 沙箱，只对这次容器设置 `seccomp=unconfined`，不使用
 `--privileged`、宿主网络或浏览器 `--no-sandbox`；内核不允许 user namespace 时应判为环境阻塞，
 不能据此认定插件输入失败。容器仍共享 Docker 引擎的内核，不是硬件/性能完全相同的虚拟机。

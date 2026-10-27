@@ -14,7 +14,7 @@ const expected = {
   ko: ['클립보드 기록 검색…', '단어 분리', '일반', '이미지 편집'],
 };
 
-async function dictionaryFailure(preferences) {
+async function errorLabels(preferences, heading) {
   for (let attempt = 0; attempt < 100; attempt++) {
     const {windows} = await preferences.inspect();
     for (const window of windows) {
@@ -26,15 +26,42 @@ async function dictionaryFailure(preferences) {
             if (parent.id === dialog.id) return true;
           return false;
         }).map(widget => widget.label);
-        if (labels.includes('词库操作失败')) return labels;
+        if (labels.includes(heading)) return labels;
       }
     }
     await pause(20);
   }
-  throw new Error('The actual dictionary failure dialog must appear with its translated Chinese heading');
+  throw new Error(`The actual error dialog must appear with its translated heading: ${heading}`);
 }
 
 export const cases = {
+  async 'SET-09-failure'(desktop) {
+    assert(GLib.getenv('LANGUAGE').startsWith('zh'), 'About error localization requires the installed Chinese catalog');
+    const preferences = await Preferences.open(desktop, {uriFailure: true});
+    try {
+      await preferences.page('about');
+      await preferences.click({type: 'AdwActionRow', row: 'Project website'});
+      const labels = await errorLabels(preferences, '操作失败');
+      const failure = preferences.state.uriFailure;
+      assert(failure?.native && failure.launches === 1,
+        'The real About activation must invoke the isolated native-Gio URI failure boundary exactly once');
+      print('[simulation] SET-09-failure Chinese heading and native Gio failure callback PASS');
+      const close = (await preferences.translate({label: 'Close'})).label;
+      const body = labels.find(label => label && !['操作失败', close].includes(label));
+      assert(typeof body === 'string' && body.trim().length > 0, 'The launch failure must display an explanatory body');
+      print(`[simulation] SET-09-failure actual body: ${body}`);
+      // About launches fixed public URLs. A native local diagnostic is not
+      // clipboard content or credentials; do not invent a path-redaction
+      // requirement for this UI from the logger's separate sink contract.
+      assert(/[\u3400-\u9fff]/u.test(body),
+        'The actual native failure must have an understandable Chinese explanation');
+      await preferences.click({type: 'GtkButton', label: 'Close'});
+      await preferences.page('general');
+      assert((await preferences.inspect()).windows.length === 1,
+        'Dismissing an external-launch failure must leave preferences usable');
+    } finally { await preferences.close(); }
+  },
+
   async 'LANG-07-dictionary'(desktop) {
     assert(GLib.getenv('LANGUAGE').startsWith('zh'), 'Dictionary error localization requires the installed Chinese catalog');
     const preferences = await Preferences.open(desktop);
@@ -43,7 +70,7 @@ export const cases = {
       await preferences.click({type: 'GtkButton', label: 'Add network location'});
       await preferences.input('HTTP(S) URL', 'ftp://example.invalid/dictionary');
       await preferences.click({type: 'GtkButton', label: 'Add'});
-      const labels = await dictionaryFailure(preferences);
+      const labels = await errorLabels(preferences, '词库操作失败');
       assert(labels.includes('词库操作失败'), 'The actual error dialog heading must be translated');
       print('[simulation] LANG-07-dictionary Chinese error heading PASS');
       const body = labels.find(label => label?.includes('HTTP') && label.includes('HTTPS'));

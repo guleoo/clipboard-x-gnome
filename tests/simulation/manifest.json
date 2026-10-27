@@ -64,6 +64,10 @@
     ]
   },
   {
+    "module": "terminal/ime.native.js",
+    "cases": [{"id": "TYPE-08-ime", "commands": ["/usr/libexec/ibus-engine-libpinyin"]}]
+  },
+  {
     "module": "terminal/vte.native.js",
     "cases": [{"id": "TYPE-02-vte", "commands": ["python3"]}]
   },
@@ -90,13 +94,18 @@
     "cases": [{"id": "CONN-07"}, {"id": "XFER-01"}]
   },
   {
+    "module": "sync/resources.native.js",
+    "cases": [{"id": "OPS-03-sync", "server": true}]
+  },
+  {
     "module": "sync/connection.native.js",
     "cases": [
       {"id": "CONN-02", "server": true, "commands": ["python3"]},
       {"id": "CONN-03", "server": true, "commands": ["python3"]},
       {"id": "CONN-03-refresh", "server": true, "commands": ["python3"]},
       {"id": "CONN-04", "server": true, "commands": ["python3"]},
-      {"id": "CONN-05", "server": true, "commands": ["python3"]}
+      {"id": "CONN-05", "server": true, "commands": ["python3"]},
+      {"id": "CONN-09-protocol-feedback", "server": true, "commands": ["python3"], "languages": ["zh"]}
     ]
   },
   {
@@ -141,7 +150,7 @@
   },
   {
     "module": "settings/colors.native.js",
-    "cases": [{"id": "SET-03"}]
+    "cases": [{"id": "SET-03"}, {"id": "SET-03-system"}]
   },
   {
     "module": "lifecycle/diagnostics.native.js",
@@ -158,6 +167,7 @@
   {
     "module": "settings/language.native.js",
     "cases": [{"id": "LANG-02", "languages": ["en", "zh", "ja", "ko"]},
+      {"id": "SET-09-failure", "languages": ["zh"]},
       {"id": "LANG-07-dictionary", "languages": ["zh"]},
       {"id": "LANG-03", "languages": ["ar", "de"]}]
   },

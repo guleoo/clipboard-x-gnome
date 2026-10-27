@@ -6,6 +6,7 @@ import {assert, pause, until} from '../helpers/desktop.js';
 import {restart} from '../helpers/restart.js';
 import {Target} from '../helpers/target.js';
 import {capture} from '../clipboard/native.js';
+import {sample} from '../helpers/resource-snapshot.js';
 
 function actorCounts() {
   const counts = {indicator: 0, menu: 0, tooltip: 0};
@@ -37,20 +38,6 @@ async function waitOwner(name, expected) {
     await pause(20);
   } while (GLib.get_monotonic_time() < deadline);
   assert(false, `Running-applications D-Bus ownership must become ${expected}`);
-}
-
-function sample(cycle, phase) {
-  const [, bytes] = Gio.File.new_for_path('/proc/self/status').load_contents(null);
-  const rssKB = Number(new TextDecoder().decode(bytes).match(/^VmRSS:\s+(\d+)\s+kB$/mu)?.[1]);
-  const descriptors = Gio.File.new_for_path('/proc/self/fd').enumerate_children(
-    'standard::name', Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
-  let openFDs = 0;
-  try { while (descriptors.next_file(null)) openFDs++; }
-  finally { descriptors.close(null); }
-  assert(Number.isFinite(rssKB) && rssKB > 0 && openFDs > 0,
-    'Resource observations must come from the actual Shell process');
-  print(`[simulation] Bounded resources: cycle=${cycle}; phase=${phase}; rssKB=${rssKB}; openFDs=${openFDs}`);
-  return {cycle, phase, rssKB, openFDs};
 }
 
 async function shortcutOnce(desktop) {

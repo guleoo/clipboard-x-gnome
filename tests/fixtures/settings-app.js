@@ -22,6 +22,25 @@ const application = new Gtk.Application({application_id: 'io.github.guleoo.CbxSe
 const stateFile = Gio.File.new_for_path(`${directory}/state.json`);
 const commandFile = Gio.File.new_for_path(`${directory}/command.json`);
 let state = {ready: false, command: 0};
+if (GLib.getenv('CBX_TEST_SETTINGS_URI_FAILURE') === '1') {
+  let failure;
+  try { Gio.File.new_for_path(`${directory}/missing-uri-target`).load_contents(null); }
+  catch (error) { failure = error; }
+  if (!(failure instanceof GLib.Error))
+    throw new Error('The URI failure profile requires a real native Gio exception');
+  state.uriFailure = {native: true, launches: 0, message: failure.message};
+  // Fault only the external launch boundary in this private GTK process. The
+  // real About row, native pointer event and production error callback remain.
+  Gtk.UriLauncher.prototype.launch = function (_parent, cancellable, callback) {
+    state.uriFailure.launches++;
+    save();
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      if (!cancellable?.is_cancelled()) callback(this, {});
+      return GLib.SOURCE_REMOVE;
+    });
+  };
+  Gtk.UriLauncher.prototype.launch_finish = () => { throw failure; };
+}
 const ids = new WeakMap();
 let nextId = 0;
 function id(widget) {

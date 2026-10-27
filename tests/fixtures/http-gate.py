@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Bounded streaming gate in front of the owned real sync server; never logs credentials/bodies."""
+import argparse
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -7,13 +8,19 @@ import os
 from pathlib import Path
 import re
 import socket
-import sys
+import ssl
 import threading
 import time
 from urllib.parse import urlsplit
 
-directory = Path(sys.argv[1])
-upstream = urlsplit(sys.argv[2])
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('directory', type=Path)
+parser.add_argument('upstream')
+parser.add_argument('--tls', action='store_true')
+parser.add_argument('--prefix', default='')
+arguments = parser.parse_args()
+directory = arguments.directory
+upstream = urlsplit(arguments.upstream)
 if upstream.scheme != 'http' or upstream.hostname != '127.0.0.1':
     raise SystemExit('Only an owned loopback HTTP server may be gated')
 lock = threading.Lock()
@@ -50,13 +57,39 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
+    def respond(self, record, status, value):
+        body = json.dumps(value).encode()
+        with lock:
+            record.update(stage='response', status=status)
+            save()
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.wfile.write(body)
+        self.close_connection = True
+        with lock:
+            record.update(stage='completed', status=status, bytes=len(body))
+            save()
+
     def forward(self):
         record = {'method': self.command, 'path': self.path, 'stage': 'started', 'bytes': 0}
+        configuration = policy()
+        expected = configuration.get('authentication')
+        if expected:
+            record['authenticated'] = self.headers.get('Authorization') == 'Bearer ' + expected['apiKey']
+            record['identified'] = self.headers.get('X-Clipboard-X-Device-Id') == expected['deviceId']
         with lock:
             state['requests'].append(record)
             state['requests'] = state['requests'][-500:]
             save()
-        configuration = policy()
+        prefix = arguments.prefix
+        if prefix and not self.path.startswith(prefix + '/'):
+            return self.respond(record, 404, {})
+        path = self.path[len(prefix):] if prefix else self.path
+        if self.command == 'GET' and path == '/api/v1/status' and 'statusResponse' in configuration:
+            return self.respond(record, 200, configuration['statusResponse'])
         matched = bool(re.search(configuration.get('path', '(?!)'), self.path))
         connection = http.client.HTTPConnection(upstream.hostname, upstream.port, timeout=25)
         try:
@@ -67,7 +100,7 @@ class Handler(BaseHTTPRequestHandler):
                     record['stage'] = 'held'
                     save()
                 time.sleep(0.02)
-            connection.putrequest(self.command, self.path, skip_host=True, skip_accept_encoding=True)
+            connection.putrequest(self.command, path, skip_host=True, skip_accept_encoding=True)
             for key, value in self.headers.items():
                 if key.lower() not in {'connection', 'transfer-encoding', 'proxy-connection'}:
                     connection.putheader(key, value)
@@ -131,6 +164,10 @@ class Handler(BaseHTTPRequestHandler):
 
 server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
 server.daemon_threads = True
+if arguments.tls:
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(directory / 'cert.pem', directory / 'key.pem')
+    server.socket = context.wrap_socket(server.socket, server_side=True)
 state['port'] = server.server_port
 with lock:
     save()

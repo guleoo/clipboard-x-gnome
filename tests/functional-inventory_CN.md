@@ -36,6 +36,10 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | SET-06 | `SET-06-global-actions` 在面板关闭时验证隐私/清空两个真实 WM 快捷键、解绑和重绑，不复制录制控件矩阵。 |
 | LANG-02/03/07 | 既有 `LANG-02` 与 `LANG-07-errors` 显式四语言双版本；`LANG-03 --language ar/de` 验证实际方向、窄面板长文本操作/完整复制及长译文设置可达；`LANG-07-dictionary --language zh_CN` 保留真实词库错误正文的本地化断言。字形和视觉质量仍人工。 |
 | OPS-01/02/03 | 既有 `XFER-02` / `XFER-02-download` 同时测精确字节、实际内容和全过程最大主循环间隙；`OPS-03-bounded` 预热 2 轮后启停 10 轮，断言 UI/名称/快捷键清理并记录 RSS/FD 趋势，不冒充数小时 soak。 |
+| CONN-01/09 | 无图形 `CONN-01-tls-prefix` / `CONN-09-protocol` 通过真实后端验证私有 CA 信任、代理前缀、请求头和协议恢复；原生 `CONN-09-protocol-feedback` 负责实际 GTK 翻译提示与 busy 接线。 |
+| SET-03/09 | `SET-03-system` 改真实桌面主题/强调色并用独立主题探针，验证自定义颜色隔离和恢复系统；`SET-09-failure` 只在外部 URI 边界注入一次真实原生 Gio 失败，验证中文提示、关闭和设置继续可用。 |
+| OPS-03 | `sync/resources.native.js` 补 2 轮预热＋8 轮真实上传/接收/轮询/刷新/开关，以 Shell 自有 TCP、任务所有权和暂存文件断言释放；RSS/FD 只记录趋势，不冒充长期无泄漏。 |
+| TYPE-08 / EDIT-07 | 可选 `applications` 镜像：`TYPE-08-ime` 使用实际 libpinyin、Gtk preedit 和中英文模式普通按键正控；既有 Gradia 原生/Flatpak 用例验证实际图片画布，安装依赖本身不算通过。 |
 
 ## 验收层级
 

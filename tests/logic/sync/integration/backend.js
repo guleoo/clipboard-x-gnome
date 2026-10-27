@@ -22,6 +22,7 @@ for (const value of [GLib.get_user_data_dir(), GLib.get_user_config_dir(), GLib.
   assert(value.startsWith(`${runtime}/`), 'Headless integration must use private XDG storage');
 const {SyncClient} = await import(`${uri}/sync/client.js`);
 const {HttpTransport} = await import(`${uri}/sync/http/transport.js`);
+const {HttpClient} = await import(`${uri}/sync/http/client.js`);
 const {SyncConfigurationStore} = await import(`${uri}/sync/configuration-store.js`);
 export const {SyncProgressStore} = await import(`${uri}/sync/progress-store.js`);
 const {UploadQueue} = await import(`${uri}/sync/upload-queue.js`);
@@ -110,8 +111,9 @@ export class Backend {
 }
 
 export class Endpoint {
-  static async open(backend, {address = backend.address, channel = backend.channel.id, start = true} = {}) {
+  static async open(backend, {address = backend.address, channel = backend.channel.id, start = true, createSession = null} = {}) {
     const endpoint = new Endpoint(await backend.device(channel));
+    endpoint.createSession = createSession;
     try {
       await endpoint.connection.saveConnection({serverAddress: address, apiKey: endpoint.identity.key, activeChannelId: channel});
       await endpoint.initialize(start);
@@ -139,7 +141,8 @@ export class Endpoint {
     this.items = await this.store.load();
     this.client = new SyncClient(this.settings, {configurationStore: this.connection, progressStore: this.progress,
       transportFactory: (configuration, options) => {
-        const transport = new HttpTransport(configuration, options);
+        const client = this.createSession ? new HttpClient({...configuration, ...options, session: this.createSession()}) : null;
+        const transport = new HttpTransport(configuration, {...options, client});
         const download = transport.downloadContent;
         const endpoint = this;
         transport.downloadContent = function (channelId, itemId, contentId, path, options) {
@@ -221,17 +224,42 @@ export class Endpoint {
 }
 
 export class Gate {
-  static async open(address) {
+  static async open(address, {tls = false, prefix = ''} = {}) {
     const gate = new Gate();
     gate.directory = `${runtime}/gate-${GLib.uuid_string_random()}`;
     GLib.mkdir_with_parents(gate.directory, 0o700);
+    if (tls) {
+      gate.caFile = `${gate.directory}/ca.pem`;
+      await gate.certificate();
+    }
     const fixture = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_parent()
       .get_child('fixtures/http-gate.py').get_path();
-    gate.process = Gio.Subprocess.new(['python3', fixture, gate.directory, address], Gio.SubprocessFlags.NONE);
+    gate.process = Gio.Subprocess.new(['python3', fixture, gate.directory, address,
+      ...(tls ? ['--tls'] : []), ...(prefix ? ['--prefix', prefix] : [])], Gio.SubprocessFlags.NONE);
     try { await until(() => gate.state.port, 'owned streaming gate ready'); }
     catch (error) { await gate.close(); throw error; }
-    gate.address = `http://127.0.0.1:${gate.state.port}`;
+    gate.address = `${tls ? 'https' : 'http'}://127.0.0.1:${gate.state.port}${prefix}`;
     return gate;
+  }
+  async certificate() {
+    assert(GLib.find_program_in_path('openssl'), 'The trusted TLS fixture requires openssl');
+    const root = this.directory;
+    GLib.file_set_contents(`${root}/leaf.cnf`, 'subjectAltName=IP:127.0.0.1\nbasicConstraints=critical,CA:FALSE\n'
+      + 'keyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n');
+    for (const args of [
+      ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=CBX private test CA',
+        '-addext', 'basicConstraints=critical,CA:TRUE', '-addext', 'keyUsage=critical,keyCertSign,cRLSign',
+        '-keyout', `${root}/ca-key.pem`, '-out', this.caFile],
+      ['req', '-new', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=127.0.0.1',
+        '-keyout', `${root}/key.pem`, '-out', `${root}/leaf.csr`],
+      ['x509', '-req', '-in', `${root}/leaf.csr`, '-CA', this.caFile, '-CAkey', `${root}/ca-key.pem`,
+        '-CAcreateserial', '-days', '1', '-extfile', `${root}/leaf.cnf`, '-out', `${root}/cert.pem`],
+    ]) {
+      const process = Gio.Subprocess.new(['openssl', ...args], Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
+      await new Promise((resolve, reject) => process.wait_check_async(null, (child, result) => {
+        try { child.wait_check_finish(result); resolve(); } catch (error) { reject(error); }
+      }));
+    }
   }
   get state() { try { return json(`${this.directory}/state.json`); } catch { return {requests: []}; } }
   set(policy) { Gio.File.new_for_path(`${this.directory}/policy.json`).replace_contents(new TextEncoder().encode(JSON.stringify(policy)),
@@ -253,7 +281,7 @@ export async function fixture(run) {
     backend = await Backend.open();
     await run({backend, endpoint: async options => {
       const value = await Endpoint.open(backend, options); endpoints.push(value); return value;
-    }, gate: async () => { const value = await Gate.open(backend.address); gates.push(value); return value; }});
+    }, gate: async options => { const value = await Gate.open(backend.address, options); gates.push(value); return value; }});
   } catch (error) { failure = error; }
   for (const resource of [...endpoints.reverse(), backend, ...gates].filter(Boolean)) {
     try { await resource.close(); } catch (error) { if (!failure) failure = error; else printerr(`Cleanup: ${error.message}`); }
