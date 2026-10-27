@@ -10,36 +10,10 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from simulation_runtime import snapshot
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFINITION = ROOT / 'tests/environments'
 LABEL = 'io.github.guleoo.clipboard-x-gnome.test-environment'
-
-
-def snapshot(destination):
-    paths = subprocess.check_output(['git', '-C', str(ROOT), 'ls-files', '--cached', '--others',
-                                     '--exclude-standard', '-z']).decode().split('\0')
-    trees = {'src', 'data', 'schemas', 'po', 'tests', 'tools', 'docs'}
-    files = {'meson.build', 'meson_options.txt', 'package.json', 'LICENSE'}
-    digest = hashlib.sha256()
-    for name in sorted(set(paths) - {''}):
-        path = Path(name)
-        if path.parts[0] not in trees and name not in files and not name.startswith(('README', 'CONTRIBUTING')):
-            continue
-        if name == 'tools/simulate-input-sample.txt':
-            continue
-        source = ROOT / path
-        if not source.is_file():
-            continue
-        if source.is_symlink():
-            raise ValueError(f'Snapshot refuses a source symlink: {name}')
-        content = source.read_bytes()
-        target = destination / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, target)
-        target.chmod(0o444 | (source.stat().st_mode & 0o111))
-        digest.update(name.encode() + b'\0' + hashlib.sha256(content).digest())
-    return digest.hexdigest()
 
 
 def main():
@@ -81,15 +55,16 @@ def main():
     with tempfile.TemporaryDirectory(prefix='cbx-environment-source-') as temporary:
         source = Path(temporary)
         source.chmod(0o755)
-        source_hash = snapshot(source)
+        source_hash = snapshot(ROOT, source)
+        definition = source / 'tests/environments'
         for major in majors:
             dockerfile = f'gnome{major}/Dockerfile'
             definition_hash = hashlib.sha256(b''.join(
-                name.encode() + b'\0' + (DEFINITION / name).read_bytes()
+                name.encode() + b'\0' + (definition / name).read_bytes()
                 for name in [dockerfile, 'session.py']
             )).hexdigest()
             base = next(line.removeprefix('FROM ').strip()
-                        for line in (DEFINITION / dockerfile).read_text().splitlines()
+                        for line in (definition / dockerfile).read_text().splitlines()
                         if line.startswith('FROM '))
             tag = f'clipboard-x-gnome-test:{major}'
             inspected = subprocess.run([*docker, 'image', 'inspect', tag], capture_output=True, text=True)
@@ -101,14 +76,14 @@ def main():
                 if labels.get(LABEL + '.definition') != definition_hash and not args.rebuild:
                     raise ValueError(f'{tag} uses a different environment definition; rebuild explicitly with --rebuild')
             if inspected.returncode or args.rebuild:
-                command = [*docker, 'build', '--file', str(DEFINITION / dockerfile),
+                command = [*docker, 'build', '--file', str(definition / dockerfile),
                            '--label', f'{LABEL}.definition={definition_hash}', '-t', tag]
                 if args.rebuild:
                     command.append('--no-cache')
                 print(f'Building GNOME {major} environment...', flush=True)
                 log = report / f'gnome{major}-image.log'
                 with log.open('w') as output:
-                    built = subprocess.run([*command, str(DEFINITION)], stdout=output, stderr=subprocess.STDOUT)
+                    built = subprocess.run([*command, str(definition)], stdout=output, stderr=subprocess.STDOUT)
                 if built.returncode:
                     print(log.read_text(errors='replace')[-6000:], file=sys.stderr)
                     raise RuntimeError(f'GNOME {major} image build failed; see {log}')

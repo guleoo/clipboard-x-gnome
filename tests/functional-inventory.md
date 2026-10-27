@@ -32,6 +32,7 @@ Observed results remain in the acceptance snapshot.
 | SET-01 | `SET-01-official` uses the production entry and reopens GNOME's official host; existing SET-01 remains the owner of eight-page navigation. |
 | SET-03 | `simulation/settings/colors.native.js`: native GTK accent/foreground selection, save/cancel and system reset, not shape/spacing assertions. |
 | LANG-07 / OPS-08 / PRIV-08 | `logic/sync/errors.test.js` covers translation and safe text for all stable codes; `LANG-07-errors` checks actual GNOME notifications, safe fallback, native Gio exceptions and silent cancellation. Other outlets remain separately scoped. |
+| CONN-07 / XFER-01 | `simulation/sync/presentation.native.js`: actual mixed-device history markers; real transfer controls, independent settings and native clicks for every state. Controlled actions verify UI wiring, not network transfer; existing backend cases remain their owner. |
 
 ## Acceptance layers
 

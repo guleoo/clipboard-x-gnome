@@ -5,6 +5,38 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## Remaining-gap coverage: sync wiring (2026-10-28)
+
+Backend acceptance now uses the independent 50/51 images' ordinary-user bootstrap, copied sources
+and supplied ZIP rather than host bind mounts or desktop/input-method inheritance. Reports export
+actual environments, packages and source hashes. Native cases each start an independent Shell.
+The existing backend fixture image `d8e3a43d15e6` was used; current server sources were not rebuilt.
+Tested plugin ZIP SHA-256: `c5f374d8962541772e075cd19121d64b3444a9c46a9bb8ed710a5e3da4de3a79`.
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| Default logic / headless acceptance | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
+| Real backend, headless destination queues / connection refusal | 2/2 passed | 2/2 passed |
+| Real backend SEND-06/04/08, RECV-06, XFER-05-disable-download, XFER-06-cancel-download | 6/6 passed | 6/6 passed |
+| CONN-07: mixed origins, local omission, unknown fallback, refresh/reopen | Passed | Passed |
+| XFER-01: real controls/native clicks for 15 states | 14/15 presentations, 15/15 actions passed | Same |
+
+Waiting for the source with a known size still incorrectly displays “Downloading · 0%”. Other
+states are collected independently and the overall case remains failed. Initial NaN clicks came
+from fixture allocation timing, corrected and rerun; they are not product action failures. The
+registry now has 129 native cases; production and CI remain unchanged. Old crash reports are kept,
+but their same-named scenarios now complete and must not retain a stale failure status.
+
+Evidence: [default logic](../build/environments-20261027T165014Z-bgniyuue/report.json),
+[icon matrix](../build/environments-20261027T164735Z-8cgailj_/report.json),
+[50 native backend](../build/simulation-tests/cbx-simulation-86e4b29fee1896e2-shell/),
+[51 native backend](../build/simulation-tests/cbx-simulation-c5804f90652f3c59-shell/),
+[50 headless backend](../build/sync-http-tests/cbx-simulation-6ce6a3c03af9ad77-shell/),
+[51 headless backend](../build/sync-http-tests/cbx-simulation-bb0fa61383d323c8-shell/).
+Backend directories contain environment/package/source information, server logs and per-case
+reports. Other source-offline/private branches, long-running resource trends and application
+profiles remain separately tracked; these six passes are not full sync acceptance.
+
 ## Remaining-gap coverage: phase one (2026-10-28)
 
 Existing independent Docker environments were used; no production changes or new CI. The native

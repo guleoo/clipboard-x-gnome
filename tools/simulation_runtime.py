@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import json
 import hashlib
 from pathlib import Path, PurePosixPath
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,32 @@ import time
 import zipfile
 
 UUID = 'clipboard-x-gnome@guleoo.github.io'
+
+
+def snapshot(root, destination):
+    paths = subprocess.check_output(['git', '-C', str(root), 'ls-files', '--cached', '--others',
+                                     '--exclude-standard', '-z']).decode().split('\0')
+    trees = {'src', 'data', 'schemas', 'po', 'tests', 'tools', 'docs'}
+    files = {'meson.build', 'meson_options.txt', 'package.json', 'LICENSE'}
+    digest = hashlib.sha256()
+    for name in sorted(set(paths) - {''}):
+        path = Path(name)
+        if path.parts[0] not in trees and name not in files and not name.startswith(('README', 'CONTRIBUTING')):
+            continue
+        if name == 'tools/simulate-input-sample.txt':
+            continue
+        source = root / path
+        if not source.is_file():
+            continue
+        if source.is_symlink():
+            raise ValueError(f'Snapshot refuses a source symlink: {name}')
+        content = source.read_bytes()
+        target = destination / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+        target.chmod(0o444 | (source.stat().st_mode & 0o111))
+        digest.update(name.encode() + b'\0' + hashlib.sha256(content).digest())
+    return digest.hexdigest()
 
 
 def fingerprint(root):

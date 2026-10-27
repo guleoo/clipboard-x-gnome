@@ -13,6 +13,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from simulation_runtime import snapshot
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -87,34 +88,41 @@ def main():
           text=True, capture_output=True).stdout.strip() if shutil.which('git') else '')
         print(f'Isolated server ready: {address}; container={name}; fixture request limit=20000/60s', flush=True)
         if args.shell_container:
-            archive = args.archive.resolve().relative_to(ROOT)
+            shell_image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', args.shell_container]))[0]
+            if (shell_image['Config'].get('Labels') or {}).get('io.github.guleoo.clipboard-x-gnome.test-environment') != '1':
+                parser.error('--shell-container requires an image built from tests/environments/gnome50 or gnome51')
             env['CBX_SIMULATION_SERVER'] = 'http://127.0.0.1:28787'
-            command = ['docker', 'create', '--name', shell_name, '--network', f'container:{name}',
-                       '--mount', f'type=bind,src={ROOT},dst=/workspace,readonly', '--workdir', '/workspace']
+            command = ['docker', 'create', '--name', shell_name, '--init', '--network', f'container:{name}',
+                       '--shm-size', '512m', '--pids-limit', '2048', '--ulimit', 'core=0']
             for key in ['CBX_SIMULATION_SERVER', 'CBX_SIMULATION_ADMIN', 'CBX_SIMULATION_PASSWORD', 'CBX_SIMULATION_SERVER_IMAGE', 'CBX_SIMULATION_TEST_REVISION']:
                 command += ['-e', key]
-            # Start a system bus only inside the disposable GNOME container.
-            bootstrap = ('import os,sys;' if args.headless else
-                         'import os,pathlib,subprocess,sys;pathlib.Path("/run/dbus").mkdir(parents=True,exist_ok=True);'
-                         'subprocess.run(["dbus-daemon","--system","--fork","--nopidfile"],check=True);')
-            bootstrap += 'os.execvp("python3",["python3",*sys.argv[1:]])'
             if any(option == '--output' or option.startswith('--output=') for option in options):
                 parser.error('--output is managed by the container runner')
-            command += [args.shell_container, 'python3', '-c', bootstrap,
-                        '/workspace/tools/test-sync-http.py' if args.headless else '/workspace/tools/test-simulation.py',
-                        f'/workspace/{archive}', *([] if args.headless else ['--group', 'sync']),
-                        '--output', '/tmp/cbx-simulation-reports', *options]
+            request = {'suite': 'sync-http' if args.headless else 'simulation',
+                       'archive': '/input.zip', 'options': options}
+            command += [shell_image['Id'], json.dumps(request)]
             run(command, env=env, stdout=subprocess.DEVNULL)
             created_shell = True
+            with tempfile.TemporaryDirectory(prefix='cbx-sync-source-') as temporary:
+                source = Path(temporary)
+                source.chmod(0o755)
+                source_hash = snapshot(ROOT, source)
+                run(['docker', 'cp', str(source), f'{shell_name}:/workspace'])
+            run(['docker', 'cp', str(args.archive.resolve()), f'{shell_name}:/input.zip'])
             subprocess.run(['docker', 'start', '-a', shell_name])
             status = int(json.loads(subprocess.check_output(['docker', 'inspect', shell_name]))[0]['State']['ExitCode'])
             reports = ROOT / 'build' / ('sync-http-tests' if args.headless else 'simulation-tests') / shell_name
             reports.mkdir(parents=True)
-            copied = subprocess.run(['docker', 'cp', f'{shell_name}:/tmp/cbx-simulation-reports/.', str(reports)])
+            copied = subprocess.run(['docker', 'cp', f'{shell_name}:/home/tester/results/.', str(reports)])
+            (reports / 'environment-source.json').write_text(json.dumps({
+                'image': shell_image['Id'], 'sourceSha256': source_hash,
+                'definitionSha256': shell_image['Config']['Labels'].get(
+                    'io.github.guleoo.clipboard-x-gnome.test-environment.definition'),
+            }, indent=2) + '\n')
             with (reports / 'server.log').open('w') as output:
                 subprocess.run(['docker', 'logs', name], stdout=output, stderr=subprocess.STDOUT)
             print(f'Container reports: {reports}', flush=True)
-            if copied.returncode or not list(reports.glob('*/report.json')):
+            if copied.returncode or not list(reports.rglob('report.json')):
                 print('Container report export failed; the run cannot be accepted', file=sys.stderr)
                 return status or 1
             return status

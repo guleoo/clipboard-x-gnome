@@ -22,7 +22,8 @@ def main():
     request = json.loads(sys.argv[1])
     bus = Path('/run/dbus')
     bus.mkdir(parents=True, exist_ok=True)
-    subprocess.run(['dbus-daemon', '--system', '--fork', '--nopidfile'], check=True)
+    if request['suite'] != 'sync-http':
+        subprocess.run(['dbus-daemon', '--system', '--fork', '--nopidfile'], check=True)
     # No host logind exists in this private container.
     seats = Path('/run/systemd/seats')
     if seats.is_dir():
@@ -48,6 +49,14 @@ def main():
     if versions['shell'].split()[-1].split('.')[0] != os.environ['CBX_TEST_SHELL']:
         raise RuntimeError('Container Shell version does not match the selected environment')
     print(json.dumps(versions), flush=True)
+    if request.get('archive'):
+        headless = request['suite'] == 'sync-http'
+        runner = 'tools/test-sync-http.py' if headless else 'tools/test-simulation.py'
+        output = results / ('sync-http' if headless else 'simulation')
+        command = ['python3', runner, request['archive'], '--output', str(output)]
+        if not headless:
+            command += ['--group', 'sync', '--shell', os.environ['CBX_TEST_SHELL'], '--isolate-cases']
+        return run([*command, *request['options']], results / 'acceptance.log')
     for label, command in [
         ('configure', ['meson', 'setup', 'build', '-Dtarget=package']),
         ('build', ['meson', 'compile', '-C', 'build']),

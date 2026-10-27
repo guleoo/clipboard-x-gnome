@@ -30,6 +30,7 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | SET-01 | `SET-01-official` 点击生产设置入口，官方宿主关闭再打开；原 SET-01 仍唯一负责八页导航。 |
 | SET-03 | `simulation/settings/colors.native.js`：原生 GTK 内置/自定义强调色、前景色、确认/取消与恢复系统；不验圆形/间距等视觉属性。 |
 | LANG-07 / OPS-08 / PRIV-08 | `logic/sync/errors.test.js` 验证全部稳定错误码经过翻译且不暴露诊断；`LANG-07-errors` 验证真实 GNOME 通知、未知错误安全回退、原生 Gio 异常和取消零通知。其他出口的审计仍独立列出。 |
+| CONN-07 / XFER-01 | `simulation/sync/presentation.native.js`：真实混合设备历史标记；独立设置驱动真实传输控件，逐态原生点击。受控动作只验 UI 接线，不冒充真实传输，后端行为继续归原有服务端用例。 |
 
 ## 验收层级
 

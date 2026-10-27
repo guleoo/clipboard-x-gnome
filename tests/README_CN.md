@@ -195,13 +195,21 @@ CLIP-02 只使用私有 Chromium profile、本地 HTML/图片，实际复制富�
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases
 # 默认构建相邻 clipboard-x-server 源码；也可提供已有镜像：
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image SERVER_IMAGE --case RECV-04
-# 已准备好 Python/GJS/GNOME 测试工具的另一个 Shell 版本镜像：
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container GNOME_TEST_IMAGE --shell 50 --isolate-cases
+# 先准备独立 GNOME 镜像，再通过镜像选择 50 或 51：
+python3 tools/test-environment.py --build-only
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:50 --case SEND-06,RECV-06
+# 无图形后端验证使用同一普通用户环境，不启动 Shell：
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:51 --headless --case SEND-05-destinations
 ```
 
 该入口需要运行中的 Docker；创建独占容器、一个临时 volume 和随机 loopback 端口，使用合成认证信息。
 另一个 Shell 镜像仅共享该服务端的网络命名空间。结束后只删除本次资源，不执行 Docker prune，
-不修改服务端源码。跨容器日志会复制回 `build/simulation-tests/`。
+不修改服务端源码。Docker Desktop 有需要时，在服务端命令前加 `DOCKER_CONTEXT=desktop-linux`。
+`--shell-container` 仅接受 `tests/environments/gnome50` / `gnome51` 构建的镜像；
+共用启动脚本降为 UID 1000，复制不可变源码快照，并测试指定 ZIP，不挂载宿主路径。
+服务端场景共享自有后端的网络，不沿用基础入口的 `network=none`；原生用例默认逐项独立 Shell。
+实际镜像、源码/定义 hash、完整包清单及日志复制回 `build/simulation-tests/` 或
+`build/sync-http-tests/`。源码与环境定义在取快照时一起固定。
 独立 `sync-peer.js` 使用生产 SyncClient、协议和存储提供原文，但它不是第二个 GNOME Shell；
 不能据此宣称已经验证两个真实桌面的剪切板自动激活竞态。
 

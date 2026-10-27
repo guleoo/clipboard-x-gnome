@@ -220,14 +220,23 @@ Real server acceptance:
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases
 # Builds the adjacent clipboard-x-server source by default; an existing image also works:
 python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image SERVER_IMAGE --case RECV-04
-# Another Shell-version image with Python/GJS/GNOME test tools already installed:
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container GNOME_TEST_IMAGE --shell 50 --isolate-cases
+# Prepare the independent GNOME images, then select 50 or 51 by image:
+python3 tools/test-environment.py --build-only
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:50 --case SEND-06,RECV-06
+# Headless backend checks use the same ordinary-user environment without starting Shell:
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:51 --headless --case SEND-05-destinations
 ```
 
 This requires running Docker. It creates owned containers, one temporary volume and a random
 loopback port with synthetic credentials. An optional Shell container shares only that server's
 network namespace. Cleanup removes only this run's resources, never Docker-prunes or edits server
-sources. Cross-container logs are copied into `build/simulation-tests/`.
+sources. Use `DOCKER_CONTEXT=desktop-linux` before the server command if required by your setup.
+Only images from `tests/environments/gnome50` / `gnome51` are accepted by `--shell-container`.
+The common bootstrap drops to UID 1000, copies an immutable source snapshot and tests the supplied
+ZIP. No host paths are mounted. Server scenarios share the owned backend's network instead of the
+baseline's `network=none`; native cases default to a separate Shell per case. Reports include the
+actual image, source/definition hashes and package list in `build/simulation-tests/` or
+`build/sync-http-tests/`. Source and environment definitions are frozen together at snapshot time.
 The independent `sync-peer.js` uses production SyncClient/protocol/storage to supply originals;
 it is not a second GNOME Shell and does not establish two-desktop automatic-activation races.
 

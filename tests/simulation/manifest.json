@@ -86,6 +86,10 @@
     ]
   },
   {
+    "module": "sync/presentation.native.js",
+    "cases": [{"id": "CONN-07"}, {"id": "XFER-01"}]
+  },
+  {
     "module": "sync/connection.native.js",
     "cases": [
       {"id": "CONN-02", "server": true, "commands": ["python3"]},
