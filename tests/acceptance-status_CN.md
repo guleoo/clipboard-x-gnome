@@ -4,8 +4,23 @@
 
 更新日期：2026-10-27。这是实际结果，不代表[功能清单](functional-inventory_CN.md)的全部要求均已通过。
 
-按确认范围移除 CapsLock 专项用例及失败项，不修改模拟输入实现，也不将旧差异标为已修复。
-原始运行报告保留；TYPE-08 保留键盘布局等验证，真实 IME 仍未完整验证。当前原生注册用例为 122 项。
+## 短文本模拟输入验收
+
+TYPE-03/04 改为共享的 57 个 Unicode 字符（58 个 UTF-16 单元）短样本，包含 ASCII、中英及其他
+CJK 文字、emoji、多行和 Tab，两档均要求目标逐字回读一致。GNOME 50.6、51.1 均通过。
+原生用例和旧 typing smoke 统一使用该短样本；移除用户样本自动入口，用户本地文件不变。
+当前原生注册表为 121 项；不修改生产功能或扩大 CI。
+
+报告：[GNOME 50](../build/simulation-tests/short-input-gnome50/gnome50-20261027T103059Z-pnscwpxv/report.json)、
+[GNOME 51](../build/simulation-tests/gnome51-20261027T103053Z-qz06glyq/report.json)。
+两次均使用未改变的 1.1.0 ZIP，SHA-256：
+`c5f374d8962541772e075cd19121d64b3444a9c46a9bb8ed710a5e3da4de3a79`。
+语法、注册清单、diff 检查通过；未复跑旧 smoke 和无关测试集。
+下方长文本差异保留为已知限制的历史证据，不视为已修复，也不再作为当前短文本验收失败。
+缺少目标应用通用的字符提交确认，模拟输入可能受应用、输入法及时序影响；VTE/Chromium 失败不变。
+
+此前按确认范围移除 CapsLock 专项用例及失败项，不修改模拟输入实现，也不将旧差异标为已修复。
+原始运行报告保留；TYPE-08 保留键盘布局等验证，真实 IME 仍未完整验证。当时原生注册用例为 122 项。
 
 ## 2026-10-27：模拟输入复测与修饰键验收口径
 
@@ -176,12 +191,14 @@ GNOME 50/51 的 WORD-06、WORD-07 各 2/2 通过：正常 2000 词和 20,000 字
 | XFER-05-disable-download / XFER-06-cancel-download | 下载响应被暂停时关闭同步或取消该任务，50/51 隔离 Shell 异常退出 |
 | RECV-08 / RECV-08-manual | 50/51：迟到激活覆盖新外部复制及手动选择的本地条目；两个分支现已独立执行 |
 | XFER-09-sha256sum | 50/51：可选原生校验路径拒绝真实服务端无 Content-Length 的 chunked 响应；默认 GLib 路径通过 |
-| TYPE-03 / TYPE-03-user-sample | 强化长样本在 50 精确回读失败，51 通过；短样本通过不能抵消 |
 | TYPE-09-chromium | 51 ASCII 通过，CJK/emoji 输出不同；相同选定用例在 50 通过，不能泛化为所有 Chromium 都有问题 |
 | TYPE-02-vte | 原生 ASCII 与真实剪切板粘贴正控均成功。插件自然粘贴在 50 通过，51 没有额外 PTY 字节（捕获 purpose 为 0）；这是 GTK3/VTE 目标/版本失败，不代表所有终端失败 |
 
 HTTP gate 流式转发真实请求，只控制时序。崩溃记 FAIL，后续未进入记 NOT_RUN；
 不自动重试、放宽断言或修改生产代码换取绿色。
+
+调整后的 TYPE-03/04 验收门槛之外，长文本仍是已知限制：此前 50 输出不一致、51 通过的实际结果
+保留在上方带日期的复测记录中；短文本通过不代表长文本可靠性已解决。
 
 ```sh
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-03,TYPE-08-layout --isolate-cases

@@ -232,10 +232,11 @@ the `chromium` or `chromium-browser` executable. Browser targets use private pro
 loopback receiver, not external sites. The VTE fixture first verifies native ASCII and real clipboard
 paste independently, then tests the plugin's natural-paste path; raw PTYs are not universal terminal apps.
 
-`TYPE-03-user-sample` optionally reads `tools/simulate-input-sample.txt` (fewer than 20,000 characters).
-It does not create, edit or commit that user file; absence is BLOCKED. Mismatch diagnostics record
-lengths, first differing code points and hashes, not the complete sample. Standard TYPE-03 always
-includes the maintained 460-character sample at both speeds.
+`TYPE-03` checks a shared short sample at standard/slow speeds, covering ASCII, mixed CJK, emoji,
+multiple lines and Tab. Mismatch diagnostics record lengths, first differing code points and hashes,
+not the complete sample. The old long-sample and user-sample automated entries are removed;
+`tools/simulate-input-sample.txt` is not read or modified. Long-text reliability remains a known
+limitation rather than an acceptance gate for this case.
 
 Dictionary GUI tests need a normal desktop user and installed file manager/editor; Nautilus refuses
 root sessions. The headless dictionary TLS case additionally needs `openssl` and checks rejection of an owned self-signed

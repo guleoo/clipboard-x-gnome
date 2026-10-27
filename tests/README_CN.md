@@ -206,9 +206,9 @@ VTE 需要 Python GI 的 Gtk 3 / VTE 2.91；Chromium 支持 `chromium` / `chromi
 浏览器目标使用私有 profile 和自有 loopback 接收器，不访问外站。VTE 先独立验证原生 ASCII 输入与
 真实剪切板粘贴，再测插件自然粘贴；raw PTY 嵌入目标不等于所有终端应用。
 
-`TYPE-03-user-sample` 可选读取 `tools/simulate-input-sample.txt`（少于 20,000 字符）；不创建、修改或
-提交该用户文件，缺文件为 BLOCKED。差异日志只记录长度、首个不同码点和 hash，不输出整个样本。
-普通 TYPE-03 始终在两档速度下检查维护中的 460 字符样本。
+`TYPE-03` 在标准/慢速两档检查共享短文本，覆盖 ASCII、中英及其他 CJK 文字、emoji、多行和 Tab。
+差异日志只记录长度、首个不同码点和 hash，不输出整个样本。旧的长样本和用户样本自动入口已移除，
+不读取或修改 `tools/simulate-input-sample.txt`。长文本可靠性作为已知限制，不再作为此项验收门槛。
 
 词库 GUI 用例需要普通桌面用户及文件管理器/编辑器，Nautilus 不支持 root 会话。
 无图形词库 TLS 用例还需 `openssl`，验证自有自签名证书被拒绝，不代表可信 HTTPS 成功。

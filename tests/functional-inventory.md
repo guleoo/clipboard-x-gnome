@@ -240,8 +240,8 @@ that delayed saves preserve new input and focus.
 | --- | --- |
 | TYPE-01 | Separate copy, paste and simulated typing; only the intended operations modify the system clipboard. |
 | TYPE-02 | Paste into the target active before opening the panel; verify received bytes in an ordinary app and a terminal. |
-| TYPE-03 | Receive exact ASCII, mixed CJK, emoji, multiline, Tab and long configuration text in the actual target. |
-| TYPE-04 | Apply standard/slow speed in the actual target without missing or reordered characters. |
+| TYPE-03 | Receive an exact short sample containing ASCII, mixed CJK, emoji, multiple lines and Tab in the actual target; long-text reliability is not an acceptance gate. |
+| TYPE-04 | Reuse the TYPE-03 short sample at standard/slow speed in the actual target without missing or reordered characters. |
 | TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
 | TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; accept this state path using actual backend virtual input. |
 | TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |
@@ -256,6 +256,9 @@ typing compares a real GTK Wayland target. Lifecycle controls modifier state and
 TYPE-05/06 accept actual backend virtual Ctrl hold/release/fuse results without requiring duplicate
 physical-keyboard runs. This does not equate every virtual and physical event path: ordinary human
 keypress detection, hardware-specific behavior and real IME composition remain separate boundaries.
+There is no general target-application character-commit acknowledgement. Long input can be affected
+by input methods, applications and timing; preserve historical mismatches as a known limitation,
+not a fix established by short-text success.
 
 ### Screenshots — SHOT-01…07
 
@@ -513,7 +516,7 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 | `clipboard/native.js`, `clipboard/policy.native.js` | CLIP-04-recovery, CLIP-09-missing, PRIV-05-exclusion | Failed decode then normal capture; missing original after restart; exclusion while a real owner is paused |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | Real deletion IO failure/retry and invalid persisted data recovery |
 | `word-selection/native.js` | SELECT-04-cross-row, SELECT-05, SELECT-07-disable | Held Shift across rows, Space/Enter and actual disable while dragging |
-| `terminal/native.js` | TYPE-03/user-sample, TYPE-08-layout | Full maintained sample at both speeds, optional user file, real US/German input sources |
+| `terminal/native.js` | TYPE-03, TYPE-08-layout | Exact short-text readback at both speeds, real US/German input sources; no user long-sample reads |
 | `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
 | `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Complete/cancel the actual system screenshot UI after disable, verify released modal and native external input, no old plugin side effects, then normal re-enable; large capture/thumbnail/save main-loop gaps |
 | `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |

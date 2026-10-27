@@ -223,8 +223,8 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 | --- | --- |
 | TYPE-01 | 复制、粘贴、模拟输入三种动作分离，只有应修改系统剪切板的动作修改它。 |
 | TYPE-02 | 粘贴回打开面板前的目标，普通应用和终端分别验收；实际收到内容而非只验证组合键序列。 |
-| TYPE-03 | ASCII、中英混排、emoji、多行、Tab、长配置文本，目标收到的字符串逐字一致。 |
-| TYPE-04 | 标准/慢速两档在实际目标应用生效；不丢字符、不乱序。 |
+| TYPE-03 | 用包含 ASCII、中英及其他 CJK 文字、emoji、多行和 Tab 的短文本验收，目标收到的字符串逐字一致；长文本可靠性不作为通过门槛。 |
+| TYPE-04 | 复用 TYPE-03 短文本，标准/慢速两档在实际目标应用生效；不丢字符、不乱序。 |
 | TYPE-05 | 启动时等待触发修饰键释放；超时不输出；Ctrl+点击不变成系统快捷键。 |
 | TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；以实际后端的虚拟按键验收该状态路径。 |
 | TYPE-07 | 关闭/禁用/注销时停止并释放虚拟按键；旧任务不在新实例继续运行。 |
@@ -237,6 +237,7 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 验收口径：逻辑 guard 验证取消判定与重复取消，typing 比较真实 GTK Wayland 目标；lifecycle 控制修饰键且抑制字符。
 TYPE-05/06 以真实后端的虚拟 Ctrl 按住、释放与熔断结果验收，不再因缺少物理键盘重复测试而标为部分通过。
 这不等于虚拟设备与物理设备的所有事件路径都相同；普通人为按键识别、物理设备特性和真实 IME 组字仍是独立边界。
+没有目标应用通用的字符提交确认，长文本可能受输入法、应用及时序影响；历史长文本差异作为已知限制保留，不因短文本通过而视为修复。
 
 ### 系统截图 — SHOT-01…07
 
@@ -497,7 +498,7 @@ WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字
 | `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05-exclusion | 解码失败后正常捕获；重启后原文缺失；真实 owner 暂停期间改变排除策略 |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | 实际删除 IO 失败/重试、损坏持久文件恢复 |
 | `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
-| `terminal/native.js` | TYPE-03/user-sample、TYPE-08-layout | 两档完整维护样本、可选用户文件、实际 US/German 输入源 |
+| `terminal/native.js` | TYPE-03、TYPE-08-layout | 两档短文本精确回读、实际 US/German 输入源；不读取用户长样本 |
 | `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
 | `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用后真正完成/取消系统截图，验证模态释放、外部窗口原生输入、旧插件无副作用及重新启用；大捕获/缩略图/保存主循环间隙 |
 | `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |

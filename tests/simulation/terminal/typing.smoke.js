@@ -3,7 +3,7 @@ import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {systemdSample} from './samples.js';
+import {typingSample} from './samples.js';
 
 const UUID = 'clipboard-x-gnome@guleoo.github.io';
 const STATUS_AREA_NAME = 'clipboard-x-gnome';
@@ -63,7 +63,7 @@ export async function run() {
       'Typing target window did not receive keyboard focus');
     await Scripting.sleep(200);
 
-    const source = systemdSample;
+    const source = typingSample;
     await terminalInput.type(source);
     await Scripting.sleep(200);
     const [, contents] = output.load_contents(null);

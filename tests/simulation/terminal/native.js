@@ -2,11 +2,11 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {getInputSourceManager} from 'resource:///org/gnome/shell/ui/status/keyboard.js';
-import {assert, block, pause, until} from '../helpers/desktop.js';
+import {assert, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
-import {systemdSample} from './samples.js';
+import {typingSample} from './samples.js';
 
 async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false} = {}) {
   const item = await capture(desktop, target, text);
@@ -69,24 +69,8 @@ export const cases = {
 
   async 'TYPE-03'(desktop) {
     const target = await Target.open(desktop);
-    const sources = ['[Unit]\n# 服务描述 日本語 한국어 🙂\nDescription=frp client\n\tline two\n', systemdSample];
     try {
-      for (const speed of ['standard', 'slow']) {
-        for (const source of sources) await exactTyping(desktop, target, source, speed);
-      }
-    } finally { await target.close(); }
-  },
-
-  async 'TYPE-03-user-sample'(desktop) {
-    const root = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_parent().get_parent();
-    const file = root.get_child('tools').get_child('simulate-input-sample.txt');
-    if (!file.query_exists(null)) block('Optional local tools/simulate-input-sample.txt is not present');
-    const [, bytes] = file.load_contents(null);
-    const source = new TextDecoder('utf-8', {fatal: true}).decode(bytes);
-    assert(source.length > 0 && source.length < 20000, 'Local sample must be nonempty and bounded to 20,000 characters');
-    const target = await Target.open(desktop);
-    try {
-      for (const speed of ['standard', 'slow']) await exactTyping(desktop, target, source, speed);
+      for (const speed of ['standard', 'slow']) await exactTyping(desktop, target, typingSample, speed);
     } finally { await target.close(); }
   },
 

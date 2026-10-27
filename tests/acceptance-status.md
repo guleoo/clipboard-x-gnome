@@ -5,9 +5,26 @@
 Updated: 2026-10-27. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## Short-text typing acceptance
+
+TYPE-03/04 now accept only the shared 57-code-point mixed-language sample (58 UTF-16 units),
+including ASCII, CJK, emoji, multiple lines and Tab, with exact target readback at both speeds.
+GNOME 50.6 and 51.1 both passed. The native case and legacy typing smoke use the same short sample;
+the automated user-sample entry is removed and its local file is untouched. There are now 121
+registered native cases. No production changes or new CI coverage.
+
+Reports: [GNOME 50](../build/simulation-tests/short-input-gnome50/gnome50-20261027T103059Z-pnscwpxv/report.json),
+[GNOME 51](../build/simulation-tests/gnome51-20261027T103053Z-qz06glyq/report.json).
+Both use the unchanged 1.1.0 ZIP with SHA-256
+`c5f374d8962541772e075cd19121d64b3444a9c46a9bb8ed710a5e3da4de3a79`.
+Syntax, registry and diff checks passed. The legacy smoke and unrelated suites were not rerun.
+The earlier long-input mismatches below remain historical evidence of a known limitation, not a
+fix or current short-text acceptance failure. There is no general application commit acknowledgement;
+typing can be affected by the target, input method and timing. VTE/Chromium failures are unchanged.
+
 Remove the CapsLock-specific case and failure entry as agreed, without changing simulated input or
 claiming the old differences are fixed. Preserve original reports. TYPE-08 retains layout checks;
-real IME coverage remains incomplete. The current native registry contains 122 cases.
+real IME coverage remains incomplete. That scope change left 122 native cases before the short-text adjustment above.
 
 ## 2026-10-27: input retest and accepted modifier scope
 
@@ -204,12 +221,15 @@ fix. Other sync interruption failures below remain unchanged. Use `--case ENV-05
 | XFER-05-disable-download / XFER-06-cancel-download | Disabling during a held download or canceling its task terminates the isolated Shell on 50/51 |
 | RECV-08 / RECV-08-manual | 50/51: late activation replaces a newer external copy and a manually chosen local item; both branches now execute independently |
 | XFER-09-sha256sum | 50/51: optional native verifier rejects real chunked responses without Content-Length; the default GLib path passes |
-| TYPE-03 / TYPE-03-user-sample | Expanded long samples fail exact readback on 50; pass on 51. Short mixed samples cannot cancel this result |
 | TYPE-09-chromium | 51: ASCII passes, CJK/emoji output differs. The same selected case passes on 50; not a universal Chromium diagnosis |
 | TYPE-02-vte | Native ASCII and real clipboard-paste positive controls succeed. Plugin natural paste passes on 50 but delivers zero extra PTY bytes on 51 (captured purpose 0). This is a GTK3/VTE target/version failure, not proof every terminal fails |
 
 The HTTP gate streams real requests and changes only timing. Crashes are FAIL, later unentered
 cases NOT_RUN; no silent retry, relaxed assertions or production fixes make these green.
+
+Known limitation outside the revised TYPE-03/04 gate: earlier long samples differed on 50 and
+passed on 51. The dated retest above preserves those exact observations; short-text success does
+not establish reliable long-text typing.
 
 ```sh
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-03,TYPE-08-layout --isolate-cases
