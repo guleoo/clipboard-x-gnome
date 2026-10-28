@@ -330,8 +330,8 @@ See the [observed snapshot](acceptance-status.md) for retained failures.
 # Real virtual displays, not mocked monitor objects:
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
-# 120,002-word import/index/cache measurement (TLS rejection is headless above):
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09 --language zh_CN
+# DICT-09: actual 120,002-entry import/index/cache and main-loop measurement, no desktop (opt-in stress):
+dbus-run-session -- meson test -C build tokenizer-dictionary-performance --print-errorlogs
 # Real two-Shell dictionary persistence, with a local HTTP request counter:
 python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
 # Independent browser textarea / GTK3-VTE PTY targets:
@@ -355,14 +355,15 @@ root sessions. The headless dictionary TLS case additionally needs `openssl` and
 certificate—not trusted HTTPS success. Cold dictionary checks need a generated non-C UTF-8 locale.
 No test changes host certificate stores or disables certificate verification.
 
-Additional concurrency entries cover `RECV-05-automatic-manual`, `CLIP-08-remote-loop`,
-`CONN-03-refresh` and `PHRASE-08-destinations` through the server runner. They verify one actual
-download, no feedback publication, shared busy controls and a naturally exiting preferences host,
-and local phrase survival across configured address/Channel changes. The latter uses two addresses
-of one owned backend, not two independently deployed servers.
+Headless real HTTP owns `RECV-05` single-GET/shared-consumer behavior and `SEND-04/08` frozen
+manifests/deletion cancellation. `RECV-05-automatic-manual` retains only clipboard wiring: automatic
+receive preserves the clipboard, explicit activation copies the original. `CLIP-08-remote-loop` and
+`CONN-03-refresh` retain real feedback boundaries, busy controls and natural preferences-process exit.
+The destination matrix belongs to HTTP `SEND-05-destinations`; `PHRASE-08` retains local-phrase wiring.
 
-`PRIV-05-thumbnail` gates the return of an already generated/staged real thumbnail before capture
-commit; it does not prove cancellation inside the decoder. `WORD-08-close/disable/newer` delay the
+`logic/clipboard/capture.test.js` uses actual decoding, thumbnails and staged files to verify cleanup
+after privacy/exclusion changes. Native `PRIV-05` only retains the real-owner in-flight switch;
+neither proves cancellation inside the decoder. `WORD-08-close/disable/newer` delay the
 real computed result and await the entire native request handler before checking stale-result guards;
 they do not simulate aborting the computation itself. `SHOT-05-unsupported` reads actual portal
 capabilities, verifies the unsupported-target error and retries a supported capture. It is BLOCKED

@@ -59,7 +59,6 @@ export async function screenshots(indicator, extensionObject) {
     await Scripting.sleep(300);
     assert(indicator._controller.items.length === historyCount,
       'Screenshot configured without history was captured again through clipboard owner change');
-    await interruptedScreenshots(extensionObject, screenshotFile.get_uri());
   } finally {
     extensionObject._launchEditor = launchEditor;
     extensionObject._portal = screenshotPortal;
@@ -70,73 +69,6 @@ export async function screenshots(indicator, extensionObject) {
   }
 }
 
-async function interruptedScreenshots(extensionObject, uri) {
-  const controller = extensionObject._controller;
-  const portal = extensionObject._portal;
-  const launchEditor = extensionObject._launchEditor;
-  const createFromUri = controller.createFromUri;
-  const writeScreenshot = controller.writeScreenshot;
-  for (const phase of ['portal', 'prepare', 'write']) {
-    let release;
-    let entered;
-    const gate = new Promise(resolve => { release = resolve; });
-    const started = new Promise(resolve => { entered = resolve; });
-    let newSessionCalls = 0;
-    let editorCalls = 0;
-    const replacement = {
-      createFromUri: async () => { newSessionCalls++; return {primary: {}}; },
-      addFromUri: async () => { newSessionCalls++; return {primary: {}}; },
-      writeScreenshot: async () => { newSessionCalls++; },
-    };
-    extensionObject._portal = {
-      async capture() {
-        if (phase === 'portal') {
-          entered();
-          await gate;
-        }
-        return uri;
-      },
-      cancel() {},
-    };
-    controller.createFromUri = async (...args) => {
-      const item = await createFromUri.apply(controller, args);
-      if (phase === 'prepare') {
-        entered();
-        await gate;
-      }
-      return item;
-    };
-    controller.writeScreenshot = async () => {
-      assert(phase === 'write', 'An interrupted screenshot reached clipboard publication too early');
-      entered();
-      await gate;
-    };
-    extensionObject._launchEditor = async () => { editorCalls++; };
-    const pending = extensionObject._takeScreenshot().then(() => null, error => error);
-    try {
-      await Promise.race([started, pending.then(error => {
-        throw error ?? new Error(`Screenshot completed before reaching the ${phase} checkpoint`);
-      })]);
-      // Model the identity change made by disable/re-enable without replacing
-      // the complete Shell session exercised by the final lifecycle scenario.
-      extensionObject._controller = replacement;
-      release();
-      const error = await pending;
-      assert(!error || error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
-        `Interrupting the ${phase} phase must settle normally or with cancellation`);
-      assert(newSessionCalls === 0 && editorCalls === 0,
-        `An old screenshot completing ${phase} must not touch the new controller or launch its editor`);
-    } finally {
-      release();
-      await pending;
-      extensionObject._controller = controller;
-      extensionObject._portal = portal;
-      extensionObject._launchEditor = launchEditor;
-      controller.createFromUri = createFromUri;
-      controller.writeScreenshot = writeScreenshot;
-    }
-  }
-}
 
 export function run() {
   return runChecks([['screenshots', screenshots]]);

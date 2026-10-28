@@ -163,6 +163,81 @@ export const cases = {
       && !(await backend.items()).items.some(value => value.id === b.id), 'A resumes after reload without mixing B data');
   }),
 
+  'SEND-04': () => fixture(async ({backend, endpoint, gate}) => {
+    const proxy = await gate();
+    const source = await endpoint({address: proxy.address});
+    source.settings.set_uint('text-full-threshold', 4096);
+    const item = await source.create({text: 'Frozen manifest survives interruption and threshold edits'});
+    proxy.set({path: '/channels/[^/]+/items$', hold: true});
+    await source.outbox.enqueue(item);
+    const sending = source.outbox.flush();
+    await until(() => proxy.state.requests.some(value => value.method === 'POST' && value.stage === 'held'),
+      'first actual publication held before the backend accepts it');
+    const path = [...source.outbox._queues.values()][0].path;
+    const frozen = json(path).publications.find(value => value.itemId === item.id)?.manifest;
+    assert(frozen?.contents.every(value => value.delivery === 'eager'), 'The exact eager manifest is durable before POST');
+    source.settings.set_boolean('sync-enabled', false);
+    await source.client.restart();
+    await sending;
+    source.settings.set_uint('text-full-threshold', 1);
+    await source.restart();
+    assert(JSON.stringify(json(path).publications.find(value => value.itemId === item.id)?.manifest) === JSON.stringify(frozen),
+      'New client/store/queue instances retain the frozen manifest despite the changed threshold');
+    proxy.set({});
+    source.settings.set_boolean('sync-enabled', true);
+    await source.client.restart();
+    await source.outbox.flush();
+    await until(() => !entries(source, item.id).length && !json(path).entries.some(value => value.itemId === item.id),
+      'backend confirmation durably removes the interrupted intent', 30000);
+    assert((await backend.item(item.id)).contents.every(value => value.delivery === 'eager' && value.availability === 'available'),
+      'Real retry honors the original manifest rather than recomputing lazy delivery');
+  }),
+
+  'SEND-08': () => fixture(async ({backend, endpoint, gate}) => {
+    const proxy = await gate();
+    const source = await endpoint({address: proxy.address});
+    const item = await source.create({text: 'Deleted source cannot finish its queued publication'});
+    proxy.set({path: '/channels/[^/]+/items$', hold: true});
+    await source.outbox.enqueue(item);
+    const sending = source.outbox.flush();
+    await until(() => proxy.state.requests.some(value => value.stage === 'held'), 'actual publication held');
+    source.items = source.items.filter(value => value.id !== item.id);
+    await source.outbox.prune();
+    assert(!entries(source, item.id).length, 'Deletion prunes the in-flight durable intent');
+    proxy.set({});
+    await sending;
+    await until(() => !proxy.state.requests.some(value => ['held', 'started', 'response'].includes(value.stage)),
+      'released HTTP publication reaches a terminal state');
+    await polls(source);
+    assert(!source.outbox._worker && !(await backend.items()).items.some(value => value.id === item.id),
+      'Deleted source must neither finish a remote item nor be retried by subsequent polls');
+  }),
+
+  'RECV-05': () => fixture(async ({endpoint, gate}) => {
+    const source = await endpoint();
+    source.settings.set_string('sync-receive-mode', 'disabled');
+    source.settings.set_uint('text-full-threshold', 4096);
+    const proxy = await gate();
+    const receiver = await endpoint({address: proxy.address});
+    receiver.settings.set_uint('text-full-threshold', 4096);
+    proxy.set({path: '/items/[^/]+/contents/[^/?]+$', hold: true});
+    const remote = await source.publish({text: 'Automatic and repeated manual consumers share one real download'});
+    const item = await received(receiver, remote.id);
+    await until(() => proxy.state.requests.some(value => value.stage === 'held'), 'automatic content download held');
+    const consumers = Array.from({length: 4}, () => receiver.client.materialize(item));
+    await Promise.resolve();
+    const downloads = () => proxy.state.requests.filter(value => value.method === 'GET'
+      && value.path.includes(`/items/${item.id}/contents/`));
+    assert(downloads().length === 1 && !item.primary.path, 'Concurrent consumers share the held automatic download');
+    proxy.set({});
+    await Promise.all(consumers);
+    await original(item);
+    await until(() => downloads()[0]?.stage === 'completed', 'one successful original response recorded');
+    assert(downloads().length === 1 && receiver.errors.length === 0
+      && receiver.client._transfers._materializations.size === 0,
+    'Automatic and manual consumers settle with one verified GET and no retained operation');
+  }),
+
   'SEND-07': () => fixture(async ({backend, endpoint, gate}) => {
     const proxy = await gate();
     const source = await endpoint({address: proxy.address});

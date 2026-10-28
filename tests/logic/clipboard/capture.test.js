@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import GdkPixbuf from 'gi://GdkPixbuf';
 import {bytesFromString, sha256} from '../../../src/common/bytes.js';
 import {writeFile} from '../../../src/common/files.js';
 import {assert, fixture, pause, removeTree, until} from './controller-fixture.js';
@@ -115,6 +116,55 @@ async function captureScopes() {
         && preparing.controller._store._staged.size === 0,
       'Cancellation after preview preparation must discard staging before commit');
     await preparing.controller.destroy();
+
+    // Real decoding, thumbnail encoding and staged files do not need a Shell.
+    // Keep only one native owner-change/privacy wiring scenario in simulation.
+    for (const [key, changed, restored] of [
+      ['private-mode', true, false],
+      ['excluded-apps', ['excluded-fixture'], []],
+    ]) {
+      const image = await create('thumbnail-' + key);
+      const pixbuf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, false, 8, 640, 320);
+      pixbuf.fill(0x336699ff);
+      image.controller._selection.get_mimetypes = () => ['image/png'];
+      image.controller._readSelectionContent = async () => new GLib.Bytes(pixbuf.save_to_bufferv('png', [], [])[1]);
+      const store = image.controller._store;
+      const stage = store.stage;
+      const entered = deferred();
+      const release = deferred();
+      let path;
+      let preview;
+      store.stage = async function (content, write, cancellable) {
+        path = await stage.call(this, content, write, cancellable);
+        preview = content;
+        entered.resolve();
+        await release.promise;
+        return path;
+      };
+      const pending = image.controller.capture();
+      try {
+        await Promise.race([entered.promise, pending.then(() => {
+          throw new Error('Image capture completed without staging its thumbnail');
+        })]);
+        assert(preview.width > 0 && preview.height > 0 && Gio.File.new_for_path(path).query_exists(null),
+          'Capture must decode and stage an actual thumbnail before the policy transition');
+        image.settings.set(key, changed);
+        image.settings.set(key, restored);
+        release.resolve();
+        assert(await pending === null && !image.controller.items.length && !store._staged.size
+          && !Gio.File.new_for_path(path).query_exists(null),
+        `${key}: late image results must discard the item and its real staged thumbnail`);
+        await image.controller.persist();
+        assert(!(await store.load()).length, 'Cancelled images must not enter durable history');
+        store.stage = stage;
+        assert(await image.controller.capture(), 'Policy cancellation must allow a fresh image capture');
+      } finally {
+        release.resolve();
+        await pending.catch(() => {});
+        store.stage = stage;
+      }
+      await image.controller.destroy();
+    }
 
     const failing = await create('failures');
     for (const error of [new Error('Injected transfer failure'),

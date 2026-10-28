@@ -148,6 +148,9 @@ test(
 )
 test('tokenizer-processors', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/processors.test.js'])
 test('tokenizer-dictionary', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/dictionary.test.js'])
+test('tokenizer-dictionary-performance', test_runner,
+  args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/performance.test.js'],
+  suite: 'stress', timeout: 60)
 test('tokenizer-dictionary-selection', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/selection.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/multilingual.test.js'])
 test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/terminal/sequence.test.js'])

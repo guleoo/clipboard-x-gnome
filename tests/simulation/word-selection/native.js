@@ -237,16 +237,19 @@ export const cases = {
       return GLib.SOURCE_CONTINUE;
     });
     try {
-      for (const source of [Array.from({length: 2000}, (_, index) => `word${index}`).join(' '),
-        'x'.repeat(20000)]) {
+      // Logic owns character/word boundary matrices; this owns real actor layout.
+      {
+        const source = Array.from({length: 2000}, (_, index) => `word${index}`).join(' ');
         phaseGap = 0;
         await openWords(desktop, target, source);
+        assert(desktop.words.buttons.length === 2000, 'The real panel must render all 2,000 allowed word buttons');
         await desktop.key(Clutter.KEY_Escape);
         await pause(30);
         print(`[simulation] Word sample: length=${source.length}; words=${desktop.words.buttons.length}; maxGapMs=${phaseGap.toFixed(1)}`);
         assert(desktop.manager.is('history'), 'Large result must still respond to native Escape');
       }
-      for (const source of ['x'.repeat(20001), `https://example.test/${'a'.repeat(100000)}`, 'x'.repeat(200000)]) {
+      {
+        const source = 'x'.repeat(20001);
         phaseGap = 0;
         const item = await capture(desktop, target, source);
         const previous = desktop.words.state;

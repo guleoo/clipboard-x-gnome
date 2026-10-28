@@ -273,37 +273,4 @@ export const cases = {
     } finally { await endpoint.close(); }
   }),
 
-  'DICT-09': desktop => fixture(desktop, async ({preferences, target, store}) => {
-    const directory = `${GLib.getenv('CBX_SIMULATION_RUNTIME')}/large-dictionary-input`;
-    GLib.mkdir_with_parents(directory, 0o700);
-    const text = '# locale: zh_CN\n# name: Large Native Dictionary\n'
-      + Array.from({length: 120000}, (_, index) => `性能词${String.fromCodePoint(0x4e00 + index % 2000)}${String.fromCodePoint(0x4e00 + Math.floor(index / 2000))} 10\n`).join('')
-      + `${first} 1000000\n${second} 1000000\n`;
-    write(`${directory}/large.txt`, text);
-    let last = GLib.get_monotonic_time();
-    let maximumGap = 0;
-    let samples = 0;
-    const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, () => {
-      const now = GLib.get_monotonic_time();
-      maximumGap = Math.max(maximumGap, (now - last) / 1000);
-      last = now;
-      samples++;
-      return GLib.SOURCE_CONTINUE;
-    });
-    try {
-      const started = GLib.get_monotonic_time();
-      await importFile(desktop, preferences, `${directory}/large.txt`, 'Large Native Dictionary');
-      assert((await store.list()).find(value => value.name === 'Large Native Dictionary')?.entryCount === 120002,
-        'The actual native import must retain all large-dictionary entries');
-      const importedAt = GLib.get_monotonic_time();
-      const cold = await words(desktop, target, first + second);
-      assert(cold.includes(first) && cold.includes(second), 'Actual first word-panel activation must use the large imported index');
-      const coldAt = GLib.get_monotonic_time();
-      const warm = await words(desktop, target, first + second);
-      assert(warm.join('|') === cold.join('|'), 'Repeated actual activation must retain correct cached segmentation');
-      await pause(30);
-      print(`[simulation] DICT-09 entries=120002 importMs=${Math.round((importedAt - started) / 1000)} coldMs=${Math.round((coldAt - importedAt) / 1000)} warmMs=${Math.round((GLib.get_monotonic_time() - coldAt) / 1000)} maximumLoopGapMs=${Math.round(maximumGap)} samples=${samples}`);
-      assert(samples > 10 && maximumGap < 1000, `Large dictionary import/indexing must keep the actual Shell responsive (maximum gap ${Math.round(maximumGap)} ms)`);
-    } finally { GLib.Source.remove(timer); }
-  }),
 };

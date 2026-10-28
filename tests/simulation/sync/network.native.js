@@ -43,67 +43,26 @@ async function complete(desktop, item) {
 }
 
 export const cases = {
-  'RECV-05': desktop => fixture(desktop, async ({gate, peer, target}) => {
-    const remote = await peer.call('publish', {text: 'concurrent activation uses one real download', threshold: 4096});
-    const item = await received(desktop, remote.id);
-    gate.set({path: contentPath, hold: true});
-    await click(desktop, item);
-    await held(gate);
-    for (let index = 0; index < 4; index++) await click(desktop, item);
-    assert(gate.state.requests.filter(value => value.method === 'GET' && new RegExp(contentPath).test(value.path)).length === 1,
-      'Repeated native activation must share one in-flight original download');
-    gate.set({});
-    await complete(desktop, item);
-    assert((await target.clipboard()).text === 'concurrent activation uses one real download', 'Concurrent consumers must receive exact full text');
-  }),
-
   'RECV-05-automatic-manual': desktop => fixture(desktop, async ({gate, peer, target}) => {
     const text = 'automatic materialization shares the manual activation original';
     const sentinel = 'automatic history fetching must not change clipboard before explicit activation';
     await capture(desktop, target, sentinel);
     desktop.settings.set_uint('text-full-threshold', 4096);
-    const content = desktop.app._content;
-    const finish = content._finishReceived;
-    const activate = content.activate;
-    let automaticStarted = 0;
-    let automaticSettled = 0;
-    let manualSettled = false;
-    content._finishReceived = async function (item, ...options) {
-      if (item.text === text) automaticStarted++;
-      try { return await finish.call(this, item, ...options); }
-      finally { if (item.text === text) automaticSettled++; }
-    };
-    content.activate = async function (item, ...options) {
-      try { return await activate.call(this, item, ...options); }
-      finally { if (item.text === text) manualSettled = true; }
-    };
-    try {
-      gate.set({path: contentPath, hold: true});
-      const remote = await peer.call('publish', {text, threshold: 4096});
-      const item = await received(desktop, remote.id);
-      await held(gate);
-      assert(automaticStarted > 0 && automaticSettled === 0 && !item.primary.path,
-        'Real history receive must already be fetching the original before the manual action');
-      assert((await target.clipboard()).text === sentinel,
-        'Automatic history-mode fetching must not prematurely activate the incoming clipboard');
-      await click(desktop, item);
-      assert(!manualSettled, 'Explicit activation must wait for the held shared original');
-      gate.set({});
-      await until(() => manualSettled && automaticSettled === automaticStarted,
-        'both real automatic and manual consumers have settled', 20000);
-      await complete(desktop, item);
-      await until(() => gate.state.requests.some(value => value.method === 'GET'
-        && value.path.includes(`/items/${item.id}/contents/`) && value.stage === 'completed'),
-      'streaming gate recorded the completed original response');
-      const downloads = gate.state.requests.filter(value => value.method === 'GET'
-        && value.path.includes(`/items/${item.id}/contents/`));
-      assert(downloads.length === 1 && downloads[0].stage === 'completed',
-        'Automatic and manual consumers must share one successful original GET, not merely deduplicate repeated clicks');
-      const [, bytes] = Gio.File.new_for_path(item.primary.path).load_contents(null);
-      assert(GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes) === remote.primary.sha256
-        && (await target.clipboard()).text === text,
-      'Both consumers must retain the same verified original and explicit activation must copy its exact bytes');
-    } finally { content._finishReceived = finish; content.activate = activate; }
+    gate.set({path: contentPath, hold: true});
+    const remote = await peer.call('publish', {text, threshold: 4096});
+    const item = await received(desktop, remote.id);
+    await held(gate);
+    assert(!item.primary.path && (await target.clipboard()).text === sentinel,
+      'Automatic fetching must not activate the external clipboard before a user action');
+    const revision = desktop.app._controller.selectionRevision;
+    await click(desktop, item);
+    assert((await target.clipboard()).text === sentinel, 'Activation must not copy a preview while the original is held');
+    gate.set({});
+    await complete(desktop, item);
+    await until(() => desktop.app._controller.selectionRevision > revision,
+      'explicit activation produces a real clipboard owner change');
+    assert((await target.clipboard()).sha256 === remote.primary.sha256,
+      'The native row must activate the exact original; HTTP consumer deduplication runs headlessly');
   }),
 
   'CLIP-08-remote-loop': desktop => fixture(desktop, async ({server, gate, peer, target}) => {

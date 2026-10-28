@@ -287,8 +287,8 @@ ENV-02/06 检查历史/固定项、语句、DeviceId 和绑定原目的地的离
 # 实际虚拟显示器，不伪造 monitor 对象：
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
 python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
-# 120,002 词导入/索引/缓存测量（TLS 拒绝归上方无图形入口）：
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-09 --language zh_CN
+# DICT-09：120,002 词的真实导入/索引/缓存和主循环测量，无需桌面（按需压力套件）：
+dbus-run-session -- meson test -C build tokenizer-dictionary-performance --print-errorlogs
 # 两个真实 Shell 之间恢复词库，本地 HTTP 独立计数：
 python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
 # 独立浏览器 textarea / GTK3-VTE PTY 输入目标：
@@ -308,11 +308,13 @@ VTE 需要 Python GI 的 Gtk 3 / VTE 2.91；Chromium 支持 `chromium` / `chromi
 无图形词库 TLS 用例还需 `openssl`，验证自有自签名证书被拒绝，不代表可信 HTTPS 成功。
 词库冷恢复需要已生成的非 C UTF-8 locale；不改宿主证书库，不关闭证书验证。
 
-其他并发入口 `RECV-05-automatic-manual`、`CLIP-08-remote-loop`、`CONN-03-refresh`、
-`PHRASE-08-destinations` 由 server runner 运行：验证实际只下载一次、无回流发布、共用 busy 与设置进程
-自然退出，以及切配置地址/Channel 后语句仍仅本地。后一项使用同一自有后端的两个地址，不是两个独立部署。
+`RECV-05` 的单次 GET、多消费者，以及 `SEND-04/08` 的冻结清单/删除取消，由无图形真实 HTTP
+入口负责。`RECV-05-automatic-manual` 仅保留自动接收不改剪切板、点击后才复制原文的桌面接线；
+`CLIP-08-remote-loop`、`CONN-03-refresh` 继续验证真实回流边界、busy 和设置进程自然退出。
+目的地矩阵归 `SEND-05-destinations` 的 HTTP 验证，快捷语句只保留 `PHRASE-08` 的本地数据接线。
 
-`PRIV-05-thumbnail` 只在真实缩略图已生成/暂存、capture 提交前延迟返回，不证明解码器内部取消。
+`logic/clipboard/capture.test.js` 使用真实解码/缩略图/暂存文件验证隐私及排除变更后的清理；
+桌面只留 `PRIV-05` 的真实 owner 传输中切换，不证明解码器内部取消。
 `WORD-08-close/disable/newer` 延迟真实计算结果，等原生顶层请求结束再验迟到防线，不模拟强行终止计算。
 `SHOT-05-unsupported` 读取真实门户能力，核对不支持目标的错误并重试支持的截图；后端支持所有目标时
 为 BLOCKED，不替代所有门户的拒绝/超时行为。

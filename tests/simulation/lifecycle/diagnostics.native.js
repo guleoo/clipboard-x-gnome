@@ -15,8 +15,6 @@ export const cases = {
     const created = [];
     const inputs = [
       [new SyncError('invalid_key', secret), 'Synchronization authentication failed'],
-      [new SyncError('invalid_response', secret), 'The synchronization server returned an invalid response'],
-      [new SyncError('unknown-code', secret), 'Operation failed'],
       [new Error(secret, {cause: new Error(secret)}), 'Operation failed'],
     ];
     const file = Gio.File.new_for_path(`${GLib.getenv('CBX_SIMULATION_RUNTIME')}/missing-native-error-file`);

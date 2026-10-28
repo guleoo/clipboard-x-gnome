@@ -38,14 +38,6 @@ async function fixture(desktop, run, {enable = true, gate = false} = {}) {
 }
 
 function digest(bytes) { return GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, bytes); }
-function document(path) {
-  const [, bytes] = Gio.File.new_for_path(path).load_contents(null);
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-function queryCursor(path) {
-  const match = /[?&]cursor=([^&]*)/.exec(path);
-  return match ? decodeURIComponent(match[1]) : '';
-}
 function pending(desktop, itemId) {
   return [...desktop.app._uploadQueue._queues.values()].flatMap(queue => [...queue.entries.values()])
     .filter(entry => entry.itemId === itemId);
@@ -79,10 +71,6 @@ async function original(item) {
   assert(bytes.length === item.primary.size && digest(bytes) === item.primary.sha256,
     'Adopted original must match declared byte count and SHA-256');
 }
-async function failedConfiguration(desktop) {
-  await until(() => desktop.app._sync._state === 'error' && !desktop.app._sync.ready,
-    'actual connection authentication failure', 20000);
-}
 
 export const cases = {
   'SEND-03-image': desktop => fixture(desktop, async ({server, target}) => {
@@ -102,80 +90,32 @@ export const cases = {
       && remote.previews.length > 0, 'Native PNG row publishes a real lightweight image snapshot');
   }),
 
-  'RECV-02-restore': desktop => fixture(desktop, async ({server, gate, peer}) => {
+  'RECV-02-restore': desktop => fixture(desktop, async ({server, peer, target}) => {
     desktop.settings.set_uint('text-full-threshold', 1);
     const source = await peer();
-    const ids = [];
-    // Production pagination/data volume belongs to the headless backend suite.
-    // Here only the Shell's receive wiring and lifecycle restoration matter.
-    for (let index = 0; index < 3; index++) {
-      const remote = await source.call('publish', {text: `retained before receiver joined ${index}`, threshold: 1});
-      ids.push(remote.id);
-    }
-    assert(!desktop.app._controller.items.some(item => ids.includes(item.id)), 'Cold receiver has not connected while source publishes');
-    const start = gate.state.requests.length;
+    const remote = await source.call('publish', {text: 'retained before receiver joins', threshold: 1});
     await server.enable();
-    await until(() => ids.every(id => desktop.app._controller.items.some(item => item.id === id)), 'all retained pages imported by joining receiver', 60000);
-    assert(ids.every(id => desktop.app._controller.items.filter(item => item.id === id).length === 1),
-      'Repeated upsert events within the real feed must not create duplicate history rows');
-    const changes = gate.state.requests.slice(start).filter(value => /\/changes\?/.test(value.path));
-    assert(changes.length >= 1 && queryCursor(changes[0].path) === '', 'Cold Shell initially requests the actual change feed');
-    const cursor = desktop.app._sync._progress.cursors[server.channel.id];
-    assert(typeof cursor === 'string' && cursor.length > 0, 'Accepted pages must advance in-memory progress');
-    const {SyncProgressStore} = await import(`${desktop.app.dir.get_uri()}/sync/progress-store.js`);
-    const persisted = await new SyncProgressStore().load({serverAddress: gate.address, deviceId: server.identity.id});
-    assert(persisted.cursors[server.channel.id] === cursor, 'A fresh progress store must read the acknowledged cursor from disk');
-    const beforeRestart = gate.state.requests.length;
+    await received(desktop, remote.id);
+    await server.disable();
     await restart(desktop);
-    await until(() => desktop.app._sync.ready, 'receiver restarted against retained feed', 30000);
-    const resumed = gate.state.requests.slice(beforeRestart).find(value => /\/changes\?/.test(value.path));
-    assert(resumed && queryCursor(resumed.path) === cursor,
-      'Actual extension restart must resume the durable cursor rather than replay the entire feed');
-    assert(ids.every(id => desktop.app._controller.items.filter(item => item.id === id).length === 1),
-      'Cursor restoration must retain each imported item exactly once');
-  }, {enable: false, gate: true}),
-
-  'SEND-05-restore': desktop => fixture(desktop, async ({server, target, openGate}) => {
-    const first = await openGate();
-    const second = await openGate();
-    const other = await server.createChannel();
-    await server.join(other.id, server.identity.id);
-    await server.configure(server.channel.id, 'invalid-key-for-pending-intent', first.address);
-    desktop.settings.set_string('sync-send-mode', 'automatic');
+    await server.enable();
     await desktop.open();
-    await desktop.click(desktop.history.syncButton);
-    await failedConfiguration(desktop);
-    const queued = await capture(desktop, target, 'pending destination A must not be sent to B');
-    await until(() => pending(desktop, queued.id).length === 1, 'offline automatic intent saved');
-    const firstQueue = [...desktop.app._uploadQueue._queues.values()].find(queue =>
-      [...queue.entries.values()].some(entry => entry.itemId === queued.id));
-    assert(document(firstQueue.path).entries.some(entry => entry.itemId === queued.id && entry.channelId === server.channel.id
-      && entry.deviceId === server.identity.id && entry.serverAddress === first.address), 'Durable intent captures server, Channel and DeviceId');
-    await server.configure(other.id, server.identity.key, second.address);
+    await until(() => desktop.history._itemRows.has(remote.id), 'restored incoming item rendered after actual extension restart');
+    // Cursor, destination and queue-file matrices run through the same real
+    // clients/stores in the headless HTTP suite. Keep only Shell lifecycle wiring.
     desktop.settings.set_string('sync-send-mode', 'automatic');
-    await until(() => desktop.app._sync.ready && desktop.app._sync.configuration.activeChannelId === other.id, 'alternate destination ready', 30000);
-    const otherItem = await capture(desktop, target, 'new destination B publication');
-    await until(() => desktop.app._sync.getTransferForItem(otherItem.id)?.state === 'completed', 'B publication really completed', 30000);
-    await polls(desktop);
-    const alternate = await server.request('GET', `/items?channelId=${other.id}&limit=200`);
-    assert(alternate.items.some(item => item.id === otherItem.id) && !alternate.items.some(item => item.id === queued.id),
-      'A pending reference must never leak into a different address/Channel');
-    assert(document(firstQueue.path).entries.some(entry => entry.itemId === queued.id), 'Dormant server queue remains on disk while B is active');
-    const secondQueue = [...desktop.app._uploadQueue._queues.values()].find(queue => queue.path !== firstQueue.path);
-    assert(secondQueue && Gio.File.new_for_path(secondQueue.path).query_exists(null),
-      'Different server addresses must own distinct actual queue files');
-    await restart(desktop);
-    await until(() => desktop.app._sync.ready && desktop.app._sync.configuration.activeChannelId === other.id,
-      'B restores after a real extension restart with the dormant A queue on disk', 30000);
-    await server.configure(server.channel.id, server.identity.key, first.address);
-    desktop.settings.set_string('sync-send-mode', 'automatic');
-    await until(() => desktop.app._sync.ready && desktop.app._sync.configuration.activeChannelId === server.channel.id, 'original destination resumed', 30000);
-    await until(() => desktop.app._sync.getTransferForItem(queued.id)?.state === 'completed' && pending(desktop, queued.id).length === 0,
-      'original pending intent resumes and confirms only at its destination', 30000);
-    assert((await server.items()).items.some(item => item.id === queued.id)
-      && !(await server.items()).items.some(item => item.id === otherItem.id), 'Returning to A restores its queue without mixing B history');
-    await until(() => !document(firstQueue.path).entries.some(entry => entry.itemId === queued.id),
-      'Acknowledged restored intent is removed from the durable A queue');
+    const local = await capture(desktop, target, 'automatic publication remains connected after extension restart');
+    await until(() => desktop.app._sync.getTransferForItem(local.id)?.state === 'completed', 'restored outgoing trigger reaches backend', 30000);
+    assert((await server.item(local.id)).id === local.id, 'Actual restart must restore outgoing as well as incoming wiring');
+    const publications = () => [...desktop.app._uploadQueue._queues.values()]
+      .flatMap(queue => [...queue.publications.values()]);
+    assert(publications().some(value => value.itemId === local.id), 'Confirmed local item retains its frozen publication');
+    await desktop.open();
+    await desktop.click(desktop.history._itemRows.get(local.id).focusActors
+      .find(actor => actor._clipboardXGnomeEntryAction === 'delete'));
+    await until(() => !desktop.app._controller.items.some(value => value.id === local.id)
+      && !publications().some(value => value.itemId === local.id),
+    'Native deletion must propagate through Controller changed to durable queue pruning');
   }, {enable: false}),
 
   'CONN-08-empty': desktop => fixture(desktop, async ({server, target}) => {

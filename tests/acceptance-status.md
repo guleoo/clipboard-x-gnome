@@ -5,6 +5,37 @@
 Updated: 2026-10-28. These are observed results, not certification of all requirements in the
 [functional inventory](functional-inventory.md).
 
+## Simulation reduction and headless ownership (2026-10-28)
+
+The native registry shrank from 140 to 132 cases. Headless logic owns ordering/search, actual staged
+thumbnail cancellation, phrase-file failure/corruption, screenshot policy/async matrices and reset-time
+file preservation. SEND-04/08 and RECV-05 use the existing real-HTTP fixture; the desktop no longer
+repeats cursor/destination matrices. DICT-09 is an opt-in logic stress test, not extra ordinary CI work.
+Actual clipboard/input/focus, modal behavior, 2,000-button layout and Shell responsiveness remain native.
+Production features and CI workflows are unchanged.
+
+| Verification | GNOME 50 | GNOME 51 |
+| --- | --- | --- |
+| Full default non-stress logic plus local headless acceptance | 51/51 + 7/7 passed | 51/51 + 7/7 passed |
+| Real HTTP: frozen/deleted/shared GET work, pagination/cursor and destination restoration | 5/5 passed | 5/5 passed |
+| Retained history/privacy/phrase-error/word/screenshot/settings/notification wiring | 12/12 passed | 12/12 passed |
+| Sync restore, system clipboard wiring and local-phrase boundary, including deletion→queue pruning | 3/3 passed | 3/3 passed |
+| Headless DICT-09 actual 120,002-entry import/index/cache | Passed, max gap 25.2 ms | Passed, 24.1 ms |
+
+Screenshot combinations now use three actual captures rather than eight; logic still checks all eight
+policies. Word selection no longer repeatedly transfers 100k/200k-character input between processes:
+one oversized rejection and actual large-panel layout remain. Main-loop budgets are unchanged.
+
+Evidence: [both default logic runs](../build/environments-20261028T050340Z-9ucwu37t/report.json),
+[both 12-case wiring runs](../build/environments-20261028T050349Z-7sqq9zhh/report.json),
+[50 headless HTTP](../build/sync-http-tests/cbx-simulation-54d91aec506af32e-shell/),
+[51 headless HTTP](../build/sync-http-tests/cbx-simulation-3ea55fd19e21b698-shell/),
+[50 final sync wiring](../build/simulation-tests/cbx-simulation-c8e52447b2f08409-shell/),
+[51 final sync wiring](../build/simulation-tests/cbx-simulation-2025282aa8edcced-shell/),
+[50 large dictionary](../build/dictionary-logic-50.log), [51 large dictionary](../build/dictionary-logic-51.log).
+Existing failures and the RSS growth below are not reclassified. Unchanged two-hour soak,
+full-application and multiple-display matrices were not rerun in this test-only change.
+
 ## Remaining-gap coverage: actual developer desktop and two-hour runs (2026-10-28)
 
 | Verification | GNOME 50 | GNOME 51 |

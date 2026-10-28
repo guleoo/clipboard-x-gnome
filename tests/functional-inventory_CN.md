@@ -152,7 +152,7 @@ profile、本地 HTML，原生复制后由独立 GTK 回读文本/HTML hash；�
 | PRIV-05 | 开启停止记录时，正在捕获的旧内容不能晚到后进入历史；已产生的临时内容被清理，之后正常捕获可恢复。 |
 
 入口：[clipboard/policy.native.js](simulation/clipboard/policy.native.js) 的 PRIV-01/02/05，
-及 [capture.test.js](logic/clipboard/capture.test.js) 的取消规则；PRIV-05-thumbnail 保留真实临时图片清理。
+及 [capture.test.js](logic/clipboard/capture.test.js) 的取消规则、真实解码和临时图片清理。
 
 本组只验收“不记录 / 仅内存 / 在途切换”三条边界，不要求实际密码管理器，也不展开
 Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内容策略，用一个带标记的受控来源提供输入；
@@ -165,7 +165,7 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 | --- | --- |
 | PRIV-04 | 排除运行中的应用和手动 window class 均正确；恢复后正常捕获，数据规整规则归逻辑测试。 |
 
-真实窗口接线由 PRIV-04、PRIV-05-exclusion 负责，设置发现/手输入口复用 SET-07。
+真实窗口接线由 PRIV-04 负责；在途策略/格式矩阵归 capture.test.js，设置发现/手输入口复用 SET-07。
 此项与隐私模式分开验收，不因应用发现或密码管理器兼容性阻碍隐私开关通过。
 
 ### 分词算法与限制 — WORD-01…08
@@ -359,11 +359,11 @@ URL、认证和并发配置的数据组合仍归现有逻辑测试。
 
 长期模拟入口：[sync/toggle.smoke.js](simulation/sync/toggle.smoke.js), [sync/status.smoke.js](simulation/sync/status.smoke.js).
 
-原生入口：[sync/native.js](simulation/sync/native.js)、[sync/queue.native.js](simulation/sync/queue.native.js)、
+原生入口：[sync/native.js](simulation/sync/native.js)、
 [sync/local-boundary.native.js](simulation/sync/local-boundary.native.js)。真实服务端接收手动/自动/仅固定、
 代表性富文本/图片，并检查关闭期间不补传、确认落盘。完整 MIME/阈值/目的地矩阵及完成响应丢失
-归无图形真实 HTTP 集成。独立流式 gate 仍挂起模拟桌面的实际请求，复现冻结清单、中断/删除，
-不伪造 SyncClient 结果。损坏和退避继续复用逻辑测试。
+归无图形真实 HTTP 集成；冻结清单、中断/删除同样在此用独立 gate 挂起真实请求，
+不伪造 SyncClient 结果。桌面只保留删除→队列通知接线，损坏和退避继续复用逻辑测试。
 
 ### 接收、增量与懒加载 — RECV-01…10
 
@@ -491,14 +491,15 @@ logic/i18n/coverage.sh；翻译质量、字形和视觉效果仍人工验收，R
 
 | 功能 | 无图形验收归属 | 保留的桌面证据 |
 | --- | --- | --- |
-| HIST-01/06/10、捕获取消与恢复 | `logic/clipboard/{capture,history/controller}.test.js`；真实临时目录/错误/恢复、控制器状态和信号 | Pin 后真实重启，外部 owner 与隐私策略变化 |
-| WORD-06 | `logic/clipboard/tokenizer/processors.test.js` 的 1999/2000/2001；已有默认设置测试 | 小配置上限和通知；WORD-07 真实大面板响应度不变 |
-| DICT-06 | `logic/clipboard/tokenizer/network.test.js` 的真实 HTTP、失败保旧文件/语言声明、`--tls` 证书拒绝 | 真实 GTK 添加/刷新、结果重载及一次错误反馈 |
-| PHRASE-06、TYPE 取消判定、截图流程策略 | `logic/ui/phrase-draft.test.js`、`logic/clipboard/terminal/guard.test.js`、`logic/screenshot/pipeline.test.js` | 表单焦点/新草稿、实际输入设备、真实门户取消与禁用 |
+| HIST-01/04/06/10、捕获取消与恢复 | `logic/clipboard/{capture,history/controller,history/order}.test.js`；排序重载、搜索/limit 矩阵、真实缩略图暂存取消与恢复 | 真实 Pin/取消固定、输入/Unicode 粘贴查询、外部 owner 与一次隐私在途切换 |
+| WORD-06/07 | `logic/clipboard/tokenizer/processors.test.js` 的字符/词数边界及词库加载前拒绝 | 小配置上限提示；WORD-07 保留 2000 个真实按钮布局、一次超长拒绝和恢复 |
+| DICT-06/09 | `logic/clipboard/tokenizer/network.test.js` 的 HTTP/TLS；`performance.test.js` 按需测 120,002 词导入、索引、缓存和 GJS 心跳 | 小词库的真实 GTK 导入/刷新、结果重载及错误反馈；不再用文件选择器跑大词库 |
+| PHRASE-06/07、TYPE 取消判定、截图流程策略 | `logic/ui/phrase-draft.test.js`、`clipboard/phrases/store.test.js`、`clipboard/terminal/guard.test.js`、`screenshot/pipeline.test.js`；完整文件失败/损坏及异步阶段/配置矩阵 | 表单焦点与失败反馈、实际输入设备、真实门户取消/禁用；截图仅三次代表链路 |
 | COLOR-03/04 | 已有 `logic/color-picker/color.test.js` 的缩放/舍入/格式 | 实际像素移动、非默认格式写剪切板、真实双屏/125% |
 | SEND-02/03、RECV-03 | `logic/sync/integration/backend.test.js`：开关与文本/图片阈值矩阵，真实生产客户端和服务端 | 单条富文本/PNG 捕获发送，以及 lazy 自动接收 |
-| SEND-05/07、RECV-02 | 同一 HTTP 集成：按目的地队列、完成响应丢失幂等、205 条实际分页与游标 | SEND-05-restore / RECV-02-restore 的少量记录真实扩展重启 |
+| SEND-04/05/07/08、RECV-02/05 | 同一 HTTP 集成：冻结清单、删除取消、按目的地队列、丢 ACK 幂等、205 条分页/游标、自动/手动共享一次 GET | RECV-02-restore 只验真实重启后入站/出站与删除→队列清理；RECV-05-automatic-manual 只验系统剪切板接线 |
 | CONN-09-device/offline、XFER-09-glib/sha256sum | 同一 HTTP 集成：真实设备撤销/新 Key、连接拒绝与恢复、真实校验路径与 framing | 不重复放入 Shell；独立 GTK 错误反馈和 Shell 取消/崩溃回归保留 |
+| SET-08、LANG-07 错误映射 | `logic/ui/settings-defaults.test.js` 使用真实 store 核对数据保留；`logic/sync/errors.test.js` 负责全部错误码与翻译映射 | 真正确认/取消重置、控件仍可编辑；代表性安全通知、真实 Gio 异常及取消零通知 |
 
 运行方式见[逻辑验证](README_CN.md#逻辑验证)。完整 HTTP 集成不等于第二个 GNOME 桌面，
 不会证明渲染或剪切板 owner 行为。已知 sha256sum framing 失败继续按真实结果登记。
@@ -511,14 +512,13 @@ logic/i18n/coverage.sh；翻译质量、字形和视觉效果仍人工验收，R
 | 模块 | ID | 实际验证及边界 |
 | --- | --- | --- |
 | `clipboard/applications.native.js` | CLIP-02-chromium | 实际本地 HTML、私有 Chromium profile、原生复制和独立 MIME 回读 |
-| `clipboard/policy.native.js` | PRIV-01/02/04/05、HIST-01/04 | 不记录、仅内存生命周期、真实窗口排除、在途取消、普通固定项重启、Unicode 搜索；不展开隐私组合矩阵 |
+| `clipboard/policy.native.js` | PRIV-01/02/04/05、HIST-01/04 | 不记录、仅内存生命周期、真实窗口排除、一次在途切换、Pin/取消固定与查询输入；矩阵归逻辑层 |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | 原生输入/提交、Esc、独立目标收到复制/粘贴/模拟输入、关闭策略、延迟保存与实际 IO 失败重试；不覆盖全部 IME 或冷 Shell 恢复 |
 | `word-selection/native.js` | WORD-05/06/07/08、SELECT-01/03/04/06/07 | 真实行入口、选择结果回读、小配置上限与提示、长文 heartbeat、迟到处理、拖选、持续 Shift 连选、滚动和退出清理；2000 算法边界归逻辑层 |
 | `terminal/native.js` | TYPE-01/03/05/06/07 | 独立 GTK 目标、两档混合语言逐字一致、等待真实 backend 修饰键、熔断一次及队列取消、实际禁用重开不继续输入 |
 | `sync/native.js` | CONN-06-profile、SEND-01/01-pinned/02/06/10、RECV-01/03/04/09、XFER-02/04 | 真实服务端/来源、持久化和实际传输；SEND-02 只保留代表性富文本接线 |
 | `sync/connection.native.js` | CONN-02/03/04/05 | 完整 GTK 测试/应用/失败重试和在途关闭 |
-| `sync/network.native.js` | RECV-05/06/07/08、XFER-02-download | 实际下载门控、来源失败、迟到选择及精确进度 |
-| `sync/queue.native.js` | SEND-04/08 | 冻结清单、中断/删除；完成响应丢失归无图形真实 HTTP 集成 |
+| `sync/network.native.js` | RECV-05-automatic-manual/06/07/08、XFER-02-download | 系统剪切板接线、来源失败、迟到选择及精确进度；共享 GET 归无图形 HTTP |
 | `sync/local-boundary.native.js` | PHRASE-08、PRIV-08 | 活跃同步下本地数据边界；不代替日志脱敏审计 |
 | `settings/native.js`、`settings/language.native.js` | SET-01/06/08、LANG-02 | 完整独立设置、原生录制/重置和实际翻译目录 |
 | `word-selection/dictionary.native.js` | DICT-02/06/08（含 DICT-07） | 本地/网络导入、多来源、刷新保留、编辑器和目录 |
@@ -529,8 +529,8 @@ SELECT-01 直接复用已有 drag 实现，包含 SELECT-02 范围；SELECT-03 �
 也复用同一函数，不复制一份测试。仅以这些原生用例替代“调用 handler 就代表用户操作”的结论，
 原有逻辑测试仍负责数据边界。
 
-WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字符、10 万字符 URL、20 万
-无空白字符必须直接拒绝并提示，不能改变分词现场，之后短文本仍可处理。1000ms 主循环预算不变，
+WORD-07 只测 2000 个真实按钮布局、一次 20,001 字符拒绝提示及之后的短文本恢复。
+字符/词数和超长 URL 的规则矩阵归逻辑层，不再跨进程重复传输大文本。1000ms 主循环预算不变，
 记录样本长度和最大间隔；字符数按 Unicode 码点计数，emoji 不按两个 UTF-16 单元计数。
 词库加载前拒绝及中英文/emoji 的长度边界由逻辑测试验证。虚拟修饰键
 熔断不证明物理键盘事件一定送达，也不证明绕过输入法。CI 范围未扩大。
@@ -542,15 +542,15 @@ WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字
 
 | 归属 | 新增/强化 ID | 独立行为边界 |
 | --- | --- | --- |
-| `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05-exclusion | 解码失败后正常捕获；重启后原文缺失；真实 owner 暂停期间改变排除策略 |
+| `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05 | 解码失败后正常捕获；重启后原文缺失；真实 owner 传输中切换隐私 |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | 实际删除 IO 失败/重试、损坏持久文件恢复 |
 | `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
 | `terminal/native.js` | TYPE-03、TYPE-08-layout | 两档短文本精确回读、实际 US/German 输入源；不读取用户长样本 |
 | `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
 | `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用后真正完成/取消系统截图，验证模态释放、外部窗口原生输入、旧插件无副作用及重新启用；大捕获/缩略图/保存主循环间隙 |
 | `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |
-| `word-selection/dictionary.native.js`、`lifecycle/cold.smoke.js` | DICT-02/06/07/08/09 | 语言列表、多来源、代表性刷新故障、实际编辑器、120,002 词索引、跨 Shell 无隐式下载；HTTP 规则与 TLS 拒绝归逻辑层 |
-| `sync/scenarios.native.js` | SEND-03-image、SEND-05-restore、RECV-02-restore | 单次图片实际捕获/发送、少量历史的持久游标与按目的地队列真实扩展重启；完整数据矩阵归逻辑层 |
+| `word-selection/dictionary.native.js`、`lifecycle/cold.smoke.js` | DICT-02/06/07/08 | 语言、多来源、刷新反馈、实际编辑器、跨 Shell 无隐式下载；大词库、HTTP/TLS 矩阵归逻辑层 |
+| `sync/scenarios.native.js` | SEND-03-image、RECV-02-restore | 单次图片捕获/发送；真实扩展启停后的入站/出站、删除清理接线；游标/目的地矩阵归逻辑层 |
 | `sync/scenarios.native.js`、`sync/network.native.js` | CONN-08-empty/revoked、XFER-05-disable-download/06-cancel-download、RECV-08-manual | 实际无权限/撤销、会话/任务取消及较新选择分支，保留 Shell 异常退出和覆盖回归 |
 | `screenshot/native.js`、`screenshot/editor.native.js`、`screenshot/remote.native.js` | SHOT-03-editor/07、EDIT-05-remote/07-lifetime | 实际截图编辑组合、取消重试、远端原图送到真实自定义编辑进程、离线缓存及禁用后编辑器继续存活 |
 | `color-picker/native.js`、`color-picker/displays.native.js` | COLOR-05-edges/displays | 四角/clamp、实际虚拟双屏/125%，坐标、剪切板和一个物理截图像素步长 |
@@ -563,12 +563,12 @@ WORD-07 测量普通 2000 词和恰好 20,000 字符的正常处理；20,001 字
 
 后续补充继续复用已有归属：`sync/network.native.js` 负责自动/手动获取竞争、远端剪切板回流
 （`RECV-05-automatic-manual`、`CLIP-08-remote-loop`）；`sync/connection.native.js` 负责在途 Refresh、
-忙态真实点击及设置进程自然退出（`CONN-03-refresh`）；`sync/local-boundary.native.js` 验证同一测试后端
-两个配置地址/Channel 切换后语句仍本地（`PHRASE-08-destinations`）。`clipboard/policy.native.js` 暂停真实
-缩略图暂存结果提交（`PRIV-05-thumbnail`），并强化已有 HIST-04 的 emoji 和过滤结果上限。
+忙态真实点击及设置进程自然退出（`CONN-03-refresh`）；`sync/local-boundary.native.js` 仅保留
+`PHRASE-08` 的本地语句接线，目的地矩阵归无图形 HTTP。真实缩略图暂存取消归
+`logic/clipboard/capture.test.js`；HIST-04 只保留输入/Unicode 粘贴与可见上限接线。
 `word-selection/native.js` 等关闭、禁用、较新条目请求后的顶层 handler 完整结束再验迟到结果
 （`WORD-08-close/disable/newer`）。这些用例先确认加载面板已经绘制、还没有词按钮，再实际返回、
-关闭、禁用或返回后选择另一条内容；词库文件更新的规则复用 DICT-09 的逻辑测试，不重复组合到桌面。
+关闭、禁用或返回后选择另一条内容；词库文件更新规则复用 dictionary.test.js，不重复组合到桌面。
 `screenshot/native.js` 验证真实不支持目标及支持目标重试
 （`SHOT-05-unsupported`），不伪造门户响应。这些是独立故障边界，不重复基础捕获、重复手动点击或
 直接调用 handler；解码器内部取消、物理输入、所有部署环境仍单列。

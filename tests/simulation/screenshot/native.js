@@ -128,34 +128,30 @@ export const cases = {
     desktop.settings.set_string('screenshot-target', 'screen');
     desktop.settings.set_boolean('screenshot-open-editor', true);
     try {
-      for (const [history, clipboard] of [[false, false], [true, false], [false, true], [true, true]]) {
-        const output = `${GLib.get_tmp_dir()}/screenshot-editor-${GLib.uuid_string_random()}.json`;
-        desktop.settings.set_string('editor-command', ['python3', script, output, 'file']
-          .map(value => GLib.shell_quote(value)).join(' ') + ' %f');
-        for (const item of [...desktop.app._controller.items]) desktop.app._controller.remove(item.id);
-        await baseline(desktop, target, 'clipboard before screenshot editor');
-        desktop.settings.set_boolean('screenshot-add-history', history);
-        desktop.settings.set_boolean('screenshot-write-clipboard', clipboard);
-        const revision = desktop.app._controller.selectionRevision;
-        const count = processes.length;
-        await capture(desktop);
-        await until(() => Gio.File.new_for_path(output).query_exists(null), 'real custom screenshot editor read original');
-        assert(processes.length === count + 1, 'One screenshot must launch exactly one real editor process');
-        const [, data] = Gio.File.new_for_path(output).load_contents(null);
-        const received = JSON.parse(new TextDecoder().decode(data));
-        const actual = await target.clipboard(clipboard ? 'image/png' : 'text/plain;charset=utf-8');
-        await until(() => (!clipboard || desktop.app._controller.selectionRevision > revision)
-          && !desktop.app._controller._captureInProgress && !desktop.app._controller._captureQueued,
-        'editor screenshot clipboard capture settled');
-        const images = desktop.app._controller.items.filter(item => item.isImage);
-        assert(images.length === (history ? 1 : 0), 'Opening an editor must not change the history option');
-        const image = GdkPixbuf.Pixbuf.new_from_file(received.source);
-        assert(image.width === global.stage.width && image.height === global.stage.height && received.size > 100,
-          'The editor must receive the complete real screenshot, not a thumbnail');
-        if (history) assert(images[0].primary.sha256 === received.sha256, 'Editor and history must reference the same screenshot');
-        assert(clipboard ? actual.sha256 === received.sha256 : actual.text === 'clipboard before screenshot editor',
-          'Editor launch must preserve independent screenshot clipboard policy');
-      }
+      // The complete policy matrix runs without a desktop in pipeline.test.js.
+      const output = `${GLib.get_tmp_dir()}/screenshot-editor-${GLib.uuid_string_random()}.json`;
+      desktop.settings.set_string('editor-command', ['python3', script, output, 'file']
+        .map(value => GLib.shell_quote(value)).join(' ') + ' %f');
+      for (const item of [...desktop.app._controller.items]) desktop.app._controller.remove(item.id);
+      await baseline(desktop, target, 'clipboard before screenshot editor');
+      desktop.settings.set_boolean('screenshot-add-history', false);
+      desktop.settings.set_boolean('screenshot-write-clipboard', true);
+      const revision = desktop.app._controller.selectionRevision;
+      await capture(desktop);
+      await until(() => Gio.File.new_for_path(output).query_exists(null), 'real custom screenshot editor read original');
+      assert(processes.length === 1, 'One screenshot must launch exactly one real editor process');
+      const [, data] = Gio.File.new_for_path(output).load_contents(null);
+      const received = JSON.parse(new TextDecoder().decode(data));
+      const actual = await target.clipboard('image/png');
+      await until(() => desktop.app._controller.selectionRevision > revision
+        && !desktop.app._controller._captureInProgress && !desktop.app._controller._captureQueued,
+      'editor screenshot clipboard capture settled');
+      assert(!desktop.app._controller.items.some(item => item.isImage),
+        'Opening an editor without history must not recapture its screenshot');
+      const image = GdkPixbuf.Pixbuf.new_from_file(received.source);
+      assert(image.width === global.stage.width && image.height === global.stage.height && received.size > 100,
+        'The editor must receive the complete real screenshot, not a thumbnail');
+      assert(actual.sha256 === received.sha256, 'Editor and actual clipboard must receive the same original');
     } finally {
       desktop.app._launchEditor = launch;
       for (const process of processes) {
@@ -192,7 +188,7 @@ export const cases = {
     desktop.settings.set_string('screenshot-target', 'screen');
     desktop.settings.set_boolean('screenshot-open-editor', false);
     try {
-      for (const [history, clipboard] of [[true, true], [true, false], [false, true], [false, false]]) {
+      for (const [history, clipboard] of [[true, true], [false, false]]) {
         for (const item of desktop.app._controller.items) desktop.app._controller.remove(item.id);
         await baseline(desktop, target, `screenshot clipboard sentinel ${history}-${clipboard}`);
         desktop.settings.set_boolean('screenshot-add-history', history);
