@@ -114,14 +114,6 @@
       <default>['apostrophe']</default>
       <summary>Context shortcut for typing a history entry</summary>
     </key>
-    <key name="simulated-input-mode" type="s">
-      <choices>
-        <choice value="commit"/>
-        <choice value="keys"/>
-      </choices>
-      <default>'commit'</default>
-      <summary>Text submission or simulated keystrokes</summary>
-    </key>
     <key name="simulated-input-speed" type="s">
       <choices>
         <choice value="standard"/>

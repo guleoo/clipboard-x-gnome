@@ -30,8 +30,7 @@ const settings = new Gio.Settings({
 assert(settings.get_string('sensitive-content-mode') === 'discard',
   'sensitive clipboard content must not be recorded by default');
 assert(settings.get_uint('tokenizer-word-limit') === 2000, 'Word selection must default to at most 2000 items');
-assert(settings.get_string('simulated-input-mode') === 'commit', 'Text submission must be the default input mode');
-settings.set_string('simulated-input-mode', 'keys');
+assert(settings.get_string('simulated-input-speed') === 'standard', 'Simulated keystrokes use standard speed by default');
 settings.set_string('simulated-input-speed', 'medium');
 settings.set_uint('tokenizer-word-limit', 3000);
 settings.set_string('sensitive-content-mode', 'memory');

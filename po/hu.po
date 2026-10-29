@@ -1300,29 +1300,11 @@ msgstr "Már folyamatban van egy beviteli művelet."
 msgid "Focus a text field before starting input."
 msgstr "A bevitel megkezdése előtt helyezze a fókuszt egy szövegmezőre."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "A közvetlen szövegküldés itt nem érhető el. Helyezze a fókuszt egy támogatott szövegmezőre, vagy válassza a szimulált billentyűleütéseket a beállításokban."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "A bevitel megkezdése előtt véglegesítse vagy vesse el a beviteli móddal éppen szerkesztett szöveget."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "A célablak vagy a szövegmező megváltozott. A hátralévő bevitel megszakadt."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Ez a szöveg nem küldhető karaktereket tartalmaz."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Nem támogatott alkalmazásoknál válassza kézzel a szimulált billentyűleütéseket."
-
-msgid "Input mode"
-msgstr "Beviteli mód"
-
-msgid "Text submission (recommended)"
-msgstr "Közvetlen szövegküldés (ajánlott)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Szimulált billentyűleütések (kompatibilitás)"
 
 msgid "Medium"
 msgstr "Közepes"

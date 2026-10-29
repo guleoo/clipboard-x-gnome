@@ -1284,29 +1284,11 @@ msgstr "ಇನ್‌ಪುಟ್ ಕಾರ್ಯವು ಈಗಾಗಲೇ ನಡ
 msgid "Focus a text field before starting input."
 msgstr "ಇನ್‌ಪುಟ್ ಪ್ರಾರಂಭಿಸುವ ಮೊದಲು ಪಠ್ಯ ಕ್ಷೇತ್ರಕ್ಕೆ ಗಮನ ನೀಡಿ."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "ಇಲ್ಲಿ ಪಠ್ಯವನ್ನು ನೇರವಾಗಿ ಸಲ್ಲಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ಬೆಂಬಲಿತ ಪಠ್ಯ ಕ್ಷೇತ್ರಕ್ಕೆ ಗಮನ ನೀಡಿ ಅಥವಾ ಆದ್ಯತೆಗಳಲ್ಲಿ ಅನುಕರಿಸಿದ ಕೀ ಒತ್ತುವಿಕೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "ಪ್ರಾರಂಭಿಸುವ ಮೊದಲು ಇನ್‌ಪುಟ್ ವಿಧಾನದಲ್ಲಿ ರಚಿಸುತ್ತಿರುವ ಪಠ್ಯವನ್ನು ದೃಢೀಕರಿಸಿ ಅಥವಾ ರದ್ದುಗೊಳಿಸಿ."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "ಗುರಿ ಕಿಟಕಿ ಅಥವಾ ಪಠ್ಯ ಕ್ಷೇತ್ರ ಬದಲಾಗಿದೆ. ಉಳಿದ ಇನ್‌ಪುಟ್ ಅನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "ಈ ಪಠ್ಯದಲ್ಲಿ ಸಲ್ಲಿಸಲು ಸಾಧ್ಯವಿಲ್ಲದ ಅಕ್ಷರಗಳಿವೆ."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "ಬೆಂಬಲಿಸದ ಅನ್ವಯಗಳಿಗಾಗಿ, ಅನುಕರಿಸಿದ ಕೀ ಒತ್ತುವಿಕೆಯನ್ನು ಸ್ವತಃ ಆಯ್ಕೆಮಾಡಿ."
-
-msgid "Input mode"
-msgstr "ಇನ್‌ಪುಟ್ ವಿಧಾನ"
-
-msgid "Text submission (recommended)"
-msgstr "ನೇರ ಪಠ್ಯ ಸಲ್ಲಿಕೆ (ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "ಅನುಕರಿಸಿದ ಕೀ ಒತ್ತುವಿಕೆ (ಹೊಂದಾಣಿಕೆ)"
 
 msgid "Medium"
 msgstr "ಮಧ್ಯಮ"

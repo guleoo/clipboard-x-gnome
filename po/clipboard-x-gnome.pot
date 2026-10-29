@@ -49,12 +49,6 @@ msgstr ""
 msgid "Focus a text field before starting input."
 msgstr ""
 
-#: src/clipboard/terminal/errors.js:27
-msgid ""
-"Text submission is unavailable here. Focus a supported text field or choose "
-"Simulated keystrokes in Preferences."
-msgstr ""
-
 #: src/clipboard/terminal/errors.js:29
 msgid ""
 "Finish or cancel the current input-method composition before starting input."
@@ -62,10 +56,6 @@ msgstr ""
 
 #: src/clipboard/terminal/errors.js:31
 msgid "The target window or text field changed. Remaining input was cancelled."
-msgstr ""
-
-#: src/clipboard/terminal/errors.js:33
-msgid "This text contains characters that cannot be submitted."
 msgstr ""
 
 #: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:155
@@ -884,22 +874,6 @@ msgstr ""
 
 #: src/ui/settings/window.js:233
 msgid "Simulated input"
-msgstr ""
-
-#: src/ui/settings/window.js:234
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr ""
-
-#: src/ui/settings/window.js:237
-msgid "Input mode"
-msgstr ""
-
-#: src/ui/settings/window.js:238
-msgid "Text submission (recommended)"
-msgstr ""
-
-#: src/ui/settings/window.js:239
-msgid "Simulated keystrokes (compatibility)"
 msgstr ""
 
 #: src/ui/settings/window.js:241

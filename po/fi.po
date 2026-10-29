@@ -1299,29 +1299,11 @@ msgstr "Syöttötoiminto on jo käynnissä."
 msgid "Focus a text field before starting input."
 msgstr "Kohdista tekstikenttään ennen syötön aloittamista."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "Suora tekstin lähetys ei ole käytettävissä tässä. Kohdista tuettuun tekstikenttään tai valitse asetuksista näppäinpainallusten simulointi."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Vahvista tai peru syöttömenetelmän keskeneräinen tekstin koostaminen ennen syötön aloittamista."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "Kohdeikkuna tai tekstikenttä vaihtui. Jäljellä oleva syöttö peruttiin."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Tämä teksti sisältää merkkejä, joita ei voi lähettää."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Valitse tukemattomille sovelluksille näppäinpainallusten simulointi käsin."
-
-msgid "Input mode"
-msgstr "Syöttötapa"
-
-msgid "Text submission (recommended)"
-msgstr "Suora tekstin lähetys (suositus)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Näppäinpainallusten simulointi (yhteensopivuus)"
 
 msgid "Medium"
 msgstr "Keskitaso"

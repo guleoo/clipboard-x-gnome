@@ -1285,29 +1285,11 @@ msgstr "別の入力処理がすでに実行中です。"
 msgid "Focus a text field before starting input."
 msgstr "入力を開始する前に、テキスト入力欄にフォーカスを合わせてください。"
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "ここではテキストを直接送信できません。対応するテキスト入力欄にフォーカスを合わせるか、設定で「キー入力のシミュレーション」を選択してください。"
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "入力を開始する前に、入力メソッドで変換中の文字列を確定するか、取り消してください。"
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "入力先のウィンドウまたはテキスト入力欄が変わったため、残りの入力を中止しました。"
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "このテキストには送信できない文字が含まれています。"
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "対応していないアプリでは、キー入力のシミュレーションを手動で選択してください。"
-
-msgid "Input mode"
-msgstr "入力方式"
-
-msgid "Text submission (recommended)"
-msgstr "テキストの直接送信（推奨）"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "キー入力のシミュレーション（互換用）"
 
 msgid "Medium"
 msgstr "中速"

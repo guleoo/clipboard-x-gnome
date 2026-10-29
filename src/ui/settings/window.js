@@ -231,24 +231,13 @@ export default class ClipboardXGnomePreferences extends ExtensionPreferences {
 
     const simulatedInput = new Adw.PreferencesGroup({
       title: _('Simulated input'),
-      description: _('For unsupported applications, choose simulated keystrokes manually.'),
     });
     page.add(simulatedInput);
-    simulatedInput.add(this._rows.combo('simulated-input-mode', _('Input mode'), [
-      ['commit', _('Text submission (recommended)')],
-      ['keys', _('Simulated keystrokes (compatibility)')],
-    ]));
     const typingSpeed = this._rows.combo('simulated-input-speed', _('Typing speed'), [
       ['standard', _('Standard')],
       ['medium', _('Medium')],
       ['slow', _('Slow')],
     ]);
-    const updateTypingSpeed = () => {
-      typingSpeed.sensitive = settings.get_string('simulated-input-mode') === 'keys';
-    };
-    updateTypingSpeed();
-    const inputModeSignal = settings.connect('changed::simulated-input-mode', updateTypingSpeed);
-    onClosed(typingSpeed, () => settings.disconnect(inputModeSignal));
     simulatedInput.add(typingSpeed);
 
     const tokenizer = new Adw.PreferencesGroup({title: _('Word Selection')});

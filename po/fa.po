@@ -1286,29 +1286,11 @@ msgstr "یک عملیات ورود متن از قبل در حال اجرا اس�
 msgid "Focus a text field before starting input."
 msgstr "پیش از شروع ورود متن، روی یک فیلد متنی تمرکز کنید."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "ارسال مستقیم متن در اینجا در دسترس نیست. روی یک فیلد متنی پشتیبانی‌شده تمرکز کنید یا در ترجیحات، شبیه‌سازی کلیدها را انتخاب کنید."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "پیش از شروع، متن در حال ترکیب با روش ورودی را تأیید یا لغو کنید."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "پنجره یا فیلد متنی مقصد تغییر کرد. ادامهٔ ورود متن لغو شد."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "این متن شامل نویسه‌هایی است که قابل ارسال نیستند."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "برای برنامه‌های پشتیبانی‌نشده، شبیه‌سازی کلیدها را به‌صورت دستی انتخاب کنید."
-
-msgid "Input mode"
-msgstr "روش ورود متن"
-
-msgid "Text submission (recommended)"
-msgstr "ارسال مستقیم متن (پیشنهادی)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "شبیه‌سازی کلیدها (سازگاری)"
 
 msgid "Medium"
 msgstr "متوسط"

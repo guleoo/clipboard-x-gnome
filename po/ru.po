@@ -1297,29 +1297,11 @@ msgstr "Операция ввода уже выполняется."
 msgid "Focus a text field before starting input."
 msgstr "Перед началом ввода установите фокус на текстовом поле."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "Прямая передача текста здесь недоступна. Установите фокус на поддерживаемом текстовом поле или выберите имитацию нажатий клавиш в настройках."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Перед началом ввода подтвердите или отмените текст, набираемый с помощью метода ввода."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "Целевое окно или текстовое поле изменилось. Оставшийся ввод отменён."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Этот текст содержит символы, которые нельзя передать."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Для неподдерживаемых приложений выберите имитацию нажатий клавиш вручную."
-
-msgid "Input mode"
-msgstr "Способ ввода"
-
-msgid "Text submission (recommended)"
-msgstr "Прямая передача текста (рекомендуется)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Имитация нажатий клавиш (совместимость)"
 
 msgid "Medium"
 msgstr "Средняя"

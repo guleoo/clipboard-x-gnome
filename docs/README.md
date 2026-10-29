@@ -9,7 +9,7 @@ and Simplified Chinese counterparts use `{name}_CN.md` in the same directory. Re
 
 ## Releases
 
-- [1.1.1 release notes](release/v1.1.1-en.md): text submission, panel interaction improvements, and fixes for editor stalls, native-error crashes, screenshot cancellation, and color sampling.
+- [1.1.1 release notes](release/v1.1.1-en.md): simulated-input and panel interaction improvements, and fixes for editor stalls, native-error crashes, screenshot cancellation, and color sampling.
 - [1.1.0 release notes](release/v1.1.0-en.md): configurable word selection limits, dictionary improvements, and synchronization, storage, and panel fixes.
 - [1.0.9 release notes](release/v1.0.9-en.md): ignore empty HTML clipboard fragments and target GNOME Shell 50 in extension metadata.
 - [1.0.7 release notes](release/v1.0.7-en.md): fixes for mouse dragging and range selection in Word Selection mode.

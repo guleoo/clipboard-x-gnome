@@ -1310,29 +1310,11 @@ msgstr "Une opération de saisie est déjà en cours."
 msgid "Focus a text field before starting input."
 msgstr "Placez le focus sur un champ de texte avant de commencer la saisie."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "L’envoi direct de texte n’est pas disponible ici. Placez le focus sur un champ compatible ou choisissez la simulation de touches dans les préférences."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Validez ou annulez le texte en cours de composition avec la méthode de saisie avant de commencer."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "La fenêtre ou le champ de texte cible a changé. La saisie restante a été annulée."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Ce texte contient des caractères qui ne peuvent pas être envoyés."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Pour les applications non prises en charge, choisissez manuellement la simulation de touches."
-
-msgid "Input mode"
-msgstr "Mode de saisie"
-
-msgid "Text submission (recommended)"
-msgstr "Envoi direct de texte (recommandé)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Simulation de touches (compatibilité)"
 
 msgid "Medium"
 msgstr "Moyenne"

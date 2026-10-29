@@ -1291,29 +1291,11 @@ msgstr "Bir giriş işlemi zaten çalışıyor."
 msgid "Focus a text field before starting input."
 msgstr "Girişi başlatmadan önce bir metin alanına odaklanın."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "Doğrudan metin gönderimi burada kullanılamıyor. Desteklenen bir metin alanına odaklanın veya tercihlerden benzetimli tuş vuruşlarını seçin."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Başlamadan önce giriş yöntemiyle oluşturulmakta olan metni onaylayın veya iptal edin."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "Hedef pencere veya metin alanı değişti. Kalan giriş iptal edildi."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Bu metin, gönderilemeyen karakterler içeriyor."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Desteklenmeyen uygulamalar için benzetimli tuş vuruşlarını elle seçin."
-
-msgid "Input mode"
-msgstr "Giriş yöntemi"
-
-msgid "Text submission (recommended)"
-msgstr "Doğrudan metin gönderimi (önerilen)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Benzetimli tuş vuruşları (uyumluluk)"
 
 msgid "Medium"
 msgstr "Orta"

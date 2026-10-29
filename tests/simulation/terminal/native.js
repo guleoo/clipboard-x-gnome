@@ -27,7 +27,6 @@ export async function trigger(desktop, target, text, key, {replaceClipboard = fa
 }
 
 async function exactTyping(desktop, target, source, speed, {pointer = false} = {}) {
-  desktop.settings.set_string('simulated-input-mode', 'keys');
   desktop.settings.set_string('simulated-input-speed', speed);
   await target.focus();
   await target.call('clear');
@@ -70,15 +69,10 @@ export const cases = {
       await trigger(desktop, target, 'paste into the original target', Clutter.KEY_v, {replaceClipboard: true});
       await until(() => target.state.text === 'paste into the original target', 'paste into real GTK target');
       await target.call('clear');
-      assert(desktop.settings.get_string('simulated-input-mode') === 'commit', 'Text submission must be the default input mode');
-      await trigger(desktop, target, typingSample, Clutter.KEY_apostrophe, {replaceClipboard: true, search: '[Unit]'});
-      await until(() => target.state.text === typingSample, 'default text submission preserves the exact multilingual sample', 15000);
+      await trigger(desktop, target, 'abc123', Clutter.KEY_apostrophe, {replaceClipboard: true});
+      await until(() => target.state.text === 'abc123', 'simulated keystrokes reach the real GTK target', 15000);
       await pause(100);
-      assert(target.state.text === typingSample, 'Default text submission must not duplicate or reorder delayed text');
-      await target.call('clear');
-      const chunked = typingSample.repeat(8);
-      await trigger(desktop, target, chunked, Clutter.KEY_apostrophe, {replaceClipboard: true, search: '[Unit]'});
-      await until(() => target.state.text === chunked, 'multiple text submissions reach GTK in exact order', 15000);
+      assert(target.state.text === 'abc123', 'Simulated keystrokes must not duplicate delayed text');
       assert((await target.clipboard()).text === 'Independent clipboard sentinel before action', 'Typing must not overwrite the clipboard');
     } finally { await target.close(); }
   },

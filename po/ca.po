@@ -1308,29 +1308,11 @@ msgstr "Ja hi ha una operació d’entrada en curs."
 msgid "Focus a text field before starting input."
 msgstr "Doneu el focus a un camp de text abans de començar l’entrada."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "Aquí no es pot enviar text directament. Doneu el focus a un camp de text compatible o trieu la simulació de tecles a les preferències."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Confirmeu o cancel·leu la composició actual del mètode d’entrada abans de començar."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "La finestra o el camp de text de destinació ha canviat. S’ha cancel·lat l’entrada restant."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Aquest text conté caràcters que no es poden enviar."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Per a les aplicacions no compatibles, trieu manualment la simulació de tecles."
-
-msgid "Input mode"
-msgstr "Mode d’entrada"
-
-msgid "Text submission (recommended)"
-msgstr "Enviament directe de text (recomanat)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Simulació de tecles (compatibilitat)"
 
 msgid "Medium"
 msgstr "Mitjana"

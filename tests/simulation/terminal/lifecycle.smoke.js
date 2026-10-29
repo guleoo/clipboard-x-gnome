@@ -47,19 +47,18 @@ function destroyAndCheck(input) {
 }
 
 function isolatedInput(TerminalInput, options = {}) {
-  const input = new TerminalInput({mode: () => 'keys', ...options});
+  const input = new TerminalInput(options);
   const target = {window: {}, focus: {}};
   input._currentTarget = () => target;
   return input;
 }
 
 export async function verify(TerminalInput) {
-  for (const phase of ['settle', 'character-delay', 'commit-delay', 'modifiers', 'notification']) {
+  for (const phase of ['settle', 'character-delay', 'modifiers', 'notification']) {
     let characters = 0;
     let notifications = 0;
     let modifierReads = 0;
     const input = isolatedInput(TerminalInput, {
-      mode: () => phase === 'commit-delay' ? 'commit' : 'keys',
       speed: () => 'slow',
       onCancelled: () => { notifications++; },
     });
@@ -70,17 +69,16 @@ export async function verify(TerminalInput) {
     // Exercise real GLib sources and the real virtual-device lifecycle without
     // sending test keystrokes into the desktop or conflating target IM issues.
     input._typeCharacter = () => { characters++; };
-    input._commit = () => { characters++; };
     try {
-      const active = input.type(phase === 'commit-delay' ? '中'.repeat(513) : '中文');
+      const active = input.type('中文');
       const duplicate = input.type('DUPLICATE').then(() => false, error => error.code === 'busy');
       const paste = input.paste().then(() => false, error => error.code === 'busy');
       assert(await duplicate && await paste, 'An active input operation must reject duplicate typing and paste');
       await waitUntil(() => input._sources.size > 0 && input._typing,
         `${phase}: input did not reach a waiting state`);
-      if (phase === 'character-delay' || phase === 'commit-delay') {
+      if (phase === 'character-delay') {
         await waitUntil(() => characters === 1 && input._sources.size > 0,
-          'Input did not reach its character or chunk delay');
+          'Input did not reach its character delay');
       } else if (phase === 'notification') {
         assert(input._cancelTypingWithNotification(), 'Cancellation must schedule its notification');
         assert(input._sources.size === 2, 'Both pending wait and notification must be registered');
@@ -93,7 +91,7 @@ export async function verify(TerminalInput) {
         `${phase}: active work created a source after destruction`);
       assert(characters === charactersAtDestroy && modifierReads === readsAtDestroy && notifications === 0,
         `${phase}: destroyed work emitted input, polled modifiers or delivered a cancellation notification`);
-      input._mode = input._speed = () => { throw new Error('Destroyed input must not read disposed settings'); };
+      input._speed = () => { throw new Error('Destroyed input must not read disposed settings'); };
       await drains(Promise.all([input.type('AFTER_DESTROY'), input.paste(), input._queue]),
         'Calls after destruction must settle without creating new work');
       print(`Clipboard X Gnome [terminal-lifecycle] ${phase}: released sources and drained active input`);
@@ -124,6 +122,21 @@ export async function verify(TerminalInput) {
     } finally {
       input.destroy();
     }
+  }
+
+  const disconnected = isolatedInput(TerminalInput);
+  const charactersWithoutFocus = [];
+  disconnected._currentTarget = () => ({window: disconnected._targetWindow, focus: null});
+  disconnected._targetWindow = {};
+  disconnected._modifierState = () => 0;
+  disconnected._prepare = async () => true;
+  disconnected._typeCharacter = character => charactersWithoutFocus.push(character);
+  try {
+    await disconnected.type('A中');
+    assert(charactersWithoutFocus.join('') === 'A中',
+      'Keystrokes must work without a GNOME text-input connection');
+  } finally {
+    disconnected.destroy();
   }
 
   let prepared;

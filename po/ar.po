@@ -1274,29 +1274,11 @@ msgstr "هناك عملية إدخال قيد التشغيل بالفعل."
 msgid "Focus a text field before starting input."
 msgstr "ضع التركيز على حقل نص قبل بدء الإدخال."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "الإرسال المباشر للنص غير متاح هنا. ضع التركيز على حقل نص مدعوم أو اختر محاكاة ضغطات المفاتيح في التفضيلات."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "أكمل النص الجاري تأليفه بطريقة الإدخال أو ألغِه قبل بدء الإدخال."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "تغيّرت النافذة أو حقل النص المستهدف. أُلغي ما تبقى من الإدخال."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "يحتوي هذا النص على محارف لا يمكن إرسالها."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "للتطبيقات غير المدعومة، اختر محاكاة ضغطات المفاتيح يدويًا."
-
-msgid "Input mode"
-msgstr "طريقة الإدخال"
-
-msgid "Text submission (recommended)"
-msgstr "إرسال النص مباشرةً (موصى به)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "محاكاة ضغطات المفاتيح (للتوافق)"
 
 msgid "Medium"
 msgstr "متوسط"

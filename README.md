@@ -129,16 +129,10 @@ Use simulated typing when the target application does not accept normal paste:
 2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the word selection panel, select the words you need and press `'`.
 3. The panel closes and Clipboard X Gnome sends text to the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
-Choose an **Input mode** under **Preferences → Clipboard → Simulated input**:
-
-- **Text submission (recommended)** is the default. It sends text directly through GNOME's text-input
-  connection in small blocks. The target must support this connection; finish or cancel any active
-  input-method composition first. Newlines and Tab are submitted as text, not pressed as keys.
-- **Simulated keystrokes (compatibility)** sends individual keys. Select it manually for unsupported
-  applications; the extension never switches modes automatically. In this mode, newlines press Return
-  and Tab presses Tab, which may execute commands or move focus rather than insert text.
-
-Typing speed applies only to simulated keystrokes. Intervals are in milliseconds:
+Simulated typing sends individual keystrokes. Finish or cancel any active input-method composition
+first. Newlines press Return and Tab presses Tab, which may execute commands or move focus rather
+than insert text. Adjust **Typing speed** under **Preferences → Clipboard → Simulated input**.
+Intervals are in milliseconds:
 
 | Profile | Before input | After ASCII | After Unicode composition |
 | --- | ---: | ---: | ---: |
@@ -147,8 +141,8 @@ Typing speed applies only to simulated keystrokes. Intervals are in milliseconds
 | Slow | 75 | 8 | 50 |
 
 Only one input operation can run at a time; another request is rejected rather than queued. An observed
-target-window or text-field change cancels the remaining input. Text submission tracks both; keystroke
-mode cannot detect field changes in clients without a supported text-input connection. A physical Tab
+target-window or text-field change cancels the remaining input. Field changes cannot be detected in
+clients without a supported text-input connection. A physical Tab
 may switch fields and stop the remainder when that change is observable. Already entered text cannot
 be undone, and successful sending is not an acknowledgement from the application. Prefer normal paste
 for long, sensitive, or exact content.

@@ -1279,29 +1279,11 @@ msgstr "이미 입력 작업이 실행 중입니다."
 msgid "Focus a text field before starting input."
 msgstr "입력을 시작하기 전에 텍스트 입력란에 초점을 맞추세요."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "여기서는 텍스트 직접 전송을 사용할 수 없습니다. 지원되는 텍스트 입력란에 초점을 맞추거나 설정에서 “키 입력 시뮬레이션”을 선택하세요."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "입력을 시작하기 전에 입력기에서 조합 중인 글자를 확정하거나 취소하세요."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "대상 창이나 텍스트 입력란이 변경되어 나머지 입력을 취소했습니다."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "이 텍스트에는 전송할 수 없는 문자가 포함되어 있습니다."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "지원되지 않는 앱에서는 키 입력 시뮬레이션을 직접 선택하세요."
-
-msgid "Input mode"
-msgstr "입력 방식"
-
-msgid "Text submission (recommended)"
-msgstr "텍스트 직접 전송 (권장)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "키 입력 시뮬레이션 (호환용)"
 
 msgid "Medium"
 msgstr "중간"

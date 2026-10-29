@@ -91,7 +91,6 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._uploadQueue = uploadQueue;
     let syncStarted = false;
     this._terminalInput = new TerminalInput({
-      mode: () => this._settings.get_string('simulated-input-mode'),
       speed: () => this._settings.get_string('simulated-input-speed'),
       onCancelled: () => Main.notify(
         _('Simulated keyboard input cancelled'),

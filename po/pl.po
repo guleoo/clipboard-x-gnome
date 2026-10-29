@@ -1300,29 +1300,11 @@ msgstr "Operacja wprowadzania już trwa."
 msgid "Focus a text field before starting input."
 msgstr "Przed rozpoczęciem wprowadzania ustaw fokus w polu tekstowym."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "Bezpośrednie przesyłanie tekstu jest tutaj niedostępne. Ustaw fokus w obsługiwanym polu tekstowym lub wybierz symulowanie klawiszy w preferencjach."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Przed rozpoczęciem zatwierdź lub anuluj tekst składany za pomocą metody wprowadzania."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "Okno lub pole tekstowe celu uległo zmianie. Pozostałe wprowadzanie zostało anulowane."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Ten tekst zawiera znaki, których nie można przesłać."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "W przypadku nieobsługiwanych aplikacji ręcznie wybierz symulowanie klawiszy."
-
-msgid "Input mode"
-msgstr "Metoda wprowadzania"
-
-msgid "Text submission (recommended)"
-msgstr "Bezpośrednie przesyłanie tekstu (zalecane)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Symulowanie klawiszy (zgodność)"
 
 msgid "Medium"
 msgstr "Średnia"

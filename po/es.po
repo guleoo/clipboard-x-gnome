@@ -1311,29 +1311,11 @@ msgstr "Ya hay una operación de entrada en curso."
 msgid "Focus a text field before starting input."
 msgstr "Enfoque un campo de texto antes de iniciar la entrada."
 
-msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
-msgstr "El envío directo de texto no está disponible aquí. Enfoque un campo de texto compatible o elija la simulación de teclas en Preferencias."
-
 msgid "Finish or cancel the current input-method composition before starting input."
 msgstr "Confirme o cancele el texto que está componiendo con el método de entrada antes de comenzar."
 
 msgid "The target window or text field changed. Remaining input was cancelled."
 msgstr "La ventana o el campo de texto de destino ha cambiado. Se ha cancelado la entrada restante."
-
-msgid "This text contains characters that cannot be submitted."
-msgstr "Este texto contiene caracteres que no se pueden enviar."
-
-msgid "For unsupported applications, choose simulated keystrokes manually."
-msgstr "Para las aplicaciones no compatibles, elija manualmente la simulación de teclas."
-
-msgid "Input mode"
-msgstr "Modo de entrada"
-
-msgid "Text submission (recommended)"
-msgstr "Envío directo de texto (recomendado)"
-
-msgid "Simulated keystrokes (compatibility)"
-msgstr "Simulación de teclas (compatibilidad)"
 
 msgid "Medium"
 msgstr "Media"
