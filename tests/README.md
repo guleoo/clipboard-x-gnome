@@ -344,6 +344,19 @@ the `chromium` or `chromium-browser` executable. Browser targets use private pro
 loopback receiver, not external sites. The VTE fixture first verifies native ASCII and real clipboard
 paste independently, then tests the plugin's natural-paste path; raw PTYs are not universal terminal apps.
 
+Run all three keystroke profiles in both independent environments:
+
+```sh
+python3 tools/test-environment.py --suite simulation --case TYPE-03,TYPE-04-medium,TYPE-04
+```
+
+These profile cases, the layout case and `typing.smoke.js` measure an initialized session, not first
+input after Shell startup. Their shared `terminal/ready.js` waits for IBus and the target text-input
+connection, verifies a normally paced Unicode key sequence using an independent virtual keyboard,
+then clears the receiver before the plugin sample. Preparation does not call or retry plugin input,
+override its intervals, or count as a profile pass. Setup failures are labelled `typing setup`; a
+sample mismatch still fails immediately without retry. A fresh Shell per case remains supported.
+
 Typing checks explicitly select the delivery mode so the default text-submission path cannot silently
 replace keystroke coverage. The shared short sample covers ASCII, mixed CJK, emoji, multiple lines and
 Tab. Text submission sends textual newlines/Tab; keystrokes press Return/Tab. Logical tests own the

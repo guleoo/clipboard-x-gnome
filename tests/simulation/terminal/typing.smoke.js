@@ -4,6 +4,7 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {typingSample} from './samples.js';
+import {prepare} from './ready.js';
 
 const UUID = 'clipboard-x-gnome@guleoo.github.io';
 const STATUS_AREA_NAME = 'clipboard-x-gnome';
@@ -64,7 +65,7 @@ export async function run() {
     Main.activateWindow(targetWindow());
     assert(await waitUntil(() => global.display.focus_window === targetWindow()),
       'Typing target window did not receive keyboard focus');
-    await Scripting.sleep(200);
+    await prepare(targetWindow(), () => new TextDecoder().decode(output.load_contents(null)[1]));
 
     const source = typingSample;
     await terminalInput.type(source);

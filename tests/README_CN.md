@@ -300,6 +300,18 @@ VTE 需要 Python GI 的 Gtk 3 / VTE 2.91；Chromium 支持 `chromium` / `chromi
 浏览器目标使用私有 profile 和自有 loopback 接收器，不访问外站。VTE 先独立验证原生 ASCII 输入与
 真实剪切板粘贴，再测插件自然粘贴；raw PTY 嵌入目标不等于所有终端应用。
 
+在两版独立环境运行全部三档模拟按键：
+
+```sh
+python3 tools/test-environment.py --suite simulation --case TYPE-03,TYPE-04-medium,TYPE-04
+```
+
+三档、布局用例及 `typing.smoke.js` 验证已初始化会话，不测 Shell 刚启动后的首次输入。
+共用 `terminal/ready.js` 等待 IBus 和目标文本输入通道，使用独立虚拟键盘、正常逐键间隔验证
+Unicode 输入，再清空接收器，最后才执行插件样本。准备阶段不调用或重试插件输入、不覆盖
+档位间隔，也不计为档位通过。准备失败单独标记为 `typing setup`；正式样本不一致仍直接失败，
+不重试。仍支持每个用例使用独立 Shell，不依赖其他用例先跑。
+
 输入测试显式选择输入方式，避免默认文本提交悄然替代模拟按键的覆盖。共享短样本覆盖 ASCII、
 中英及其他 CJK 文字、emoji、多行和 Tab；文本提交发送文本换行/Tab，模拟按键发送 Return/Tab。
 逻辑测试负责每块 256 码点 / 1024 UTF-8 字节上限、块间 20 ms、忙碌拒绝、不自动回退及精确档位：

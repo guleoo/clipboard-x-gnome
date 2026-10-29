@@ -56,7 +56,7 @@
   {
     "module": "terminal/native.js",
     "cases": [
-      {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-04"}, {"id": "TYPE-05"},
+      {"id": "TYPE-01"}, {"id": "TYPE-03"}, {"id": "TYPE-04-medium"}, {"id": "TYPE-04"}, {"id": "TYPE-05"},
       {"id": "TYPE-06"}, {"id": "TYPE-07"},
       {"id": "TYPE-08-layout"}
     ]

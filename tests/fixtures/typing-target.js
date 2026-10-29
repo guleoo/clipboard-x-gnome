@@ -27,8 +27,10 @@ application.connect('activate', app => {
   const save = () => {
     saveSource = 0;
     const [start, end] = buffer.get_bounds();
-    const bytes = new TextEncoder().encode(buffer.get_text(start, end, true));
-    output.replace_contents(bytes, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+    // GJS can marshal an empty Uint8Array as NULL; an empty string still writes
+    // a real zero-byte snapshot when the readiness control clears the buffer.
+    const text = buffer.get_text(start, end, true);
+    output.replace_contents(text, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
     return GLib.SOURCE_REMOVE;
   };
   buffer.connect('changed', () => {

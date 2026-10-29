@@ -267,7 +267,7 @@ that delayed saves preserve new input and focus.
 | TYPE-01 | Separate copy, paste and default text submission; read back exact multilingual text without changing the clipboard during submission. |
 | TYPE-02 | Paste into the target active before opening the panel; verify received bytes in an ordinary app and a terminal. |
 | TYPE-03 | Explicitly select standard keystrokes (`75 / 4 / 30` ms) and receive the exact short ASCII/CJK/emoji/multiline/Tab sample. Return/Tab remain physical keys; long-text reliability is not an acceptance gate. |
-| TYPE-04 | Independently run the short sample with slow keystrokes (`75 / 8 / 50` ms); a standard-case failure must not hide this readback. Medium (`75 / 6 / 40` ms) is verified by logic and the SET-02 preferences write, not a duplicate native typing case. |
+| TYPE-04 | Independently run the short sample with medium (`TYPE-04-medium`, `75 / 6 / 40` ms) and slow keystrokes (`75 / 8 / 50` ms); a standard-case failure must not hide either readback. All three profiles share receiver preparation. |
 | TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
 | TYPE-06 | Fuse on observed input/backend modifiers, notify once and send no further blocks/characters; reject a second active operation rather than queue it. Accept modifier behavior using actual backend virtual input, not a claim of observing every physical key. |
 | TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |
@@ -277,6 +277,12 @@ that delayed saves preserve new input and focus.
 Logic entries: [terminal/guard.test.js](logic/clipboard/terminal/guard.test.js),
 [terminal/sequence.test.js](logic/clipboard/terminal/sequence.test.js).
 Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
+
+Profile/layout cases and the standalone typing smoke first use
+[terminal/ready.js](simulation/terminal/ready.js) to wait for the input framework and text-input
+connection, verify an independent normally paced Unicode key sequence and clear the receiver. They
+cover initialized-session input, not Shell cold-start behavior. Preparation neither calls plugin input
+nor retries a failing sample; each measured sample must still match exactly on its first attempt.
 
 Text submission uses `Main.inputMethod.commit()` in blocks of at most 256 code points / 1024 UTF-8
 bytes, yielding for 20 ms between blocks. It submits newlines and Tab as text, unlike keystroke mode.
@@ -546,7 +552,7 @@ These are coverage boundaries, not certification of every requirement within an 
 | `clipboard/policy.native.js` | PRIV-01/02/04/05, HIST-01/04 | Pause, memory-only lifecycle, focused-window exclusion, one in-flight switch, pin/unpin and query input; matrices belong to logic |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
 | `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, small configured limits/notification, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup; logic owns the 2000-word algorithm boundary |
-| `terminal/native.js` | TYPE-01/03/04/05/06/07 | Independent GTK target, explicit delivery modes and exact mixed-language output, real backend modifier wait/fuse, one notification, busy rejection and no old typing after actual disable/re-enable |
+| `terminal/native.js` | TYPE-01/03/04/04-medium/05/06/07 | Independent GTK target, explicit delivery modes and exact mixed-language output, real backend modifier wait/fuse, one notification, busy rejection and no old typing after actual disable/re-enable |
 | `sync/native.js` | CONN-06-profile, SEND-01/01-pinned/02/06/10, RECV-01/03/04/09, XFER-02/04 | Real server/source, durable state and actual transport; SEND-02 retains representative rich-text wiring |
 | `sync/connection.native.js` | CONN-02/03/04/05 | Complete GTK Test/Apply/failure/retry and in-flight close |
 | `sync/network.native.js` | RECV-05-automatic-manual/06/07/08, XFER-02-download | System clipboard wiring, source failure, stale choices and exact progress; shared GET belongs to headless HTTP |
@@ -578,7 +584,7 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 | `clipboard/native.js`, `clipboard/policy.native.js` | CLIP-04-recovery, CLIP-09-missing, PRIV-05 | Failed decode then normal capture; missing original after restart; privacy change during an actual owner transfer |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | Real deletion IO failure/retry and invalid persisted data recovery |
 | `word-selection/native.js` | SELECT-04-cross-row, SELECT-05, SELECT-07-disable | Held Shift across rows, Space/Enter and actual disable while dragging |
-| `terminal/native.js` | TYPE-03/04, TYPE-08-layout | Exact short-text readback with explicitly selected delivery modes, real US/German input sources; no user long-sample reads |
+| `terminal/native.js` | TYPE-03/04/04-medium, TYPE-08-layout | Exact short-text readback after independent receiver preparation, explicitly selected keys profiles, real US/German input sources; no user long-sample reads |
 | `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
 | `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Complete/cancel the actual system screenshot UI after disable, verify released modal and native external input, no old plugin side effects, then normal re-enable; large capture/thumbnail/save main-loop gaps |
 | `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |

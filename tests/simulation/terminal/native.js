@@ -7,6 +7,7 @@ import {Target} from '../helpers/target.js';
 import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 import {typingSample} from './samples.js';
+import {prepare} from './ready.js';
 
 export async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false, search = text} = {}) {
   const item = await capture(desktop, target, text);
@@ -54,7 +55,10 @@ async function exactTyping(desktop, target, source, speed, {pointer = false} = {
 
 async function typing(desktop, speed) {
   const target = await Target.open(desktop);
-  try { await exactTyping(desktop, target, typingSample, speed); }
+  try {
+    await prepare(target.window, () => target.state.text);
+    await exactTyping(desktop, target, typingSample, speed);
+  }
   finally { await target.close(); }
 }
 
@@ -82,6 +86,7 @@ export const cases = {
   },
 
   'TYPE-03': desktop => typing(desktop, 'standard'),
+  'TYPE-04-medium': desktop => typing(desktop, 'medium'),
   'TYPE-04': desktop => typing(desktop, 'slow'),
 
   async 'TYPE-08-layout'(desktop) {
@@ -91,6 +96,7 @@ export const cases = {
     const originalId = manager.currentSource?.id;
     const target = await Target.open(desktop);
     try {
+      await prepare(target.window, () => target.state.text);
       settings.set_value('sources', new GLib.Variant('a(ss)', [['xkb', 'us'], ['xkb', 'de']]));
       for (const id of ['us', 'de']) {
         await until(() => Object.values(manager.inputSources).some(source => source.type === 'xkb' && source.id === id),
