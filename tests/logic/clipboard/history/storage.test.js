@@ -17,7 +17,9 @@ async function assertRejects(promise, pattern, message) {
   try {
     await promise;
   } catch (error) {
-    assert(pattern.test(error.message), `${message}: ${error.message}`);
+    // GLib errors carry translated messages, so callers may match the error code instead.
+    const matched = typeof pattern === 'function' ? pattern(error) : pattern.test(error.message);
+    assert(matched, `${message}: ${error.message}`);
     return;
   }
   throw new Error(`${message}: promise resolved unexpectedly`);
@@ -406,7 +408,8 @@ try {
       await new Promise(resolve => { finishWriter = resolve; });
       await writeFile(Gio.File.new_for_path(path), pending.primary.bytes);
     }, cancellable);
-    const rejected = assertRejects(writing, /cancelled|canceled/iu, 'closing an active writer');
+    const rejected = assertRejects(writing,
+      error => error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED), 'closing an active writer');
     const closing = staging.close();
     assert(cancellable.is_cancelled(), 'closing storage must cancel active staging writes');
     finishWriter();

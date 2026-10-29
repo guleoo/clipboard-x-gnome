@@ -29,7 +29,9 @@ async function assertRejects(promise, pattern, message) {
   try {
     await promise;
   } catch (error) {
-    assert(pattern.test(error.message), `${message}: ${error.message}`);
+    // GLib errors carry translated messages, so callers may match the error code instead.
+    const matched = typeof pattern === 'function' ? pattern(error) : pattern.test(error.message);
+    assert(matched, `${message}: ${error.message}`);
     return;
   }
   throw new Error(`${message}: promise resolved unexpectedly`);
@@ -420,7 +422,7 @@ await assertRejects(
 
 await assertRejects(
   launchEditor({command: '/usr/bin/true %i', uri: standardInputFile.get_uri()}),
-  /No such file|not found|Failed to open/iu,
+  error => error.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND),
   'Missing standard-input image must be reported before starting the editor',
 );
 
@@ -431,6 +433,6 @@ try {
     uri: 'file:///tmp/image.png',
   });
 } catch (error) {
-  missingEditorRejected = /No such file|not found|Failed to execute/iu.test(error.message);
+  missingEditorRejected = error.matches?.(GLib.SpawnError, GLib.SpawnError.NOENT) ?? false;
 }
 assert(missingEditorRejected, 'missing custom editor executable must be reported');
