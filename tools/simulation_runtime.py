@@ -39,21 +39,14 @@ def private_directory():
             print(f'Warning: private runtime cleanup incomplete: {directory}', file=sys.stderr)
 
 
-def prepare_archive(source_path, destination, major):
-    with zipfile.ZipFile(source_path) as source, zipfile.ZipFile(destination, 'w') as target:
-        metadata = json.loads(source.read('metadata.json'))
+def check_archive(path, major):
+    with zipfile.ZipFile(path) as archive:
+        metadata = json.loads(archive.read('metadata.json'))
         if metadata['uuid'] != UUID:
             raise ValueError('Unexpected extension UUID')
         if major not in metadata['shell-version']:
-            if major != '51':
-                raise ValueError('Release package does not support the requested Shell')
-            metadata['shell-version'].append('51')
-        for entry in source.infolist():
-            path = PurePosixPath(entry.filename)
-            if path.is_absolute() or '..' in path.parts:
+            raise ValueError('Release package does not support the running Shell')
+        for name in archive.namelist():
+            member = PurePosixPath(name)
+            if member.is_absolute() or '..' in member.parts:
                 raise ValueError('Archive contains an unsafe member path')
-            contents = source.read(entry)
-            if entry.filename == 'metadata.json':
-                contents = (json.dumps(metadata, indent=2) + '\n').encode()
-            target.writestr(entry, contents)
-    return metadata

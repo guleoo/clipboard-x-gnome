@@ -17,7 +17,7 @@ export function json(path) {
 }
 const uri = GLib.getenv('CBX_SYNC_EXTENSION_URI');
 const runtime = GLib.getenv('CBX_SYNC_HTTP_RUNTIME');
-assert(uri && runtime?.startsWith('/tmp/cbx-sync-http-'), 'Run tools/test-sync-http.py against its owned backend');
+assert(uri && runtime?.startsWith('/tmp/cbx-sync-http-'), 'Run tools/test-sync-server.py against its owned backend');
 for (const value of [GLib.get_user_data_dir(), GLib.get_user_config_dir(), GLib.get_user_cache_dir()])
   assert(value.startsWith(`${runtime}/`), 'Headless integration must use private XDG storage');
 const {SyncClient} = await import(`${uri}/sync/client.js`);

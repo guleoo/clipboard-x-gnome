@@ -36,7 +36,7 @@ fi
 if [[ ! "$repeats" =~ ^([1-9]|1[0-9]|20)$ ]]; then
   usage >&2; exit 2
 fi
-for dependency in gnome-shell gnome-shell-test-tool dbus-run-session timeout python3 sha256sum; do
+for dependency in gnome-shell gnome-shell-test-tool dbus-run-session timeout sha256sum; do
   command -v "$dependency" >/dev/null || { printf 'Missing dependency: %s\n' "$dependency" >&2; exit 2; }
 done
 shell_version=$(gnome-shell --version)
@@ -62,27 +62,6 @@ trap 'exit 143' TERM
 mkdir -p -- "$output_parent"
 report_dir=$(mktemp -d "$output_parent/gnome${shell_major}-$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")
 report_dir=$(realpath -- "$report_dir")
-test_archive="$panel_runtime/extension.zip"
-# Only the disposable test ZIP may gain the current version; never rewrite the input artifact.
-python3 - "$archive" "$test_archive" "$shell_major" <<'PY'
-import json
-import sys
-import zipfile
-
-with zipfile.ZipFile(sys.argv[1]) as source, zipfile.ZipFile(sys.argv[2], 'w') as target:
-    metadata = json.loads(source.read('metadata.json'))
-    if metadata['uuid'] != 'clipboard-x-gnome@guleoo.github.io':
-        raise SystemExit('Unexpected extension UUID')
-    if sys.argv[3] not in metadata['shell-version']:
-        if sys.argv[3] != '51':
-            raise SystemExit('Release metadata does not support this Shell version')
-        metadata['shell-version'].append('51')
-    for entry in source.infolist():
-        content = source.read(entry)
-        if entry.filename == 'metadata.json':
-            content = (json.dumps(metadata, indent=2) + '\n').encode()
-        target.writestr(entry, content)
-PY
 base64 --decode "$project_dir/tests/simulation/panels/fixtures/background.png.base64" > "$panel_runtime/background.png"
 summary="$report_dir/summary.txt"
 printf 'GNOME Shell: %s\nArchive: %s\nSHA-256: %s\nCases: %s\nRepeats: %s\n' \
@@ -105,7 +84,7 @@ for ((round = 1; round <= repeats; round++)); do
       unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR GSETTINGS_BACKEND
       timeout --kill-after=10s 300s dbus-run-session -- gnome-shell-test-tool --headless \
         --extra-filter Gjs --extra-filter gjs --extra-filter org.gnome.Shell.Extensions \
-        --extension "$test_archive" "$test_script"
+        --extension "$archive" "$test_script"
     ) > "$log" 2>&1; then
       IFS=',' read -r -a expected_cases <<< "$cases"
       complete=true

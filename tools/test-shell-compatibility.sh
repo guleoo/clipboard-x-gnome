@@ -34,29 +34,6 @@ cleanup_runtime() {
 }
 trap cleanup_runtime EXIT
 
-# Keep the upload artifact unchanged while exercising GNOME 51 runtime support.
-if [[ "$shell_major" == '51' ]]; then
-  test_archive="$test_runtime/$(basename -- "$archive")"
-  python3 - "$archive" "$test_archive" <<'PY'
-import json
-import sys
-import zipfile
-
-with zipfile.ZipFile(sys.argv[1]) as source, zipfile.ZipFile(sys.argv[2], "w") as target:
-    metadata = json.loads(source.read("metadata.json"))
-    if "51" not in metadata["shell-version"]:
-        metadata["shell-version"].append("51")
-    for entry in source.infolist():
-        content = source.read(entry)
-        if entry.filename == "metadata.json":
-            content = (json.dumps(metadata, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
-        target.writestr(entry, content)
-    target.comment = source.comment
-PY
-  archive="$test_archive"
-  printf '%s\n' 'GNOME Shell 51 added to temporary test ZIP metadata; release ZIP unchanged.'
-fi
-
 export XDG_RUNTIME_DIR="$test_runtime"
 export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
 # Do not depend on the performance tool's animated wallpaper or distro background packages.

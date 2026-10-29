@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from simulation_runtime import fingerprint, prepare_archive, private_directory
+from simulation_runtime import check_archive, fingerprint, private_directory
 
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / 'tests/simulation'
@@ -23,7 +23,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('archive', type=Path, nargs='?')
     parser.add_argument('--case', help='Comma-separated acceptance IDs')
-    parser.add_argument('--group', help='Comma-separated domain names')
     parser.add_argument('--shell', choices=['50', '51'])
     parser.add_argument('--language', default='en_US', help='Gettext language for the isolated processes')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/simulation-tests')
@@ -32,21 +31,13 @@ def main():
     parser.add_argument('--isolate-cases', action='store_true', help='Start a fresh Shell per case instead of one shared Shell')
     args = parser.parse_args()
     registry = json.loads((TESTS / 'manifest.json').read_text())
-    available = {case['id']: (group['module'], case) for group in registry for case in group['cases']}
+    available = {case['id']: group['module'] for group in registry for case in group['cases']}
     selected = args.case.split(',') if args.case else list(available)
-    if args.group:
-        groups = args.group.split(',')
-        selected = [key for key in selected if available.get(key, ('',))[0].split('/')[0] in groups]
-        known_groups = {module.split('/')[0] for module, _ in available.values()}
-        if set(groups) - known_groups:
-            parser.error('Unknown group')
     if not selected or set(selected) - available.keys() or len(set(selected)) != len(selected):
         parser.error('Empty, duplicate or unknown case selection')
     if args.list:
         for key in selected:
-            module, case = available[key]
-            requirements = case.get('commands', [])
-            print(f'{key}: {module}' + (f"; requires {', '.join(requirements)}" if requirements else ''))
+            print(f'{key}: {available[key]}')
         return 0
     if not args.archive or not args.archive.is_file():
         parser.error('A built release ZIP is required')
@@ -78,32 +69,26 @@ def main():
             break
         except locale.Error:
             continue
+    if not args.language.startswith('en') and message_locale == 'C.UTF-8':
+        parser.error('Missing a generated non-C UTF-8 locale (for example en_US.UTF-8)')
     args.output.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     report = Path(tempfile.mkdtemp(prefix=f'gnome{match[1]}-{stamp}-', dir=args.output)).resolve()
     archive_bytes = args.archive.read_bytes()
     archive_hash = hashlib.sha256(archive_bytes).hexdigest()
     source_hash = fingerprint(ROOT)
-    revision = os.environ.get('CBX_SIMULATION_TEST_REVISION')
-    if not revision and shutil.which('git'):
+    revision = None
+    if shutil.which('git'):
         revision = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True, capture_output=True).stdout.strip() or None
     results = {}
     sessions = defaultdict(list)
     for key in selected:
-        module, case = available[key]
-        missing = [name for name in case.get('commands', []) if not shutil.which(name)]
-        if not args.language.startswith('en') and message_locale == 'C.UTF-8':
-            missing.append('a generated non-C UTF-8 locale (for example en_US.UTF-8)')
-        if missing:
-            results[key] = {'status': 'BLOCKED', 'reason': 'Missing: ' + ', '.join(missing)}
-        else:
-            sessions[key if args.isolate_cases else 'all'].append(key)
+        sessions[key if args.isolate_cases else 'all'].append(key)
     with private_directory() as runtime:
-        source_archive = runtime / 'source.zip'
-        source_archive.write_bytes(archive_bytes)
+        # Test a private copy so the input ZIP may change while the Shell runs.
         archive = runtime / 'extension.zip'
-        prepare_archive(source_archive, archive, match[1])
-        prepared_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+        archive.write_bytes(archive_bytes)
+        check_archive(archive, match[1])
         import base64
         background = runtime / 'background.png'
         background.write_bytes(base64.b64decode((TESTS / 'panels/fixtures/background.png.base64').read_bytes()))
@@ -153,7 +138,7 @@ def main():
     if fingerprint(ROOT) != source_hash:
         results['RUNNER:sources'] = {'status': 'FAIL', 'reason': 'Test sources changed during this run; repeat against a stable snapshot'}
     document = {'shell': shell, 'archive': str(args.archive.resolve()), 'testsRevision': revision,
-                'testsFingerprint': source_hash, 'preparedSha256': prepared_hash,
+                'testsFingerprint': source_hash,
                 'sha256': archive_hash, 'language': args.language,
                 'messageLocale': message_locale,
                 'results': results}
