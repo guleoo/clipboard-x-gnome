@@ -5,24 +5,19 @@ export function buildEditorArgv(template, uri, localPath = null) {
   return parseEditorCommand(template, uri, localPath).argv;
 }
 
-export async function launchEditor({command, uri, bytes = null}) {
+export async function launchEditor({command, uri}) {
   const file = Gio.File.new_for_uri(uri);
-  const parsed = parseEditorCommand(command, uri, file.get_path());
-  const input = parsed.standardInput ? await openStandardInput(file, bytes) : null;
-  const flags = parsed.standardInput
-    ? Gio.SubprocessFlags.STDIN_PIPE
-    : Gio.SubprocessFlags.NONE;
-  const launcher = new Gio.SubprocessLauncher({flags});
-  try {
-    const process = launcher.spawnv(parsed.argv);
-    if (input)
-      await writeStandardInput(process, input);
-    return process;
-  } finally {
-    // Also release the input if spawning fails before splice takes ownership.
-    if (input && !input.is_closed())
-      input.close(null);
+  const path = file.get_path();
+  const parsed = parseEditorCommand(command, uri, path);
+  const launcher = new Gio.SubprocessLauncher({flags: Gio.SubprocessFlags.NONE});
+  if (parsed.standardInput) {
+    if (!path)
+      throw new Error('The editor command requires a local file for standard input');
+    // Give the child the file directly. Splicing to a blocking stdin pipe can
+    // stall the Shell main loop while an editor is waiting for the compositor.
+    launcher.set_stdin_file_path(path);
   }
+  return launcher.spawnv(parsed.argv);
 }
 
 function parseEditorCommand(template, uri, localPath) {
@@ -87,36 +82,4 @@ function hasPlaceholder(argument, expected) {
     index++;
   }
   return false;
-}
-
-async function openStandardInput(file, bytes) {
-  if (bytes)
-    return Gio.MemoryInputStream.new_from_bytes(bytes);
-  if (!file.get_path())
-    throw new Error('The editor command requires image data or a local file for standard input');
-  return new Promise((resolve, reject) => file.read_async(
-    GLib.PRIORITY_DEFAULT, null, (source, result) => {
-      try { resolve(source.read_finish(result)); } catch (error) { reject(error); }
-    },
-  ));
-}
-
-function writeStandardInput(process, source) {
-  return new Promise((resolve, reject) => {
-    const target = process.get_stdin_pipe();
-    target.splice_async(
-      source,
-      Gio.OutputStreamSpliceFlags.CLOSE_SOURCE | Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
-      GLib.PRIORITY_DEFAULT,
-      null,
-      (stream, result) => {
-        try {
-          stream.splice_finish(result);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      },
-    );
-  });
 }

@@ -10,10 +10,13 @@ import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js'
 import {PanelManager} from './panel-manager.js';
 import {IconButton} from './controls/icon-button.js';
 import {Tooltip} from './controls/tooltip.js';
+import {InputMode} from './navigation/input-mode.js';
 import {HistoryPanel} from './panels/history/panel.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases/panel.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
+import {loadWords} from './panels/tokenizer/request.js';
 import {matches as matchesShortcut} from './shortcut.js';
+import {checkInput} from '../clipboard/tokenizer/processors.js';
 
 const TEXT_PROCESSING_LIMIT_BYTES = 1024 * 1024;
 const ICON_SIZE = 16;
@@ -67,6 +70,10 @@ class Indicator extends PanelMenu.Button {
       style_class: 'system-status-icon',
     }));
     this.menu.actor.add_style_class_name('cbx-menu');
+    this._inputMode = new InputMode(this.menu.actor, {
+      onChanged: (mode, position) => this._tooltip.setMode(mode, position),
+      onPointer: (actor, pressed) => this._focusPointer(actor, pressed),
+    });
     this._indicatorArrowSide = this.menu._boxPointer.arrowSide;
     this._indicatorArrowAlignment = this.menu._arrowAlignment;
     this._menuAnchor = new St.Widget({
@@ -134,6 +141,7 @@ class Indicator extends PanelMenu.Button {
     this._updateThemeColor();
 
     this._themeColorSignal = settings.connect('changed::theme-color', () => this._updateThemeColor());
+    this._foregroundColorSignal = settings.connect('changed::foreground-color', () => this._updateMenuStyle());
     this._panelWidthSignal = settings.connect('changed::panel-width', () => this._updatePanelGeometry());
     this._panelHeightSignal = settings.connect('changed::panel-height', () => this._updatePanelGeometry());
     this._panelAnchorSignal = settings.connect('changed::panel-anchor', () => this._updateMenuSource());
@@ -161,17 +169,42 @@ class Indicator extends PanelMenu.Button {
     this._wordLimitSignal = settings.connect('changed::tokenizer-word-limit', () => {
       this._tokenizerRequest++;
       if (this._panelManager.is('tokenizer')
-          && this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit'))
+          && (this._panelManager.state.loading
+            || this._panelManager.state.tokens.length > settings.get_uint('tokenizer-word-limit')))
         this._panelManager.reset();
     });
     this._menuVisibilitySignal = this.menu.actor.connect('notify::visible', () => {
-      if (!this.menu.actor.visible)
+      if (!this.menu.actor.visible) {
+        this._inputMode.close();
         this._panelManager.hidden();
+      }
     });
     this._menuKeyPressSignal = this.menu.actor.connect('key-press-event', (_actor, event) =>
       this._handleMenuKey(event));
-    this.menu.connect('open-state-changed', (_menu, open) => {
+    // Handle Escape before PopupMenu's default handler closes the entire menu.
+    if (Clutter.KeyController) {
+      this._menuKeyController = new Clutter.KeyController();
+      this._menuCaptureSignal = this._menuKeyController.connect('key-press', controller => {
+        const symbol = controller.get_key()[1];
+        this._inputMode.keyboard(symbol);
+        return this._handleEscape(symbol);
+      });
+      this.menu.actor.add_action_full('clipboard-x-gnome-escape', Clutter.EventPhase.CAPTURE, this._menuKeyController);
+    } else {
+      this._menuCaptureSignal = this.menu.actor.connect('captured-event', (_actor, event) => {
+        if (event.type() !== Clutter.EventType.KEY_PRESS)
+          return Clutter.EVENT_PROPAGATE;
+        const symbol = event.get_key_symbol();
+        this._inputMode.keyboard(symbol);
+        return this._handleEscape(symbol);
+      });
+    }
+    this._menuOpenStateSignal = this.menu.connect('open-state-changed', (_menu, open) => {
       if (open) {
+        const eventType = Clutter.get_current_event()?.type();
+        const keyboard = this._openingWithKeyboard
+          || eventType === Clutter.EventType.KEY_PRESS || eventType === Clutter.EventType.KEY_RELEASE;
+        this._inputMode.open(keyboard ? 'keyboard' : 'pointer');
         this._actions.rememberInputTarget();
         this._panelManager.open();
         this._actions.ensureIdentity();
@@ -182,10 +215,14 @@ class Indicator extends PanelMenu.Button {
         else if (this._panelManager.is('phrases'))
           this._quickPhrases.focusStart();
       } else {
+        this._inputMode.close();
         this._tokenizerRequest++;
+        if (this._panelManager.is('tokenizer'))
+          this._tokenizer.leave();
         this._tooltip.hide();
         this._panelManager.close({
-          preserve: this._settings.get_boolean('preserve-panel-state'),
+          preserve: this._settings.get_boolean('preserve-panel-state')
+            && !(this._panelManager.is('tokenizer') && this._panelManager.state.loading),
         });
         if (!this.menu.actor.visible)
           this._panelManager.hidden();
@@ -204,13 +241,18 @@ class Indicator extends PanelMenu.Button {
     }
   }
 
-  toggle() {
+  toggle({keyboard = false} = {}) {
     if (this.menu.isOpen) {
       this.menu.close();
       return;
     }
     this._updateMenuSource();
-    this.menu.open();
+    this._openingWithKeyboard = keyboard;
+    try {
+      this.menu.open();
+    } finally {
+      this._openingWithKeyboard = false;
+    }
   }
 
   _buildMenu() {
@@ -295,28 +337,36 @@ class Indicator extends PanelMenu.Button {
     this._panelManager?.refresh();
   }
 
-  async _openTokenizer(item) {
-    const request = ++this._tokenizerRequest;
-    const current = () => request === this._tokenizerRequest && this.menu.isOpen;
-    try {
-      if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
-        throw new Error(_('This text is too large for interactive processing'));
-      await this._actions.readItem(item);
-      if (!current())
-        return;
-      const source = item.text;
-      const state = await this._tokenizer.createState(item, source);
-      if (!current())
-        return;
-      this._panelManager.show('tokenizer', state);
-      this._tokenizer.focusStart();
-    } catch (error) {
-      if (current()) {
-        this._actions.reportError(error.code === 'word_limit_exceeded'
-          ? new Error(_('Too many words. Use less text or increase the limit in Preferences.'))
-          : error);
-      }
-    }
+  _openTokenizer(item) {
+    return loadWords(item, {
+      nextRequest: () => ++this._tokenizerRequest,
+      latestRequest: () => this._tokenizerRequest,
+      isOpen: () => this.menu.isOpen,
+      shownState: () => this._panelManager.is('tokenizer') ? this._panelManager.state : null,
+      validate: value => {
+        if ((value.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
+          throw new Error(_('This text is too large for interactive processing'));
+        checkInput(value.text);
+      },
+      showLoading: value => {
+        const state = this._tokenizer.createLoadingState(value, value.text);
+        this._panelManager.show('tokenizer', state);
+        this._tokenizer.focusStart();
+        return state;
+      },
+      waitForPaint: () => this._tokenizer.waitForPaint(),
+      readItem: value => this._actions.readItem(value),
+      createState: (value, source) => this._tokenizer.createState(value, source),
+      refresh: () => this._panelManager.refresh('tokenizer'),
+      reset: () => this._panelManager.reset(),
+      reportError: error => {
+        if (error.code === 'word_limit_exceeded')
+          error = new Error(_('Too many words. Use less text or increase the limit in Preferences.'));
+        else if (error.code === 'text_limit_exceeded')
+          error = new Error(_('This text is too large for interactive processing'));
+        this._actions.reportError(error);
+      },
+    });
   }
 
   _openPhrases() {
@@ -403,8 +453,19 @@ class Indicator extends PanelMenu.Button {
   }
 
   _setMenuGeometry({width}) {
+    this._menuWidth = width;
     this.menu.actor.set_width(width);
+    this._updateMenuStyle();
+  }
+
+  _updateMenuStyle() {
+    const width = this._menuWidth;
+    const foreground = this._settings.get_string('foreground-color');
+    const color = HEX_COLOR_PATTERN.test(foreground) ? `color: ${foreground};` : '';
     this.menu.actor.set_style(`width: ${width}px; max-width: ${width}px;`);
+    // PopupMenu's themed content has its own foreground, so override that
+    // color boundary rather than the outer BoxPointer.
+    this.menu.box.set_style(color);
   }
 
   _updateThemeColor() {
@@ -420,7 +481,8 @@ class Indicator extends PanelMenu.Button {
   }
 
   _updatePanelStateRetention() {
-    if (this._settings.get_boolean('preserve-panel-state')) {
+    if (this._settings.get_boolean('preserve-panel-state')
+      && !(this._panelManager.is('tokenizer') && this._panelManager.state.loading)) {
       this._panelManager.preservePendingState();
       return;
     }
@@ -477,6 +539,34 @@ class Indicator extends PanelMenu.Button {
     });
   }
 
+  _handleEscape(symbol) {
+    if (!this.menu.isOpen || symbol !== Clutter.KEY_Escape)
+      return Clutter.EVENT_PROPAGATE;
+    if (this._panelManager.is('phrases') && this._quickPhrases.formVisible)
+      this._quickPhrases.hideForm();
+    else if (!this._panelManager.is('history') && this._settings.get_string('panel-escape-action') === 'back')
+      this._panelManager.reset();
+    else
+      this.menu.close();
+    return Clutter.EVENT_STOP;
+  }
+
+  _focusPointer(actor, pressed) {
+    const grid = this._panelManager.focusGrid;
+    const target = grid?.resolve(actor);
+    const focus = global.stage.get_key_focus();
+    if (!target || target === focus)
+      return;
+    // Automatic search focus on opening is not an editing session.
+    // Only real entry input/clicks protect editing from pointer hover.
+    const editable = candidate => candidate instanceof St.Entry
+      || (candidate instanceof Clutter.Text && candidate.editable);
+    if (!pressed && (this._inputMode.editing || editable(target)))
+      return;
+    // The pointer target is already visible; revealing it would snap scrolling.
+    grid.focusAt(grid.location(target), {ensureVisible: false});
+  }
+
   _handleMenuKey(event) {
     if (!this.menu.isOpen)
       return Clutter.EVENT_PROPAGATE;
@@ -510,9 +600,9 @@ class Indicator extends PanelMenu.Button {
 
   destroy() {
     this._tokenizerRequest++;
-    this._panelManager?.destroy();
     for (const signal of [
       this._themeColorSignal,
+      this._foregroundColorSignal,
       this._panelWidthSignal,
       this._panelHeightSignal,
       this._panelAnchorSignal,
@@ -527,6 +617,7 @@ class Indicator extends PanelMenu.Button {
         this._settings.disconnect(signal);
     }
     this._themeColorSignal = 0;
+    this._foregroundColorSignal = 0;
     this._panelWidthSignal = 0;
     this._panelHeightSignal = 0;
     this._panelAnchorSignal = 0;
@@ -536,18 +627,31 @@ class Indicator extends PanelMenu.Button {
     this._preservePanelStateSignal = 0;
     this._phraseLimitSignal = 0;
     this._wordLimitSignal = 0;
+    // PopupMenu destruction closes the menu. Disconnect its callbacks before
+    // disposing the panel state or tooltip they would otherwise still access.
+    if (this._menuOpenStateSignal)
+      this.menu.disconnect(this._menuOpenStateSignal);
+    this._menuOpenStateSignal = 0;
     if (this._menuVisibilitySignal)
       this.menu.actor.disconnect(this._menuVisibilitySignal);
     this._menuVisibilitySignal = 0;
     if (this._menuKeyPressSignal)
       this.menu.actor.disconnect(this._menuKeyPressSignal);
     this._menuKeyPressSignal = 0;
+    if (this._menuCaptureSignal)
+      (this._menuKeyController ?? this.menu.actor).disconnect(this._menuCaptureSignal);
+    this._menuCaptureSignal = 0;
+    if (this._menuKeyController)
+      this.menu.actor.remove_action(this._menuKeyController);
+    this._menuKeyController = null;
     if (this._monitorsChangedSignal)
       Main.layoutManager.disconnect(this._monitorsChangedSignal);
     this._monitorsChangedSignal = 0;
     if (this._workareasChangedSignal)
       global.display.disconnect(this._workareasChangedSignal);
     this._workareasChangedSignal = 0;
+    this._inputMode.destroy();
+    this._panelManager?.destroy();
     this._tooltip.destroy();
     this.menu.sourceActor = this;
     this.menu.focusActor = this;

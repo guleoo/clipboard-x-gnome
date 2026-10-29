@@ -23,44 +23,25 @@ Add lasting regression tests for repeatable behavior, not document wording, CSS 
 names, or routine widget properties. Validate CI/release configuration with existing checks, temporary
 scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
-Shell interaction and preferences checks run separately from Meson, in an isolated test desktop:
+Tests are primarily headless logic checks; see the [test guide](tests/README.md) for the layers:
 
 ```sh
-run_shell_check() (
-  test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
-  trap 'rm -rf -- "$test_runtime"' EXIT
-  export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
-  unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
-  dbus-run-session -- gnome-shell-test-tool --headless \
-    --extension build/clipboard-x-gnome_<version>.zip "$1"
-)
-run_shell_check tests/ui/shell.smoke.js
-run_shell_check tests/ui/preferences.smoke.js
+bun run test:logic              # daily and CI: Meson logic suite, a few seconds
+bun run test:logic:acceptance   # daily and CI: headless acceptance on private D-Bus, files, local HTTP
 ```
 
-For privacy boundaries, search cursor navigation / color-picker movement, screenshot cancellation,
-or press-and-drag word selection,
-run the corresponding focused check using the same helper:
+Put decision logic for new behavior in modules that do not need the Shell, then cover it with logic
+tests. Only core wiring that must go through a real Shell belongs in the simulation layer; run it in
+an isolated desktop before a release:
 
 ```sh
-run_shell_check tests/ui/privacy.smoke.js
-run_shell_check tests/ui/search-picker.smoke.js
-run_shell_check tests/ui/screenshot-cancel.smoke.js
-run_shell_check tests/ui/word-selection.smoke.js
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip   # 13 core scenarios in one Shell
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip          # PANEL-01…10
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 ```
 
-The device-icon chooser has a separate GTK integration check. It requires a graphical display and
-a configured package build; it uses an in-memory settings backend, not the host extension's settings:
-
-```sh
-shell_libdir=/usr/lib/gnome-shell
-dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
-  GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/ui/settings-icon.integration.js
-```
-
-Set `shell_libdir` to the installed GNOME Shell library directory (typically
-`/usr/lib64/gnome-shell` on Fedora). Its private typelibs are needed by the preferences API.
+Simulation entries are not part of CI. Headless integration against a real sync server uses
+`tools/test-sync-server.py ZIP` (Docker required).
 
 Dictionary throughput and memory measurements belong in the optional benchmark, not normal CI
 regressions. Supply a local dictionary file; the benchmark does not download one:
@@ -91,7 +72,8 @@ check installed locales; the script has no `--lang` option.
 - `src/common/` contains infrastructure shared by multiple domains.
 - `src/entry/`, `clipboard/`, `sync/`, `screenshot/`, `color-picker/`, and `ui/` are organized
   by feature domain; tokenization belongs to `src/clipboard/tokenizer/`.
-- `tests/` follows the same domain layout; cross-process fixtures live in `tests/fixtures/`.
+- `tests/logic/` holds headless checks; `tests/simulation/` holds real Shell/GTK integration checks.
+  Both follow the domain layout. Shared cross-process fixtures live in `tests/fixtures/`.
 
 Clipboard X Server owns the synchronization protocol and its OpenAPI contract. Propose and land protocol
 changes in the Server repository first; then update the GJS routes and validators and the client conformance
@@ -108,7 +90,7 @@ meson compile -C build clipboard-x-gnome-update-po
 ```
 
 Then update every catalog listed in `po/LINGUAS` and run
-`bash tests/i18n/coverage.sh`. The check verifies extracted strings, gettext format validity, and
+`bash tests/logic/i18n/coverage.sh`. The check verifies extracted strings, gettext format validity, and
 missing or fuzzy translations. English is the source language and has no PO catalog.
 Machine-translated drafts need native-speaker review before their wording is considered final.
 Chinese documentation is maintained as the
@@ -132,7 +114,7 @@ they must not include tests, protocol source, dictionaries, or the central serve
 
 The [CI workflow](.github/workflows/ci.yml) runs on every branch push and pull request in a
 Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
-regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
+regression suite with `--no-suite stress` and the headless acceptance script, builds the extension ZIP, and verifies that the archive
 contains exactly the runtime files and compiled catalogs.
 Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
 after validation. CI only validates and retains artifacts; it never publishes a release.

@@ -14,7 +14,8 @@ moving to controllers is a separate change, not required just to load on 51.
 
 The CI and Release workflows use Fedora 44 / Shell 50 and Fedora 45 / Shell 51. CI runs on every branch push
 and pull request; Release runs only on `v*` tag pushes, without also triggering ordinary CI. Each job checks the actual
-Shell version before building, runs the Meson regression suite excluding `stress`, validates the ZIP, and runs an isolated
+Shell version before building, runs the Meson regression suite excluding `stress` and the headless acceptance script,
+validates the ZIP, and runs an isolated
 headless Shell lifecycle test. A version mismatch fails rather than silently testing another version.
 Fedora 45 may be a prerelease container; the installed Shell version is the compatibility target.
 Both jobs must succeed before publication. Only one runtime ZIP is uploaded.
@@ -46,8 +47,7 @@ settings changes from coalescing into a no-op and mistaking the previous instanc
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
 word selection panel rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
 physical-keyboard, server-interoperability or visual-layout acceptance test. Those still require
-separate testing on the target desktop. The larger `shell.smoke.js` and preferences checks remain
-independent; a successful lifecycle test does not claim that every assertion in those suites passed.
+separate testing on the target desktop; the core desktop scenarios run through `tools/test-simulation.py`.
 
 ## References
 

@@ -11,8 +11,10 @@ import {MAX_PHRASE_LENGTH, PhraseStore} from '../../../clipboard/phrases/store.j
 import {ContentItem} from '../../controls/content-item.js';
 import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelHeader} from '../../controls/panel-header.js';
+import {SearchEntry} from '../../controls/search-entry.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
+import {Draft} from './draft.js';
 
 const OPTICAL_BASELINE_OFFSET = -1;
 
@@ -35,9 +37,7 @@ export class QuickPhrasesPanel {
       if (!this._destroyed)
         reportError(error);
     };
-    this._formVisible = false;
-    this._formRevision = 0;
-    this._saveRequest = 0;
+    this._draft = new Draft();
     this._buttons = [];
     this._rows = [];
     this._focusIdleId = 0;
@@ -78,28 +78,32 @@ export class QuickPhrasesPanel {
       x_expand: true,
       visible: false,
     });
-    this.entry = new St.Entry({
-      style_class: 'cbx-search cbx-phrase-entry',
-      hint_text: _('Enter a custom phrase…'),
-      can_focus: true,
-      x_expand: true,
+    this.entry = new SearchEntry({
+      styleClass: 'cbx-phrase-entry',
+      placeholder: _('Enter a custom phrase…'),
+      iconName: null,
+      placeholderOffset: OPTICAL_BASELINE_OFFSET,
+      placeholderMargin: 0,
+      onChanged: entry => this._draft.change(entry.get_text()),
+      onActivate: () => this.save().catch(error => this._reportError(error)),
+      onKeyPress: event => {
+        const key = event.get_key_symbol();
+        // Adding a form action must not steal arrows used to edit the draft.
+        if ([Clutter.KEY_Left, Clutter.KEY_KP_Left].includes(key)
+            || ([Clutter.KEY_Right, Clutter.KEY_KP_Right].includes(key) && !this.entry.atEnd))
+          return Clutter.EVENT_PROPAGATE;
+        return this._handleKey(event);
+      },
     });
     this.entry.clutter_text.set_max_length(MAX_PHRASE_LENGTH);
-    this.entry.get_hint_actor()._clipboardXGnomeTextBaselineOffset = OPTICAL_BASELINE_OFFSET;
-    this.entry.clutter_text.connect('text-changed', () => this._formRevision++);
-    this.entry.clutter_text.connect('key-press-event', (_actor, event) => {
-      const key = event.get_key_symbol();
-      if ([Clutter.KEY_Return, Clutter.KEY_KP_Enter, Clutter.KEY_ISO_Enter].includes(key)) {
-        this.save().catch(error => this._reportError(error));
-        return Clutter.EVENT_STOP;
-      }
-      if (key === Clutter.KEY_Escape) {
-        this.hideForm();
-        return Clutter.EVENT_STOP;
-      }
-      return this._handleKey(event);
-    });
     this.form.add_child(this.entry);
+    this.saveButton = createIconButton(
+      'object-select-symbolic',
+      _('Add custom phrase'),
+      () => this.save(),
+      {showTooltip: false},
+    );
+    this.form.add_child(this.saveButton);
     this.actor.add_child(this.form);
 
     this._section = new PopupMenu.PopupMenuSection();
@@ -142,14 +146,14 @@ export class QuickPhrasesPanel {
   }
 
   get formVisible() {
-    return this._formVisible;
+    return this._draft.visible;
   }
 
   render() {
     this._section.removeAll();
     this._buttons = [];
     this._rows = [];
-    this.form.visible = this._formVisible;
+    this.form.visible = this._draft.visible;
     const focusRows = [];
     for (const phrase of this._store.all) {
       const row = new ContentItem();
@@ -196,7 +200,7 @@ export class QuickPhrasesPanel {
     }
     this.focusGrid.setRows([
       [this.backButton, this.addButton],
-      ...(this._formVisible ? [[this.entry.clutter_text]] : []),
+      ...(this._draft.visible ? [[this.entry.clutter_text, this.saveButton]] : []),
       ...focusRows,
     ]);
   }
@@ -205,7 +209,7 @@ export class QuickPhrasesPanel {
     this._cancelFocus();
     if (this._destroyed || !this._isActive())
       return;
-    const target = this._formVisible ? this.entry.clutter_text : this.addButton;
+    const target = this._draft.visible ? this.entry.clutter_text : this.addButton;
     target.grab_key_focus();
   }
 
@@ -293,6 +297,7 @@ export class QuickPhrasesPanel {
 
   destroy() {
     this._destroyed = true;
+    this._draft.destroy();
     this.leave();
     this.focusGrid.clear();
     this._buttons = [];
@@ -325,24 +330,22 @@ export class QuickPhrasesPanel {
   }
 
   toggleForm() {
-    if (this._formVisible)
+    if (this._draft.visible)
       this.hideForm();
     else
       this.showForm();
   }
 
   async save() {
-    const text = this.entry.get_text();
-    if (!text.trim())
+    const submission = this._draft.submit();
+    if (!submission)
       return false;
-    const revision = this._formRevision;
-    const request = ++this._saveRequest;
-    await this._store.add(text);
+    await this._store.add(submission.text);
     if (this._destroyed)
       return true;
-    const current = this._formVisible && revision === this._formRevision && request === this._saveRequest;
+    const current = this._draft.complete(submission);
     if (current)
-      this._setFormVisible(false);
+      this.entry.set_text('');
     this._refresh();
     if (current)
       this.focus();
@@ -372,8 +375,7 @@ export class QuickPhrasesPanel {
   }
 
   _setFormVisible(visible) {
-    this._formRevision++;
-    this._formVisible = visible;
+    this._draft.setVisible(visible);
     this.entry.set_text('');
   }
 }

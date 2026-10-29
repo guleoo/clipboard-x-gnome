@@ -15,12 +15,21 @@ export class Tooltip {
       reactive: false,
     });
     this._source = null;
-    this._fromKeyboard = false;
+    this._mode = null;
     this._timeoutId = 0;
     this._connections = new Map();
-    this._stageSignal = global.stage.connect('captured-event', (_stage, event) =>
-      this._handleCapturedEvent(event));
     Main.uiGroup.add_child(this.actor);
+  }
+
+  setMode(mode, position = null) {
+    this.hide();
+    this._mode = mode;
+    if (mode === 'keyboard') {
+      this._showFor(global.stage.get_key_focus(), {immediate: true});
+    } else if (mode === 'pointer') {
+      const [x, y] = position ?? global.get_pointer();
+      this._showFor(global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y));
+    }
   }
 
   attach(actor, text) {
@@ -35,14 +44,19 @@ export class Tooltip {
 
     const signals = [
       actor.connect('notify::hover', () => {
+        if (this._mode !== 'pointer')
+          return;
         if (actor.hover)
           this.show(actor);
-        else if (!actor.has_key_focus?.())
+        else
           this.hide(actor);
       }),
-      actor.connect('key-focus-in', () => this.show(actor, {immediate: true})),
+      actor.connect('key-focus-in', () => {
+        if (this._mode === 'keyboard')
+          this.show(actor, {immediate: true});
+      }),
       actor.connect('key-focus-out', () => {
-        if (!actor.hover)
+        if (this._mode === 'keyboard')
           this.hide(actor);
       }),
       actor.connect('destroy', () => {
@@ -55,13 +69,16 @@ export class Tooltip {
   }
 
   show(actor, {immediate = false} = {}) {
+    const mode = immediate ? 'keyboard' : 'pointer';
+    if (this._mode !== mode || !this._connections.has(actor))
+      return;
     this._cancelTimeout();
     const reveal = () => {
       this._timeoutId = 0;
-      if (!actor.mapped || (!actor.hover && !actor.has_key_focus?.()))
+      if (this._mode !== mode || !this._connections.has(actor) || !actor.mapped
+          || !(immediate ? actor.has_key_focus?.() : actor.hover))
         return GLib.SOURCE_REMOVE;
       this._source = actor;
-      this._fromKeyboard = immediate;
       this.actor.text = this._connections.get(actor)?.text ?? '';
       this.actor.show();
       Main.uiGroup.set_child_above_sibling(this.actor, null);
@@ -84,7 +101,6 @@ export class Tooltip {
       return;
     this._cancelTimeout();
     this._source = null;
-    this._fromKeyboard = false;
     this.actor.hide();
   }
 
@@ -103,11 +119,18 @@ export class Tooltip {
   }
 
   destroy() {
+    this._mode = null;
     this.clear();
-    if (this._stageSignal)
-      global.stage.disconnect(this._stageSignal);
-    this._stageSignal = 0;
     this.actor.destroy();
+  }
+
+  _showFor(actor, options = {}) {
+    for (let target = actor; target; target = target.get_parent()) {
+      if (this._connections.has(target)) {
+        this.show(target, options);
+        return;
+      }
+    }
   }
 
   _place(source) {
@@ -124,12 +147,6 @@ export class Tooltip {
       ? below
       : Math.max(SCREEN_MARGIN, sourceY - height - SCREEN_MARGIN);
     this.actor.set_position(Math.round(x), Math.round(y));
-  }
-
-  _handleCapturedEvent(event) {
-    if (event.type() === Clutter.EventType.MOTION && this._fromKeyboard)
-      this.hide();
-    return Clutter.EVENT_PROPAGATE;
   }
 
   _cancelTimeout() {

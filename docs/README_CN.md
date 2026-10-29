@@ -11,6 +11,7 @@ GitHub Release 默认展示英文，并提供中文入口。
 
 ## 版本发布
 
+- [1.1.1 发布说明](release/v1.1.1-cn.md)：改进模拟输入和面板交互，修复图片编辑卡顿、原生异常日志引发崩溃、截图取消及取色采样问题。
 - [1.1.0 发布说明](release/v1.1.0-cn.md)：可配置的分词数量上限、词库体验改进，以及同步、存储和面板操作修复。
 - [1.0.9 发布说明](release/v1.0.9-cn.md)：过滤无效 HTML 剪切板片段，扩展元数据仅声明支持 GNOME Shell 50。
 - [1.0.7 发布说明](release/v1.0.7-cn.md)：修复分词模式的鼠标拖动与区间选择。
@@ -31,10 +32,12 @@ GitHub Release 默认展示英文，并提供中文入口。
 
 ## 扩展开发
 
+- [测试目录说明](../tests/README_CN.md)：区分无需图形桌面的逻辑验证与真实桌面模拟验证。
 - [GNOME Shell 兼容性](shell-compatibility_CN.md)：50+ 共用接口、CI 矩阵和隔离生命周期检查。
 
 - [日志与问题排查](diagnostics_CN.md)：系统 journal、Devkit 输出、初始化阶段与隐私边界。
 - [界面开发指南](ui-architecture_CN.md)：面板、控件、焦点矩阵、生命周期和 CSS 约定。
+- [本地面板回归测试](panel-testing_CN.md)：可重复执行的入口、导航、现场、键鼠和显示环境验证。
 - [参与开发](../CONTRIBUTING.zh-CN.md)：构建、测试、目录结构、协议改动和代码约定。
 
 ## 安全与数据流

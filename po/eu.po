@@ -817,12 +817,6 @@ msgstr "Kendu testuaren inguruko zuriuneak"
 msgid "Simulated input"
 msgstr "Sarrera simulatua"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Erabili sarrera motela helburuko aplikazioak tekla-sakatze simulatuak "
-"galtzen baditu."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Idazteko abiadura"
@@ -1287,3 +1281,27 @@ msgstr "Eman arazo baten berri"
 
 msgid "License"
 msgstr "Lizentzia"
+
+msgid "Text and icon color"
+msgstr "Testuaren eta ikonoen kolorea"
+
+msgid "Escape in secondary panels"
+msgstr "Escape bigarren mailako paneletan"
+
+msgid "Close panel"
+msgstr "Itxi panela"
+
+msgid "An input operation is already running."
+msgstr "Sarrera-eragiketa bat abian dago jada."
+
+msgid "Focus a text field before starting input."
+msgstr "Jarri fokua testu-eremu batean sarrera hasi aurretik."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Amaitu edo utzi sarrera-metodoaren uneko testu-konposizioa sarrera hasi aurretik."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Helburuko leihoa edo testu-eremua aldatu da. Gainerako sarrera bertan behera utzi da."
+
+msgid "Medium"
+msgstr "Ertaina"

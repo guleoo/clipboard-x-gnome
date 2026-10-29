@@ -814,12 +814,6 @@ msgstr "テキストの前後の空白を削除"
 msgid "Simulated input"
 msgstr "キー入力のシミュレーション"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"対象アプリケーションでキー入力の一部が認識されない場合は、低速入力を使用して"
-"ください。"
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "入力速度"
@@ -1275,3 +1269,27 @@ msgstr "問題を報告"
 
 msgid "License"
 msgstr "ライセンス"
+
+msgid "Text and icon color"
+msgstr "文字とアイコンの色"
+
+msgid "Escape in secondary panels"
+msgstr "サブパネルでの Esc キーの動作"
+
+msgid "Close panel"
+msgstr "パネルを閉じる"
+
+msgid "An input operation is already running."
+msgstr "別の入力処理がすでに実行中です。"
+
+msgid "Focus a text field before starting input."
+msgstr "入力を開始する前に、テキスト入力欄にフォーカスを合わせてください。"
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "入力を開始する前に、入力メソッドで変換中の文字列を確定するか、取り消してください。"
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "入力先のウィンドウまたはテキスト入力欄が変わったため、残りの入力を中止しました。"
+
+msgid "Medium"
+msgstr "中速"

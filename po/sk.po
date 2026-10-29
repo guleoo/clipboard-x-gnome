@@ -820,12 +820,6 @@ msgstr "Odstraňovať medzery pred a za textom"
 msgid "Simulated input"
 msgstr "Simulované zadávanie"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Ak cieľová aplikácia vynecháva simulované stlačenia klávesov, použite pomalé "
-"zadávanie."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Rýchlosť zadávania"
@@ -1283,3 +1277,27 @@ msgstr "Nahlásiť problém"
 
 msgid "License"
 msgstr "Licencia"
+
+msgid "Text and icon color"
+msgstr "Farba textu a ikon"
+
+msgid "Escape in secondary panels"
+msgstr "Escape vo vedľajších paneloch"
+
+msgid "Close panel"
+msgstr "Zavrieť panel"
+
+msgid "An input operation is already running."
+msgstr "Operácia zadávania už prebieha."
+
+msgid "Focus a text field before starting input."
+msgstr "Pred začatím zadávania zamerajte textové pole."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Pred začatím zadávania potvrďte alebo zrušte rozpracovaný text vstupnej metódy."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Cieľové okno alebo textové pole sa zmenilo. Zvyšné zadávanie bolo zrušené."
+
+msgid "Medium"
+msgstr "Stredná"

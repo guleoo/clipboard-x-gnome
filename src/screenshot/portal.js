@@ -15,11 +15,13 @@ const Target = Object.freeze({
 });
 
 export class ScreenshotPortal {
-  constructor({connection = Gio.DBus.session, timeoutMilliseconds = 120_000} = {}) {
+  constructor({connection = Gio.DBus.session, timeoutMilliseconds = 120_000,
+    observeCancellation = () => () => {}} = {}) {
     this._connection = connection;
     this._timeoutMilliseconds = timeoutMilliseconds;
     this._request = null;
     this._capabilities = null;
+    this._observeCancellation = observeCancellation;
   }
 
   // Returns the screenshot URI, or null when the user cancels the request.
@@ -36,6 +38,11 @@ export class ScreenshotPortal {
       if (request.cancelled)
         return null;
       const options = this._buildOptions(request.token, target, capabilities);
+      if (target === 'interactive') {
+        request.stopObserving = this._observeCancellation(() => {
+          request.userCancelled = true;
+        });
+      }
       const responsePromise = this._waitForResponse(request);
       const callPromise = this._call(
         PORTAL_NAME,
@@ -77,6 +84,8 @@ export class ScreenshotPortal {
       path: `/org/freedesktop/portal/desktop/request/${sender}/${token}`,
       cancellable: new Gio.Cancellable(),
       cancelled: false,
+      userCancelled: false,
+      stopObserving: null,
       subscriptionId: 0,
       timeoutId: 0,
       rejectResponse: null,
@@ -150,7 +159,7 @@ export class ScreenshotPortal {
         Gio.DBusSignalFlags.NONE,
         (_connection, _sender, _path, _interface, _signal, parameters) => {
           const [response, rawResults] = parameters.deepUnpack();
-          if (response === 1) {
+          if (response === 1 || (response === 2 && request.userCancelled)) {
             request.cancelled = true;
             finish(resolve, null);
             return;
@@ -215,6 +224,8 @@ export class ScreenshotPortal {
   }
 
   _cleanup(request) {
+    request.stopObserving?.();
+    request.stopObserving = null;
     if (request.subscriptionId)
       this._connection.signal_unsubscribe(request.subscriptionId);
     if (request.timeoutId)

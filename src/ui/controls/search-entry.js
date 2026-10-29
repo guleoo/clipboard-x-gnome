@@ -14,6 +14,7 @@ class SearchEntry extends St.Entry {
     onChanged = null,
     onFocusChanged = null,
     onKeyPress = null,
+    onActivate = null,
   } = {}) {
     const styleClasses = ['cbx-search', styleClass].filter(Boolean).join(' ');
     super._init({
@@ -29,16 +30,21 @@ class SearchEntry extends St.Entry {
     this._clipboardXGnomeControlType = 'search-entry';
     const hint = this.get_hint_actor();
     hint._clipboardXGnomeTextBaselineOffset = placeholderOffset;
-    hint.margin_left = placeholderMargin;
+    // Shell themes may add their own margin to StEntry's hint label.
+    hint.set_style(`margin-left: ${placeholderMargin}px;`);
 
     if (onChanged)
       this.clutter_text.connect('text-changed', () => onChanged(this));
+    if (onActivate)
+      this.clutter_text.connect('activate', () => onActivate(this));
     if (onFocusChanged) {
       this.clutter_text.connect('key-focus-in', () => onFocusChanged(this, true));
       this.clutter_text.connect('key-focus-out', () => onFocusChanged(this, false));
     }
+    // Run entry navigation before the native text bindings consume arrow keys.
     if (onKeyPress)
-      this.clutter_text.connect('key-press-event', (_actor, event) => onKeyPress(event));
+      this.connect('captured-event', (_actor, event) => event.type() === Clutter.EventType.KEY_PRESS
+        ? onKeyPress(event) : Clutter.EVENT_PROPAGATE);
   }
 
   get atEnd() {

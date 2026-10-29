@@ -1,0 +1,10 @@
+[
+  {"module": "clipboard/native.js", "cases": [{"id": "CLIP-01"}, {"id": "CLIP-04"}, {"id": "CLIP-09"}]},
+  {"module": "clipboard/policy.native.js", "cases": [{"id": "PRIV-01"}]},
+  {"module": "phrases/native.js", "cases": [{"id": "PHRASE-01"}, {"id": "PHRASE-04"}]},
+  {"module": "word-selection/native.js", "cases": [{"id": "SELECT-01"}, {"id": "WORD-05"}]},
+  {"module": "terminal/native.js", "cases": [{"id": "TYPE-01"}, {"id": "TYPE-03"}]},
+  {"module": "screenshot/native.js", "cases": [{"id": "SHOT-03"}]},
+  {"module": "color-picker/native.js", "cases": [{"id": "COLOR-01"}]},
+  {"module": "settings/native.js", "cases": [{"id": "SET-01"}]}
+]

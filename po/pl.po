@@ -821,12 +821,6 @@ msgstr "Usuń białe znaki przed/po tekście"
 msgid "Simulated input"
 msgstr "Symulowane wprowadzanie"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Użyj wolniejszego tempa, jeśli program pomija symulowane naciśnięcia "
-"klawiszy."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Szybkość pisania"
@@ -1290,3 +1284,27 @@ msgstr "Zgłoś problem"
 
 msgid "License"
 msgstr "Licencja"
+
+msgid "Text and icon color"
+msgstr "Kolor tekstu i ikon"
+
+msgid "Escape in secondary panels"
+msgstr "Escape w panelach podrzędnych"
+
+msgid "Close panel"
+msgstr "Zamknij panel"
+
+msgid "An input operation is already running."
+msgstr "Operacja wprowadzania już trwa."
+
+msgid "Focus a text field before starting input."
+msgstr "Przed rozpoczęciem wprowadzania ustaw fokus w polu tekstowym."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Przed rozpoczęciem zatwierdź lub anuluj tekst składany za pomocą metody wprowadzania."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Okno lub pole tekstowe celu uległo zmianie. Pozostałe wprowadzanie zostało anulowane."
+
+msgid "Medium"
+msgstr "Średnia"

@@ -1,0 +1,50 @@
+Hello, World! 1234567890
+The quick brown fox jumps over the lazy dog.
+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+Special symbols test:
+! @ # $ % ^ & * ( ) _ + - = [ ] { } \ | ; : ' " , . < > / ? ~ `
+
+Numbers and mixed content:
+0123456789 98.7654321 -42 +3.14 1,000,000 0x1F 0b1010 1e-10
+
+Punctuation and quotes:
+"double quotes" 'single quotes' “curly double quotes” ‘curly single quotes’ «guillemets» 《CJK angle brackets》 〈CJK corner brackets〉
+
+Chinese text test:
+这是一个用于测试模拟键盘输入的中文段落。包含标点符号：，。！？；：“”‘’（）【】《》——……、
+Character coverage: 天地玄黄 宇宙洪荒 日月盈昃 辰宿列张 寒来暑往 秋收冬藏
+
+Mixed Chinese and English:
+测试Test 123 混合Mixed 内容Content, including spaces and a tab character (real tab here:	).
+
+Special whitespace and line breaks:
+Line 1
+Line 2 with two leading spaces
+Line 3	with one leading tab
+
+Unicode and emoji:
+© ® ™ € £ ¥ § ¶ † ‡ • … ‰ ′ ″
+α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ σ τ υ φ χ ψ ω
+Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω
+😀 😃 😄 😁 🎉 🚀 ✅ ❌ ⚡ 🔥 💡
+
+Long runs of repeated characters:
+aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhh
+1234567890123456789012345678901234567890123456789012345678901234567890
+
+Nested brackets:
+{[()]} ((())) [[[]]] {[({})]} <tag attr="value">content</tag>
+
+Paths and URLs:
+C:\Users\Test\Documents\file.txt
+https://www.example.com/path?query=1&name=test#anchor
+
+Code snippets:
+function test() { return "Hello"; }
+if (a >= b && c != d) { console.log('ok'); }
+int main(void) { printf("%d\n", 42); return 0; }
+
+End marker: === END OF TEST ===

@@ -1,0 +1,418 @@
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Meta from 'gi://Meta';
+
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
+import {ExtensionState} from 'resource:///org/gnome/shell/misc/extensionUtils.js';
+
+const UUID = 'clipboard-x-gnome@guleoo.github.io';
+export const METRICS = {};
+const WAIT_TIMEOUT_MILLISECONDS = 15_000;
+const STARTUP_TIMEOUT_MILLISECONDS = 30_000;
+let phase = 'module-loaded';
+let startupWatchdog = 0;
+let preparedSignal = 0;
+let startedSignal = 0;
+
+function stage(name) {
+  phase = name;
+  print(`Clipboard X Gnome [compatibility] ${name}`);
+}
+
+function startupState() {
+  const layout = Main.layoutManager;
+  const extension = Main.extensionManager?.lookup(UUID);
+  const backgrounds = (layout?._bgManagers ?? []).map(manager =>
+    manager.backgroundActor?.content?.background?.isLoaded ?? 'unknown');
+  return `shellStartingUp=${layout?._startingUp ?? 'unknown'}; monitors=${layout?.monitors.length ?? 0}; backgroundLoaded=${backgrounds.join(',') || 'none'}; extensionState=${extension?.state ?? 'unknown'}; indicatorPresent=${Boolean(Main.panel?.statusArea['clipboard-x-gnome'])}`;
+}
+
+// GNOME calls init() before startup-complete and run() only after its automation helper is ready.
+export function init() {
+  stage('automation-init');
+  stage(Main.layoutManager._startingUp ? 'waiting-for-shell-startup' : 'waiting-for-automation-run');
+  preparedSignal = Main.layoutManager.connect('startup-prepared', () => stage('shell-startup-prepared'));
+  startedSignal = Main.layoutManager.connect('startup-complete', () => {
+    stage('shell-startup-complete');
+    stage('waiting-for-automation-run');
+  });
+  startupWatchdog = GLib.timeout_add(GLib.PRIORITY_DEFAULT, STARTUP_TIMEOUT_MILLISECONDS, () => {
+    startupWatchdog = 0;
+    printerr(`Clipboard X Gnome [compatibility] Timeout after ${STARTUP_TIMEOUT_MILLISECONDS} ms: ${phase}; ${startupState()}`);
+    Meta.exit(Meta.ExitCode.ERROR);
+    return GLib.SOURCE_REMOVE;
+  });
+}
+
+function clearStartupWatchdog() {
+  if (startupWatchdog)
+    GLib.Source.remove(startupWatchdog);
+  startupWatchdog = 0;
+  if (preparedSignal)
+    Main.layoutManager.disconnect(preparedSignal);
+  if (startedSignal)
+    Main.layoutManager.disconnect(startedSignal);
+  preparedSignal = 0;
+  startedSignal = 0;
+}
+
+async function wait(name, promise) {
+  stage(name);
+  let source = 0;
+  try {
+    const timeout = new Promise((_resolve, reject) => {
+      source = GLib.timeout_add(GLib.PRIORITY_DEFAULT, WAIT_TIMEOUT_MILLISECONDS, () => {
+        source = 0;
+        reject(new Error(`Timeout after ${WAIT_TIMEOUT_MILLISECONDS} ms: ${name}; ${startupState()}`));
+        return GLib.SOURCE_REMOVE;
+      });
+    });
+    const result = await Promise.race([promise, timeout]);
+    print(`Clipboard X Gnome [compatibility] ${name} completed`);
+    return result;
+  } finally {
+    if (source)
+      GLib.Source.remove(source);
+  }
+}
+
+function assert(condition, message) {
+  if (!condition)
+    throw new Error(message);
+}
+
+function waitForTokenizer(name, started, operation) {
+  return wait(name, Promise.race([
+    started,
+    operation.then(() => { throw new Error(`Word selection ended before ${name} was reached`); }),
+  ]));
+}
+
+async function indicator(previous = null) {
+  stage('waiting-for-indicator');
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const extension = Main.extensionManager.lookup(UUID);
+    const actor = Main.panel.statusArea['clipboard-x-gnome'];
+    if (extension?.enabled && extension.state === ExtensionState.ACTIVE
+        && actor && actor !== previous) {
+      print('Clipboard X Gnome [compatibility] indicator ready');
+      return actor;
+    }
+    await Scripting.sleep(50);
+  }
+  const extension = Main.extensionManager.lookup(UUID);
+  throw new Error(`Extension did not enable: ${extension?.error ?? 'no indicator'}`);
+}
+
+async function disable() {
+  stage('waiting-for-extension-disable');
+  assert(Main.extensionManager.disableExtension(UUID), 'Extension disable request was rejected');
+  await wait('extension-disabled', (async () => {
+    while (true) {
+      const extension = Main.extensionManager.lookup(UUID);
+      assert(extension && extension.state !== ExtensionState.ERROR,
+        `Extension failed while disabling: ${extension?.error ?? 'not installed'}`);
+      if (extension.state === ExtensionState.INACTIVE && !Main.panel.statusArea['clipboard-x-gnome'])
+        return;
+      await Scripting.sleep(20);
+    }
+  })());
+}
+
+async function enable(previous) {
+  assert(Main.extensionManager.enableExtension(UUID), 'Extension enable request was rejected');
+  return indicator(previous);
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise(yes => { resolve = yes; });
+  return {promise, resolve};
+}
+
+async function verifyHistoryLifecycle(actor) {
+  const extensionObject = Main.extensionManager.lookup(UUID).stateObj;
+  await wait('clipboard-startup', extensionObject._startup);
+  const {ClipboardItem} = await import(`${extensionObject.dir.get_uri()}/clipboard/item.js`);
+  const {SyncConfigurationStore} = await import(`${extensionObject.dir.get_uri()}/sync/configuration-store.js`);
+  const historical = ClipboardItem.fromText('History before delayed initialization');
+  actor._controller.add(historical);
+  await wait('initial-history-save', actor._controller.persist());
+  const historicalPath = historical.primary.path;
+  const storePrototype = Object.getPrototypeOf(actor._controller._store);
+  const syncPrototype = Object.getPrototypeOf(extensionObject._sync);
+  const load = storePrototype.load;
+  const startSync = syncPrototype.start;
+  const restartSync = syncPrototype.restart;
+  const publishSync = syncPrototype.publish;
+  const configurationPrototype = SyncConfigurationStore.prototype;
+  const loadConfiguration = configurationPrototype.load;
+  const uploadConfiguration = {
+    serverAddress: 'http://compatibility.invalid', apiKey: 'isolated-test-key',
+    activeChannelId: '22222222-2222-4222-8222-222222222222',
+  };
+  const loading = deferred();
+  const releaseLoad = deferred();
+  let syncStarts = 0;
+  let syncRestarts = 0;
+  let publications = 0;
+  try {
+    stage('delayed-history-initialization');
+    await disable();
+    storePrototype.load = async function (cancellable) {
+      const snapshot = await load.call(this, cancellable);
+      loading.resolve();
+      await releaseLoad.promise;
+      return snapshot;
+    };
+    configurationPrototype.load = async () => ({...uploadConfiguration});
+    syncPrototype.start = async function () {
+      syncStarts++;
+      this._configuration = {...uploadConfiguration, apiKeyConfigured: true};
+      this._ready = true;
+    };
+    syncPrototype.restart = async () => { syncRestarts++; };
+    syncPrototype.publish = async () => {
+      assert(syncStarts === 1, 'Publication ran before synchronization startup');
+      publications++;
+    };
+    actor = await enable(actor);
+    await wait('history-load-hook', loading.promise);
+    const settings = actor._settings;
+    settings.set_boolean('sync-enabled', true);
+    settings.set_boolean('sync-enabled', false);
+    assert(syncStarts === 0 && syncRestarts === 0,
+      'Synchronization started or restarted before history initialization completed');
+    settings.set_boolean('sync-enabled', true);
+    const publishing = extensionObject._publish(historical)
+      .then(() => ({success: true}), error => ({error}));
+    const incoming = ClipboardItem.fromText('Item added during delayed initialization');
+    actor._controller.add(incoming, 'remote');
+    await Scripting.sleep(200); // Let the normal 150 ms save deadline expire while loading is held.
+    assert((await wait('existing-history-read', load.call(actor._controller._store))).some(item => item.id === historical.id)
+        && Gio.File.new_for_path(historicalPath).query_exists(null),
+      'An early item overwrote the existing history index or deleted its content');
+    assert(publications === 0, 'Publication did not wait for startup to complete');
+    releaseLoad.resolve();
+    await wait('resumed-clipboard-startup', extensionObject._startup);
+    assert(syncStarts === 1 && actor._controller.items.some(item => item.id === historical.id)
+        && actor._controller.items.some(item => item.id === incoming.id),
+      'Startup lost an existing or early-arriving history item');
+    assert((await wait('startup-publication', publishing)).success && publications === 1,
+      'Publication did not resume after history and synchronization startup completed');
+    settings.set_boolean('sync-enabled', false);
+    await wait('merged-history-save', actor._controller.persist());
+  } finally {
+    releaseLoad.resolve();
+    storePrototype.load = load;
+    syncPrototype.start = startSync;
+    syncPrototype.restart = restartSync;
+    syncPrototype.publish = publishSync;
+    configurationPrototype.load = loadConfiguration;
+  }
+
+  const latest = ClipboardItem.fromText('History immediately before disable');
+  actor._controller.add(latest);
+  const store = actor._controller._store;
+  const save = store.save.bind(store);
+  const saving = deferred();
+  const releaseSave = deferred();
+  let loads = 0;
+  try {
+    stage('rapid-disable-reenable');
+    store.save = async (...args) => {
+      saving.resolve();
+      await releaseSave.promise;
+      return save(...args);
+    };
+    storePrototype.load = async function (cancellable) {
+      loads++;
+      return load.call(this, cancellable);
+    };
+    syncPrototype.start = async () => { syncStarts++; };
+    await disable();
+    await wait('shutdown-save-hook', saving.promise);
+    actor = await enable(actor);
+    const oldStartup = extensionObject._startup;
+    const oldPublication = extensionObject._publish(latest)
+      .then(() => ({}), error => ({error}));
+    // Disable again while the previous instance is still flushing to disk.
+    await disable();
+    actor = await enable(actor);
+    const expectedStarts = syncStarts;
+    await Scripting.sleep(50);
+    assert(loads === 0 && syncStarts === expectedStarts,
+      'The replacement started loading or synchronizing before the previous save completed');
+    releaseSave.resolve();
+    await wait('superseded-startup', oldStartup);
+    assert((await wait('superseded-publication', oldPublication)).error?.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED),
+      'A publication waiting on a superseded startup must be cancelled');
+    actor = await indicator();
+    await wait('replacement-startup', Main.extensionManager.lookup(UUID).stateObj._startup);
+    assert(syncStarts === expectedStarts + 1,
+      'A disabled startup continued and started synchronization on the old instance');
+    const reloaded = actor._controller.items.find(item => item.id === latest.id);
+    assert(reloaded && Gio.File.new_for_path(reloaded.primary.path).query_exists(null),
+      'Immediate disable/re-enable lost the history item waiting for its debounced save');
+  } finally {
+    releaseSave.resolve();
+    store.save = save;
+    storePrototype.load = load;
+    syncPrototype.start = startSync;
+  }
+  return actor;
+}
+
+async function verifyOpenPanelDisable(actor) {
+  const preserve = actor._settings.get_boolean('preserve-panel-state');
+  try {
+    for (const keepState of [false, true]) {
+      actor._settings.set_boolean('preserve-panel-state', keepState);
+      for (const panel of ['history', 'tokenizer', 'phrases']) {
+        stage(`disable-open-${panel}-preserve-${keepState}`);
+        const app = Main.extensionManager.lookup(UUID).stateObj;
+        await wait('open-panel-startup', app._startup);
+        const state = panel === 'tokenizer'
+          ? await actor._tokenizer.createState(null, 'Open panel shutdown') : null;
+        actor.menu.open();
+        actor._panelManager.show(panel, state);
+        await Scripting.sleep(50);
+        assert(actor.menu.isOpen, `${panel} must be open before testing disable`);
+        const tooltip = actor._tooltip;
+        const inputMode = actor._inputMode;
+        const hide = tooltip.hide;
+        let destroyed = false;
+        let lateUses = 0;
+        tooltip.actor.connect('destroy', () => { destroyed = true; });
+        tooltip.hide = function (...args) {
+          if (destroyed)
+            lateUses++;
+          return hide.apply(this, args);
+        };
+        try {
+          await disable();
+          await wait('open-panel-shutdown', app._shutdown);
+          assert(destroyed && lateUses === 0,
+            `Disabling ${panel} must not call its tooltip after destruction`);
+          assert(inputMode._filterId === 0, 'Disabling an open panel must remove its input filter');
+        } finally {
+          tooltip.hide = hide;
+        }
+        actor = await enable(actor);
+      }
+    }
+    return actor;
+  } finally {
+    actor._settings.set_boolean('preserve-panel-state', preserve);
+  }
+}
+
+export async function run() {
+  clearStartupWatchdog();
+  stage('automation-run');
+  if (Main.extensionManager._initializationPromise)
+    await wait('extension-manager-initialization', Main.extensionManager._initializationPromise);
+  Main.overview.hide();
+  let actor = await indicator();
+  assert(Main.extensionManager.lookup(UUID).stateObj._terminalInput._device,
+    'Shared backend/seat API did not create the virtual keyboard');
+  assert(global.stage.context.get_backend().get_default_seat(),
+    'Shared backend/seat API is unavailable');
+
+  stage('main-panel');
+  const extensionObject = Main.extensionManager.lookup(UUID).stateObj;
+  await wait('initial-startup', extensionObject._startup);
+  const {TerminalInput} = await import(`${extensionObject.dir.get_uri()}/clipboard/terminal/input.js`);
+  const {verify: verifyTerminalLifecycle} = await import('../terminal/lifecycle.smoke.js');
+  await wait('terminal-source-cleanup', verifyTerminalLifecycle(TerminalInput));
+  const {verifyLifecycle: verifyPreferencesLifecycle} = await import('../settings/window.smoke.js');
+  await wait('settings-close-lifecycle', verifyPreferencesLifecycle());
+  const {verify: verifyInputMode} = await import('../panels/input-mode.smoke.js');
+  await wait('input-mode', verifyInputMode(actor));
+  actor.menu.open();
+  await Scripting.sleep(150);
+  assert(actor.menu.isOpen, 'Main panel did not open');
+  assert(actor._historyPanel.actor.orientation === Clutter.Orientation.VERTICAL,
+    'Main panel must use the shared orientation property');
+  assert(actor._historyPanel.scroll.get_vadjustment(),
+    'Shared scroll adjustment API is unavailable');
+
+  stage('tokenizer-panel');
+  actor._panelManager.show('tokenizer', await actor._tokenizer.createState(null, 'Hello, world!'));
+  await Scripting.sleep(100);
+  assert(actor._tokenizer._buttons.length > 0, 'Tokenizer panel did not render tokens');
+  assert(actor._tokenizer.header.orientation === Clutter.Orientation.VERTICAL,
+    'Shared panel header must use orientation');
+  const actions = actor._actions;
+  const tokenize = actions.tokenizeText;
+  const release = deferred();
+  const resume = deferred();
+  let source = null;
+  try {
+    stage('delayed-tokenizer-navigation');
+    const {ClipboardItem} = await import(`${Main.extensionManager.lookup(UUID).stateObj.dir.get_uri()}/clipboard/item.js`);
+    // Use the retained history object, just as an actual entry action does.
+    source = actor._controller.add(ClipboardItem.fromText('Delayed word selection fixture'), 'local');
+    const delayed = deferred();
+    actions.tokenizeText = async text => {
+      delayed.resolve();
+      await release.promise;
+      return tokenize(text);
+    };
+    const pending = actor._openTokenizer(source);
+    await waitForTokenizer('dictionary-loading', delayed.promise, pending);
+    actor._openPhrases();
+    actor._closePhrases();
+    release.resolve();
+    await wait('superseded-tokenizer', pending);
+    assert(actor._panelManager.is('history'), 'Late dictionary loading must not override panel navigation');
+
+    const closing = deferred();
+    actions.tokenizeText = async text => {
+      closing.resolve();
+      await resume.promise;
+      return tokenize(text);
+    };
+    const closed = actor._openTokenizer(source);
+    await waitForTokenizer('dictionary-loading-before-close', closing.promise, closed);
+    actor.menu.close();
+    actor.menu.open();
+    resume.resolve();
+    await wait('closed-tokenizer-request', closed);
+    assert(actor._panelManager.is('history'), 'Reopening the menu must not revive a closed tokenizer request');
+  } finally {
+    release.resolve();
+    resume.resolve();
+    actions.tokenizeText = tokenize;
+    if (source)
+      actor._controller.remove(source.id);
+  }
+  stage('quick-phrases-panel');
+  actor._openPhrases();
+  await Scripting.sleep(100);
+  assert(actor._quickPhrases.actor.orientation === Clutter.Orientation.VERTICAL,
+    'Quick phrases panel must use orientation');
+  actor.menu.close();
+
+  stage('disable-reenable');
+  const previousSync = actor._historyPanel._sync;
+  const previousIcon = previousSync._previewIcon;
+  assert(previousIcon instanceof Gio.FileIcon, 'Enabled synchronization UI must create its preview icon');
+  await disable();
+  assert(previousSync._previewIcon === null, 'Disabled synchronization UI must release its preview icon');
+  actor = await enable(actor);
+  assert(actor._historyPanel._sync._previewIcon !== previousIcon,
+    'Re-enabling must create an icon owned by the new synchronization UI');
+  actor.menu.open();
+  await Scripting.sleep(100);
+  assert(actor.menu.isOpen, 'Panel did not open after re-enabling');
+  actor.menu.close();
+  actor = await verifyHistoryLifecycle(actor);
+  actor = await verifyOpenPanelDisable(actor);
+  stage('final-disable');
+  await disable();
+  stage('completed');
+  print('Clipboard X Gnome: shared Shell APIs and enable/disable/re-enable passed.');
+}

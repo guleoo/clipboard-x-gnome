@@ -828,12 +828,6 @@ msgstr "Leerzeichen vor und nach dem Text entfernen"
 msgid "Simulated input"
 msgstr "Simulierte Eingabe"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Wählen Sie die langsame Eingabe, wenn eine Zielanwendung simulierte "
-"Tastenanschläge auslässt."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Eingabegeschwindigkeit"
@@ -1298,3 +1292,27 @@ msgstr "Problem melden"
 
 msgid "License"
 msgstr "Lizenz"
+
+msgid "Text and icon color"
+msgstr "Text- und Symbolfarbe"
+
+msgid "Escape in secondary panels"
+msgstr "Escape in Unteransichten"
+
+msgid "Close panel"
+msgstr "Ansicht schließen"
+
+msgid "An input operation is already running."
+msgstr "Es läuft bereits ein Eingabevorgang."
+
+msgid "Focus a text field before starting input."
+msgstr "Fokussieren Sie ein Textfeld, bevor Sie die Eingabe starten."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Bestätigen oder verwerfen Sie den aktuell mit der Eingabemethode zusammengesetzten Text, bevor Sie die Eingabe starten."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Das Zielfenster oder Textfeld hat sich geändert. Die verbleibende Eingabe wurde abgebrochen."
+
+msgid "Medium"
+msgstr "Mittel"

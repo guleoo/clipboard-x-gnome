@@ -41,7 +41,7 @@ jobs:
         run: >-
           dnf install -y
           7zip dbus-daemon gettext git gjs glib2 gnome-shell
-          gtk4 libadwaita libsoup3 meson ninja-build nodejs python3
+          gtk4 gvfs gvfs-client libadwaita libsoup3 meson ninja-build nodejs openssl python3
           mesa-dri-drivers mesa-libEGL dejavu-sans-fonts
       - name: Verify GNOME version and record environment
         env:
@@ -62,6 +62,10 @@ jobs:
         run: find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check
       - name: Run regression test suite
         run: dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs
+      # Exit 2 (missing dependency) fails too: a skipped check must not pass.
+      - name: Run headless acceptance
+        shell: bash
+        run: bash tools/test-logic-acceptance.sh 2>&1 | tee build/meson-logs/logic-acceptance.log
       - name: Create and validate extension ZIP
         id: package
         shell: bash

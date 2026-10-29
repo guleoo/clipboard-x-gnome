@@ -8,8 +8,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {ClipboardController} from '../clipboard/controller.js';
+import {createPlatform} from '../clipboard/platform.js';
 import {Content} from '../clipboard/content.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
+import {message as inputErrorMessage} from '../clipboard/terminal/errors.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
 import {createLogger} from '../common/logger.js';
@@ -24,6 +26,8 @@ import {ensureDeviceIdentity} from '../sync/device.js';
 import {message as syncErrorMessage, SyncError} from '../sync/errors.js';
 import {Indicator} from '../ui/indicator.js';
 import {ScreenshotPortal} from '../screenshot/portal.js';
+import {observeCancellation} from '../screenshot/cancellation.js';
+import {capture as captureScreenshot} from '../screenshot/pipeline.js';
 
 const SHORTCUT_KEYS = Object.freeze([
   'panel-shortcut',
@@ -39,10 +43,10 @@ export default class ClipboardXGnomeExtension extends Extension {
   enable() {
     logger.info('enable');
     this._settings = this.getSettings();
-    this._controller = new ClipboardController(this._settings);
+    this._controller = new ClipboardController(this._settings, {platform: createPlatform()});
     const controller = this._controller;
     const settings = this._settings;
-    this._portal = new ScreenshotPortal();
+    this._portal = new ScreenshotPortal({observeCancellation});
     this._sync = new SyncClient(this._settings, {
       sourceItem: itemId => controller.items.find(item => item.id === itemId) ?? null,
       applyChanges: (changes, scope) => content.receive(changes, scope),
@@ -68,7 +72,17 @@ export default class ClipboardXGnomeExtension extends Extension {
       source: itemId => controller.items.find(item => item.id === itemId) ?? null,
       sourceReady: () => !controller.loading && !controller.error,
       prepare: () => controller.persist(),
-      publish: (item, options) => sync.publish(item, options),
+      publish: async (item, options) => {
+        const result = await sync.publish(item, options);
+        // Only a newly confirmed publication changes the item's delivery plan.
+        // Replaying server transfer history must not save or rebuild history.
+        if (this._controller === controller && controller.items.includes(item)) {
+          // Keep disable()'s shutdown snapshot aware of an in-flight save.
+          controller.update(item, {notify: false});
+          await controller.persist();
+        }
+        return result;
+      },
       onError: error => {
         if (this._controller === controller)
           this._reportError(error);
@@ -163,11 +177,6 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._transferSignal = this._sync.connect(
       'transfer-changed',
       (_sync, transfer) => {
-        if (transfer.kind === 'publish' && transfer.state === 'completed') {
-          const item = controller.items.find(value => value.id === transfer.itemId);
-          if (item)
-            controller.update(item);
-        }
         this._indicator?.refreshTransfer(transfer.itemId);
       },
     );
@@ -282,30 +291,8 @@ export default class ClipboardXGnomeExtension extends Extension {
 
   async _takeScreenshot() {
     const controller = this._controller;
-    const settings = this._settings;
-    const portal = this._portal;
-    const check = () => {
-      if (!controller || this._controller !== controller)
-        throw new Gio.IOErrorEnum({code: Gio.IOErrorEnum.CANCELLED, message: 'Screenshot operation was stopped'});
-    };
-    check();
-    const uri = await portal.capture(settings.get_string('screenshot-target'));
-    check();
-    if (uri === null)
-      return;
-    const addToHistory = settings.get_boolean('screenshot-add-history');
-    const item = addToHistory
-      ? await controller.addFromUri(uri, 'screenshot')
-      : await controller.createFromUri(uri);
-    check();
-    if (settings.get_boolean('screenshot-write-clipboard')) {
-      await controller.writeScreenshot(item);
-      check();
-    }
-    if (settings.get_boolean('screenshot-open-editor')) {
-      await this._launchEditor(uri, item.primary?.bytes);
-      check();
-    }
+    return captureScreenshot({controller, settings: this._settings, portal: this._portal,
+      isCurrent: () => this._controller === controller, openEditor: uri => this._launchEditor(uri)});
   }
 
   _pickColor() {
@@ -331,7 +318,7 @@ export default class ClipboardXGnomeExtension extends Extension {
         'The original image has not been downloaded and synchronization is disabled');
     }
     const path = await this._content.file(item);
-    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), item.primary?.bytes, command);
+    await this._launchEditor(Gio.File.new_for_path(path).get_uri(), command);
   }
 
   async _pasteItem(item) {
@@ -360,13 +347,12 @@ export default class ClipboardXGnomeExtension extends Extension {
     return null;
   }
 
-  _launchEditor(uri, bytes = null, command = this._editorCommand()) {
+  _launchEditor(uri, command = this._editorCommand()) {
     if (!command)
       return null;
     return launchEditor({
       command,
       uri,
-      bytes,
     });
   }
 
@@ -379,7 +365,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     const actions = {
       'panel-shortcut': () => {
         ensureDeviceIdentity(this._settings);
-        this._indicator.toggle();
+        this._indicator.toggle({keyboard: true});
       },
       'screenshot-shortcut': () => this._takeScreenshot().catch(error => this._reportError(error)),
       'color-picker-shortcut': () => this._pickColor(),
@@ -422,7 +408,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     logger.error('operation', error);
     Main.notifyError(
       'Clipboard X Gnome',
-      syncErrorMessage(error, _) || _('Operation failed'),
+      inputErrorMessage(error, _) || syncErrorMessage(error, _) || _('Operation failed'),
     );
   }
 }

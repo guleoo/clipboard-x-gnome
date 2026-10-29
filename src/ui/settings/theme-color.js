@@ -1,11 +1,12 @@
 // Theme color settings control.
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
+import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
 
 import {gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-import {disconnectWhenUnrooted} from './lifecycle.js';
+import {onClosed} from './lifecycle.js';
 
 const COLORS = Object.freeze([
   ['blue', '#3584e4'],
@@ -75,6 +76,7 @@ export function create(settings) {
     Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
   );
   let buttons = [];
+  let pending = null;
   const updateSelection = () => {
     const selected = settings.get_string('theme-color');
     for (const [value, button] of buttons) {
@@ -147,6 +149,10 @@ export function create(settings) {
       vexpand: false,
     });
     addButton.connect('clicked', () => {
+      if (pending)
+        return;
+      const cancellable = new Gio.Cancellable();
+      pending = cancellable;
       const dialog = new Gtk.ColorDialog({
         title: _('Choose custom theme color'),
         modal: true,
@@ -155,9 +161,11 @@ export function create(settings) {
       const initial = HEX_COLOR_PATTERN.test(settings.get_string('theme-color'))
         ? parse(settings.get_string('theme-color'))
         : styleManager.get_accent_color_rgba();
-      dialog.choose_rgba(addButton.get_root(), initial, null, (_source, result) => {
+      dialog.choose_rgba(addButton.get_root(), initial, cancellable, (_source, result) => {
         try {
           const color = toHex(dialog.choose_rgba_finish(result));
+          if (cancellable.is_cancelled())
+            return;
           settings.set_strv('custom-theme-colors', unique([
             ...settings.get_strv('custom-theme-colors'),
             color,
@@ -165,6 +173,8 @@ export function create(settings) {
           settings.set_string('theme-color', color);
         } catch (_error) {
           // Closing the color chooser is not an error for the preferences UI.
+        } finally {
+          pending = null;
         }
       });
     });
@@ -177,7 +187,8 @@ export function create(settings) {
   const systemAccentSignal = styleManager.connect('notify::accent-color-rgba', () => {
     buttons[0]?.[1].get_child().queue_draw();
   });
-  disconnectWhenUnrooted(row, () => {
+  onClosed(row, () => {
+    pending?.cancel();
     settings.disconnect(themeColorSignal);
     settings.disconnect(customColorsSignal);
     styleManager.disconnect(systemAccentSignal);

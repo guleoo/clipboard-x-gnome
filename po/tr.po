@@ -815,11 +815,6 @@ msgstr "Metnin çevresindeki boşlukları sil"
 msgid "Simulated input"
 msgstr "Benzetimli giriş"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Hedef uygulama benzetimli tuş vuruşlarını kaçırıyorsa yavaş girişi kullanın."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Yazma hızı"
@@ -1280,3 +1275,27 @@ msgstr "Sorun bildir"
 
 msgid "License"
 msgstr "Lisans"
+
+msgid "Text and icon color"
+msgstr "Metin ve simge rengi"
+
+msgid "Escape in secondary panels"
+msgstr "Alt panellerde Escape tuşu"
+
+msgid "Close panel"
+msgstr "Paneli kapat"
+
+msgid "An input operation is already running."
+msgstr "Bir giriş işlemi zaten çalışıyor."
+
+msgid "Focus a text field before starting input."
+msgstr "Girişi başlatmadan önce bir metin alanına odaklanın."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Başlamadan önce giriş yöntemiyle oluşturulmakta olan metni onaylayın veya iptal edin."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Hedef pencere veya metin alanı değişti. Kalan giriş iptal edildi."
+
+msgid "Medium"
+msgstr "Orta"

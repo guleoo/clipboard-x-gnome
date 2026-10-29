@@ -811,10 +811,6 @@ msgstr "앞뒤 공백 문자 제거"
 msgid "Simulated input"
 msgstr "키보드 입력 시뮬레이션"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr "대상 앱에서 시뮬레이션 키 입력이 누락되면 느린 속도를 사용하세요."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "입력 속도"
@@ -1267,3 +1263,27 @@ msgstr "문제 보고"
 
 msgid "License"
 msgstr "라이선스"
+
+msgid "Text and icon color"
+msgstr "텍스트 및 아이콘 색상"
+
+msgid "Escape in secondary panels"
+msgstr "하위 패널에서 Esc 키 동작"
+
+msgid "Close panel"
+msgstr "패널 닫기"
+
+msgid "An input operation is already running."
+msgstr "이미 입력 작업이 실행 중입니다."
+
+msgid "Focus a text field before starting input."
+msgstr "입력을 시작하기 전에 텍스트 입력란에 초점을 맞추세요."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "입력을 시작하기 전에 입력기에서 조합 중인 글자를 확정하거나 취소하세요."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "대상 창이나 텍스트 입력란이 변경되어 나머지 입력을 취소했습니다."
+
+msgid "Medium"
+msgstr "중간"

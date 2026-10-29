@@ -818,12 +818,6 @@ msgstr "Szóközök eltávolítása a szöveg körül"
 msgid "Simulated input"
 msgstr "Szimulált bevitel"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Használjon lassú bevitelt, ha a célalkalmazás kihagyja a szimulált "
-"billentyűleütéseket."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Gépelési sebesség"
@@ -1290,3 +1284,27 @@ msgstr "Hiba jelentése"
 
 msgid "License"
 msgstr "Licenc"
+
+msgid "Text and icon color"
+msgstr "Szöveg és ikonok színe"
+
+msgid "Escape in secondary panels"
+msgstr "Escape a másodlagos paneleken"
+
+msgid "Close panel"
+msgstr "Panel bezárása"
+
+msgid "An input operation is already running."
+msgstr "Már folyamatban van egy beviteli művelet."
+
+msgid "Focus a text field before starting input."
+msgstr "A bevitel megkezdése előtt helyezze a fókuszt egy szövegmezőre."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "A bevitel megkezdése előtt véglegesítse vagy vesse el a beviteli móddal éppen szerkesztett szöveget."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "A célablak vagy a szövegmező megváltozott. A hátralévő bevitel megszakadt."
+
+msgid "Medium"
+msgstr "Közepes"

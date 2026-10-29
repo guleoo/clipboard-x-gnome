@@ -4,6 +4,8 @@ import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {typingDelay, typingSequence, typingTiming} from './sequence.js';
+import {cancel, shouldCancel} from './guard.js';
+import {InputError} from './errors.js';
 
 const INPUT_POLL_MILLISECONDS = 20;
 const INPUT_WAIT_TIMEOUT_MILLISECONDS = 10_000;
@@ -22,14 +24,16 @@ export class TerminalInput {
     const seat = global.stage.context.get_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
+    this._targetWindow = null;
     this._queue = Promise.resolve();
     this._destroyed = false;
     this._emitting = false;
     this._monitoring = false;
     this._typing = null;
-    this._typingRevision = 0;
+    this._busy = false;
     this._onCancelled = onCancelled;
     this._speed = speed;
+    this._sources = new Map();
     this._eventFilterId = Clutter.Event.add_filter(
       null,
       event => this._filterEvent(event),
@@ -38,6 +42,7 @@ export class TerminalInput {
 
   rememberTarget() {
     this._targetPurpose = Main.inputMethod.content_purpose;
+    this._targetWindow = this._currentTarget().window;
   }
 
   paste() {
@@ -46,33 +51,39 @@ export class TerminalInput {
       ? [Clutter.KEY_Control_L, Clutter.KEY_Shift_L]
       : [Clutter.KEY_Shift_L];
     return this._enqueue(async () => {
-      if (await this._prepare())
+      if (await this._prepare() && !this._destroyed)
         this._chord(modifiers, Clutter.KEY_Insert);
     });
   }
 
   type(text) {
-    const sequence = typingSequence(text);
-    const revision = this._typingRevision;
+    if (this._destroyed)
+      return Promise.resolve();
+    const speed = this._speed();
+    const window = this._targetWindow ?? this._currentTarget().window;
     return this._enqueue(async () => {
-      if (this._destroyed || revision !== this._typingRevision)
-        return;
       const typing = {cancelled: false};
-      const speed = this._speed();
       this._typing = typing;
       this._monitoring = true;
       try {
-        if (!await this._prepare(typingTiming(speed).settle))
+        if (!window)
+          throw new InputError('target_unavailable');
+        if (!await this._prepare(typingTiming().settle) || !this._canContinue())
           return;
-        for (const character of sequence) {
-          if (this._destroyed || typing.cancelled)
+        const target = this._currentTarget();
+        if (target.window !== window)
+          throw new InputError('focus_changed');
+        if (Main.inputMethod.hasPreedit())
+          throw new InputError('composition_active');
+        for (const character of typingSequence(text)) {
+          if (!this._canContinue())
             return;
-          if (this._commandModifiersPressed()) {
-            this._cancelTypingWithNotification();
-            return;
-          }
+          const current = this._currentTarget();
+          if (current.window !== window || target.focus && current.focus !== target.focus)
+            throw new InputError('focus_changed');
           this._typeCharacter(character);
-          await this._waitForNextStep(character, speed);
+          if (!await this._waitForNextStep(character, speed))
+            return;
         }
       } finally {
         if (this._typing === typing)
@@ -83,10 +94,17 @@ export class TerminalInput {
   }
 
   destroy() {
+    if (this._destroyed)
+      return;
     this._destroyed = true;
-    this._typingRevision++;
+    this._targetWindow = null;
     if (this._typing)
       this._typing.cancelled = true;
+    for (const [source, finish] of this._sources) {
+      GLib.Source.remove(source);
+      finish?.(false);
+    }
+    this._sources.clear();
     if (this._eventFilterId)
       Clutter.Event.remove_filter(this._eventFilterId);
     this._eventFilterId = 0;
@@ -99,7 +117,18 @@ export class TerminalInput {
   _enqueue(operation) {
     if (this._destroyed)
       return Promise.resolve();
-    const next = this._queue.catch(() => {}).then(operation);
+    if (this._busy)
+      return Promise.reject(new InputError('busy'));
+    // Reserve synchronously, including the microtask before preparation begins.
+    this._busy = true;
+    const next = Promise.resolve().then(async () => {
+      try {
+        if (!this._destroyed)
+          return await operation();
+      } finally {
+        this._busy = false;
+      }
+    });
     this._queue = next;
     return next;
   }
@@ -153,8 +182,8 @@ export class TerminalInput {
   _filterEvent(event) {
     if (!this._monitoring || this._emitting)
       return Clutter.EVENT_PROPAGATE;
-    const type = event.type();
-    if (type !== Clutter.EventType.KEY_PRESS)
+    if (!shouldCancel({monitoring: this._monitoring, emitting: this._emitting,
+      keyPress: event.type() === Clutter.EventType.KEY_PRESS}))
       return Clutter.EVENT_PROPAGATE;
     // VirtualInputDevice events bypass this filter, while physical events may
     // use a logical input device without a device node.
@@ -165,50 +194,57 @@ export class TerminalInput {
   _cancelTypingWithNotification() {
     if (!this._cancelTyping())
       return false;
-    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+    const source = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+      this._sources.delete(source);
       if (!this._destroyed)
         this._onCancelled?.();
       return GLib.SOURCE_REMOVE;
     });
+    this._sources.set(source, null);
     return true;
   }
 
   _cancelTyping() {
-    if (!this._typing || this._typing.cancelled)
+    if (!cancel(this._typing))
       return false;
-    this._typing.cancelled = true;
-    this._typingRevision++;
     return true;
+  }
+
+  _canContinue() {
+    if (this._destroyed || !this._typing || this._typing.cancelled)
+      return false;
+    if (this._commandModifiersPressed()) {
+      this._cancelTypingWithNotification();
+      return false;
+    }
+    return true;
+  }
+
+  _currentTarget() {
+    return {window: global.display.focus_window, focus: Main.inputMethod.currentFocus};
   }
 
   async _prepare(settleDelay = typingTiming().settle) {
     if (!await this._waitForModifiersReleased())
       return false;
-    await this._settle(settleDelay);
-    return !this._destroyed;
+    return await this._settle(settleDelay) && !this._destroyed;
   }
 
-  _waitForModifiersReleased() {
+  async _waitForModifiersReleased() {
+    if (this._destroyed)
+      return false;
     if (!(this._modifierState() & COMMAND_MODIFIER_MASK))
-      return Promise.resolve(true);
+      return true;
     const deadline = GLib.get_monotonic_time() + INPUT_WAIT_TIMEOUT_MILLISECONDS * 1000;
-    return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, INPUT_POLL_MILLISECONDS, () => {
-        if (this._destroyed) {
-          resolve(false);
-          return GLib.SOURCE_REMOVE;
-        }
-        if (!(this._modifierState() & COMMAND_MODIFIER_MASK)) {
-          resolve(true);
-          return GLib.SOURCE_REMOVE;
-        }
-        if (GLib.get_monotonic_time() >= deadline) {
-          resolve(false);
-          return GLib.SOURCE_REMOVE;
-        }
-        return GLib.SOURCE_CONTINUE;
-      });
-    });
+    while (await this._wait(INPUT_POLL_MILLISECONDS)) {
+      if (this._destroyed)
+        return false;
+      if (!(this._modifierState() & COMMAND_MODIFIER_MASK))
+        return true;
+      if (GLib.get_monotonic_time() >= deadline)
+        return false;
+    }
+    return false;
   }
 
   _modifierState() {
@@ -220,20 +256,23 @@ export class TerminalInput {
   }
 
   _settle(delay) {
-    return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
-        resolve();
-        return GLib.SOURCE_REMOVE;
-      });
-    });
+    return this._wait(delay);
   }
 
   _waitForNextStep(character, speed) {
+    return this._wait(typingDelay(character, speed));
+  }
+
+  _wait(delay) {
+    if (this._destroyed)
+      return Promise.resolve(false);
     return new Promise(resolve => {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, typingDelay(character, speed), () => {
-        resolve();
+      const source = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
+        this._sources.delete(source);
+        resolve(true);
         return GLib.SOURCE_REMOVE;
       });
+      this._sources.set(source, resolve);
     });
   }
 }

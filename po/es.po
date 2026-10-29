@@ -827,12 +827,6 @@ msgstr "Eliminar espacios en blanco alrededor del texto"
 msgid "Simulated input"
 msgstr "Entrada simulada"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Use la entrada lenta si una aplicación no recibe todas las pulsaciones "
-"simuladas."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Velocidad de escritura"
@@ -1301,3 +1295,27 @@ msgstr "Informar de un problema"
 
 msgid "License"
 msgstr "Licencia"
+
+msgid "Text and icon color"
+msgstr "Color del texto y los iconos"
+
+msgid "Escape in secondary panels"
+msgstr "Escape en paneles secundarios"
+
+msgid "Close panel"
+msgstr "Cerrar panel"
+
+msgid "An input operation is already running."
+msgstr "Ya hay una operación de entrada en curso."
+
+msgid "Focus a text field before starting input."
+msgstr "Enfoque un campo de texto antes de iniciar la entrada."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Confirme o cancele el texto que está componiendo con el método de entrada antes de comenzar."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "La ventana o el campo de texto de destino ha cambiado. Se ha cancelado la entrada restante."
+
+msgid "Medium"
+msgstr "Media"

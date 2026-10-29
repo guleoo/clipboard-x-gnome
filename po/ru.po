@@ -820,12 +820,6 @@ msgstr "Удалить пробелы в тексте"
 msgid "Simulated input"
 msgstr "Имитация ввода"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Используйте медленный ввод, если приложение пропускает имитируемые нажатия "
-"клавиш."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Скорость ввода"
@@ -1287,3 +1281,27 @@ msgstr "Сообщить о проблеме"
 
 msgid "License"
 msgstr "Лицензия"
+
+msgid "Text and icon color"
+msgstr "Цвет текста и значков"
+
+msgid "Escape in secondary panels"
+msgstr "Escape во вложенных панелях"
+
+msgid "Close panel"
+msgstr "Закрыть панель"
+
+msgid "An input operation is already running."
+msgstr "Операция ввода уже выполняется."
+
+msgid "Focus a text field before starting input."
+msgstr "Перед началом ввода установите фокус на текстовом поле."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Перед началом ввода подтвердите или отмените текст, набираемый с помощью метода ввода."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Целевое окно или текстовое поле изменилось. Оставшийся ввод отменён."
+
+msgid "Medium"
+msgstr "Средняя"

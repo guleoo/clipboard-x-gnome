@@ -827,12 +827,6 @@ msgstr "Supprimer les espaces autour du texte"
 msgid "Simulated input"
 msgstr "Saisie simulée"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Utilisez la saisie lente si l’application cible ne reconnaît pas certaines "
-"frappes simulées."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Vitesse de saisie"
@@ -1300,3 +1294,27 @@ msgstr "Signaler un problème"
 
 msgid "License"
 msgstr "Licence"
+
+msgid "Text and icon color"
+msgstr "Couleur du texte et des icônes"
+
+msgid "Escape in secondary panels"
+msgstr "Échap dans les panneaux secondaires"
+
+msgid "Close panel"
+msgstr "Fermer le panneau"
+
+msgid "An input operation is already running."
+msgstr "Une opération de saisie est déjà en cours."
+
+msgid "Focus a text field before starting input."
+msgstr "Placez le focus sur un champ de texte avant de commencer la saisie."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Validez ou annulez le texte en cours de composition avec la méthode de saisie avant de commencer."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "La fenêtre ou le champ de texte cible a changé. La saisie restante a été annulée."
+
+msgid "Medium"
+msgstr "Moyenne"

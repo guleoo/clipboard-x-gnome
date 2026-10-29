@@ -825,11 +825,6 @@ msgstr "Suprimir los espacis blancs a l’entorn del tèxt"
 msgid "Simulated input"
 msgstr "Entrada simulada"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Utilizatz l’entrada lenta se l’aplicacion cibla manca de tocas simuladas."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Velocitat de picada"
@@ -1298,3 +1293,27 @@ msgstr "Senhalar un problèma"
 
 msgid "License"
 msgstr "Licéncia"
+
+msgid "Text and icon color"
+msgstr "Color del tèxte e de las icònas"
+
+msgid "Escape in secondary panels"
+msgstr "Esc dins los panèls segondaris"
+
+msgid "Close panel"
+msgstr "Tampar lo panèl"
+
+msgid "An input operation is already running."
+msgstr "Una operacion de picada es ja en cors."
+
+msgid "Focus a text field before starting input."
+msgstr "Donatz lo fòcus a un camp de tèxte abans de començar la picada."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Validatz o anullatz lo tèxte en cors de composicion amb lo metòde de picada abans de començar."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "La fenèstra o lo camp de tèxte de destinacion a cambiat. La picada restanta es estada anullada."
+
+msgid "Medium"
+msgstr "Mejana"

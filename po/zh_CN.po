@@ -807,10 +807,6 @@ msgstr "自动去除首尾空白字符"
 msgid "Simulated input"
 msgstr "模拟输入"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr "如果目标应用漏掉模拟按键，可以尝试慢速输入。"
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "输入速度"
@@ -1418,3 +1414,27 @@ msgstr "报告问题"
 
 msgid "License"
 msgstr "许可证"
+
+msgid "Text and icon color"
+msgstr "文字与图标颜色"
+
+msgid "Escape in secondary panels"
+msgstr "非主面板按 ESC 的动作"
+
+msgid "Close panel"
+msgstr "直接关闭面板"
+
+msgid "An input operation is already running."
+msgstr "已有输入任务正在运行。"
+
+msgid "Focus a text field before starting input."
+msgstr "请先聚焦文本输入框，再开始输入。"
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "请先完成或取消输入法中正在编辑的内容，再开始输入。"
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "目标窗口或文本输入框已改变，剩余输入已取消。"
+
+msgid "Medium"
+msgstr "中速"

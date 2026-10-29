@@ -821,12 +821,6 @@ msgstr "Вилучати проміжки навколо тексту"
 msgid "Simulated input"
 msgstr "Імітоване введення"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Використовуйте повільне введення, якщо застосунок пропускає імітовані "
-"натискання клавіш."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Швидкість введення"
@@ -1286,3 +1280,27 @@ msgstr "Повідомити про проблему"
 
 msgid "License"
 msgstr "Ліцензія"
+
+msgid "Text and icon color"
+msgstr "Колір тексту та піктограм"
+
+msgid "Escape in secondary panels"
+msgstr "Escape у вкладених панелях"
+
+msgid "Close panel"
+msgstr "Закрити панель"
+
+msgid "An input operation is already running."
+msgstr "Операція введення вже виконується."
+
+msgid "Focus a text field before starting input."
+msgstr "Перед початком введення встановіть фокус на текстовому полі."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Перед початком підтвердьте або скасуйте текст, який набирається за допомогою методу введення."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Цільове вікно або текстове поле змінилося. Решту введення скасовано."
+
+msgid "Medium"
+msgstr "Середня"

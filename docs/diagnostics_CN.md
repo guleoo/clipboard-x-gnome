@@ -41,6 +41,9 @@ Clipboard X Gnome [ERROR] sync initialize failed at channels · HttpError:channe
 主动取消作为信息记录，不视为操作错误。桌面通知仍保持简短且支持多语言，技术细节在
 journal 中查看。
 
+仅普通 JavaScript 错误使用弱引用关联来避免跨层重复记录。原生 GLib/Gio 异常不会作为弱引用的键；
+操作仍记录失败阶段、耗时，并原样抛出异常。因此，调用方再次记录同一个原生异常时可能出现重复日志。
+
 ## 开发会话
 
 默认终端只显示构建摘要、插件日志和系统警告/错误。安装文件列表、服务成功启动等信息不再

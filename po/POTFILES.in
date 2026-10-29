@@ -1,4 +1,5 @@
 src/entry/extension.js
+src/clipboard/terminal/errors.js
 src/sync/errors.js
 src/ui/indicator.js
 src/ui/panels/history/item.js
@@ -9,6 +10,7 @@ src/ui/panels/tokenizer/panel.js
 src/ui/settings/panel-actions.js
 src/ui/settings/dictionaries.js
 src/ui/settings/file-verification.js
+src/ui/settings/foreground-color.js
 src/ui/settings/rows.js
 src/ui/settings/running-apps.js
 src/ui/settings/sync.js

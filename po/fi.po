@@ -821,12 +821,6 @@ msgstr "Poista tekstin alusta ja lopusta tyhjät merkit"
 msgid "Simulated input"
 msgstr "Simuloitu näppäimistösyöte"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Käytä hidasta syöttöä, jos kohdesovellus ei tunnista kaikkia simuloituja "
-"näppäinpainalluksia."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Kirjoitusnopeus"
@@ -1289,3 +1283,27 @@ msgstr "Ilmoita ongelmasta"
 
 msgid "License"
 msgstr "Lisenssi"
+
+msgid "Text and icon color"
+msgstr "Tekstin ja kuvakkeiden väri"
+
+msgid "Escape in secondary panels"
+msgstr "Escape alipaneeleissa"
+
+msgid "Close panel"
+msgstr "Sulje paneeli"
+
+msgid "An input operation is already running."
+msgstr "Syöttötoiminto on jo käynnissä."
+
+msgid "Focus a text field before starting input."
+msgstr "Kohdista tekstikenttään ennen syötön aloittamista."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Vahvista tai peru syöttömenetelmän keskeneräinen tekstin koostaminen ennen syötön aloittamista."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Kohdeikkuna tai tekstikenttä vaihtui. Jäljellä oleva syöttö peruttiin."
+
+msgid "Medium"
+msgstr "Keskitaso"

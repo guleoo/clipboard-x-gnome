@@ -1,6 +1,7 @@
 const TIMING = Object.freeze({
-  standard: {ascii: 3, unicode: 20, settle: 75},
-  slow: {ascii: 15, unicode: 50, settle: 150},
+  standard: {ascii: 4, unicode: 30, settle: 75},
+  medium: {ascii: 6, unicode: 40, settle: 75},
+  slow: {ascii: 8, unicode: 50, settle: 75},
 });
 
 export function typingTiming(speed = 'standard') {

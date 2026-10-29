@@ -11,6 +11,12 @@
   padding: 2px 4px;
 }
 
+/* Panel hosts are non-reactive containers, not disabled content. */
+.cbx-menu .popup-menu-item,
+.cbx-menu .popup-menu-item:insensitive {
+  color: inherit;
+}
+
 .cbx-menu StScrollBar {
   padding: 0;
   margin: 2px 0 2px 2px;
@@ -55,7 +61,7 @@
   padding: 0 7px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background-color: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.96);
+  color: inherit;
   font-size: 0.9em;
   box-shadow: none;
 }
@@ -80,22 +86,23 @@
 
 .cbx-toolbar .cbx-icon-button,
 .cbx-panel-footer .cbx-icon-button {
-  color: rgba(255, 255, 255, 0.95);
+  color: inherit;
   opacity: 1;
 }
 
-.cbx-icon-button:hover,
-.cbx-icon-button:focus {
+.cbx-menu.cbx-pointer .cbx-icon-button:hover,
+.cbx-menu.cbx-keyboard .cbx-icon-button:focus {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.cbx-icon-button:active,
+.cbx-menu.cbx-pointer .cbx-icon-button:active,
+.cbx-menu.cbx-keyboard .cbx-icon-button:active,
 .cbx-icon-button:checked {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
 .cbx-entry {
-  color: rgba(255, 255, 255, 0.95);
+  color: inherit;
   spacing: 1px;
   padding: 2px 3px;
   margin: 1px 2px;
@@ -116,8 +123,8 @@
   min-width: 0;
 }
 
-.cbx-entry-content:hover,
-.cbx-entry-content:focus {
+.cbx-menu.cbx-pointer .cbx-entry-content:hover,
+.cbx-menu.cbx-keyboard .cbx-entry-content:focus {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -130,13 +137,15 @@
 }
 
 .cbx-entry-meta {
-  color: rgba(255, 255, 255, 0.55);
+  color: inherit;
+  opacity: 0.65;
   font-size: 0.85em;
 }
 
 .cbx-empty {
   padding: 18px 10px;
-  color: rgba(255, 255, 255, 0.6);
+  color: inherit;
+  opacity: 0.65;
 }
 
 .cbx-device-icon {
@@ -158,7 +167,7 @@
 }
 
 .cbx-icon-button.cbx-private-inactive {
-  color: rgba(255, 255, 255, 0.95);
+  color: inherit;
 }
 
 .cbx-icon-button.cbx-private-active {
@@ -174,12 +183,13 @@
   background-color: transparent;
 }
 
-.cbx-icon-button.cbx-state-icon:checked:hover,
-.cbx-icon-button.cbx-state-icon:checked:focus {
+.cbx-menu.cbx-pointer .cbx-icon-button.cbx-state-icon:checked:hover,
+.cbx-menu.cbx-keyboard .cbx-icon-button.cbx-state-icon:checked:focus {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.cbx-icon-button.cbx-state-icon:checked:active {
+.cbx-menu.cbx-pointer .cbx-icon-button.cbx-state-icon:checked:active,
+.cbx-menu.cbx-keyboard .cbx-icon-button.cbx-state-icon:checked:active {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
@@ -197,7 +207,7 @@
 }
 
 .cbx-progress-ring {
-  color: rgba(255, 255, 255, 0.9);
+  color: inherit;
 }
 
 .cbx-token-panel {
@@ -206,7 +216,8 @@
 
 .cbx-token-source {
   padding: 2px 8px 5px;
-  color: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  opacity: 0.8;
 }
 
 .cbx-token-scroll {
@@ -215,7 +226,8 @@
 
 .cbx-token-result {
   padding: 4px 5px;
-  color: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  opacity: 0.8;
 }
 
 .cbx-token-box {
@@ -228,11 +240,24 @@
 }
 
 .cbx-token {
+  color: inherit;
   padding: 5px 8px;
   border-radius: 10px;
 }
 
-.cbx-token:checked {
+/* Own the normal surface so native :hover/:focus cannot outlive the active
+ * input mode. Checked backgrounds and token colors remain independent. */
+.cbx-menu .cbx-token {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.cbx-menu.cbx-pointer .cbx-token:hover,
+.cbx-menu.cbx-keyboard .cbx-token:focus {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.cbx-menu .cbx-token:checked {
   background-color: -st-accent-color;
   color: white;
 }

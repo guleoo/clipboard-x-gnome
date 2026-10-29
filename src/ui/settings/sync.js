@@ -9,6 +9,7 @@ import {message as syncErrorMessage} from '../../sync/errors.js';
 import {ensureDeviceIdentity} from '../../sync/device.js';
 import {HttpTransport} from '../../sync/http/transport.js';
 import {createConnectionActions, createRunner} from './sync-connection.js';
+import {onClosed} from './lifecycle.js';
 
 export function create(settings, deviceId, rows) {
   const store = new SyncConfigurationStore();
@@ -48,6 +49,7 @@ export function create(settings, deviceId, rows) {
   group.add(status);
 
   let channelIds = [];
+  let active = true;
   const setBusy = value => {
     apply.sensitive = !value;
     test.sensitive = !value;
@@ -86,16 +88,21 @@ export function create(settings, deviceId, rows) {
   const persistInputs = () => connection.save(readInputs());
   const loadChannels = async configuration => {
     const result = await connection.channels(configuration);
+    if (!active)
+      return result;
     if (result.configuration.activeChannelId !== configuration.activeChannelId)
       result.configuration = await connection.save(result.configuration);
-    renderChannels(result.channels, result.configuration.activeChannelId);
+    if (active)
+      renderChannels(result.channels, result.configuration.activeChannelId);
     return result;
   };
-  const run = createRunner({setBusy, onError: showError});
+  const run = createRunner({setBusy, onError: showError, isActive: () => active});
 
   apply.connect('clicked', () => run(async () => {
     status.subtitle = _('Connecting…');
     const result = await connection.apply(readInputs());
+    if (!active)
+      return;
     if (result.error) {
       status.subtitle = [
         _('Connection settings saved locally'),
@@ -111,6 +118,8 @@ export function create(settings, deviceId, rows) {
   test.connect('clicked', () => run(async () => {
     status.subtitle = _('Connecting…');
     const result = await connection.test(readInputs());
+    if (!active)
+      return;
     renderChannels(result.channels, result.configuration.activeChannelId);
     const serverState = result.status.status === 'degraded'
       ? _('Degraded')
@@ -121,16 +130,23 @@ export function create(settings, deviceId, rows) {
   refresh.connect('clicked', () => run(async () => {
     status.subtitle = _('Loading channels…');
     const configuration = await persistInputs();
+    if (!active)
+      return;
     const result = await loadChannels(configuration);
+    if (!active)
+      return;
     status.subtitle = result.channels.length > 0
       ? _('Channels refreshed')
       : _('No available channels');
   }));
 
-  GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+  let loadSource = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+    loadSource = 0;
     run(async () => {
       status.subtitle = _('Loading…');
       const configuration = await store.load();
+      if (!active)
+        return;
       fill(configuration);
       renderChannels([], configuration.activeChannelId);
       if (!store.exists) {
@@ -139,10 +155,14 @@ export function create(settings, deviceId, rows) {
       }
       try {
         const result = await loadChannels(configuration);
+        if (!active)
+          return;
         status.subtitle = result.configuration.apiKey
           ? _('Connection settings loaded · API key configured')
           : _('Connection settings loaded · API key not configured');
       } catch (error) {
+        if (!active)
+          return;
         status.subtitle = [
           _('Connection settings loaded locally'),
           syncErrorMessage(error, _) || _('Synchronization request failed'),
@@ -150,6 +170,13 @@ export function create(settings, deviceId, rows) {
       }
     });
     return GLib.SOURCE_REMOVE;
+  });
+  onClosed(group, () => {
+    active = false;
+    if (loadSource)
+      GLib.Source.remove(loadSource);
+    loadSource = 0;
+    connection.close();
   });
   return group;
 }

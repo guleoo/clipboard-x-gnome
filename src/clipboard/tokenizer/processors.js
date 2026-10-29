@@ -12,10 +12,27 @@ const WORD_GRAPHEME_PATTERN = /^[\p{L}\p{M}\p{N}_]+$/u;
 const PUNCTUATION_PATTERN = /^\p{P}+$/u;
 const APOSTROPHES = new Set(["'", '’']);
 const WORD_RUN_PATTERN = /[\p{L}\p{M}\p{N}_]+(?:['’][\p{L}\p{M}\p{N}_]+)*/gu;
+const MAXIMUM_CHARACTERS = 20_000;
 
-export function tokenizeText(text, localeOrOptions = undefined) {
+export function checkInput(text) {
   if (typeof text !== 'string')
     throw new TypeError('Text to tokenize must be a string');
+  if (text.length <= MAXIMUM_CHARACTERS)
+    return;
+  // Count Unicode code points, not UTF-16 units. Stop at the first excess
+  // character without allocating an array or scanning the rest of the input.
+  let characters = 0;
+  for (const _character of text) {
+    if (++characters > MAXIMUM_CHARACTERS) {
+      const error = new RangeError('Text exceeds the 20,000-character word selection limit');
+      error.code = 'text_limit_exceeded';
+      throw error;
+    }
+  }
+}
+
+export function tokenizeText(text, localeOrOptions = undefined) {
+  checkInput(text);
   const options = localeOrOptions && typeof localeOrOptions === 'object'
     ? localeOrOptions
     : {locale: localeOrOptions};

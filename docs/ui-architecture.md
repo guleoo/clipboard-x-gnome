@@ -13,6 +13,9 @@ follow. Extend these boundaries instead of putting state and widgets back into `
   width and height for every panel; a registered panel may override them with a partial `geometry` object.
 - `ui/navigation/focus-grid.js`: two-dimensional keyboard navigation inside a panel. Each panel owns
   its matrix; no global focus listener repairs focus.
+- `ui/navigation/input-mode.js`: popup-wide keyboard/pointer presentation arbitration. It observes
+  pointer input only while open; existing menu key capture supplies keyboard input. Real pointer targets
+  are handed to the current panel's focus grid without global focus-change listeners.
 - `ui/layouts/panel-actions.js`: layout model and validation for top and bottom actions.
 - `ui/layouts/entry-actions.js`: clipboard-entry action order, visibility, and content-type eligibility.
 - `ui/controls/`: public Shell controls. Controls provide structure and generic state; they do not read
@@ -68,6 +71,15 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - Selected icons use the theme color; normal hover and active feedback remain distinct states.
 - Entry actions, word selection buttons, and back buttons do not show tooltips by default. Global tools may use
   the floating tooltip.
+- Keyboard navigation suppresses stationary-pointer hover feedback; actual pointer movement, clicks, or
+  scrolling restore pointer feedback. Layout-driven hover/focus signals do not choose the input mode.
+  Root mode classes gate hover/focus styling, not checked state, accent colors, entry focus, or caret.
+  Actual pointer movement synchronizes focus to eligible controls in the current panel, so subsequent
+  keyboard actions continue from that target. Hover does not interrupt entry editing or start it.
+  Opening-time autofocus alone is not editing. Entry key input or a deliberate click protects its focus
+  until focus leaves that entry; closing the popup clears this editing state.
+  Wheel scrolling and layout-only hover changes never move focus or reveal a row.
+  Tooltips use only the current mode's target and cancel pending help on mode changes or panel close.
 - Every switchable panel has an independent `FocusGrid`. A setting controls whether direction keys at
   an edge may leave the extension.
 - Refreshable panels capture and restore focused content identity and scroll position. History uses
@@ -75,6 +87,44 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   its state, and quick phrases use phrase text plus action. Theme updates do not rebuild content.
 - Scrollable content uses an overlay scrollbar and the shared thin-scrollbar style.
 - Panel geometry, text vertical offset, and scene restoration are settings, not hard-coded per-user values.
+- Escape dismisses an active quick-phrase form first. Otherwise secondary panels follow the configured
+  action (return to history by default, or close); Escape in history always closes the popup.
+- Normal text and icons inherit the system foreground color unless a custom foreground is configured.
+  Accent states, selected-word contrast, and the separate tooltip/picker preview keep their own colors.
+  Changing the foreground updates styles without rebuilding panel content.
+
+## Lifecycle conventions
+
+- Disconnect popup state/visibility callbacks before destroying the panel manager or tooltip. Destroying
+  the parent PopupMenu can close an open menu and emit those signals again.
+- Simulated input owns every wait timer and deferred notification. Destruction removes their sources and
+  settles waiting promises; removing a source must not strand an active operation. Only one operation
+  is accepted at a time; a busy request is rejected, not queued.
+- Closing, hiding, or destroying the popup removes its input-mode filter before disposing the tooltip.
+  Mode classes remain during the closing animation; the next opening chooses its actual input source.
+- Settings use `ui/settings/lifecycle.js`'s `onClosed()` for cleanup on window close or actual unroot.
+  A closed GTK window may retain rooted children, so unroot alone is not a close notification.
+- Cancel read-only requests, native choosers, and launch callbacks when preferences close; explicitly close
+  shortcut-recording windows. Late results must not update controls or present error dialogs.
+- An already accepted persistent save/import may finish safely, but must not revive a closed UI or start
+  another network stage after its owner closes.
+
+## Text delivery
+
+`clipboard/terminal/input.js` owns target restoration, cancellation, modifier safety and simulated
+keystrokes. It rejects active input-method composition without confirming or clearing it. It does not
+alter the clipboard or require a GNOME text-input connection to send keystrokes.
+
+Timing profiles (initial / ASCII / completed Unicode-composition delay, in ms) are standard
+`75 / 4 / 30`, medium `75 / 6 / 40`, slow `75 / 8 / 50`. Non-ASCII characters use the Unicode-entry chord;
+individual key transitions within a character have no added delay. Newlines and Tab produce Return and
+Tab keys. With a supported text-input focus snapshot, input cancels on field changes; a Tab may therefore
+stop the remaining text. Unsupported clients, including XWayland targets without that connection,
+expose no guaranteed field-change detection: only their window identity is guarded.
+
+Input stops on cancellation, disable, an observable target change, observed user input or the modifier fuse.
+GNOME Shell cannot observe every physical key delivered to another client. Already sent content cannot
+be retracted; long or exact text should normally be pasted instead.
 
 ## CSS conventions
 
@@ -85,6 +135,15 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 
 ## Verification
 
-Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and lifecycle are covered by
-`tests/ui/shell.smoke.js`; GTK preferences are covered by `tests/ui/preferences.smoke.js`. Every
-structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.
+Headless checks live in `tests/logic/`; real Shell/GTK checks live in `tests/simulation/`.
+See the [test directory guide](../tests/README.md) for the boundary and execution commands.
+
+Pure layout and state algorithms need GJS logic tests; keep decisions out of actor code so they can be
+tested that way. Core Shell wiring is covered by `tools/test-simulation.py`, panel focus by
+`tools/test-panels.sh`, and GTK preferences (inside the compatibility entry) by
+`tests/simulation/settings/window.smoke.js`. Every structural refactor must pass the build and the logic
+suite, and the simulation entries before a release.
+The existing Shell compatibility entry also runs open-panel disable coverage, simulated-input source
+cleanup, and the settings lifecycle integration test in a separate GTK process. Never import GTK into Shell.
+`input-mode.smoke.js` verifies actual keyboard/pointer switching, delayed help, stationary hover, entry
+caret, selected words, and popup cleanup on both supported Shell versions.

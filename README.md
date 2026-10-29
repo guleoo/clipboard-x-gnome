@@ -127,30 +127,44 @@ Use simulated typing when the target application does not accept normal paste:
 
 1. Focus the target text field, then open Clipboard X Gnome.
 2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the word selection panel, select the words you need and press `'`.
-3. The panel closes and Clipboard X Gnome types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
+3. The panel closes and Clipboard X Gnome sends text to the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
-Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical
-key presses sent to another Wayland client, so letters and numbers may interleave with the simulated
-text. Do not use the keyboard until typing finishes. Cancellation does not undo text already entered;
-prefer normal paste for long, sensitive, or exact content.
+Simulated typing sends individual keystrokes. Finish or cancel any active input-method composition
+first. Newlines press Return and Tab presses Tab, which may execute commands or move focus rather
+than insert text. Adjust **Typing speed** under **Preferences → Clipboard → Simulated input**.
+Intervals are in milliseconds:
 
-If an application misses keystrokes, select **Slow** under **Preferences → Clipboard → Simulated input**.
-This changes the typing interval; it cannot guarantee that another application accepts every key.
+| Profile | Before input | After ASCII | After Unicode composition |
+| --- | ---: | ---: | ---: |
+| Standard | 75 | 4 | 30 |
+| Medium | 75 | 6 | 40 |
+| Slow | 75 | 8 | 50 |
+
+Only one input operation can run at a time; another request is rejected rather than queued. An observed
+target-window or text-field change cancels the remaining input. Field changes cannot be detected in
+clients without a supported text-input connection. A physical Tab
+may switch fields and stop the remainder when that change is observable. Already entered text cannot
+be undone, and successful sending is not an acknowledgement from the application. Prefer normal paste
+for long, sensitive, or exact content.
 
 > [!IMPORTANT]
-> During simulated typing, GNOME Shell can detect accidental modifier-key presses, but not all physical
-> key presses. Pressing Ctrl, Alt, Shift, Super, Meta, or Hyper cancels the remaining input and shows a
-> GNOME notification.
+> Do not use the keyboard until input finishes. Observed user input or an accidental Ctrl, Alt, Shift,
+> Super, Meta, or Hyper press cancels the remaining input and shows a GNOME notification. GNOME Shell
+> cannot reliably observe every ordinary physical key sent to another Wayland client; such keys may
+> still interleave with the text.
 
 ### 4. Word selection mode
 
 Press the word selection button on a text entry. Move with the arrow keys, click or drag across words to select
 them, and use `Shift` + arrow keys for keyboard range selection. The default actions are `c` to copy,
 `v` to paste, and `'` to simulate typing the selected result.
+The panel opens with a loading state before the word buttons appear; you can go back or close it while waiting.
 
 **Preferences → Clipboard → Word Selection → Maximum words** limits selectable items to 2,000 by
 default. Longer results are rejected with a notification, not silently truncated. Links, numbers,
 punctuation and symbols each count as selectable items.
+An additional built-in input limit rejects text longer than 20,000 characters without truncation;
+exactly 20,000 characters is allowed.
 
 For Chinese or Japanese, open **Preferences → Clipboard → Dictionaries** to enable the system segmenter,
 import UTF-8 dictionaries, or add an HTTP/HTTPS dictionary location. A dictionary may contain one word
@@ -301,10 +315,7 @@ Logs use the system journal; see [Logs and troubleshooting](docs/diagnostics.md)
 Before submitting code:
 
 ```sh
-meson test -C build --print-errorlogs
-meson test -C build --suite stress --print-errorlogs
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/shell.smoke.js
-gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_1.x.x.zip tests/ui/preferences.smoke.js
+dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs
 ```
 
 Clipboard X Gnome does not use ESLint. See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout,

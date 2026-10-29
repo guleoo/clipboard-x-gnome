@@ -808,11 +808,6 @@ msgstr "إزالة المسافات الفارغة حول النص"
 msgid "Simulated input"
 msgstr "الإدخال المحاكى"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"استخدم الإدخال البطيء إذا كان التطبيق الهدف يفوّت ضغطات المفاتيح المحاكاة."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "سرعة الكتابة"
@@ -1263,3 +1258,27 @@ msgstr "الإبلاغ عن مشكلة"
 
 msgid "License"
 msgstr "الترخيص"
+
+msgid "Text and icon color"
+msgstr "لون النص والأيقونات"
+
+msgid "Escape in secondary panels"
+msgstr "مفتاح Escape في اللوحات الثانوية"
+
+msgid "Close panel"
+msgstr "إغلاق اللوحة"
+
+msgid "An input operation is already running."
+msgstr "هناك عملية إدخال قيد التشغيل بالفعل."
+
+msgid "Focus a text field before starting input."
+msgstr "ضع التركيز على حقل نص قبل بدء الإدخال."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "أكمل النص الجاري تأليفه بطريقة الإدخال أو ألغِه قبل بدء الإدخال."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "تغيّرت النافذة أو حقل النص المستهدف. أُلغي ما تبقى من الإدخال."
+
+msgid "Medium"
+msgstr "متوسط"

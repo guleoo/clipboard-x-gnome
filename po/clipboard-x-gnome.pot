@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: clipboard-x-gnome\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 15:53+0800\n"
+"POT-Creation-Date: 2026-10-29 10:51+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,31 +17,48 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/entry/extension.js:82
+#: src/entry/extension.js:97
 msgid "Simulated keyboard input cancelled"
 msgstr ""
 
-#: src/entry/extension.js:83
+#: src/entry/extension.js:98
 msgid ""
 "Physical keyboard input was detected. The remaining simulated input was "
 "cancelled."
 msgstr ""
 
-#: src/entry/extension.js:356 src/ui/settings/window.js:399
+#: src/entry/extension.js:346 src/ui/settings/window.js:423
 msgid "Image editing"
 msgstr ""
 
-#: src/entry/extension.js:357
+#: src/entry/extension.js:347
 msgid ""
 "Configure an image editor command in Preferences → Screenshot → Image "
 "editing."
 msgstr ""
 
-#: src/entry/extension.js:423 src/ui/settings/about.js:41
+#: src/entry/extension.js:412 src/ui/settings/about.js:41
 msgid "Operation failed"
 msgstr ""
 
-#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:153
+#: src/clipboard/terminal/errors.js:23
+msgid "An input operation is already running."
+msgstr ""
+
+#: src/clipboard/terminal/errors.js:25
+msgid "Focus a text field before starting input."
+msgstr ""
+
+#: src/clipboard/terminal/errors.js:29
+msgid ""
+"Finish or cancel the current input-method composition before starting input."
+msgstr ""
+
+#: src/clipboard/terminal/errors.js:31
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr ""
+
+#: src/sync/errors.js:12 src/ui/panels/history/sync-action.js:155
 msgid "Synchronization is disabled"
 msgstr ""
 
@@ -50,7 +67,7 @@ msgid ""
 "The original image has not been downloaded. Enable synchronization first."
 msgstr ""
 
-#: src/sync/errors.js:16 src/ui/settings/window.js:242
+#: src/sync/errors.js:16 src/ui/settings/window.js:266
 msgid "Sensitive content"
 msgstr ""
 
@@ -132,50 +149,54 @@ msgstr ""
 msgid "Synchronization download failed"
 msgstr ""
 
-#: src/sync/errors.js:64 src/ui/settings/sync.js:57 src/ui/settings/sync.js:102
-#: src/ui/settings/sync.js:148
+#: src/sync/errors.js:64 src/ui/settings/sync.js:59 src/ui/settings/sync.js:109
+#: src/ui/settings/sync.js:168
 msgid "Synchronization request failed"
 msgstr ""
 
-#: src/ui/indicator.js:297
+#: src/ui/indicator.js:348 src/ui/indicator.js:374
 msgid "This text is too large for interactive processing"
 msgstr ""
 
-#: src/ui/panels/history/item.js:62
-msgid "Download original and copy"
+#: src/ui/indicator.js:372
+msgid "Too many words. Use less text or increase the limit in Preferences."
 msgstr ""
 
 #: src/ui/panels/history/item.js:63
+msgid "Download original and copy"
+msgstr ""
+
+#: src/ui/panels/history/item.js:64
 msgid "Copy original"
 msgstr ""
 
-#: src/ui/panels/history/item.js:69 src/ui/panels/tokenizer/panel.js:63
-#: src/ui/settings/panel-actions.js:147 src/ui/settings/window.js:232
-#: src/ui/settings/window.js:454
+#: src/ui/panels/history/item.js:70 src/ui/panels/tokenizer/panel.js:64
+#: src/ui/settings/panel-actions.js:147 src/ui/settings/window.js:254
+#: src/ui/settings/window.js:478
 msgid "Word Selection"
 msgstr ""
 
-#: src/ui/panels/history/item.js:75 src/ui/settings/panel-actions.js:148
+#: src/ui/panels/history/item.js:76 src/ui/settings/panel-actions.js:148
 msgid "Edit image"
 msgstr ""
 
-#: src/ui/panels/history/item.js:82
+#: src/ui/panels/history/item.js:83
 msgid "Unpin"
 msgstr ""
 
-#: src/ui/panels/history/item.js:82 src/ui/settings/panel-actions.js:149
+#: src/ui/panels/history/item.js:83 src/ui/settings/panel-actions.js:149
 msgid "Pin"
 msgstr ""
 
-#: src/ui/panels/history/item.js:97 src/ui/settings/panel-actions.js:151
+#: src/ui/panels/history/item.js:98 src/ui/settings/panel-actions.js:151
 msgid "Delete from local history"
 msgstr ""
 
-#: src/ui/panels/history/item.js:133 src/ui/settings/window.js:311
+#: src/ui/panels/history/item.js:136 src/ui/settings/window.js:335
 msgid "Text"
 msgstr ""
 
-#: src/ui/panels/history/item.js:198 src/ui/panels/history/item.js:200
+#: src/ui/panels/history/item.js:201 src/ui/panels/history/item.js:203
 msgid "Image"
 msgstr ""
 
@@ -184,26 +205,26 @@ msgid "Search clipboard history…"
 msgstr ""
 
 #: src/ui/panels/history/panel.js:85 src/ui/settings/panel-actions.js:157
-#: src/ui/settings/window.js:381 src/ui/settings/window.js:382
-#: src/ui/settings/window.js:473
+#: src/ui/settings/window.js:405 src/ui/settings/window.js:406
+#: src/ui/settings/window.js:497
 msgid "Screenshot"
 msgstr ""
 
-#: src/ui/panels/history/panel.js:91 src/ui/settings/window.js:471
+#: src/ui/panels/history/panel.js:91 src/ui/settings/window.js:495
 msgid "Pick color"
 msgstr ""
 
-#: src/ui/panels/history/panel.js:97 src/ui/panels/history/panel.js:460
-#: src/ui/settings/panel-actions.js:160 src/ui/settings/window.js:241
+#: src/ui/panels/history/panel.js:97 src/ui/panels/history/panel.js:486
+#: src/ui/settings/panel-actions.js:160 src/ui/settings/window.js:265
 msgid "Privacy mode"
 msgstr ""
 
 #: src/ui/panels/history/panel.js:103 src/ui/panels/quick-phrases/panel.js:70
-#: src/ui/settings/panel-actions.js:159 src/ui/settings/window.js:264
+#: src/ui/settings/panel-actions.js:159 src/ui/settings/window.js:288
 msgid "Quick phrases"
 msgstr ""
 
-#: src/ui/panels/history/panel.js:141 src/ui/settings/window.js:435
+#: src/ui/panels/history/panel.js:141 src/ui/settings/window.js:459
 msgid "Clear unpinned history"
 msgstr ""
 
@@ -227,12 +248,12 @@ msgstr ""
 msgid "Clipboard history is empty"
 msgstr ""
 
-#: src/ui/panels/history/panel.js:478
+#: src/ui/panels/history/panel.js:504
 msgid "Unknown device"
 msgstr ""
 
 #: src/ui/panels/history/sync-action.js:27 src/ui/settings/panel-actions.js:150
-#: src/ui/settings/panel-actions.js:161 src/ui/settings/window.js:285
+#: src/ui/settings/panel-actions.js:161 src/ui/settings/window.js:309
 msgid "Synchronization"
 msgstr ""
 
@@ -240,76 +261,78 @@ msgstr ""
 msgid "Synchronize"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:83
+#: src/ui/panels/history/sync-action.js:85
 msgid "Sync disabled"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:86
+#: src/ui/panels/history/sync-action.js:88
 msgid "Synchronization server offline"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:92
+#: src/ui/panels/history/sync-action.js:94
 msgid "Sync protocol error"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:97
+#: src/ui/panels/history/sync-action.js:99
 msgid "Synchronization server degraded"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:98
+#: src/ui/panels/history/sync-action.js:100
 msgid "Synchronization server online"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:127
-#: src/ui/panels/history/sync-action.js:164
+#: src/ui/panels/history/sync-action.js:129
+#: src/ui/panels/history/sync-action.js:166
 msgid "Original is available locally"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:128
+#: src/ui/panels/history/sync-action.js:130
 msgid "Upload completed"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:128
+#: src/ui/panels/history/sync-action.js:130
 msgid "Original downloaded"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:134
+#: src/ui/panels/history/sync-action.js:136
 msgid "Uploading"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:134
+#: src/ui/panels/history/sync-action.js:136
 msgid "Downloading"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:138
+#: src/ui/panels/history/sync-action.js:140
 msgid "Waiting for peer device"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:139
+#: src/ui/panels/history/sync-action.js:141
 msgid "Preparing transfer"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:147
+#: src/ui/panels/history/sync-action.js:149
 msgid "Transfer failed; activate to retry"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:159
+#: src/ui/panels/history/sync-action.js:161
 msgid "Retry original download"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:159
+#: src/ui/panels/history/sync-action.js:161
 msgid "Download original"
 msgstr ""
 
-#: src/ui/panels/history/sync-action.js:165
+#: src/ui/panels/history/sync-action.js:167
 msgid "Send to synchronization server"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:60 src/ui/panels/tokenizer/panel.js:58
+#: src/ui/panels/quick-phrases/panel.js:60 src/ui/panels/tokenizer/panel.js:59
+#: src/ui/settings/window.js:167
 msgid "Back to clipboard history"
 msgstr ""
 
 #: src/ui/panels/quick-phrases/panel.js:66
+#: src/ui/panels/quick-phrases/panel.js:102
 msgid "Add custom phrase"
 msgstr ""
 
@@ -317,27 +340,32 @@ msgstr ""
 msgid "Enter a custom phrase…"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:171
+#: src/ui/panels/quick-phrases/panel.js:175
 msgid "Copy quick phrase"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:177
+#: src/ui/panels/quick-phrases/panel.js:181
 msgid "Delete quick phrase"
 msgstr ""
 
-#: src/ui/panels/quick-phrases/panel.js:192
+#: src/ui/panels/quick-phrases/panel.js:196
 msgid "No quick phrases"
 msgstr ""
 
-#: src/ui/panels/tokenizer/panel.js:94 src/ui/panels/tokenizer/panel.js:428
+#: src/ui/panels/tokenizer/panel.js:95 src/ui/panels/tokenizer/panel.js:466
 msgid "Select one or more words"
 msgstr ""
 
-#: src/ui/panels/tokenizer/panel.js:103 src/ui/settings/window.js:459
+#: src/ui/panels/tokenizer/panel.js:104 src/ui/settings/window.js:483
 msgid "Copy selected words"
 msgstr ""
 
-#: src/ui/panels/tokenizer/panel.js:227
+#: src/ui/panels/tokenizer/panel.js:262 src/ui/settings/running-apps.js:14
+#: src/ui/settings/sync.js:146
+msgid "Loading…"
+msgstr ""
+
+#: src/ui/panels/tokenizer/panel.js:262
 msgid "No words found"
 msgstr ""
 
@@ -373,8 +401,8 @@ msgstr ""
 msgid "Move to top toolbar"
 msgstr ""
 
-#: src/ui/settings/panel-actions.js:158 src/ui/settings/window.js:368
-#: src/ui/settings/window.js:469
+#: src/ui/settings/panel-actions.js:158 src/ui/settings/window.js:392
+#: src/ui/settings/window.js:493
 msgid "Color picker"
 msgstr ""
 
@@ -386,90 +414,90 @@ msgstr ""
 msgid "Dictionary operation failed"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:32 src/ui/settings/file-verification.js:17
+#: src/ui/settings/dictionaries.js:31 src/ui/settings/dictionaries.js:115
+msgid "The dictionary must declare a valid “# locale: language-code” header."
+msgstr ""
+
+#: src/ui/settings/dictionaries.js:34 src/ui/settings/file-verification.js:17
 #: src/ui/settings/about.js:42
 msgid "Close"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:75
+#: src/ui/settings/dictionaries.js:77
 msgid "HTTP(S) URL"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:79
+#: src/ui/settings/dictionaries.js:81
 msgid "Add network dictionary location"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:80
+#: src/ui/settings/dictionaries.js:82
 msgid "Enter an HTTP or HTTPS URL that serves a UTF-8 dictionary file."
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:83 src/ui/settings/window.js:185
+#: src/ui/settings/dictionaries.js:85 src/ui/settings/window.js:195
 msgid "Cancel"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:84
+#: src/ui/settings/dictionaries.js:86
 msgid "Add"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:103
+#: src/ui/settings/dictionaries.js:105
 msgid "Dictionaries"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:104
+#: src/ui/settings/dictionaries.js:106
 msgid ""
 "Enabled dictionaries matching the current display language are loaded "
 "automatically."
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:109
+#: src/ui/settings/dictionaries.js:111
 msgid "Dictionary language"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:113
-msgid "The dictionary must declare a valid “# locale: language-code” header."
-msgstr ""
-
-#: src/ui/settings/dictionaries.js:117 src/ui/settings/dictionaries.js:321
+#: src/ui/settings/dictionaries.js:119 src/ui/settings/dictionaries.js:322
 msgid "Import dictionary"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:118
+#: src/ui/settings/dictionaries.js:120
 msgid "UTF-8 text; one word and optional frequency per line"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:121
+#: src/ui/settings/dictionaries.js:123
 msgid "Import…"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:126
+#: src/ui/settings/dictionaries.js:128
 msgid "Add network location"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:181
+#: src/ui/settings/dictionaries.js:183
 msgid "System word segmenter"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:192
+#: src/ui/settings/dictionaries.js:194
 msgid "entries"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:221
+#: src/ui/settings/dictionaries.js:223
 msgid "Edit dictionary"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:229
+#: src/ui/settings/dictionaries.js:231
 msgid "Open containing folder"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:238
+#: src/ui/settings/dictionaries.js:240
 msgid "Refresh dictionary"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:261
+#: src/ui/settings/dictionaries.js:263
 msgid "Remove dictionary"
 msgstr ""
 
-#: src/ui/settings/dictionaries.js:339
+#: src/ui/settings/dictionaries.js:342
 msgid "Dictionary import failed"
 msgstr ""
 
@@ -483,722 +511,732 @@ msgid ""
 "downloaded file again."
 msgstr ""
 
-#: src/ui/settings/rows.js:138 src/ui/settings/rows.js:147
-#: src/ui/settings/window.js:324 src/ui/settings/window.js:331
-msgid "Disabled"
+#: src/ui/settings/foreground-color.js:13
+#: src/ui/settings/foreground-color.js:17
+#: src/ui/settings/foreground-color.js:20
+msgid "Text and icon color"
 msgstr ""
 
-#: src/ui/settings/rows.js:143
-msgid "Click to set a shortcut"
-msgstr ""
-
-#: src/ui/settings/rows.js:178
-msgid "Press shortcut…"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:12
-msgid "Running application"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:13 src/ui/settings/sync.js:132
-msgid "Loading…"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:19
-msgid "Exclude selected application"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:26
-msgid "Refresh running applications"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:42
-msgid "No running applications found"
-msgstr ""
-
-#: src/ui/settings/running-apps.js:46
-msgid "Enable the extension to choose running applications"
-msgstr ""
-
-#: src/ui/settings/sync.js:22
-msgid "Server connection"
-msgstr ""
-
-#: src/ui/settings/sync.js:23
-msgid "Enable synchronization"
-msgstr ""
-
-#: src/ui/settings/sync.js:25
-msgid "Server address"
-msgstr ""
-
-#: src/ui/settings/sync.js:28
-msgid "API key"
-msgstr ""
-
-#: src/ui/settings/sync.js:31
-msgid "Active channel"
-msgstr ""
-
-#: src/ui/settings/sync.js:36
-msgid "Refresh channels"
-msgstr ""
-
-#: src/ui/settings/sync.js:41
-msgid "Server status"
-msgstr ""
-
-#: src/ui/settings/sync.js:41
-msgid "Not tested"
-msgstr ""
-
-#: src/ui/settings/sync.js:43
-msgid "Apply"
-msgstr ""
-
-#: src/ui/settings/sync.js:44
-msgid "Test connection"
-msgstr ""
-
-#: src/ui/settings/sync.js:62 src/ui/settings/sync.js:127
-msgid "No available channels"
-msgstr ""
-
-#: src/ui/settings/sync.js:97 src/ui/settings/sync.js:112
-msgid "Connecting…"
-msgstr ""
-
-#: src/ui/settings/sync.js:101
-msgid "Connection settings saved locally"
-msgstr ""
-
-#: src/ui/settings/sync.js:108
-msgid "Connection settings saved · API key configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:109
-msgid "Connection settings saved · API key not configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:116
-msgid "Degraded"
-msgstr ""
-
-#: src/ui/settings/sync.js:117
-msgid "Online"
-msgstr ""
-
-#: src/ui/settings/sync.js:122
-msgid "Loading channels…"
-msgstr ""
-
-#: src/ui/settings/sync.js:126
-msgid "Channels refreshed"
-msgstr ""
-
-#: src/ui/settings/sync.js:137
-msgid "Connection settings are not configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:143
-msgid "Connection settings loaded · API key configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:144
-msgid "Connection settings loaded · API key not configured"
-msgstr ""
-
-#: src/ui/settings/sync.js:147
-msgid "Connection settings loaded locally"
-msgstr ""
-
-#: src/ui/settings/theme-color.js:31
-msgid "Theme color"
-msgstr ""
-
-#: src/ui/settings/theme-color.js:126
+#: src/ui/settings/foreground-color.js:23
+#: src/ui/settings/foreground-color.js:46 src/ui/settings/theme-color.js:128
 msgid "Follow system"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/rows.js:140 src/ui/settings/rows.js:151
+#: src/ui/settings/window.js:348 src/ui/settings/window.js:355
+msgid "Disabled"
+msgstr ""
+
+#: src/ui/settings/rows.js:145
+msgid "Click to set a shortcut"
+msgstr ""
+
+#: src/ui/settings/rows.js:182
+msgid "Press shortcut…"
+msgstr ""
+
+#: src/ui/settings/running-apps.js:13
+msgid "Running application"
+msgstr ""
+
+#: src/ui/settings/running-apps.js:20
+msgid "Exclude selected application"
+msgstr ""
+
+#: src/ui/settings/running-apps.js:27
+msgid "Refresh running applications"
+msgstr ""
+
+#: src/ui/settings/running-apps.js:47
+msgid "No running applications found"
+msgstr ""
+
+#: src/ui/settings/running-apps.js:53
+msgid "Enable the extension to choose running applications"
+msgstr ""
+
+#: src/ui/settings/sync.js:23
+msgid "Server connection"
+msgstr ""
+
+#: src/ui/settings/sync.js:24
+msgid "Enable synchronization"
+msgstr ""
+
+#: src/ui/settings/sync.js:26
+msgid "Server address"
+msgstr ""
+
+#: src/ui/settings/sync.js:29
+msgid "API key"
+msgstr ""
+
+#: src/ui/settings/sync.js:32
+msgid "Active channel"
+msgstr ""
+
+#: src/ui/settings/sync.js:37
+msgid "Refresh channels"
+msgstr ""
+
+#: src/ui/settings/sync.js:42
+msgid "Server status"
+msgstr ""
+
+#: src/ui/settings/sync.js:42
+msgid "Not tested"
+msgstr ""
+
+#: src/ui/settings/sync.js:44
+msgid "Apply"
+msgstr ""
+
+#: src/ui/settings/sync.js:45
+msgid "Test connection"
+msgstr ""
+
+#: src/ui/settings/sync.js:64 src/ui/settings/sync.js:140
+msgid "No available channels"
+msgstr ""
+
+#: src/ui/settings/sync.js:102 src/ui/settings/sync.js:119
+msgid "Connecting…"
+msgstr ""
+
+#: src/ui/settings/sync.js:108
+msgid "Connection settings saved locally"
+msgstr ""
+
+#: src/ui/settings/sync.js:115
+msgid "Connection settings saved · API key configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:116
+msgid "Connection settings saved · API key not configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:125
+msgid "Degraded"
+msgstr ""
+
+#: src/ui/settings/sync.js:126
+msgid "Online"
+msgstr ""
+
+#: src/ui/settings/sync.js:131
+msgid "Loading channels…"
+msgstr ""
+
+#: src/ui/settings/sync.js:139
+msgid "Channels refreshed"
+msgstr ""
+
+#: src/ui/settings/sync.js:153
+msgid "Connection settings are not configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:161
+msgid "Connection settings loaded · API key configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:162
+msgid "Connection settings loaded · API key not configured"
+msgstr ""
+
+#: src/ui/settings/sync.js:167
+msgid "Connection settings loaded locally"
+msgstr ""
+
+#: src/ui/settings/theme-color.js:32
+msgid "Theme color"
+msgstr ""
+
+#: src/ui/settings/theme-color.js:129
 msgid "Blue"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/theme-color.js:129
 msgid "Teal"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/theme-color.js:129
 msgid "Green"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/theme-color.js:129
 msgid "Orange"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/theme-color.js:129
 msgid "Pink"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:127
+#: src/ui/settings/theme-color.js:129
 msgid "Slate"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:141
+#: src/ui/settings/theme-color.js:143
 msgid "Add custom color"
 msgstr ""
 
-#: src/ui/settings/theme-color.js:151
+#: src/ui/settings/theme-color.js:157
 msgid "Choose custom theme color"
 msgstr ""
 
-#: src/ui/settings/window.js:104
+#: src/ui/settings/window.js:107
 msgid "General"
 msgstr ""
 
-#: src/ui/settings/window.js:107
+#: src/ui/settings/window.js:110
 msgid "Appearance"
 msgstr ""
 
-#: src/ui/settings/window.js:111
+#: src/ui/settings/window.js:115
 msgid "Panel"
 msgstr ""
 
-#: src/ui/settings/window.js:113
+#: src/ui/settings/window.js:117
 msgid "Show panel indicator"
 msgstr ""
 
-#: src/ui/settings/window.js:114
+#: src/ui/settings/window.js:118
 msgid "Panel position when indicator is hidden"
 msgstr ""
 
-#: src/ui/settings/window.js:115
+#: src/ui/settings/window.js:119
 msgid "Top left"
 msgstr ""
 
-#: src/ui/settings/window.js:116
+#: src/ui/settings/window.js:120
 msgid "Top center"
 msgstr ""
 
-#: src/ui/settings/window.js:117
+#: src/ui/settings/window.js:121
 msgid "Top right"
 msgstr ""
 
-#: src/ui/settings/window.js:118
+#: src/ui/settings/window.js:122
 msgid "Center left"
 msgstr ""
 
-#: src/ui/settings/window.js:119
+#: src/ui/settings/window.js:123
 msgid "Center"
 msgstr ""
 
-#: src/ui/settings/window.js:120
+#: src/ui/settings/window.js:124
 msgid "Center right"
 msgstr ""
 
-#: src/ui/settings/window.js:121
+#: src/ui/settings/window.js:125
 msgid "Bottom left"
 msgstr ""
 
-#: src/ui/settings/window.js:122
+#: src/ui/settings/window.js:126
 msgid "Bottom center"
 msgstr ""
 
-#: src/ui/settings/window.js:123
+#: src/ui/settings/window.js:127
 msgid "Bottom right"
 msgstr ""
 
-#: src/ui/settings/window.js:127
+#: src/ui/settings/window.js:131
 msgid "Horizontal panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:131
+#: src/ui/settings/window.js:135
 msgid "px; positive moves right"
 msgstr ""
 
-#: src/ui/settings/window.js:135
+#: src/ui/settings/window.js:139
 msgid "Vertical panel offset"
 msgstr ""
 
-#: src/ui/settings/window.js:139
+#: src/ui/settings/window.js:143
 msgid "px; positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:141
+#: src/ui/settings/window.js:145
 msgid "Panel width"
 msgstr ""
 
-#: src/ui/settings/window.js:141 src/ui/settings/window.js:142
-#: src/ui/settings/window.js:355
+#: src/ui/settings/window.js:145 src/ui/settings/window.js:146
+#: src/ui/settings/window.js:379
 msgid "px"
 msgstr ""
 
-#: src/ui/settings/window.js:142
+#: src/ui/settings/window.js:146
 msgid "Panel height"
 msgstr ""
 
-#: src/ui/settings/window.js:145
+#: src/ui/settings/window.js:149
 msgid "Text vertical offset"
 msgstr ""
 
-#: src/ui/settings/window.js:149
+#: src/ui/settings/window.js:153
 msgid "px; negative moves up, positive moves down"
 msgstr ""
 
-#: src/ui/settings/window.js:151
+#: src/ui/settings/window.js:155
 msgid "Maximum entries shown in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:154
+#: src/ui/settings/window.js:158
 msgid "Preserve panel state"
 msgstr ""
 
-#: src/ui/settings/window.js:155
+#: src/ui/settings/window.js:159
 msgid ""
 "Reopen the previous view instead of always returning to clipboard history"
 msgstr ""
 
-#: src/ui/settings/window.js:159
+#: src/ui/settings/window.js:163
 msgid "Keep keyboard focus in panel"
 msgstr ""
 
-#: src/ui/settings/window.js:160
+#: src/ui/settings/window.js:164
 msgid "At the edge, arrow keys do not move focus outside the extension panel"
 msgstr ""
 
-#: src/ui/settings/window.js:164
+#: src/ui/settings/window.js:166
+msgid "Escape in secondary panels"
+msgstr ""
+
+#: src/ui/settings/window.js:168
+msgid "Close panel"
+msgstr ""
+
+#: src/ui/settings/window.js:172
 msgid "Icon layout"
 msgstr ""
 
-#: src/ui/settings/window.js:165
+#: src/ui/settings/window.js:173
 msgid "Use the buttons to change action placement and order."
 msgstr ""
 
-#: src/ui/settings/window.js:170
+#: src/ui/settings/window.js:178
 msgid ""
 "Reset all preferences without deleting clipboard history, quick phrases, "
 "dictionaries, server connection, or device identity."
 msgstr ""
 
-#: src/ui/settings/window.js:173
+#: src/ui/settings/window.js:181
 msgid "Restore default settings"
 msgstr ""
 
-#: src/ui/settings/window.js:177 src/ui/settings/window.js:186
+#: src/ui/settings/window.js:185 src/ui/settings/window.js:196
 msgid "Restore"
 msgstr ""
 
-#: src/ui/settings/window.js:182
+#: src/ui/settings/window.js:192
 msgid "Restore default settings?"
 msgstr ""
 
-#: src/ui/settings/window.js:210 src/ui/settings/window.js:440
+#: src/ui/settings/window.js:220 src/ui/settings/window.js:464
 msgid "Clipboard"
 msgstr ""
 
-#: src/ui/settings/window.js:212
+#: src/ui/settings/window.js:222
 msgid "History"
 msgstr ""
 
-#: src/ui/settings/window.js:213
+#: src/ui/settings/window.js:223
 msgid "Pinned entries are kept when history or storage limits are reached."
 msgstr ""
 
-#: src/ui/settings/window.js:216
+#: src/ui/settings/window.js:226
 msgid "History entries"
 msgstr ""
 
-#: src/ui/settings/window.js:217
+#: src/ui/settings/window.js:227
 msgid "Storage size"
 msgstr ""
 
-#: src/ui/settings/window.js:217 src/ui/settings/window.js:219
-#: src/ui/settings/window.js:351
+#: src/ui/settings/window.js:227 src/ui/settings/window.js:229
+#: src/ui/settings/window.js:375
 msgid "MB"
 msgstr ""
 
-#: src/ui/settings/window.js:218
+#: src/ui/settings/window.js:228
 msgid "History retention"
 msgstr ""
 
-#: src/ui/settings/window.js:218
+#: src/ui/settings/window.js:228
 msgid "days; 0 disables"
 msgstr ""
 
-#: src/ui/settings/window.js:219
+#: src/ui/settings/window.js:229
 msgid "Maximum item size"
 msgstr ""
 
-#: src/ui/settings/window.js:220
+#: src/ui/settings/window.js:230
 msgid "Trim surrounding whitespace"
 msgstr ""
 
-#: src/ui/settings/window.js:223
+#: src/ui/settings/window.js:233
 msgid "Simulated input"
 msgstr ""
 
-#: src/ui/settings/window.js:224
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-
-#: src/ui/settings/window.js:227
+#: src/ui/settings/window.js:241
 msgid "Typing speed"
 msgstr ""
 
-#: src/ui/settings/window.js:228
+#: src/ui/settings/window.js:242
 msgid "Standard"
 msgstr ""
 
-#: src/ui/settings/window.js:229
+#: src/ui/settings/window.js:243
+msgid "Medium"
+msgstr ""
+
+#: src/ui/settings/window.js:244
 msgid "Slow"
 msgstr ""
 
-#: src/ui/settings/window.js:234
-msgid "Maximum words"
-msgstr ""
-
-msgid "Texts exceeding this limit are not opened in word selection mode."
-msgstr ""
-
-msgid "Too many words. Use less text or increase the limit in Preferences."
-msgstr ""
-
+#: src/ui/settings/window.js:256
 msgid "Show source text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:237
+#: src/ui/settings/window.js:257
+msgid "Maximum words"
+msgstr ""
+
+#: src/ui/settings/window.js:258
+msgid "Texts exceeding this limit are not opened in word selection mode."
+msgstr ""
+
+#: src/ui/settings/window.js:261
 msgid "Privacy"
 msgstr ""
 
-#: src/ui/settings/window.js:238
+#: src/ui/settings/window.js:262
 msgid ""
 "Select a running application or enter its window class manually to exclude "
 "it."
 msgstr ""
 
-#: src/ui/settings/window.js:243
+#: src/ui/settings/window.js:267
 msgid "Do not record"
 msgstr ""
 
-#: src/ui/settings/window.js:244
+#: src/ui/settings/window.js:268
 msgid "Keep until extension stops"
 msgstr ""
 
-#: src/ui/settings/window.js:248
+#: src/ui/settings/window.js:272
 msgid "Excluded applications"
 msgstr ""
 
-#: src/ui/settings/window.js:249
+#: src/ui/settings/window.js:273
 msgid "Comma-separated window classes"
 msgstr ""
 
-#: src/ui/settings/window.js:268
+#: src/ui/settings/window.js:292
 msgid "Behavior"
 msgstr ""
 
-#: src/ui/settings/window.js:269
+#: src/ui/settings/window.js:293
 msgid "Quick phrases are stored only on this device."
 msgstr ""
 
-#: src/ui/settings/window.js:272
+#: src/ui/settings/window.js:296
 msgid "Maximum quick phrases"
 msgstr ""
 
-#: src/ui/settings/window.js:275
+#: src/ui/settings/window.js:299
 msgid "Place new phrases first"
 msgstr ""
 
-#: src/ui/settings/window.js:279
+#: src/ui/settings/window.js:303
 msgid "Close panel after copying"
 msgstr ""
 
-#: src/ui/settings/window.js:286
+#: src/ui/settings/window.js:310
 msgid "Device"
 msgstr ""
 
-#: src/ui/settings/window.js:288
+#: src/ui/settings/window.js:312
 msgid "Device ID"
 msgstr ""
 
-#: src/ui/settings/window.js:293
+#: src/ui/settings/window.js:317
 msgid "Device tag"
 msgstr ""
 
-#: src/ui/settings/window.js:293
+#: src/ui/settings/window.js:317
 msgid "Friendly name shown during device discovery"
 msgstr ""
 
-#: src/ui/settings/window.js:294
+#: src/ui/settings/window.js:318
 msgid "Device icon"
 msgstr ""
 
-#: src/ui/settings/window.js:295
+#: src/ui/settings/window.js:319
 msgid "Desktop"
 msgstr ""
 
-#: src/ui/settings/window.js:296
+#: src/ui/settings/window.js:320
 msgid "Laptop"
 msgstr ""
 
-#: src/ui/settings/window.js:297
+#: src/ui/settings/window.js:321
 msgid "Tablet"
 msgstr ""
 
-#: src/ui/settings/window.js:298
+#: src/ui/settings/window.js:322
 msgid "Server"
 msgstr ""
 
-#: src/ui/settings/window.js:309
+#: src/ui/settings/window.js:333
 msgid "Content to send"
 msgstr ""
 
-#: src/ui/settings/window.js:313
+#: src/ui/settings/window.js:337
 msgid "Rich text formatting"
 msgstr ""
 
-#: src/ui/settings/window.js:314
+#: src/ui/settings/window.js:338
 msgid "Send copied text with its original formatting (HTML)."
 msgstr ""
 
-#: src/ui/settings/window.js:316
+#: src/ui/settings/window.js:340
 msgid "Images"
 msgstr ""
 
-#: src/ui/settings/window.js:319
+#: src/ui/settings/window.js:343
 msgid "Transfer policy"
 msgstr ""
 
-#: src/ui/settings/window.js:320
+#: src/ui/settings/window.js:344
 msgid ""
 "Previews reduce initial transfer size; originals are fetched when needed."
 msgstr ""
 
-#: src/ui/settings/window.js:323
+#: src/ui/settings/window.js:347
 msgid "Send mode"
 msgstr ""
 
-#: src/ui/settings/window.js:325
+#: src/ui/settings/window.js:349
 msgid "Manual"
 msgstr ""
 
-#: src/ui/settings/window.js:326
+#: src/ui/settings/window.js:350
 msgid "Automatic"
 msgstr ""
 
-#: src/ui/settings/window.js:328
+#: src/ui/settings/window.js:352
 msgid ""
 "Automatic sending uploads matching new entries to the configured server."
 msgstr ""
 
-#: src/ui/settings/window.js:330
+#: src/ui/settings/window.js:354
 msgid "Receive mode"
 msgstr ""
 
-#: src/ui/settings/window.js:332
+#: src/ui/settings/window.js:356
 msgid "History only"
 msgstr ""
 
-#: src/ui/settings/window.js:333
+#: src/ui/settings/window.js:357
 msgid "Activate clipboard"
 msgstr ""
 
-#: src/ui/settings/window.js:335
+#: src/ui/settings/window.js:359
 msgid ""
 "Activate clipboard replaces the current clipboard with incoming content."
 msgstr ""
 
-#: src/ui/settings/window.js:339
+#: src/ui/settings/window.js:363
 msgid "Pinned entries only"
 msgstr ""
 
-#: src/ui/settings/window.js:340
+#: src/ui/settings/window.js:364
 msgid "Only applies to automatic sending"
 msgstr ""
 
-#: src/ui/settings/window.js:342
+#: src/ui/settings/window.js:366
 msgid "Text full-transfer threshold"
 msgstr ""
 
-#: src/ui/settings/window.js:343 src/ui/settings/window.js:348
-#: src/ui/settings/window.js:357
+#: src/ui/settings/window.js:367 src/ui/settings/window.js:372
+#: src/ui/settings/window.js:381
 msgid "KB"
 msgstr ""
 
-#: src/ui/settings/window.js:345 src/ui/settings/window.js:353
+#: src/ui/settings/window.js:369 src/ui/settings/window.js:377
 msgid ""
 "Applies to sending and receiving. Larger content is downloaded only when "
 "needed."
 msgstr ""
 
-#: src/ui/settings/window.js:347
+#: src/ui/settings/window.js:371
 msgid "Large text preview"
 msgstr ""
 
-#: src/ui/settings/window.js:350
+#: src/ui/settings/window.js:374
 msgid "Image full-transfer threshold"
 msgstr ""
 
-#: src/ui/settings/window.js:355
+#: src/ui/settings/window.js:379
 msgid "Thumbnail dimension"
 msgstr ""
 
-#: src/ui/settings/window.js:356
+#: src/ui/settings/window.js:380
 msgid "Thumbnail size limit"
 msgstr ""
 
-#: src/ui/settings/window.js:359
+#: src/ui/settings/window.js:383
 msgid "On-demand timeout"
 msgstr ""
 
-#: src/ui/settings/window.js:359 src/ui/settings/window.js:360
+#: src/ui/settings/window.js:383 src/ui/settings/window.js:384
 msgid "seconds"
 msgstr ""
 
-#: src/ui/settings/window.js:360
+#: src/ui/settings/window.js:384
 msgid "Polling interval"
 msgstr ""
 
-#: src/ui/settings/window.js:361
+#: src/ui/settings/window.js:385
 msgid ""
 "Seconds between checks; longer intervals reduce requests but delay updates."
 msgstr ""
 
-#: src/ui/settings/window.js:369
+#: src/ui/settings/window.js:393
 msgid "Color format"
 msgstr ""
 
-#: src/ui/settings/window.js:371
+#: src/ui/settings/window.js:395
 msgid "Default format"
 msgstr ""
 
-#: src/ui/settings/window.js:384
+#: src/ui/settings/window.js:408
 msgid "Default target"
 msgstr ""
 
-#: src/ui/settings/window.js:385
+#: src/ui/settings/window.js:409
 msgid "Interactive"
 msgstr ""
 
-#: src/ui/settings/window.js:386
+#: src/ui/settings/window.js:410
 msgid "Full screen"
 msgstr ""
 
-#: src/ui/settings/window.js:387
+#: src/ui/settings/window.js:411
 msgid "Window"
 msgstr ""
 
-#: src/ui/settings/window.js:388
+#: src/ui/settings/window.js:412
 msgid "Area"
 msgstr ""
 
-#: src/ui/settings/window.js:389
+#: src/ui/settings/window.js:413
 msgid "Active window"
 msgstr ""
 
-#: src/ui/settings/window.js:391
+#: src/ui/settings/window.js:415
 msgid "Available targets depend on the system screenshot portal."
 msgstr ""
 
-#: src/ui/settings/window.js:393
+#: src/ui/settings/window.js:417
 msgid "Add to history"
 msgstr ""
 
-#: src/ui/settings/window.js:394
+#: src/ui/settings/window.js:418
 msgid "Copy screenshot"
 msgstr ""
 
-#: src/ui/settings/window.js:395
+#: src/ui/settings/window.js:419
 msgid "Open image editor"
 msgstr ""
 
-#: src/ui/settings/window.js:396
+#: src/ui/settings/window.js:420
 msgid "Requires an image editor command below."
 msgstr ""
 
-#: src/ui/settings/window.js:400
+#: src/ui/settings/window.js:424
 msgid ""
 "Enter a command to enable editing. %u is an image URI, %f a local path, %i "
 "image bytes on standard input, and %% a percent sign."
 msgstr ""
 
-#: src/ui/settings/window.js:405
+#: src/ui/settings/window.js:429
 msgid "Command"
 msgstr ""
 
-#: src/ui/settings/window.js:424
+#: src/ui/settings/window.js:448
 msgid "Shortcuts"
 msgstr ""
 
-#: src/ui/settings/window.js:428
+#: src/ui/settings/window.js:452
 msgid "Global"
 msgstr ""
 
-#: src/ui/settings/window.js:429
+#: src/ui/settings/window.js:453
 msgid ""
 "Click a shortcut, then press the new key combination. Backspace disables it."
 msgstr ""
 
-#: src/ui/settings/window.js:433
+#: src/ui/settings/window.js:457
 msgid "Open clipboard panel"
 msgstr ""
 
-#: src/ui/settings/window.js:434
+#: src/ui/settings/window.js:458
 msgid "Pause or resume clipboard recording"
 msgstr ""
 
-#: src/ui/settings/window.js:441
+#: src/ui/settings/window.js:465
 msgid "Active while a clipboard history entry has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:445
+#: src/ui/settings/window.js:469
 msgid "Focus clipboard search"
 msgstr ""
 
-#: src/ui/settings/window.js:446
+#: src/ui/settings/window.js:470
 msgid "Paste entry"
 msgstr ""
 
-#: src/ui/settings/window.js:447
+#: src/ui/settings/window.js:471
 msgid "Pin or unpin entry"
 msgstr ""
 
-#: src/ui/settings/window.js:448
+#: src/ui/settings/window.js:472
 msgid "Delete entry"
 msgstr ""
 
-#: src/ui/settings/window.js:449
+#: src/ui/settings/window.js:473
 msgid "Type entry directly"
 msgstr ""
 
-#: src/ui/settings/window.js:455
+#: src/ui/settings/window.js:479
 msgid "Active while a word has keyboard focus."
 msgstr ""
 
-#: src/ui/settings/window.js:460
+#: src/ui/settings/window.js:484
 msgid "Paste selected words"
 msgstr ""
 
-#: src/ui/settings/window.js:461
+#: src/ui/settings/window.js:485
 msgid "Type selected words"
 msgstr ""
 
-#: src/ui/settings/window.js:462
+#: src/ui/settings/window.js:486
 msgid "Extend selection left"
 msgstr ""
 
-#: src/ui/settings/window.js:463
+#: src/ui/settings/window.js:487
 msgid "Extend selection right"
 msgstr ""
 
-#: src/ui/settings/window.js:464
+#: src/ui/settings/window.js:488
 msgid "Extend selection upward"
 msgstr ""
 
-#: src/ui/settings/window.js:465
+#: src/ui/settings/window.js:489
 msgid "Extend selection downward"
 msgstr ""
 
-#: src/ui/settings/window.js:475
+#: src/ui/settings/window.js:499
 msgid "Take screenshot"
 msgstr ""
 

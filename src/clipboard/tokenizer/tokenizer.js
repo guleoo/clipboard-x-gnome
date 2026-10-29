@@ -2,7 +2,7 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
 import {localeCandidates} from './dictionary/locale.js';
-import {tokenizeText} from './processors.js';
+import {checkInput, tokenizeText} from './processors.js';
 
 export class Tokenizer {
   constructor({store, languageNames = () => GLib.get_language_names()} = {}) {
@@ -21,6 +21,7 @@ export class Tokenizer {
 
   async tokenize(text, {revision = 0, dictionaryFiles = [], maximumTokens = Infinity} = {}) {
     this._cancellable.set_error_if_cancelled();
+    checkInput(text);
     if (this._store.watch) {
       this._watching ??= this._store.watch(() => {
         this._generation++;
