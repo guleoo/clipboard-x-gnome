@@ -12,7 +12,7 @@
 
 CI 和 Release 工作流使用 Fedora 44 / Shell 50 和 Fedora 45 / Shell 51。CI 在每次分支推送和 Pull Request 时执行，
 Release 只在推送 `v*` 标签时执行，不会同时触发普通 CI。每个任务构建前检查实际 Shell 版本，
-执行排除 `stress` 套件的 Meson 普通回归测试、校验 ZIP，然后运行隔离的无窗口 Shell 生命周期测试。版本不匹配会明确失败，
+执行排除 `stress` 套件的 Meson 普通回归测试和无图形验收脚本、校验 ZIP，然后运行隔离的无窗口 Shell 生命周期测试。版本不匹配会明确失败，
 不会静默改测其他版本。Fedora 45 容器可能处于预发布阶段，兼容性目标以实际安装的 Shell 版本为准。
 两个任务均成功才能发布，只上传一份运行时 ZIP。
 

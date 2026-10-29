@@ -23,7 +23,8 @@ bash tools/test-logic-acceptance.sh                                            #
 ```
 
 第一条是普通回归，几秒完成，CI 在 GNOME 50/51 上运行。第二条是无图形验收：捕获状态、
-历史控制器、输入保护、截图编排、快捷语句草稿和网络词库，使用私有 Session Bus。
+历史控制器、输入保护、截图编排、快捷语句草稿和网络词库，使用私有 Session Bus；CI 同样运行，
+缺少依赖（`BLOCKED`，退出码 2）会使任务失败，而不是算作通过。
 `--suite stress` 是可选压力测试，见[同步性能测试](../docs/sync-performance-testing_CN.md)。
 
 需要真实同步服务端的无图形集成（需要 Docker 和相邻的 `clipboard-x-server` 源码或镜像）：

@@ -25,7 +25,8 @@ bash tools/test-logic-acceptance.sh                                            #
 
 The first is the ordinary regression suite; it takes a few seconds and CI runs it on GNOME 50/51.
 The second is headless acceptance for capture state, the history controller, input guards, screenshot
-orchestration, phrase drafts and network dictionaries, each on a private session bus.
+orchestration, phrase drafts and network dictionaries, each on a private session bus; CI runs it too,
+and a missing dependency (`BLOCKED`, exit 2) fails the job instead of passing.
 `--suite stress` holds the optional stress tests; see [sync performance testing](../docs/sync-performance-testing.md).
 
 Headless integration against a real sync server (Docker plus the sibling `clipboard-x-server`

@@ -27,7 +27,7 @@ Tests are primarily headless logic checks; see the [test guide](tests/README.md)
 
 ```sh
 bun run test:logic              # daily and CI: Meson logic suite, a few seconds
-bun run test:logic:acceptance   # headless acceptance: private D-Bus, real files and local HTTP
+bun run test:logic:acceptance   # daily and CI: headless acceptance on private D-Bus, files, local HTTP
 ```
 
 Put decision logic for new behavior in modules that do not need the Shell, then cover it with logic
@@ -114,7 +114,7 @@ they must not include tests, protocol source, dictionaries, or the central serve
 
 The [CI workflow](.github/workflows/ci.yml) runs on every branch push and pull request in a
 Fedora 44 / GNOME 50 and Fedora 45 / GNOME 51 matrix. It checks JavaScript syntax, runs the Meson
-regression suite with `--no-suite stress`, builds the extension ZIP, and verifies that the archive
+regression suite with `--no-suite stress` and the headless acceptance script, builds the extension ZIP, and verifies that the archive
 contains exactly the runtime files and compiled catalogs.
 Both environments also run an isolated headless extension lifecycle check. One ZIP is uploaded only
 after validation. CI only validates and retains artifacts; it never publishes a release.

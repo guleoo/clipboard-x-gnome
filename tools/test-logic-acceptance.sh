@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local headless acceptance extracted from desktop suites; not an ordinary CI job.
+# Headless acceptance extracted from desktop suites; also run by CI.
 set -uo pipefail
 
 project_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
