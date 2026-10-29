@@ -825,11 +825,6 @@ msgstr "Suprimir los espacis blancs a l’entorn del tèxt"
 msgid "Simulated input"
 msgstr "Entrada simulada"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Utilizatz l’entrada lenta se l’aplicacion cibla manca de tocas simuladas."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Velocitat de picada"
@@ -1307,3 +1302,36 @@ msgstr "Esc dins los panèls segondaris"
 
 msgid "Close panel"
 msgstr "Tampar lo panèl"
+
+msgid "An input operation is already running."
+msgstr "Una operacion de picada es ja en cors."
+
+msgid "Focus a text field before starting input."
+msgstr "Donatz lo fòcus a un camp de tèxte abans de començar la picada."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "L’enviament dirècte de tèxte es pas disponible aicí. Donatz lo fòcus a un camp compatible o causissètz la simulacion de tòcas dins las preferéncias."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Validatz o anullatz lo tèxte en cors de composicion amb lo metòde de picada abans de començar."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "La fenèstra o lo camp de tèxte de destinacion a cambiat. La picada restanta es estada anullada."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Aqueste tèxte conten de caractèrs que se pòdon pas enviar."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Per las aplicacions pas presas en carga, causissètz manualament la simulacion de tòcas."
+
+msgid "Input mode"
+msgstr "Mòde de picada"
+
+msgid "Text submission (recommended)"
+msgstr "Enviament dirècte de tèxte (recomandat)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Simulacion de tòcas (compatibilitat)"
+
+msgid "Medium"
+msgstr "Mejana"

@@ -96,8 +96,10 @@ export const cases = {
     await preferences.page('clipboard');
     await preferences.click({type: 'AdwSwitchRow', row: 'Trim surrounding whitespace'});
     await until(() => desktop.settings.get_boolean('trim-whitespace'), 'native whitespace switch is live');
+    await preferences.choice('Input mode', 1);
+    await until(() => desktop.settings.get_string('simulated-input-mode') === 'keys', 'native input mode enables keyboard compatibility');
     await preferences.choice('Typing speed', 1);
-    await until(() => desktop.settings.get_string('simulated-input-speed') === 'slow', 'native enum writes its value');
+    await until(() => desktop.settings.get_string('simulated-input-speed') === 'medium', 'native enum writes the middle speed tier');
     await spin(desktop, preferences, 'History entries', 17, 'history-size');
     await preferences.page('sync');
     await spin(desktop, preferences, 'Text full-transfer threshold', 3, 'text-full-threshold', 3072);

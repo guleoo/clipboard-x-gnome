@@ -1,4 +1,5 @@
 src/entry/extension.js
+src/clipboard/terminal/errors.js
 src/sync/errors.js
 src/ui/indicator.js
 src/ui/panels/history/item.js

@@ -820,12 +820,6 @@ msgstr "Odstraňovať medzery pred a za textom"
 msgid "Simulated input"
 msgstr "Simulované zadávanie"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Ak cieľová aplikácia vynecháva simulované stlačenia klávesov, použite pomalé "
-"zadávanie."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Rýchlosť zadávania"
@@ -1292,3 +1286,36 @@ msgstr "Escape vo vedľajších paneloch"
 
 msgid "Close panel"
 msgstr "Zavrieť panel"
+
+msgid "An input operation is already running."
+msgstr "Operácia zadávania už prebieha."
+
+msgid "Focus a text field before starting input."
+msgstr "Pred začatím zadávania zamerajte textové pole."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Priame odoslanie textu tu nie je dostupné. Zamerajte podporované textové pole alebo v predvoľbách vyberte simulované stlačenia klávesov."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Pred začatím zadávania potvrďte alebo zrušte rozpracovaný text vstupnej metódy."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Cieľové okno alebo textové pole sa zmenilo. Zvyšné zadávanie bolo zrušené."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Tento text obsahuje znaky, ktoré sa nedajú odoslať."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Pri nepodporovaných aplikáciách ručne vyberte simulované stlačenia klávesov."
+
+msgid "Input mode"
+msgstr "Spôsob zadávania"
+
+msgid "Text submission (recommended)"
+msgstr "Priame odoslanie textu (odporúčané)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Simulované stlačenia klávesov (kompatibilita)"
+
+msgid "Medium"
+msgstr "Stredná"

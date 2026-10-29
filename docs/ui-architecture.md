@@ -98,7 +98,8 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
 - Disconnect popup state/visibility callbacks before destroying the panel manager or tooltip. Destroying
   the parent PopupMenu can close an open menu and emit those signals again.
 - Simulated input owns every wait timer and deferred notification. Destruction removes their sources and
-  settles waiting promises; removing a source must not strand active or queued input.
+  settles waiting promises; removing a source must not strand an active operation. Only one operation
+  is accepted at a time; a busy request is rejected, not queued.
 - Closing, hiding, or destroying the popup removes its input-mode filter before disposing the tooltip.
   Mode classes remain during the closing animation; the next opening chooses its actual input source.
 - Settings use `ui/settings/lifecycle.js`'s `onClosed()` for cleanup on window close or actual unroot.
@@ -107,6 +108,32 @@ business shortcuts; panels connect actions and use their own `FocusGrid`.
   shortcut-recording windows. Late results must not update controls or present error dialogs.
 - An already accepted persistent save/import may finish safely, but must not revive a closed UI or start
   another network stage after its owner closes.
+
+## Text delivery
+
+`clipboard/terminal/input.js` owns target restoration, cancellation, modifier safety and the selected
+delivery mode. Default text submission uses `Main.inputMethod.commit()` only when the original window
+has a supported text-input focus and no active preedit. It rejects active input-method composition
+without confirming or clearing it. Unsupported targets require a manual switch to simulated keystrokes;
+there is no automatic fallback or retry.
+
+Text submission uses one channel for all characters, including newlines and Tab. Blocks are limited to
+256 Unicode code points and 1024 UTF-8 bytes, with 20 ms between blocks to yield the main loop. A changed
+target window or text-input focus cancels the remainder. Returning from `commit()` means sent, not
+acknowledged by the target application. Neither delivery mode alters the clipboard.
+
+Keystroke mode uses these profiles (initial / ASCII / completed Unicode-composition delay, in ms):
+standard `75 / 4 / 30`, medium `75 / 6 / 40`, slow `75 / 8 / 50`. The speed setting applies only to this
+mode. Non-ASCII characters use the Unicode-entry chord; individual key transitions within a character
+have no added delay. Newlines and Tab produce physical Return and Tab keys, so application behavior can
+differ from textual submission. With a supported text-input focus snapshot, keystrokes also cancel on
+field changes; a physical Tab may therefore stop the remaining text. Unsupported clients, including
+XWayland targets without that connection, expose no guaranteed field-change detection: only their
+window identity is guarded. Text submission always binds both window and text-focus identities.
+
+Both modes stop on cancellation, disable, an observable target change, observed user input or the modifier fuse.
+GNOME Shell cannot observe every physical key delivered to another client. Already sent content cannot
+be retracted; long or exact text should normally be pasted instead.
 
 ## CSS conventions
 

@@ -27,7 +27,7 @@ Observed results remain in the acceptance snapshot.
 | --- | --- |
 | SHOT-02/05 | `logic/screenshot/tools.test.js`: v2/v3 target capabilities/rejections, native-typed D-Bus exceptions, cleanup and retry on the same portal; not every deployed backend. |
 | RECV-06 / XFER-06 | `logic/sync/transfer-session.test.js`: terminal failure/expiry/cancellation settles all consumers; actual short deadline, one remote cancellation and a fresh retry. Controlled transport, not a real offline source. |
-| TYPE-03/04 | `simulation/terminal/native.js`: separate standard/slow cases preserve exact readback and allow the slow case to run after a standard failure. |
+| TYPE-03/04 | `simulation/terminal/native.js`: explicitly select the input mode and preserve independent exact readback; text-submission success must not replace keystroke coverage. |
 | COLOR-06 | `simulation/color-picker/failures.native.js`: actual picker initialization rejection and native-grab boundary exception, modal/chrome/subscription cleanup and reopening; assertions precede fixture cleanup. |
 | SET-01 | `SET-01-official` uses the production entry and reopens GNOME's official host; existing SET-01 remains the owner of eight-page navigation. |
 | SET-03 | `simulation/settings/colors.native.js`: native GTK accent/foreground selection, save/cancel and system reset, not shape/spacing assertions. |
@@ -264,18 +264,30 @@ that delayed saves preserve new input and focus.
 
 | ID | What to test / expected result |
 | --- | --- |
-| TYPE-01 | Separate copy, paste and simulated typing; only the intended operations modify the system clipboard. |
+| TYPE-01 | Separate copy, paste and default text submission; read back exact multilingual text without changing the clipboard during submission. |
 | TYPE-02 | Paste into the target active before opening the panel; verify received bytes in an ordinary app and a terminal. |
-| TYPE-03 | Receive an exact short sample containing ASCII, mixed CJK, emoji, multiple lines and Tab in the actual target; long-text reliability is not an acceptance gate. |
-| TYPE-04 | Run the TYPE-03 short sample independently at standard/slow speed; failure in one must not hide the other's readback, missing or reordered characters. |
+| TYPE-03 | Explicitly select standard keystrokes (`75 / 4 / 30` ms) and receive the exact short ASCII/CJK/emoji/multiline/Tab sample. Return/Tab remain physical keys; long-text reliability is not an acceptance gate. |
+| TYPE-04 | Independently run the short sample with slow keystrokes (`75 / 8 / 50` ms); a standard-case failure must not hide this readback. Medium (`75 / 6 / 40` ms) is verified by logic and the SET-02 preferences write, not a duplicate native typing case. |
 | TYPE-05 | Wait for trigger modifiers to be released; output nothing on timeout and avoid Ctrl+click shortcut leakage. |
-| TYPE-06 | Fuse on backend modifier input during typing, cancel queued tasks, notify once and emit no trailing characters; accept this state path using actual backend virtual input. |
+| TYPE-06 | Fuse on observed input/backend modifiers, notify once and send no further blocks/characters; reject a second active operation rather than queue it. Accept modifier behavior using actual backend virtual input, not a claim of observing every physical key. |
 | TYPE-07 | Close/disable/session exit stops typing and releases keys; an old task cannot continue in a new instance. |
-| TYPE-08 | Test real IME language modes, keyboard layouts and target changes; do not assume IME bypass. |
+| TYPE-08 | Test real IME language modes, keyboard layouts and observable window/text-field changes; active preedit is rejected without confirmation/clearing, and an observed target change cancels remaining input. Do not assume universal IME bypass or field-change detection in unsupported clients. |
 | TYPE-09 | Test multiple toolkits, browsers and terminals; document the Wayland limits on observing ordinary physical input. |
 
-Logic guard entry: [terminal/guard.test.js](logic/clipboard/terminal/guard.test.js).
+Logic entries: [terminal/guard.test.js](logic/clipboard/terminal/guard.test.js),
+[terminal/sequence.test.js](logic/clipboard/terminal/sequence.test.js).
 Maintained simulation entries: [terminal/typing.smoke.js](simulation/terminal/typing.smoke.js), [terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js).
+
+Text submission uses `Main.inputMethod.commit()` in blocks of at most 256 code points / 1024 UTF-8
+bytes, yielding for 20 ms between blocks. It submits newlines and Tab as text, unlike keystroke mode.
+Unsupported text-input focus and active preedit must be rejected without automatic fallback or clearing
+composition; only one input operation may be active.
+Keystroke mode's initial / ASCII / Unicode-composition waits are standard `75 / 4 / 30`, medium
+`75 / 6 / 40`, slow `75 / 8 / 50` ms. Speed does not affect text submission. A successful send is
+not a target acknowledgement, and cancellation cannot retract content already sent. Text submission
+binds window and text-focus identities. Keystroke mode guards text focus only when the client exposes
+it; unsupported clients have a window guard only. Physical Tab can change a supported focus and stop
+the remaining text.
 
 Acceptance scope: the logic guard checks cancellation decisions and repeated cancellation;
 typing compares a real GTK Wayland target. Lifecycle controls modifier state and suppresses characters.
@@ -471,7 +483,7 @@ can validate schema types/ranges, but cannot replace the functional behavior bel
 | --- | --- | --- |
 | Device (2) | `device-tag`, `device-icon-kind` | device/client logic, CONN-06-profile/07 |
 | General/panel (19) | `show-indicator`, `panel-anchor`, `panel-offset-x`, `panel-offset-y`, `theme-color`, `foreground-color`, `custom-theme-colors`, `panel-escape-action`, `panel-confine-focus`, `panel-visible-item-limit`, `panel-width`, `panel-height`, `panel-text-vertical-offset`, `panel-toolbar-actions`, `panel-footer-actions`, `panel-hidden-actions`, `entry-actions`, `entry-hidden-actions`, `preserve-panel-state` | panel-manager/focus-grid/actions, PANEL, SET-03/04/05; visual text offset belongs to LANG-04 |
-| Clipboard (9) | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-speed` | history-controller/capture/input logic, CLIP/PRIV/TYPE |
+| Clipboard (10) | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-mode`, `simulated-input-speed` | history-controller/capture/input logic, CLIP/PRIV/TYPE |
 | Words/dictionaries (3) | `tokenizer-show-source-preview`, `tokenizer-word-limit`, `tokenizer-dictionary-files` | processors/dictionary/selection logic, WORD/DICT |
 | Quick phrases (3) | `saved-phrase-limit`, `saved-phrase-newest-first`, `phrase-close-after-copy` | phrase-store logic, PHRASE |
 | Sync (15) | `sync-enabled`, `sync-use-sha256sum`, `sync-poll-interval-seconds`, `sync-send-mode`, `sync-receive-mode`, `sync-text`, `sync-html`, `sync-images`, `sync-favorites-only`, `text-full-threshold`, `text-preview-limit`, `image-full-threshold`, `thumbnail-size`, `thumbnail-byte-limit`, `sync-transfer-timeout-seconds` | client/lifecycle/queue/receive/policy/verifier/storage, CONN/SEND/RECV/XFER; unit wiring belongs to SET-02 |
@@ -534,7 +546,7 @@ These are coverage boundaries, not certification of every requirement within an 
 | `clipboard/policy.native.js` | PRIV-01/02/04/05, HIST-01/04 | Pause, memory-only lifecycle, focused-window exclusion, one in-flight switch, pin/unpin and query input; matrices belong to logic |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | Native input/submission, Escape, independent copy/paste/type receiver, close policy, delayed writes and retry after real IO failure; not every IME or cold-Shell recovery |
 | `word-selection/native.js` | WORD-05/06/07/08, SELECT-01/03/04/06/07 | Native row entry, result readback, small configured limits/notification, long-input heartbeat, late results, held dragging/Shift ranges, scrolling and exit cleanup; logic owns the 2000-word algorithm boundary |
-| `terminal/native.js` | TYPE-01/03/05/06/07 | Independent GTK target, exact mixed-language output at both speeds, real backend modifier wait/fuse, one notification/queued cancellation, no old typing after actual disable/re-enable |
+| `terminal/native.js` | TYPE-01/03/04/05/06/07 | Independent GTK target, explicit delivery modes and exact mixed-language output, real backend modifier wait/fuse, one notification, busy rejection and no old typing after actual disable/re-enable |
 | `sync/native.js` | CONN-06-profile, SEND-01/01-pinned/02/06/10, RECV-01/03/04/09, XFER-02/04 | Real server/source, durable state and actual transport; SEND-02 retains representative rich-text wiring |
 | `sync/connection.native.js` | CONN-02/03/04/05 | Complete GTK Test/Apply/failure/retry and in-flight close |
 | `sync/network.native.js` | RECV-05-automatic-manual/06/07/08, XFER-02-download | System clipboard wiring, source failure, stale choices and exact progress; shared GET belongs to headless HTTP |
@@ -566,7 +578,7 @@ entries extend the owners above rather than duplicate their happy paths. Failure
 | `clipboard/native.js`, `clipboard/policy.native.js` | CLIP-04-recovery, CLIP-09-missing, PRIV-05 | Failed decode then normal capture; missing original after restart; privacy change during an actual owner transfer |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | Real deletion IO failure/retry and invalid persisted data recovery |
 | `word-selection/native.js` | SELECT-04-cross-row, SELECT-05, SELECT-07-disable | Held Shift across rows, Space/Enter and actual disable while dragging |
-| `terminal/native.js` | TYPE-03, TYPE-08-layout | Exact short-text readback at both speeds, real US/German input sources; no user long-sample reads |
+| `terminal/native.js` | TYPE-03/04, TYPE-08-layout | Exact short-text readback with explicitly selected delivery modes, real US/German input sources; no user long-sample reads |
 | `terminal/browser.native.js`, `terminal/vte.native.js` | TYPE-09-firefox/chromium, TYPE-02-vte | Independent browser textarea → loopback readback; real GTK3/VTE PTY with keyboard/clipboard positive controls; not physical IME |
 | `lifecycle/native.js`, `lifecycle/responsiveness.native.js` | ENV-05-screenshot, OPS-01-capture | Complete/cancel the actual system screenshot UI after disable, verify released modal and native external input, no old plugin side effects, then normal re-enable; large capture/thumbnail/save main-loop gaps |
 | `settings/coverage.native.js`, `settings/native.js` | SET-02/04/05/06/07/08/09 | Representative native configuration paths, layout/keyboard behavior, exclusions, invalid/clear/cancel recording, data-preserving reset and URI-handler handoff |

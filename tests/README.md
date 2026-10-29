@@ -344,9 +344,19 @@ the `chromium` or `chromium-browser` executable. Browser targets use private pro
 loopback receiver, not external sites. The VTE fixture first verifies native ASCII and real clipboard
 paste independently, then tests the plugin's natural-paste path; raw PTYs are not universal terminal apps.
 
-`TYPE-03` checks a shared short sample at standard/slow speeds, covering ASCII, mixed CJK, emoji,
-multiple lines and Tab. Mismatch diagnostics record lengths, first differing code points and hashes,
-not the complete sample. The old long-sample and user-sample automated entries are removed;
+Typing checks explicitly select the delivery mode so the default text-submission path cannot silently
+replace keystroke coverage. The shared short sample covers ASCII, mixed CJK, emoji, multiple lines and
+Tab. Text submission sends textual newlines/Tab; keystrokes press Return/Tab. Logical tests own the
+chunk limits (256 code points / 1024 UTF-8 bytes), 20 ms block interval, busy rejection, no automatic
+fallback and exact keystroke profiles: standard `75 / 4 / 30`, medium `75 / 6 / 40`, slow `75 / 8 / 50`
+ms (initial / ASCII / Unicode composition). Speed applies only to keystrokes. Native targets verify
+received text and cancellation on observable target changes; active IME preedit must be rejected without
+clearing or confirming it. Text submission tracks window and text-focus identities. Keystrokes can only
+track field changes when the client exposes a supported text-input focus; physical Tab may switch that
+focus and stop the remainder. A returned `commit()` is not a receiver acknowledgement.
+
+Mismatch diagnostics record lengths, first differing code points and hashes, not the complete sample.
+The old long-sample and user-sample automated entries are removed;
 `tools/simulate-input-sample.txt` is not read or modified. Long-text reliability remains a known
 limitation rather than an acceptance gate for this case.
 

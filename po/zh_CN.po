@@ -807,10 +807,6 @@ msgstr "自动去除首尾空白字符"
 msgid "Simulated input"
 msgstr "模拟输入"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr "如果目标应用漏掉模拟按键，可以尝试慢速输入。"
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "输入速度"
@@ -1427,3 +1423,36 @@ msgstr "非主面板按 ESC 的动作"
 
 msgid "Close panel"
 msgstr "直接关闭面板"
+
+msgid "An input operation is already running."
+msgstr "已有输入任务正在运行。"
+
+msgid "Focus a text field before starting input."
+msgstr "请先聚焦文本输入框，再开始输入。"
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "此处不支持文本提交。请聚焦支持的文本输入框，或在设置中选择“模拟按键”。"
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "请先完成或取消输入法中正在编辑的内容，再开始输入。"
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "目标窗口或文本输入框已改变，剩余输入已取消。"
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "此文本包含无法提交的字符。"
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "对于不支持的应用，请手动选择模拟按键。"
+
+msgid "Input mode"
+msgstr "输入方式"
+
+msgid "Text submission (recommended)"
+msgstr "文本提交（推荐）"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "模拟按键（兼容）"
+
+msgid "Medium"
+msgstr "中速"

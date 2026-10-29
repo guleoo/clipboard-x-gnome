@@ -826,12 +826,6 @@ msgstr "Αφαίρεση κενών από την αρχή και το τέλο�
 msgid "Simulated input"
 msgstr "Προσομοιωμένη πληκτρολόγηση"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Χρησιμοποιήστε αργή πληκτρολόγηση αν η εφαρμογή προορισμού χάνει "
-"προσομοιωμένα πατήματα πλήκτρων."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Ταχύτητα πληκτρολόγησης"
@@ -1310,3 +1304,36 @@ msgstr "Escape στα δευτερεύοντα πάνελ"
 
 msgid "Close panel"
 msgstr "Κλείσιμο πάνελ"
+
+msgid "An input operation is already running."
+msgstr "Εκτελείται ήδη μια λειτουργία εισαγωγής."
+
+msgid "Focus a text field before starting input."
+msgstr "Εστιάστε σε ένα πεδίο κειμένου πριν ξεκινήσετε την εισαγωγή."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Η άμεση υποβολή κειμένου δεν είναι διαθέσιμη εδώ. Εστιάστε σε ένα υποστηριζόμενο πεδίο κειμένου ή επιλέξτε προσομοίωση πλήκτρων στις προτιμήσεις."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Ολοκληρώστε ή ακυρώστε την τρέχουσα σύνθεση της μεθόδου εισαγωγής πριν ξεκινήσετε."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Το παράθυρο ή το πεδίο κειμένου προορισμού άλλαξε. Η υπόλοιπη εισαγωγή ακυρώθηκε."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Αυτό το κείμενο περιέχει χαρακτήρες που δεν μπορούν να υποβληθούν."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Για μη υποστηριζόμενες εφαρμογές, επιλέξτε χειροκίνητα την προσομοίωση πλήκτρων."
+
+msgid "Input mode"
+msgstr "Τρόπος εισαγωγής"
+
+msgid "Text submission (recommended)"
+msgstr "Άμεση υποβολή κειμένου (συνιστάται)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Προσομοίωση πλήκτρων (συμβατότητα)"
+
+msgid "Medium"
+msgstr "Μεσαία"

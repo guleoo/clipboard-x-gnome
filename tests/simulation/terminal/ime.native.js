@@ -33,6 +33,7 @@ async function clear(desktop, target) {
 
 export const cases = {
   async 'TYPE-08-ime'(desktop) {
+    desktop.settings.set_string('simulated-input-mode', 'keys');
     const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.input-sources'});
     const sources = settings.get_value('sources');
     const manager = getInputSourceManager();
@@ -49,6 +50,7 @@ export const cases = {
         && inputMode(manager.currentSource), 'libpinyin activated with its actual mode properties', 15000);
       const verified = new Set();
       for (let trial = 0; trial < 2; trial++) {
+        desktop.settings.set_string('simulated-input-mode', 'keys');
         await clear(desktop, target);
         const mode = modeValue(manager.currentSource);
         const updates = target.state.preeditUpdates;
@@ -85,6 +87,43 @@ export const cases = {
           'Opening the clipboard and typing must not silently change the tested IME mode');
         assert(chinese ? target.state.preeditUpdates > simulatedUpdates : target.state.preeditUpdates === simulatedUpdates,
           'Plugin input must follow the same real composition or ASCII path, not bypass the tested input method');
+
+        await clear(desktop, target);
+        desktop.settings.set_string('simulated-input-mode', 'commit');
+        const literal = 'nihao 中文 日本語 한국어 🙂';
+        const input = desktop.app._terminalInput;
+        const submittedUpdates = target.state.preeditUpdates;
+        const previousSubmission = input._queue;
+        await trigger(desktop, target, literal, Clutter.KEY_apostrophe, {pointer: true});
+        await until(() => !desktop.indicator.menu.isOpen && input._queue !== previousSubmission,
+          `${name}: full-panel text submission starts after closing the popup`);
+        await input._queue;
+        await until(() => target.state.text === literal && target.state.preedit === '',
+          `${name}: text submission preserves the literal multilingual input`);
+        await pause(100);
+        assert(target.state.text === literal && target.state.preedit === ''
+          && target.state.preeditUpdates === submittedUpdates,
+        `${name}: submitted text must not enter IME composition or append delayed characters`);
+        assert(modeValue(manager.currentSource) === mode,
+          `${name}: text submission must not change the input-method mode`);
+
+        if (chinese) {
+          await clear(desktop, target);
+          await desktop.type('nihao');
+          await until(() => target.state.preedit.length > 0 && target.state.text === '',
+            'Actual Chinese composition is active before the rejection check');
+          const beforeComposition = target.state;
+          input.rememberTarget();
+          const rejected = input.type('MUST_NOT_REPLACE_COMPOSITION').then(() => null, error => error);
+          assert((await rejected)?.code === 'composition_active',
+            'Text submission must reject the real active input-method composition');
+          await pause(100);
+          assert(target.state.preedit === beforeComposition.preedit && target.state.text === beforeComposition.text,
+            'Rejected submission must neither cancel the candidate nor append text');
+          assert(modeValue(manager.currentSource) === mode,
+            'Rejecting active composition must not change the input-method mode');
+        }
+
         verified.add(name);
         print(`[simulation] TYPE-08-ime ${name}: actual committed text=${JSON.stringify(reference)}`);
         if (trial === 0) {
@@ -101,7 +140,7 @@ export const cases = {
         }
       }
       assert(verified.size === 2, 'Both real Chinese and ASCII modes must have independent positive controls');
-      print('[simulation] Virtual keyboard equivalence under a real IME passed; this does not claim to bypass IME or verify physical hardware');
+      print('[simulation] Real IME keyboard equivalence, literal text submission and active-composition rejection passed; physical hardware remains outside this fixture');
     } finally {
       await desktop.key(Clutter.KEY_Escape);
       settings.set_value('sources', sources);

@@ -8,11 +8,11 @@ import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 import {typingSample} from './samples.js';
 
-export async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false} = {}) {
+export async function trigger(desktop, target, text, key, {replaceClipboard = false, pointer = false, search = text} = {}) {
   const item = await capture(desktop, target, text);
   if (replaceClipboard) await target.offer('Independent clipboard sentinel before action');
   await desktop.open();
-  if (replaceClipboard) await desktop.search(text);
+  if (replaceClipboard) await desktop.search(search);
   await desktop.key(Clutter.KEY_Down);
   assert(desktop.focus === desktop.history._itemRows.get(item.id).focusActors[0], 'Native action targets the copied row');
   if (pointer) {
@@ -28,6 +28,7 @@ export async function trigger(desktop, target, text, key, {replaceClipboard = fa
 }
 
 async function exactTyping(desktop, target, source, speed, {pointer = false} = {}) {
+  desktop.settings.set_string('simulated-input-mode', 'keys');
   desktop.settings.set_string('simulated-input-speed', speed);
   await target.focus();
   await target.call('clear');
@@ -67,8 +68,15 @@ export const cases = {
       await trigger(desktop, target, 'paste into the original target', Clutter.KEY_v, {replaceClipboard: true});
       await until(() => target.state.text === 'paste into the original target', 'paste into real GTK target');
       await target.call('clear');
-      await trigger(desktop, target, 'simulated input target', Clutter.KEY_apostrophe, {replaceClipboard: true});
-      await until(() => target.state.text === 'simulated input target', 'native simulated-input shortcut', 15000);
+      assert(desktop.settings.get_string('simulated-input-mode') === 'commit', 'Text submission must be the default input mode');
+      await trigger(desktop, target, typingSample, Clutter.KEY_apostrophe, {replaceClipboard: true, search: '[Unit]'});
+      await until(() => target.state.text === typingSample, 'default text submission preserves the exact multilingual sample', 15000);
+      await pause(100);
+      assert(target.state.text === typingSample, 'Default text submission must not duplicate or reorder delayed text');
+      await target.call('clear');
+      const chunked = typingSample.repeat(8);
+      await trigger(desktop, target, chunked, Clutter.KEY_apostrophe, {replaceClipboard: true, search: '[Unit]'});
+      await until(() => target.state.text === chunked, 'multiple text submissions reach GTK in exact order', 15000);
       assert((await target.clipboard()).text === 'Independent clipboard sentinel before action', 'Typing must not overwrite the clipboard');
     } finally { await target.close(); }
   },
@@ -124,6 +132,7 @@ export const cases = {
   },
 
   async 'TYPE-06'(desktop) {
+    desktop.settings.set_string('simulated-input-mode', 'keys');
     const target = await Target.open(desktop);
     const input = desktop.app._terminalInput;
     const notify = input._onCancelled;
@@ -133,16 +142,16 @@ export const cases = {
     try {
       await trigger(desktop, target, 'a'.repeat(1000), Clutter.KEY_apostrophe);
       await until(() => target.state.text.length > 0 && target.state.text.length < 1000, 'typing observed in periodic external snapshot');
-      const queued = input.type('QUEUED_OUTPUT_MUST_BE_CANCELLED');
+      const rejected = input.type('BUSY_OUTPUT_MUST_NOT_APPEAR').then(() => null, error => error);
+      assert((await rejected)?.code === 'busy', 'A second input must be rejected without entering a pending queue');
       desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
       held = true;
       await until(() => notifications === 1, 'actual backend Control state trips the fuse');
-      await queued;
       await input._queue;
       await pause(60);
       const stopped = target.state.text;
-      assert(stopped.length < 1000 && !stopped.includes('QUEUED_OUTPUT_MUST_BE_CANCELLED'),
-        'Fuse must cancel both active and queued output');
+      assert(stopped.length < 1000 && !stopped.includes('BUSY_OUTPUT_MUST_NOT_APPEAR'),
+        'Fuse must cancel active output and rejected busy input must never appear');
       desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
       held = false;
       await pause(120);
@@ -156,19 +165,21 @@ export const cases = {
   },
 
   async 'TYPE-07'(desktop) {
+    desktop.settings.set_string('simulated-input-mode', 'keys');
     const target = await Target.open(desktop);
     const input = desktop.app._terminalInput;
     try {
       await trigger(desktop, target, 'b'.repeat(1000), Clutter.KEY_apostrophe);
       await until(() => target.state.text.length > 0 && target.state.text.length < 1000, 'active output before disabling');
-      const queued = input.type('OLD_SESSION_MUST_NOT_TYPE');
+      const rejected = input.type('OLD_SESSION_MUST_NOT_TYPE').then(() => null, error => error);
+      assert((await rejected)?.code === 'busy', 'Repeated input before disable must be rejected rather than queued');
       await restart(desktop);
-      await queued;
+      await input._queue;
       await pause(60);
       const stopped = target.state.text;
       await pause(120);
       assert(stopped.length < 1000 && !stopped.includes('OLD_SESSION_MUST_NOT_TYPE') && target.state.text === stopped,
-        'Disable/re-enable must not resume old active or queued output');
+        'Disable/re-enable must not resume old active or rejected output');
       assert(input._sources.size === 0 && input._eventFilterId === 0 && !input._device,
         'Old input resources must be released');
     } finally { await target.close(); }

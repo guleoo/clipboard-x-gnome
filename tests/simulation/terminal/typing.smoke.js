@@ -40,6 +40,9 @@ export async function run() {
   await waitUntil(() => Boolean(Main.panel.statusArea[STATUS_AREA_NAME]));
   const terminalInput = extension.stateObj._terminalInput;
   assert(terminalInput, 'Clipboard X Gnome terminal input is unavailable');
+  const settings = extension.stateObj._settings;
+  const originalMode = settings.get_string('simulated-input-mode');
+  settings.set_string('simulated-input-mode', 'keys');
   const originalModifierState = terminalInput._modifierState.bind(terminalInput);
 
   const [output, outputStream] = Gio.File.new_tmp('clipboard-x-gnome-typing-XXXXXX');
@@ -71,27 +74,29 @@ export async function run() {
     assert(actual === source,
       `Mixed-language simulated input changed character order (${actual.length}/${source.length})`);
 
-    const queuedSuffix = 'x'.repeat(200);
+    const pendingSuffix = 'x'.repeat(200);
     let manualModifiers = 0;
     terminalInput._modifierState = () => manualModifiers;
-    const interrupted = terminalInput.type(queuedSuffix);
-    const queued = terminalInput.type('THIS_QUEUED_INPUT_MUST_NOT_APPEAR');
+    const interrupted = terminalInput.type(pendingSuffix);
+    const rejected = terminalInput.type('THIS_BUSY_INPUT_MUST_NOT_APPEAR').then(() => null, error => error);
+    assert((await rejected)?.code === 'busy', 'Repeated input must be rejected instead of being queued');
     await Scripting.sleep(30);
     manualModifiers = Clutter.ModifierType.CONTROL_MASK;
-    await Promise.all([interrupted, queued]);
+    await interrupted;
     manualModifiers = 0;
     await Scripting.sleep(50);
     const [, interruptedContents] = output.load_contents(null);
     const interruptedText = new TextDecoder().decode(interruptedContents);
     assert(interruptedText.startsWith(source)
-        && interruptedText.length < source.length + queuedSuffix.length
-        && !interruptedText.includes('THIS_QUEUED_INPUT_MUST_NOT_APPEAR'),
+        && interruptedText.length < source.length + pendingSuffix.length
+        && !interruptedText.includes('THIS_BUSY_INPUT_MUST_NOT_APPEAR'),
     'Physical keyboard input did not cancel the remaining simulated input');
     await Scripting.sleep(100);
     const [, settledContents] = output.load_contents(null);
     assert(new TextDecoder().decode(settledContents) === interruptedText,
       'Simulated input continued after cancellation');
   } finally {
+    settings.set_string('simulated-input-mode', originalMode);
     terminalInput._modifierState = originalModifierState;
     targetWindow()?.delete(global.get_current_time());
     process.force_exit();

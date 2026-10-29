@@ -46,12 +46,20 @@ function destroyAndCheck(input) {
   input.destroy();
 }
 
+function isolatedInput(TerminalInput, options = {}) {
+  const input = new TerminalInput({mode: () => 'keys', ...options});
+  const target = {window: {}, focus: {}};
+  input._currentTarget = () => target;
+  return input;
+}
+
 export async function verify(TerminalInput) {
-  for (const phase of ['settle', 'character-delay', 'modifiers', 'notification']) {
+  for (const phase of ['settle', 'character-delay', 'commit-delay', 'modifiers', 'notification']) {
     let characters = 0;
     let notifications = 0;
     let modifierReads = 0;
-    const input = new TerminalInput({
+    const input = isolatedInput(TerminalInput, {
+      mode: () => phase === 'commit-delay' ? 'commit' : 'keys',
       speed: () => 'slow',
       onCancelled: () => { notifications++; },
     });
@@ -62,15 +70,17 @@ export async function verify(TerminalInput) {
     // Exercise real GLib sources and the real virtual-device lifecycle without
     // sending test keystrokes into the desktop or conflating target IM issues.
     input._typeCharacter = () => { characters++; };
+    input._commit = () => { characters++; };
     try {
-      const active = input.type('中文');
-      const queued = input.type('QUEUED');
-      const paste = input.paste();
+      const active = input.type(phase === 'commit-delay' ? '中'.repeat(513) : '中文');
+      const duplicate = input.type('DUPLICATE').then(() => false, error => error.code === 'busy');
+      const paste = input.paste().then(() => false, error => error.code === 'busy');
+      assert(await duplicate && await paste, 'An active input operation must reject duplicate typing and paste');
       await waitUntil(() => input._sources.size > 0 && input._typing,
         `${phase}: input did not reach a waiting state`);
-      if (phase === 'character-delay') {
+      if (phase === 'character-delay' || phase === 'commit-delay') {
         await waitUntil(() => characters === 1 && input._sources.size > 0,
-          'Input did not reach its character delay');
+          'Input did not reach its character or chunk delay');
       } else if (phase === 'notification') {
         assert(input._cancelTypingWithNotification(), 'Cancellation must schedule its notification');
         assert(input._sources.size === 2, 'Both pending wait and notification must be registered');
@@ -78,14 +88,39 @@ export async function verify(TerminalInput) {
       const charactersAtDestroy = characters;
       const readsAtDestroy = modifierReads;
       destroyAndCheck(input);
-      await drains(Promise.all([active, queued, paste]), `${phase}: cancellation stranded an input Promise`);
+      await drains(active, `${phase}: cancellation stranded an input Promise`);
       assert(input._sources.size === 0 && !input._typing && !input._monitoring,
-        `${phase}: active or queued work created a source after destruction`);
+        `${phase}: active work created a source after destruction`);
       assert(characters === charactersAtDestroy && modifierReads === readsAtDestroy && notifications === 0,
         `${phase}: destroyed work emitted input, polled modifiers or delivered a cancellation notification`);
+      input._mode = input._speed = () => { throw new Error('Destroyed input must not read disposed settings'); };
       await drains(Promise.all([input.type('AFTER_DESTROY'), input.paste(), input._queue]),
         'Calls after destruction must settle without creating new work');
-      print(`Clipboard X Gnome [terminal-lifecycle] ${phase}: released sources and drained active/queued input`);
+      print(`Clipboard X Gnome [terminal-lifecycle] ${phase}: released sources and drained active input`);
+    } finally {
+      input.destroy();
+    }
+  }
+
+  for (const changed of ['window', 'focus']) {
+    const input = isolatedInput(TerminalInput);
+    const original = input._currentTarget();
+    let target = original;
+    const characters = [];
+    input._currentTarget = () => target;
+    input._modifierState = () => 0;
+    input._prepare = async () => true;
+    input._typeCharacter = character => {
+      characters.push(character);
+      target = {...original, [changed]: {}};
+    };
+    try {
+      const error = await input.type('AB').then(() => null, failure => failure);
+      assert(error?.code === 'focus_changed' && characters.join('') === 'A',
+        `Keystrokes must stop before entering another ${changed}`);
+      target = original;
+      await input.type('C');
+      assert(characters.join('') === 'AC', 'An aborted input must release the busy gate for a new explicit request');
     } finally {
       input.destroy();
     }
@@ -111,7 +146,7 @@ export async function verify(TerminalInput) {
   let held = true;
   let releaseModifierReads = 0;
   const characters = [];
-  const released = new TerminalInput();
+  const released = isolatedInput(TerminalInput);
   released._modifierState = () => {
     releaseModifierReads++;
     return held ? Clutter.ModifierType.CONTROL_MASK : 0;
@@ -131,7 +166,7 @@ export async function verify(TerminalInput) {
   }
 
   let notifications = 0;
-  const input = new TerminalInput({onCancelled: () => {
+  const input = isolatedInput(TerminalInput, {onCancelled: () => {
     notifications++;
     // The idle must have forgotten its own ID before reentrant destruction.
     input.destroy();

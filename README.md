@@ -127,20 +127,37 @@ Use simulated typing when the target application does not accept normal paste:
 
 1. Focus the target text field, then open Clipboard X Gnome.
 2. For a text history entry, use `Ctrl` + click or focus it and press `'`. In the word selection panel, select the words you need and press `'`.
-3. The panel closes and Clipboard X Gnome types into the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
+3. The panel closes and Clipboard X Gnome sends text to the previously focused field after the triggering modifier keys are released. Unlike copy or paste, this does not replace your clipboard content.
 
-Simulated typing is **not** as reliable as pasting. GNOME Shell cannot reliably detect ordinary physical
-key presses sent to another Wayland client, so letters and numbers may interleave with the simulated
-text. Do not use the keyboard until typing finishes. Cancellation does not undo text already entered;
-prefer normal paste for long, sensitive, or exact content.
+Choose an **Input mode** under **Preferences → Clipboard → Simulated input**:
 
-If an application misses keystrokes, select **Slow** under **Preferences → Clipboard → Simulated input**.
-This changes the typing interval; it cannot guarantee that another application accepts every key.
+- **Text submission (recommended)** is the default. It sends text directly through GNOME's text-input
+  connection in small blocks. The target must support this connection; finish or cancel any active
+  input-method composition first. Newlines and Tab are submitted as text, not pressed as keys.
+- **Simulated keystrokes (compatibility)** sends individual keys. Select it manually for unsupported
+  applications; the extension never switches modes automatically. In this mode, newlines press Return
+  and Tab presses Tab, which may execute commands or move focus rather than insert text.
+
+Typing speed applies only to simulated keystrokes. Intervals are in milliseconds:
+
+| Profile | Before input | After ASCII | After Unicode composition |
+| --- | ---: | ---: | ---: |
+| Standard | 75 | 4 | 30 |
+| Medium | 75 | 6 | 40 |
+| Slow | 75 | 8 | 50 |
+
+Only one input operation can run at a time; another request is rejected rather than queued. An observed
+target-window or text-field change cancels the remaining input. Text submission tracks both; keystroke
+mode cannot detect field changes in clients without a supported text-input connection. A physical Tab
+may switch fields and stop the remainder when that change is observable. Already entered text cannot
+be undone, and successful sending is not an acknowledgement from the application. Prefer normal paste
+for long, sensitive, or exact content.
 
 > [!IMPORTANT]
-> During simulated typing, GNOME Shell can detect accidental modifier-key presses, but not all physical
-> key presses. Pressing Ctrl, Alt, Shift, Super, Meta, or Hyper cancels the remaining input and shows a
-> GNOME notification.
+> Do not use the keyboard until input finishes. Observed user input or an accidental Ctrl, Alt, Shift,
+> Super, Meta, or Hyper press cancels the remaining input and shows a GNOME notification. GNOME Shell
+> cannot reliably observe every ordinary physical key sent to another Wayland client; such keys may
+> still interleave with the text.
 
 ### 4. Word selection mode
 

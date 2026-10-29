@@ -5,9 +5,12 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {typingDelay, typingSequence, typingTiming} from './sequence.js';
 import {cancel, shouldCancel} from './guard.js';
+import {submit} from './commit.js';
+import {InputError} from './errors.js';
 
 const INPUT_POLL_MILLISECONDS = 20;
 const INPUT_WAIT_TIMEOUT_MILLISECONDS = 10_000;
+const FOCUS_WAIT_TIMEOUT_MILLISECONDS = 1000;
 const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.CONTROL_MASK
   | Clutter.ModifierType.MOD1_MASK
@@ -19,18 +22,20 @@ const COMMAND_MODIFIER_MASK = Clutter.ModifierType.SHIFT_MASK
   | Clutter.ModifierType.META_MASK;
 
 export class TerminalInput {
-  constructor({onCancelled = null, speed = () => 'standard'} = {}) {
+  constructor({onCancelled = null, mode = () => 'commit', speed = () => 'standard'} = {}) {
     const seat = global.stage.context.get_backend().get_default_seat();
     this._device = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
     this._targetPurpose = Clutter.InputContentPurpose.NORMAL;
+    this._targetWindow = null;
     this._queue = Promise.resolve();
     this._destroyed = false;
     this._emitting = false;
     this._monitoring = false;
     this._typing = null;
-    this._typingRevision = 0;
+    this._busy = false;
     this._onCancelled = onCancelled;
     this._speed = speed;
+    this._mode = mode;
     this._sources = new Map();
     this._eventFilterId = Clutter.Event.add_filter(
       null,
@@ -40,6 +45,7 @@ export class TerminalInput {
 
   rememberTarget() {
     this._targetPurpose = Main.inputMethod.content_purpose;
+    this._targetWindow = this._currentTarget().window;
   }
 
   paste() {
@@ -54,25 +60,44 @@ export class TerminalInput {
   }
 
   type(text) {
-    const sequence = typingSequence(text);
-    const revision = this._typingRevision;
+    if (this._destroyed)
+      return Promise.resolve();
+    const mode = this._mode();
+    const speed = this._speed();
+    const window = this._targetWindow ?? this._currentTarget().window;
     return this._enqueue(async () => {
-      if (this._destroyed || revision !== this._typingRevision)
-        return;
       const typing = {cancelled: false};
-      const speed = this._speed();
       this._typing = typing;
       this._monitoring = true;
       try {
-        if (!await this._prepare(typingTiming(speed).settle))
+        if (!window)
+          throw new InputError('target_unavailable');
+        if (!await this._prepare(typingTiming().settle) || !this._canContinue())
           return;
-        for (const character of sequence) {
-          if (this._destroyed || typing.cancelled)
+        if (!await this._waitForTarget(window, mode))
+          return;
+        const target = {window, focus: this._currentTarget().focus};
+        if (Main.inputMethod.hasPreedit())
+          throw new InputError('composition_active');
+        if (mode === 'commit') {
+          await submit(text, {
+            target,
+            current: () => this._currentTarget(),
+            composing: () => Main.inputMethod.hasPreedit(),
+            active: () => this._canContinue(),
+            commit: chunk => this._commit(chunk),
+            wait: delay => this._wait(delay),
+          });
+          return;
+        }
+        if (mode !== 'keys')
+          throw new Error('Unknown simulated input mode');
+        for (const character of typingSequence(text)) {
+          if (!this._canContinue())
             return;
-          if (this._commandModifiersPressed()) {
-            this._cancelTypingWithNotification();
-            return;
-          }
+          const current = this._currentTarget();
+          if (current.window !== window || target.focus && current.focus !== target.focus)
+            throw new InputError('focus_changed');
           this._typeCharacter(character);
           if (!await this._waitForNextStep(character, speed))
             return;
@@ -89,7 +114,7 @@ export class TerminalInput {
     if (this._destroyed)
       return;
     this._destroyed = true;
-    this._typingRevision++;
+    this._targetWindow = null;
     if (this._typing)
       this._typing.cancelled = true;
     for (const [source, finish] of this._sources) {
@@ -109,9 +134,17 @@ export class TerminalInput {
   _enqueue(operation) {
     if (this._destroyed)
       return Promise.resolve();
-    const next = this._queue.catch(() => {}).then(() => {
-      if (!this._destroyed)
-        return operation();
+    if (this._busy)
+      return Promise.reject(new InputError('busy'));
+    // Reserve synchronously, including the microtask before preparation begins.
+    this._busy = true;
+    const next = Promise.resolve().then(async () => {
+      try {
+        if (!this._destroyed)
+          return await operation();
+      } finally {
+        this._busy = false;
+      }
     });
     this._queue = next;
     return next;
@@ -191,8 +224,41 @@ export class TerminalInput {
   _cancelTyping() {
     if (!cancel(this._typing))
       return false;
-    this._typingRevision++;
     return true;
+  }
+
+  _canContinue() {
+    if (this._destroyed || !this._typing || this._typing.cancelled)
+      return false;
+    if (this._commandModifiersPressed()) {
+      this._cancelTypingWithNotification();
+      return false;
+    }
+    return true;
+  }
+
+  _currentTarget() {
+    return {window: global.display.focus_window, focus: Main.inputMethod.currentFocus};
+  }
+
+  _commit(text) {
+    Main.inputMethod.commit(text);
+  }
+
+  async _waitForTarget(window, mode) {
+    const deadline = GLib.get_monotonic_time() + FOCUS_WAIT_TIMEOUT_MILLISECONDS * 1000;
+    do {
+      if (!this._canContinue())
+        return false;
+      const target = this._currentTarget();
+      if (target.window !== window)
+        throw new InputError('focus_changed');
+      if (mode !== 'commit' || target.focus)
+        return true;
+    } while (GLib.get_monotonic_time() < deadline && await this._wait(INPUT_POLL_MILLISECONDS));
+    if (this._canContinue())
+      throw new InputError('text_unavailable');
+    return false;
   }
 
   async _prepare(settleDelay = typingTiming().settle) {

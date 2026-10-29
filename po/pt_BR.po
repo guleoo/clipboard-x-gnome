@@ -824,12 +824,6 @@ msgstr "Remover os espaços em branco ao redor do texto"
 msgid "Simulated input"
 msgstr "Entrada simulada"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Use a entrada lenta se o aplicativo de destino não registrar algumas teclas "
-"simuladas."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Velocidade de digitação"
@@ -1302,3 +1296,36 @@ msgstr "Escape nos painéis secundários"
 
 msgid "Close panel"
 msgstr "Fechar painel"
+
+msgid "An input operation is already running."
+msgstr "Já há uma operação de entrada em andamento."
+
+msgid "Focus a text field before starting input."
+msgstr "Coloque o foco em um campo de texto antes de iniciar a entrada."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "O envio direto de texto não está disponível aqui. Coloque o foco em um campo compatível ou escolha a simulação de teclas nas preferências."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Confirme ou cancele o texto em composição pelo método de entrada antes de começar."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "A janela ou o campo de texto de destino mudou. A entrada restante foi cancelada."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Este texto contém caracteres que não podem ser enviados."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Para aplicativos não compatíveis, escolha manualmente a simulação de teclas."
+
+msgid "Input mode"
+msgstr "Modo de entrada"
+
+msgid "Text submission (recommended)"
+msgstr "Envio direto de texto (recomendado)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Simulação de teclas (compatibilidade)"
+
+msgid "Medium"
+msgstr "Média"

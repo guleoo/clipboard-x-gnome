@@ -817,12 +817,6 @@ msgstr "Kendu testuaren inguruko zuriuneak"
 msgid "Simulated input"
 msgstr "Sarrera simulatua"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Erabili sarrera motela helburuko aplikazioak tekla-sakatze simulatuak "
-"galtzen baditu."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Idazteko abiadura"
@@ -1296,3 +1290,36 @@ msgstr "Escape bigarren mailako paneletan"
 
 msgid "Close panel"
 msgstr "Itxi panela"
+
+msgid "An input operation is already running."
+msgstr "Sarrera-eragiketa bat abian dago jada."
+
+msgid "Focus a text field before starting input."
+msgstr "Jarri fokua testu-eremu batean sarrera hasi aurretik."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Hemen ezin da testua zuzenean bidali. Jarri fokua onartutako testu-eremu batean edo hautatu tekla-sakatzearen simulazioa hobespenetan."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Amaitu edo utzi sarrera-metodoaren uneko testu-konposizioa sarrera hasi aurretik."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Helburuko leihoa edo testu-eremua aldatu da. Gainerako sarrera bertan behera utzi da."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Testu honek bidali ezin diren karaktereak ditu."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Onartzen ez diren aplikazioetarako, hautatu eskuz tekla-sakatzearen simulazioa."
+
+msgid "Input mode"
+msgstr "Sarrera-modua"
+
+msgid "Text submission (recommended)"
+msgstr "Testua zuzenean bidaltzea (gomendatua)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Tekla-sakatzearen simulazioa (bateragarritasuna)"
+
+msgid "Medium"
+msgstr "Ertaina"

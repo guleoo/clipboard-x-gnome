@@ -11,6 +11,7 @@ import {ClipboardController} from '../clipboard/controller.js';
 import {createPlatform} from '../clipboard/platform.js';
 import {Content} from '../clipboard/content.js';
 import {TerminalInput} from '../clipboard/terminal/input.js';
+import {message as inputErrorMessage} from '../clipboard/terminal/errors.js';
 import {DictionaryStore} from '../clipboard/tokenizer/dictionary/store.js';
 import {Tokenizer} from '../clipboard/tokenizer/tokenizer.js';
 import {createLogger} from '../common/logger.js';
@@ -90,6 +91,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     this._uploadQueue = uploadQueue;
     let syncStarted = false;
     this._terminalInput = new TerminalInput({
+      mode: () => this._settings.get_string('simulated-input-mode'),
       speed: () => this._settings.get_string('simulated-input-speed'),
       onCancelled: () => Main.notify(
         _('Simulated keyboard input cancelled'),
@@ -407,7 +409,7 @@ export default class ClipboardXGnomeExtension extends Extension {
     logger.error('operation', error);
     Main.notifyError(
       'Clipboard X Gnome',
-      syncErrorMessage(error, _) || _('Operation failed'),
+      inputErrorMessage(error, _) || syncErrorMessage(error, _) || _('Operation failed'),
     );
   }
 }

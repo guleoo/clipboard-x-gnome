@@ -820,12 +820,6 @@ msgstr "Witruimte rondom tekst wissen"
 msgid "Simulated input"
 msgstr "Gesimuleerde invoer"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Gebruik langzame invoer als een doeltoepassing gesimuleerde toetsaanslagen "
-"mist."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Typsnelheid"
@@ -1302,3 +1296,36 @@ msgstr "Escape in secundaire panelen"
 
 msgid "Close panel"
 msgstr "Paneel sluiten"
+
+msgid "An input operation is already running."
+msgstr "Er wordt al een invoerbewerking uitgevoerd."
+
+msgid "Focus a text field before starting input."
+msgstr "Geef een tekstveld de focus voordat u de invoer start."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Rechtstreekse tekstinvoer is hier niet beschikbaar. Geef een ondersteund tekstveld de focus of kies gesimuleerde toetsaanslagen in de voorkeuren."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Bevestig of annuleer de tekst die met de invoermethode wordt samengesteld voordat u begint."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Het doelvenster of tekstveld is gewijzigd. De resterende invoer is geannuleerd."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Deze tekst bevat tekens die niet kunnen worden ingevoerd."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Kies voor niet-ondersteunde toepassingen handmatig gesimuleerde toetsaanslagen."
+
+msgid "Input mode"
+msgstr "Invoermethode"
+
+msgid "Text submission (recommended)"
+msgstr "Rechtstreekse tekstinvoer (aanbevolen)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Gesimuleerde toetsaanslagen (compatibiliteit)"
+
+msgid "Medium"
+msgstr "Gemiddeld"

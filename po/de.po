@@ -828,12 +828,6 @@ msgstr "Leerzeichen vor und nach dem Text entfernen"
 msgid "Simulated input"
 msgstr "Simulierte Eingabe"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Wählen Sie die langsame Eingabe, wenn eine Zielanwendung simulierte "
-"Tastenanschläge auslässt."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Eingabegeschwindigkeit"
@@ -1307,3 +1301,36 @@ msgstr "Escape in Unteransichten"
 
 msgid "Close panel"
 msgstr "Ansicht schließen"
+
+msgid "An input operation is already running."
+msgstr "Es läuft bereits ein Eingabevorgang."
+
+msgid "Focus a text field before starting input."
+msgstr "Fokussieren Sie ein Textfeld, bevor Sie die Eingabe starten."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Die direkte Textübermittlung ist hier nicht verfügbar. Fokussieren Sie ein unterstütztes Textfeld oder wählen Sie in den Einstellungen simulierte Tastendrücke."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Bestätigen oder verwerfen Sie den aktuell mit der Eingabemethode zusammengesetzten Text, bevor Sie die Eingabe starten."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Das Zielfenster oder Textfeld hat sich geändert. Die verbleibende Eingabe wurde abgebrochen."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Dieser Text enthält Zeichen, die nicht übermittelt werden können."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Wählen Sie für nicht unterstützte Anwendungen manuell simulierte Tastendrücke."
+
+msgid "Input mode"
+msgstr "Eingabemethode"
+
+msgid "Text submission (recommended)"
+msgstr "Direkte Textübermittlung (empfohlen)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Simulierte Tastendrücke (Kompatibilität)"
+
+msgid "Medium"
+msgstr "Mittel"

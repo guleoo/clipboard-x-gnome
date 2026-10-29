@@ -25,7 +25,7 @@ GNOME 50/51 通过。执行结果另见[验收快照](acceptance-status_CN.md)�
 | --- | --- |
 | SHOT-02/05 | `logic/screenshot/tools.test.js`：v2/v3 目标能力/拒绝矩阵，真实类型的 D-Bus 异常、清理和同实例重试；不伪装已遍历全部门户部署。 |
 | RECV-06 / XFER-06 | `logic/sync/transfer-session.test.js`：失败/过期/取消终态结束所有共享等待者；真实短超时、一次远端取消及新传输重试。受控传输层，不冒充真实来源离线。 |
-| TYPE-03/04 | `simulation/terminal/native.js`：标准/慢速分别注册为独立 case，前者失败不能阻止慢速执行，字符回读预期不变。 |
+| TYPE-03/04 | `simulation/terminal/native.js`：显式选择输入方式并独立精确回读；文本提交通过不能替代模拟按键的覆盖。 |
 | COLOR-06 | `simulation/color-picker/failures.native.js`：实际取色器初始化拒绝、原生 grab 边界抛错、modal/chrome/订阅清理及正常重开；断言在测试清理之前执行。 |
 | SET-01 | `SET-01-official` 点击生产设置入口，官方宿主关闭再打开；原 SET-01 仍唯一负责八页导航。 |
 | SET-03 | `simulation/settings/colors.native.js`：原生 GTK 内置/自定义强调色、前景色、确认/取消与恢复系统；不验圆形/间距等视觉属性。 |
@@ -246,18 +246,28 @@ Pin、清空、错误重试或多格式组合。仅内存沿用现有敏感内�
 
 | ID | 要测什么 / 预期结果 |
 | --- | --- |
-| TYPE-01 | 复制、粘贴、模拟输入三种动作分离，只有应修改系统剪切板的动作修改它。 |
+| TYPE-01 | 复制、粘贴、默认文本提交三种动作分离；文本提交时精确回读多语言文本，且不修改剪切板。 |
 | TYPE-02 | 粘贴回打开面板前的目标，普通应用和终端分别验收；实际收到内容而非只验证组合键序列。 |
-| TYPE-03 | 用包含 ASCII、中英及其他 CJK 文字、emoji、多行和 Tab 的短文本验收，目标收到的字符串逐字一致；长文本可靠性不作为通过门槛。 |
-| TYPE-04 | 复用 TYPE-03 短文本，标准/慢速两档独立执行并回读；前档失败不遮挡另一档，不丢字符、不乱序。 |
+| TYPE-03 | 显式选择标准模拟按键（`75 / 4 / 30` ms），真实目标精确收到 ASCII/CJK/emoji/多行/Tab 短文本；Return/Tab 保持实际按键行为，长文本可靠性不作为通过门槛。 |
+| TYPE-04 | 独立运行慢速模拟按键（`75 / 8 / 50` ms）短文本，标准档失败不遮挡本项回读。中速（`75 / 6 / 40` ms）由逻辑精确验证及 SET-02 设置写入覆盖，不增加重复原生输入用例。 |
 | TYPE-05 | 启动时等待触发修饰键释放；超时不输出；Ctrl+点击不变成系统快捷键。 |
-| TYPE-06 | 执行中 backend 修饰键熔断、后续排队任务停止、通知次数正确，无尾部输入；以实际后端的虚拟按键验收该状态路径。 |
+| TYPE-06 | 可观察到的用户输入或 backend 修饰键触发熔断，通知一次，不再发送后续块/字符；已有任务时拒绝新请求，不排队。以实际后端虚拟按键验收，不声称能观察所有物理按键。 |
 | TYPE-07 | 关闭/禁用/注销时停止并释放虚拟按键；旧任务不在新实例继续运行。 |
-| TYPE-08 | 输入法中/英文模式、键盘布局、目标应用切换分别测试，不能假定可绕过输入法。 |
+| TYPE-08 | 分别测试输入法中/英文模式、键盘布局和可观察到的窗口/文本框切换；活动 preedit 应拒绝且不确认/清除，观察到目标改变就取消剩余输入，不假定能普遍绕过输入法或检测不支持客户端的文本框变化。 |
 | TYPE-09 | 不同 toolkit、浏览器和终端验收；普通物理按键在 Wayland 下不可可靠感知的限制明确披露。 |
 
-逻辑保护入口：[terminal/guard.test.js](logic/clipboard/terminal/guard.test.js)。
+逻辑入口：[terminal/guard.test.js](logic/clipboard/terminal/guard.test.js)、
+[terminal/sequence.test.js](logic/clipboard/terminal/sequence.test.js)。
 长期模拟入口：[terminal/typing.smoke.js](simulation/terminal/typing.smoke.js)、[terminal/lifecycle.smoke.js](simulation/terminal/lifecycle.smoke.js)。
+
+文本提交使用 `Main.inputMethod.commit()`，每块最多 256 个码点 / 1024 个 UTF-8 字节，块间
+等待 20 ms 让出主循环；换行、Tab 作为文本，而非模拟按键。
+不支持的文本焦点和活动 preedit 应拒绝，不自动回退、不清除组字；同一时间只接受一个输入任务。
+按键方式的开始前 / ASCII 后 / Unicode 组合完成后等待为标准 `75 / 4 / 30`、中速
+`75 / 6 / 40`、慢速 `75 / 8 / 50` ms。
+速度不作用于文本提交。已发送不代表目标确认收到，取消也不能撤回已发送内容。文本提交
+绑定窗口和文本焦点，模拟按键仅在客户端提供文本焦点时跟踪它；不支持时只保护窗口身份。
+实际 Tab 若切换受支持的文本焦点，会停止剩余输入。
 
 验收口径：逻辑 guard 验证取消判定与重复取消，typing 比较真实 GTK Wayland 目标；lifecycle 控制修饰键且抑制字符。
 TYPE-05/06 以真实后端的虚拟 Ctrl 按住、释放与熔断结果验收，不再因缺少物理键盘重复测试而标为部分通过。
@@ -436,7 +446,7 @@ Schema 类型/范围可临时用 memory backend 校验，不能用它代替下�
 | --- | --- | --- |
 | 设备（2） | `device-tag`, `device-icon-kind` | device/client 逻辑，CONN-06-profile/07 |
 | 常规与面板（19） | `show-indicator`, `panel-anchor`, `panel-offset-x`, `panel-offset-y`, `theme-color`, `foreground-color`, `custom-theme-colors`, `panel-escape-action`, `panel-confine-focus`, `panel-visible-item-limit`, `panel-width`, `panel-height`, `panel-text-vertical-offset`, `panel-toolbar-actions`, `panel-footer-actions`, `panel-hidden-actions`, `entry-actions`, `entry-hidden-actions`, `preserve-panel-state` | panel-manager/focus-grid/actions，PANEL、SET-03/04/05；文字视觉偏移归 LANG-04 |
-| 剪切板（9） | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-speed` | history-controller/capture/input 逻辑，CLIP/PRIV/TYPE |
+| 剪切板（10） | `history-size`, `cache-size-mib`, `history-retention-days`, `private-mode`, `trim-whitespace`, `capture-size-limit-mib`, `excluded-apps`, `sensitive-content-mode`, `simulated-input-mode`, `simulated-input-speed` | history-controller/capture/input 逻辑，CLIP/PRIV/TYPE |
 | 分词和词库（3） | `tokenizer-show-source-preview`, `tokenizer-word-limit`, `tokenizer-dictionary-files` | processors/dictionary/selection 逻辑，WORD/DICT |
 | 快捷语句（3） | `saved-phrase-limit`, `saved-phrase-newest-first`, `phrase-close-after-copy` | phrase-store 逻辑，PHRASE |
 | 同步（15） | `sync-enabled`, `sync-use-sha256sum`, `sync-poll-interval-seconds`, `sync-send-mode`, `sync-receive-mode`, `sync-text`, `sync-html`, `sync-images`, `sync-favorites-only`, `text-full-threshold`, `text-preview-limit`, `image-full-threshold`, `thumbnail-size`, `thumbnail-byte-limit`, `sync-transfer-timeout-seconds` | client/lifecycle/queue/receive/policy/verifier/storage，CONN/SEND/RECV/XFER；单位接线归 SET-02 |
@@ -515,7 +525,7 @@ logic/i18n/coverage.sh；翻译质量、字形和视觉效果仍人工验收，R
 | `clipboard/policy.native.js` | PRIV-01/02/04/05、HIST-01/04 | 不记录、仅内存生命周期、真实窗口排除、一次在途切换、Pin/取消固定与查询输入；矩阵归逻辑层 |
 | `phrases/native.js` | PHRASE-01/02/04/05/06/07 | 原生输入/提交、Esc、独立目标收到复制/粘贴/模拟输入、关闭策略、延迟保存与实际 IO 失败重试；不覆盖全部 IME 或冷 Shell 恢复 |
 | `word-selection/native.js` | WORD-05/06/07/08、SELECT-01/03/04/06/07 | 真实行入口、选择结果回读、小配置上限与提示、长文 heartbeat、迟到处理、拖选、持续 Shift 连选、滚动和退出清理；2000 算法边界归逻辑层 |
-| `terminal/native.js` | TYPE-01/03/05/06/07 | 独立 GTK 目标、两档混合语言逐字一致、等待真实 backend 修饰键、熔断一次及队列取消、实际禁用重开不继续输入 |
+| `terminal/native.js` | TYPE-01/03/04/05/06/07 | 独立 GTK 目标、显式选择输入方式并精确回读混合语言、等待真实 backend 修饰键、熔断通知一次、忙碌拒绝、实际禁用重开不继续输入 |
 | `sync/native.js` | CONN-06-profile、SEND-01/01-pinned/02/06/10、RECV-01/03/04/09、XFER-02/04 | 真实服务端/来源、持久化和实际传输；SEND-02 只保留代表性富文本接线 |
 | `sync/connection.native.js` | CONN-02/03/04/05 | 完整 GTK 测试/应用/失败重试和在途关闭 |
 | `sync/network.native.js` | RECV-05-automatic-manual/06/07/08、XFER-02-download | 系统剪切板接线、来源失败、迟到选择及精确进度；共享 GET 归无图形 HTTP |
@@ -545,7 +555,7 @@ WORD-07 只测 2000 个真实按钮布局、一次 20,001 字符拒绝提示及�
 | `clipboard/native.js`、`clipboard/policy.native.js` | CLIP-04-recovery、CLIP-09-missing、PRIV-05 | 解码失败后正常捕获；重启后原文缺失；真实 owner 传输中切换隐私 |
 | `phrases/native.js` | PHRASE-07-delete/corrupt | 实际删除 IO 失败/重试、损坏持久文件恢复 |
 | `word-selection/native.js` | SELECT-04-cross-row、SELECT-05、SELECT-07-disable | 持续 Shift 跨行、Space/Enter、按住拖动时真正禁用 |
-| `terminal/native.js` | TYPE-03、TYPE-08-layout | 两档短文本精确回读、实际 US/German 输入源；不读取用户长样本 |
+| `terminal/native.js` | TYPE-03/04、TYPE-08-layout | 显式选择输入方式后短文本精确回读、实际 US/German 输入源；不读取用户长样本 |
 | `terminal/browser.native.js`、`terminal/vte.native.js` | TYPE-09-firefox/chromium、TYPE-02-vte | 独立浏览器 textarea→loopback 回读；真实 GTK3/VTE PTY，先做键盘/剪切板正控；不代表物理 IME |
 | `lifecycle/native.js`、`lifecycle/responsiveness.native.js` | ENV-05-screenshot、OPS-01-capture | 禁用后真正完成/取消系统截图，验证模态释放、外部窗口原生输入、旧插件无副作用及重新启用；大捕获/缩略图/保存主循环间隙 |
 | `settings/coverage.native.js`、`settings/native.js` | SET-02/04/05/06/07/08/09 | 原生代表性配置路径、布局/快捷键行为、排除、无效/清空/取消录制、重置保留数据、URI handler 交接 |

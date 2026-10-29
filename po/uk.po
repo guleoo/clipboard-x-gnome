@@ -821,12 +821,6 @@ msgstr "Вилучати проміжки навколо тексту"
 msgid "Simulated input"
 msgstr "Імітоване введення"
 
-#: src/ui/settings/window.js:184
-msgid "Use slow input if a target application misses simulated keystrokes."
-msgstr ""
-"Використовуйте повільне введення, якщо застосунок пропускає імітовані "
-"натискання клавіш."
-
 #: src/ui/settings/window.js:187
 msgid "Typing speed"
 msgstr "Швидкість введення"
@@ -1295,3 +1289,36 @@ msgstr "Escape у вкладених панелях"
 
 msgid "Close panel"
 msgstr "Закрити панель"
+
+msgid "An input operation is already running."
+msgstr "Операція введення вже виконується."
+
+msgid "Focus a text field before starting input."
+msgstr "Перед початком введення встановіть фокус на текстовому полі."
+
+msgid "Text submission is unavailable here. Focus a supported text field or choose Simulated keystrokes in Preferences."
+msgstr "Пряме передавання тексту тут недоступне. Встановіть фокус на підтримуваному текстовому полі або виберіть імітацію натискань клавіш у налаштуваннях."
+
+msgid "Finish or cancel the current input-method composition before starting input."
+msgstr "Перед початком підтвердьте або скасуйте текст, який набирається за допомогою методу введення."
+
+msgid "The target window or text field changed. Remaining input was cancelled."
+msgstr "Цільове вікно або текстове поле змінилося. Решту введення скасовано."
+
+msgid "This text contains characters that cannot be submitted."
+msgstr "Цей текст містить символи, які неможливо передати."
+
+msgid "For unsupported applications, choose simulated keystrokes manually."
+msgstr "Для непідтримуваних програм виберіть імітацію натискань клавіш вручну."
+
+msgid "Input mode"
+msgstr "Спосіб введення"
+
+msgid "Text submission (recommended)"
+msgstr "Пряме передавання тексту (рекомендовано)"
+
+msgid "Simulated keystrokes (compatibility)"
+msgstr "Імітація натискань клавіш (сумісність)"
+
+msgid "Medium"
+msgstr "Середня"

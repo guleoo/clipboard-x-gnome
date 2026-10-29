@@ -154,6 +154,7 @@ test('tokenizer-dictionary-performance', test_runner,
 test('tokenizer-dictionary-selection', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/selection.test.js'])
 test('tokenizer-multilingual', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/tokenizer/multilingual.test.js'])
 test('terminal-sequence', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/terminal/sequence.test.js'])
+test('terminal-commit', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/clipboard/terminal/commit.test.js'])
 test('panel-manager', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/ui/panel-manager.test.js'])
 test('focus-grid', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/ui/focus-grid.test.js'])
 test('panel-actions', test_runner, args: ['-m', meson.current_source_dir() / 'tests/logic/ui/panel-actions.test.js'])
