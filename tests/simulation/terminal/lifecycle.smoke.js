@@ -22,10 +22,10 @@ async function waitUntil(predicate, message) {
 async function drains(promise, message) {
   let source = 0;
   try {
-    await Promise.race([promise, new Promise((_resolve, reject) => {
+    return await Promise.race([promise, new Promise((_resolve, reject) => {
       source = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 2000, () => {
         source = 0;
-        reject(new Error(message));
+        reject(new Error(typeof message === 'function' ? message() : message));
         return GLib.SOURCE_REMOVE;
       });
     })]);
@@ -58,6 +58,10 @@ export async function verify(TerminalInput) {
     let characters = 0;
     let notifications = 0;
     let modifierReads = 0;
+    let cancelled = false;
+    let reached = false;
+    let charactersAtDestroy = 0;
+    let readsAtDestroy = 0;
     const input = isolatedInput(TerminalInput, {
       speed: () => 'slow',
       onCancelled: () => { notifications++; },
@@ -69,24 +73,45 @@ export async function verify(TerminalInput) {
     // Exercise real GLib sources and the real virtual-device lifecycle without
     // sending test keystrokes into the desktop or conflating target IM issues.
     input._typeCharacter = () => { characters++; };
+    const cancel = input._cancelTyping.bind(input);
+    input._cancelTyping = () => {
+      const result = cancel();
+      cancelled ||= result;
+      return result;
+    };
+    const describe = () => `${phase}: characters=${characters}; modifierReads=${modifierReads}; `
+      + `sources=${input._sources.size}; cancelled=${cancelled}; `
+      + `preedit=${Main.inputMethod.hasPreedit()}; destroyed=${input._destroyed}`;
+    const wait = input._wait.bind(input);
+    input._wait = delay => {
+      const pending = wait(delay);
+      if (!reached && (phase !== 'character-delay' || characters === 1)) {
+        // Observe registration synchronously, while the real source is still
+        // alive. Do not race a polling timer against the character delay.
+        assert(input._typing && input._sources.size > 0, `Missing input wait; ${describe()}`);
+        if (phase === 'notification') {
+          assert(input._cancelTypingWithNotification(), 'Cancellation must schedule its notification');
+          assert(input._sources.size === 2, 'Both pending wait and notification must be registered');
+        }
+        charactersAtDestroy = characters;
+        readsAtDestroy = modifierReads;
+        destroyAndCheck(input);
+        reached = true;
+      }
+      return pending;
+    };
     try {
-      const active = input.type('中文');
+      // Attach both handlers immediately: an early rejection must not become
+      // an unhandled rejection or be hidden behind a generic polling timeout.
+      const active = input.type('中文').then(() => ({error: null}), error => ({error}));
       const duplicate = input.type('DUPLICATE').then(() => false, error => error.code === 'busy');
       const paste = input.paste().then(() => false, error => error.code === 'busy');
       assert(await duplicate && await paste, 'An active input operation must reject duplicate typing and paste');
-      await waitUntil(() => input._sources.size > 0 && input._typing,
-        `${phase}: input did not reach a waiting state`);
-      if (phase === 'character-delay') {
-        await waitUntil(() => characters === 1 && input._sources.size > 0,
-          'Input did not reach its character delay');
-      } else if (phase === 'notification') {
-        assert(input._cancelTypingWithNotification(), 'Cancellation must schedule its notification');
-        assert(input._sources.size === 2, 'Both pending wait and notification must be registered');
-      }
-      const charactersAtDestroy = characters;
-      const readsAtDestroy = modifierReads;
-      destroyAndCheck(input);
-      await drains(active, `${phase}: cancellation stranded an input Promise`);
+      const outcome = await drains(active, () => `Input task did not settle; ${describe()}`);
+      if (outcome.error)
+        throw new Error(`Input failed (${outcome.error.code ?? outcome.error.name}): `
+          + `${outcome.error.message}; ${describe()}`, {cause: outcome.error});
+      assert(reached, `Input ${cancelled ? 'was cancelled' : 'completed'} before its cancellation boundary; ${describe()}`);
       assert(input._sources.size === 0 && !input._typing && !input._monitoring,
         `${phase}: active work created a source after destruction`);
       assert(characters === charactersAtDestroy && modifierReads === readsAtDestroy && notifications === 0,
