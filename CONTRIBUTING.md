@@ -23,75 +23,25 @@ Add lasting regression tests for repeatable behavior, not document wording, CSS 
 names, or routine widget properties. Validate CI/release configuration with existing checks, temporary
 scripts, or isolated dry-runs instead of adding tests that lock its formatting.
 
-Tests are separated into [headless logic and desktop simulation](tests/README.md).
-For a host-independent GNOME 50/51 baseline, run `bun run test:environment` (Docker required).
-It defaults to logic checks; select real desktop cases explicitly as described in the test guide.
-Use the [functional inventory](tests/functional-inventory.md) to choose the owning check and identify
-unverified external/manual boundaries; avoid running copied scenarios as extra coverage.
-For the ordinary logic suite, use `bun run test:logic` or run Meson with `--no-suite stress` inside
-`dbus-run-session`. Run extracted local headless acceptance with `bun run test:logic:acceptance`;
-real-backend headless integration uses `tools/test-sync-server.py ZIP --headless` (Docker required).
-Both are opt-in; see the test guide for dependencies. Shell interaction and preferences checks run
-separately in an isolated test desktop.
-
-For repeatable panel entrance, focus navigation, scene restoration, animated close, and real
-multi-monitor/scaling checks, use the [local panel suite](docs/panel-testing.md). It supports individual
-PANEL-01…10 cases and fresh-session repetitions without enabling them in CI:
+Tests are primarily headless logic checks; see the [test guide](tests/README.md) for the layers:
 
 ```sh
-bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 3
+bun run test:logic              # daily and CI: Meson logic suite, a few seconds
+bun run test:logic:acceptance   # headless acceptance: private D-Bus, real files and local HTTP
 ```
 
-Other focused Shell checks can run separately:
+Put decision logic for new behavior in modules that do not need the Shell, then cover it with logic
+tests. Only core wiring that must go through a real Shell belongs in the simulation layer; run it in
+an isolated desktop before a release:
 
 ```sh
-run_shell_check() (
-  test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
-  trap 'rm -rf -- "$test_runtime"' EXIT
-  export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
-  unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
-  dbus-run-session -- gnome-shell-test-tool --headless \
-    --extension build/clipboard-x-gnome_<version>.zip "$1"
-)
-run_shell_check tests/simulation/shell.smoke.js
-run_shell_check tests/simulation/settings/window.smoke.js
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip   # 13 core scenarios in one Shell
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip          # PANEL-01…10
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 ```
 
-For privacy boundaries, entry keyboard navigation / submission, color sampling, sync toggles, screenshot cancellation,
-or press-and-drag word selection,
-run the corresponding focused check using the same helper:
-
-```sh
-run_shell_check tests/simulation/panels/search.smoke.js
-run_shell_check tests/simulation/panels/escape.smoke.js
-run_shell_check tests/simulation/phrases/form.smoke.js
-run_shell_check tests/simulation/color-picker/sampling.smoke.js
-run_shell_check tests/simulation/settings/foreground.smoke.js
-run_shell_check tests/simulation/sync/toggle.smoke.js
-run_shell_check tests/simulation/screenshot/cancel.smoke.js
-run_shell_check tests/simulation/word-selection/drag.smoke.js
-```
-
-Privacy uses native `PRIV-01,PRIV-02,PRIV-05`; pixel movement uses `COLOR-03`.
-Headless tests own policy cancellation and scale/rounding matrices:
-
-```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-03
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case PRIV-01,PRIV-02,PRIV-05
-```
-
-The device-icon chooser has a separate GTK integration check. It requires a graphical display and
-a configured package build; it uses an in-memory settings backend, not the host extension's settings:
-
-```sh
-shell_libdir=/usr/lib/gnome-shell
-dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
-  GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/settings/icon.integration.js
-```
-
-Set `shell_libdir` to the installed GNOME Shell library directory (typically
-`/usr/lib64/gnome-shell` on Fedora). Its private typelibs are needed by the preferences API.
+Simulation entries are not part of CI. Headless integration against a real sync server uses
+`tools/test-sync-server.py ZIP` (Docker required).
 
 Dictionary throughput and memory measurements belong in the optional benchmark, not normal CI
 regressions. Supply a local dictionary file; the benchmark does not download one:

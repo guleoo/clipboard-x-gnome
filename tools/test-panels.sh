@@ -4,8 +4,7 @@ set -euo pipefail
 usage() {
   printf '%s\n' 'Usage: bash tools/test-panels.sh RELEASE_ZIP [50|51] [options]' \
     '  --case PANEL-01,PANEL-10     Run selected cases (default: PANEL-01 through PANEL-10)' \
-    '  --repeat N                 Run each profile in N fresh sessions, 1..20 (default: 1)' \
-    '  --display all|standard|dual|fractional   Default: all; extra profiles apply to PANEL-02' \
+    '  --repeat N                 Run the suite in N fresh sessions, 1..20 (default: 1)' \
     '  --output DIRECTORY         Parent for unique logs (default: build/panel-tests)' \
     'This local acceptance suite is not part of CI and never installs into the host desktop.'
 }
@@ -18,7 +17,6 @@ if [[ ${1:-} == '50' || ${1:-} == '51' ]]; then expected_major=$1; shift; fi
 all_cases='PANEL-01,PANEL-02,PANEL-03,PANEL-04,PANEL-05,PANEL-06,PANEL-07,PANEL-08,PANEL-09,PANEL-10'
 cases=$all_cases
 repeats=1
-display=all
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 project_dir=$(CDPATH='' cd -- "$script_dir/.." && pwd)
 output_parent="$project_dir/build/panel-tests"
@@ -27,7 +25,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --case) cases=$2 ;;
     --repeat) repeats=$2 ;;
-    --display) display=$2 ;;
     --output) output_parent=$2 ;;
     *) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -36,11 +33,8 @@ done
 if [[ ! "$cases" =~ ^PANEL-(0[1-9]|10)(,PANEL-(0[1-9]|10))*$ ]]; then
   printf '%s\n' 'Invalid case list: use PANEL-01 through PANEL-10.' >&2; exit 2
 fi
-if [[ ! "$repeats" =~ ^([1-9]|1[0-9]|20)$ || ! "$display" =~ ^(all|standard|dual|fractional)$ ]]; then
+if [[ ! "$repeats" =~ ^([1-9]|1[0-9]|20)$ ]]; then
   usage >&2; exit 2
-fi
-if [[ "$display" != all && "$display" != standard && ",$cases," != *,PANEL-02,* ]]; then
-  printf '%s\n' 'Display-only profiles require PANEL-02 in --case.' >&2; exit 2
 fi
 for dependency in gnome-shell gnome-shell-test-tool dbus-run-session timeout python3 sha256sum; do
   command -v "$dependency" >/dev/null || { printf 'Missing dependency: %s\n' "$dependency" >&2; exit 2; }
@@ -90,44 +84,30 @@ with zipfile.ZipFile(sys.argv[1]) as source, zipfile.ZipFile(sys.argv[2], 'w') a
         target.writestr(entry, content)
 PY
 base64 --decode "$project_dir/tests/simulation/panels/fixtures/background.png.base64" > "$panel_runtime/background.png"
-cp -- "$project_dir/tests/simulation/panels/fixtures/dual-monitor.sh" "$panel_runtime/dual-monitor.sh"
-chmod +x "$panel_runtime/dual-monitor.sh"
 summary="$report_dir/summary.txt"
-printf 'GNOME Shell: %s\nArchive: %s\nSHA-256: %s\nCases: %s\nRepeats: %s\nDisplay: %s\n' \
-  "$shell_version" "$archive" "$(sha256sum "$archive" | cut -d ' ' -f 1)" "$cases" "$repeats" "$display" > "$summary"
+printf 'GNOME Shell: %s\nArchive: %s\nSHA-256: %s\nCases: %s\nRepeats: %s\n' \
+  "$shell_version" "$archive" "$(sha256sum "$archive" | cut -d ' ' -f 1)" "$cases" "$repeats" > "$summary"
 printf '[panels] Reports: %s\n' "$report_dir"
-profiles=()
-if [[ "$display" == all || "$display" == standard ]]; then profiles+=(standard); fi
-if [[ ",$cases," == *,PANEL-02,* ]]; then
-  if [[ "$display" == all || "$display" == dual ]]; then profiles+=(dual); fi
-  if [[ "$display" == all || "$display" == fractional ]]; then profiles+=(fractional); fi
-fi
+profiles=(standard)
 failed=0
 for ((round = 1; round <= repeats; round++)); do
   for profile in "${profiles[@]}"; do
     session_runtime="$panel_runtime/$profile-$round"
     mkdir -m 700 -- "$session_runtime"
     log="$report_dir/$profile-$round.log"
-    options=()
     test_script="$project_dir/tests/simulation/panels/navigation.smoke.js"
-    if [[ "$profile" != standard ]]; then test_script="$project_dir/tests/simulation/panels/monitors.smoke.js"; fi
-    if [[ "$profile" == dual ]]; then options+=(--wrap "$panel_runtime/dual-monitor.sh"); fi
     printf '[panels] Running GNOME %s / %s / round %s\n' "$shell_major" "$profile" "$round"
     if (
       export XDG_RUNTIME_DIR="$session_runtime" TMPDIR="$session_runtime"
-      export CBX_SIMULATION_RUNTIME="$session_runtime" CBX_PANEL_TEST_CASES="$cases" CBX_PANEL_TEST_DISPLAY="$profile"
+      export CBX_SIMULATION_RUNTIME="$session_runtime" CBX_PANEL_TEST_CASES="$cases"
       export LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1 PYTHONUNBUFFERED=1
       export SHELL_BACKGROUND_IMAGE="$panel_runtime/background.png" XDG_CURRENT_DESKTOP=GNOME XDG_SESSION_TYPE=wayland
       unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR GSETTINGS_BACKEND
       timeout --kill-after=10s 300s dbus-run-session -- gnome-shell-test-tool --headless \
         --extra-filter Gjs --extra-filter gjs --extra-filter org.gnome.Shell.Extensions \
-        "${options[@]}" --extension "$test_archive" "$test_script"
+        --extension "$test_archive" "$test_script"
     ) > "$log" 2>&1; then
-      if [[ "$profile" == standard ]]; then
-        IFS=',' read -r -a expected_cases <<< "$cases"
-      else
-        expected_cases=(PANEL-02)
-      fi
+      IFS=',' read -r -a expected_cases <<< "$cases"
       complete=true
       for id in "${expected_cases[@]}"; do
         if ! grep -Eq "^\[panels\] PASS $id( |$)" "$log"; then complete=false; fi

@@ -26,16 +26,14 @@ def main():
     parser.add_argument('--group', help='Comma-separated domain names')
     parser.add_argument('--shell', choices=['50', '51'])
     parser.add_argument('--language', default='en_US', help='Gettext language for the isolated processes')
-    parser.add_argument('--display', choices=['standard', 'dual', 'fractional'], default='standard')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/simulation-tests')
     parser.add_argument('--timeout', type=int, default=300)
     parser.add_argument('--list', action='store_true')
-    parser.add_argument('--isolate-cases', action='store_true', help='Start a fresh Shell per case, continuing after failures')
+    parser.add_argument('--isolate-cases', action='store_true', help='Start a fresh Shell per case instead of one shared Shell')
     args = parser.parse_args()
     registry = json.loads((TESTS / 'manifest.json').read_text())
     available = {case['id']: (group['module'], case) for group in registry for case in group['cases']}
-    selected = args.case.split(',') if args.case else [key for key, (_, case) in available.items()
-                                                     if args.list or not case.get('explicitOnly')]
+    selected = args.case.split(',') if args.case else list(available)
     if args.group:
         groups = args.group.split(',')
         selected = [key for key in selected if available.get(key, ('',))[0].split('/')[0] in groups]
@@ -47,10 +45,7 @@ def main():
     if args.list:
         for key in selected:
             module, case = available[key]
-            requirements = [*case.get('commands', []), *(['isolated server'] if case.get('server') else [])]
-            if case.get('languages'): requirements.append('--language ' + '/'.join(case['languages']))
-            if case.get('displays'): requirements.append('--display ' + '/'.join(case['displays']))
-            if case.get('explicitOnly'): requirements.append('explicit --case ' + key)
+            requirements = case.get('commands', [])
             print(f'{key}: {module}' + (f"; requires {', '.join(requirements)}" if requirements else ''))
         return 0
     if not args.archive or not args.archive.is_file():
@@ -93,22 +88,16 @@ def main():
     if not revision and shutil.which('git'):
         revision = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True, capture_output=True).stdout.strip() or None
     results = {}
-    modules = defaultdict(list)
+    sessions = defaultdict(list)
     for key in selected:
         module, case = available[key]
         missing = [name for name in case.get('commands', []) if not shutil.which(name)]
         if not args.language.startswith('en') and message_locale == 'C.UTF-8':
             missing.append('a generated non-C UTF-8 locale (for example en_US.UTF-8)')
-        if case.get('languages') and args.language.split('_')[0] not in case['languages']:
-            missing.append('--language ' + '/'.join(case['languages']))
-        if case.get('displays') and args.display not in case['displays']:
-            missing.append('--display ' + '/'.join(case['displays']))
-        if case.get('server') and not os.environ.get('CBX_SIMULATION_SERVER'):
-            missing.append('isolated server (use tools/test-sync-server.py)')
         if missing:
             results[key] = {'status': 'BLOCKED', 'reason': 'Missing: ' + ', '.join(missing)}
         else:
-            modules[(module, key if args.isolate_cases else '')].append(key)
+            sessions[key if args.isolate_cases else 'all'].append(key)
     with private_directory() as runtime:
         source_archive = runtime / 'source.zip'
         source_archive.write_bytes(archive_bytes)
@@ -120,15 +109,14 @@ def main():
         background.write_bytes(base64.b64decode((TESTS / 'panels/fixtures/background.png.base64').read_bytes()))
         wrapper = runtime / 'session.py'
         shutil.copyfile(ROOT / 'tests/fixtures/shell-session.py', wrapper)
-        for index, ((module, isolated_case), cases) in enumerate(modules.items()):
+        for index, (session_name, cases) in enumerate(sessions.items()):
             session = runtime / str(index)
             session.mkdir(mode=0o700)
             artifacts = report / f'artifacts-{index}'
             artifacts.mkdir()
             env = dict(os.environ, XDG_RUNTIME_DIR=str(session), TMPDIR=str(session),
                        XDG_STATE_HOME=str(session / 'state'),
-                       CBX_SIMULATION_RUNTIME=str(session), CBX_SIMULATION_MODULE=module,
-                       CBX_SIMULATION_DISPLAY=args.display,
+                       CBX_SIMULATION_RUNTIME=str(session),
                        CBX_SIMULATION_CASES=','.join(cases), LIBGL_ALWAYS_SOFTWARE='1',
                        CBX_SIMULATION_ARTIFACTS=str(artifacts),
                        GTK_A11Y='none', NO_AT_BRIDGE='1', SHELL_BACKGROUND_IMAGE=str(background),
@@ -136,12 +124,11 @@ def main():
                        LANG=message_locale, LC_ALL=message_locale, PYTHONUNBUFFERED='1')
             for name in ['DISPLAY', 'WAYLAND_DISPLAY', 'GDK_BACKEND', 'GSETTINGS_SCHEMA_DIR', 'GSETTINGS_BACKEND']:
                 env.pop(name, None)
-            log = report / (module.replace('/', '-').removesuffix('.js') + (f'-{isolated_case}' if isolated_case else '') + '.log')
+            log = report / f'{session_name}.log'
             command = ['timeout', '--kill-after=10s', f'{args.timeout}s', 'dbus-run-session', '--',
                        'gnome-shell-test-tool', '--headless', '--disable-animations',
                        '--wrap', f'{sys.executable} {wrapper}',
                        '--extra-filter', 'Gjs', '--extra-filter', 'gjs',
-                       *(['--extra-filter', 'org.gnome.Mutter.Mdk'] if 'OPS-07-devkit' in cases else []),
                        '--extension', str(archive),
                        str(TESTS / 'acceptance.smoke.js')]
             with log.open('w') as output:
@@ -157,19 +144,18 @@ def main():
                 results[key] = {'status': outcome, 'log': log.name}
                 if blocked:
                     results[key]['reason'] = blocked[1]
-            complete = f'[simulation] COMPLETE {module}: {len(cases)} cases' in contents
+            complete = f'[simulation] COMPLETE: {len(cases)} cases' in contents
             if status != 0 or not complete:
-                results[f'RUNNER:{module}:{isolated_case}'] = {'status': 'FAIL', 'reason': f'Exit {status}; complete={complete}', 'log': log.name}
-            print(f'{module}: exit {status}; {log}', flush=True)
+                results[f'RUNNER:{session_name}'] = {'status': 'FAIL', 'reason': f'Exit {status}; complete={complete}', 'log': log.name}
+            print(f'{session_name}: exit {status}; {log}', flush=True)
             for key in cases:
                 print(f"  {results[key]['status']} {key}", flush=True)
     if fingerprint(ROOT) != source_hash:
         results['RUNNER:sources'] = {'status': 'FAIL', 'reason': 'Test sources changed during this run; repeat against a stable snapshot'}
     document = {'shell': shell, 'archive': str(args.archive.resolve()), 'testsRevision': revision,
                 'testsFingerprint': source_hash, 'preparedSha256': prepared_hash,
-                'sha256': archive_hash, 'language': args.language, 'display': args.display,
+                'sha256': archive_hash, 'language': args.language,
                 'messageLocale': message_locale,
-                'serverImage': os.environ.get('CBX_SIMULATION_SERVER_IMAGE'),
                 'results': results}
     (report / 'report.json').write_text(json.dumps(document, indent=2) + '\n')
     (report / 'summary.txt').write_text('\n'.join(f"{value['status']} {key} {value.get('reason', '')}" for key, value in results.items()) + '\n')

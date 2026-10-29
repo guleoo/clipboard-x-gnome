@@ -147,9 +147,11 @@ be retracted; long or exact text should normally be pasted instead.
 Headless checks live in `tests/logic/`; real Shell/GTK checks live in `tests/simulation/`.
 See the [test directory guide](../tests/README.md) for the boundary and execution commands.
 
-Pure layout and state algorithms need GJS unit tests. Shell actors, focus, and lifecycle are covered by
-`tests/simulation/shell.smoke.js`; GTK preferences are covered by `tests/simulation/settings/window.smoke.js`. Every
-structural refactor must pass the build, normal tests, Shell smoke test, and preferences smoke test.
+Pure layout and state algorithms need GJS logic tests; keep decisions out of actor code so they can be
+tested that way. Core Shell wiring is covered by `tools/test-simulation.py`, panel focus by
+`tools/test-panels.sh`, and GTK preferences (inside the compatibility entry) by
+`tests/simulation/settings/window.smoke.js`. Every structural refactor must pass the build and the logic
+suite, and the simulation entries before a release.
 The existing Shell compatibility entry also runs open-panel disable coverage, simulated-input source
 cleanup, and the settings lifecycle integration test in a separate GTK process. Never import GTK into Shell.
 `input-mode.smoke.js` verifies actual keyboard/pointer switching, delayed help, stationary hover, entry

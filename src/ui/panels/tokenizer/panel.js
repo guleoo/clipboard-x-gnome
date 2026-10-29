@@ -10,6 +10,7 @@ import {composeTokens} from '../../../clipboard/tokenizer/processors.js';
 import {FocusAnchor} from '../../controls/focus-anchor.js';
 import {PanelFooter} from '../../controls/panel-footer.js';
 import {PanelHeader} from '../../controls/panel-header.js';
+import {beginRange, rangeSelection} from './selection.js';
 import {FocusGrid} from '../../navigation/focus-grid.js';
 import {matches as matchesShortcut} from '../../shortcut.js';
 
@@ -401,15 +402,16 @@ export class TokenizerPanel {
 
   beginSelectionDrag(button) {
     this.endSelectionDrag();
-    const token = button._clipboardXGnomeToken;
     const state = button._clipboardXGnomeTokenState;
     state.keyboardSelection = null;
+    const buttons = this._buttons.filter(candidate => candidate._clipboardXGnomeTokenState === state);
+    const order = buttons.map(candidate => candidate._clipboardXGnomeToken.index);
     this._selectionDrag = {
       state,
-      selected: !state.selected.has(token.index),
-      anchorIndex: token.index,
-      currentIndex: null,
-      baseSelected: new Set(state.selected),
+      buttons,
+      order,
+      range: beginRange(state.selected, order, buttons.indexOf(button)),
+      currentPosition: null,
     };
     this._applySelectionDrag(button);
     let lastX = null;
@@ -496,26 +498,11 @@ export class TokenizerPanel {
     const targetPosition = this._buttons.indexOf(target);
     if (position < 0 || targetPosition < 0)
       return;
-    if (!state.keyboardSelection) {
-      state.keyboardSelection = {
-        anchorPosition: position,
-        baseSelected: new Set(state.selected),
-        targetSelected: !state.selected.has(button._clipboardXGnomeToken.index),
-      };
-    }
-    const {anchorPosition, baseSelected, targetSelected} = state.keyboardSelection;
+    const order = this._buttons.map(candidate => candidate._clipboardXGnomeToken.index);
+    state.keyboardSelection ??= beginRange(state.selected, order, position);
     state.selected.clear();
-    for (const index of baseSelected)
+    for (const index of rangeSelection(state.keyboardSelection, order, targetPosition))
       state.selected.add(index);
-    const start = Math.min(anchorPosition, targetPosition);
-    const end = Math.max(anchorPosition, targetPosition);
-    for (let index = start; index <= end; index++) {
-      const tokenIndex = this._buttons[index]._clipboardXGnomeToken.index;
-      if (targetSelected)
-        state.selected.add(tokenIndex);
-      else
-        state.selected.delete(tokenIndex);
-    }
     for (const candidate of this._buttons) {
       const candidateToken = candidate._clipboardXGnomeToken;
       candidate.checked = state.selected.has(candidateToken.index);
@@ -554,22 +541,15 @@ export class TokenizerPanel {
 
   _applySelectionDrag(button) {
     const drag = this._selectionDrag;
-    const token = button?._clipboardXGnomeToken;
-    if (!drag || !token || button._clipboardXGnomeTokenState !== drag.state)
+    const position = drag?.buttons.indexOf(button) ?? -1;
+    if (position < 0 || drag.currentPosition === position)
       return;
-    if (drag.currentIndex === token.index)
-      return;
-    drag.currentIndex = token.index;
-    const start = Math.min(drag.anchorIndex, token.index);
-    const end = Math.max(drag.anchorIndex, token.index);
+    drag.currentPosition = position;
+    const selection = rangeSelection(drag.range, drag.order, position);
     let changed = false;
-    for (const candidate of this._buttons) {
-      const candidateToken = candidate._clipboardXGnomeToken;
-      if (candidate._clipboardXGnomeTokenState !== drag.state)
-        continue;
-      const selected = candidateToken.index >= start && candidateToken.index <= end
-        ? drag.selected : drag.baseSelected.has(candidateToken.index);
-      if (drag.state.selected.has(candidateToken.index) === selected)
+    for (const candidate of drag.buttons) {
+      const selected = selection.has(candidate._clipboardXGnomeToken.index);
+      if (drag.state.selected.has(candidate._clipboardXGnomeToken.index) === selected)
         continue;
       this.setSelected(candidate, selected, false);
       changed = true;

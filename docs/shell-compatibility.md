@@ -46,8 +46,7 @@ settings changes from coalescing into a no-op and mistaking the previous instanc
 The check verifies extension loading, shared orientation/backend/scroll APIs, opening the main panel,
 word selection panel rendering, quick phrases construction, and disable/re-enable. It is not a screenshot,
 physical-keyboard, server-interoperability or visual-layout acceptance test. Those still require
-separate testing on the target desktop. The larger `shell.smoke.js` and preferences checks remain
-independent; a successful lifecycle test does not claim that every assertion in those suites passed.
+separate testing on the target desktop; the core desktop scenarios run through `tools/test-simulation.py`.
 
 ## References
 

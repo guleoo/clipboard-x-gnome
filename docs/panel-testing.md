@@ -6,8 +6,7 @@ This local suite makes PANEL-01 through PANEL-10 reproducible with real Mutter v
 pointer, and wheel events. It is separate from Meson and GitHub CI. It does not install the extension
 on the host desktop, read the host history, or require Clipboard X Server.
 
-The [functional inventory](../tests/functional-inventory.md) owns the complete feature scope and
-duplicate-test review; this guide describes the panel runner and finite reproduction matrix.
+The [test guide](../tests/README.md) maps every scenario to its test; this guide describes the panel runner.
 
 ## Run
 
@@ -24,7 +23,7 @@ It does not install these dependencies or change system services. Run the same c
 each prepared GNOME 50/51 environment to test both; appending `50` or `51` requires that exact version.
 See [Shell compatibility](shell-compatibility.md) for container environment requirements.
 
-For a repeatability check, use two or more fresh sessions per display profile:
+For a repeatability check, use two or more fresh sessions:
 
 ```sh
 bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip 51 --repeat 3
@@ -35,23 +34,12 @@ To reproduce a specific case:
 ```sh
 bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --case PANEL-05
 bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --case PANEL-10 --repeat 3
-bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --case PANEL-02,PANEL-09 --display standard
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --case PANEL-02,PANEL-09
 ```
 
-## Display profiles
+## Display
 
-The default `--display all` runs:
-
-- `standard`: one 1280×720 virtual monitor; all selected cases.
-- `dual`: a second, real 1024×768 virtual monitor; PANEL-02 on each monitor.
-- `fractional`: one virtual monitor configured to 125% through Mutter DisplayConfig, then read back;
-  PANEL-02 at that actual scale, not font scaling or a fabricated monitor array.
-
-The extra display profiles run only when PANEL-02 is selected. Choose `--display standard`, `dual`,
-or `fractional` for a narrower reproduction. A missing second monitor or unavailable 125% mode fails
-the corresponding profile explicitly; it is not reported as a pass or silently skipped.
-
-The single-screen size matrix may exceed the workarea. PANEL-03 checks that configured dimensions
+The suite uses one 1280×720 virtual monitor. The single-screen size matrix may exceed the workarea. PANEL-03 checks that configured dimensions
 apply to all panels, not that oversized panels are automatically shrunk.
 
 ## Cases and assertions
@@ -59,7 +47,7 @@ apply to all panels, not that oversized panels are automatically shrunk.
 | ID | Reproducible operation and expected result |
 | --- | --- |
 | PANEL-01 | Topbar clicks and configured Ctrl+Shift+F8 toggle the popup; a desktop click closes it. |
-| PANEL-02 | Hide the indicator and open by shortcut. Test nine anchors with −18/0/+18 offsets and eight extreme offset cases; popup rectangles remain in the target workarea. Extra profiles verify two monitors and 125% scaling. |
+| PANEL-02 | Hide the indicator and open by shortcut. Test nine anchors with −18/0/+18 offsets and eight extreme offset cases; popup rectangles remain in the target workarea. |
 | PANEL-03 | Apply 360×400, 300×160, 480×500, and 800×800 to all three panels; change dimensions while open. A 420×260 override for quick phrases does not alter history dimensions. Geometry uses real actors through PanelManager; entrance events are tested separately. |
 | PANEL-04 | Close each secondary panel by pointer with animations enabled, with retention both off and on. Actual painted fade frames must not flash history. Reopen and check the phrase draft or selected words; also reopen during closing. |
 | PANEL-05 | Search the fixed history, navigate to item 11, open word selection, and click Back. Search, item identity, action focus, and the settled scroll offset remain unchanged. |
@@ -74,11 +62,11 @@ The wheel/update overlap is deliberate scheduling of a real input race, not simu
 
 ## Isolation, stability, and evidence
 
-Each profile and repetition starts a new headless Shell, session bus, keyfile settings, and XDG
+Each repetition starts a new headless Shell, session bus, keyfile settings, and XDG
 directories. The driver rejects execution outside the runner's private directory. Fixtures contain
 35 synthetic history entries and three quick phrases; no private clipboard is used. Each case resets
 settings and navigation before running. The main suite fails at its first failing case; subsequent
-profiles/repetitions still have fresh processes, and any failure keeps the overall exit status nonzero.
+repetitions still have fresh processes, and any failure keeps the overall exit status nonzero.
 
 The suite waits for actual popup, focus, scroll, and geometry states with bounded deadlines. Short
 input spacing is not a substitute for completion checks. It moves the newly created pointer away
@@ -94,7 +82,7 @@ parent directory, which is useful for read-only container mounts. Each directory
 
 - `summary.txt`: installed Shell version, input ZIP path and SHA-256, selection, repetition count,
   and the outcome of each session.
-- `standard-N.log`, `dual-N.log`, `fractional-N.log`: complete Shell output, per-case START/PASS/FAIL,
+- `standard-N.log`: complete Shell output, per-case START/PASS/FAIL,
   assertion stack, and failed panel/focus/geometry diagnostics.
 
 The terminal prints concise case results and the report location. Nonzero status, missing completion
@@ -103,5 +91,4 @@ without hiding the original result. Temporary test metadata may add GNOME 51 to 
 the input release ZIP is unchanged.
 
 These checks cover the stated finite matrix, not all themes, physical input devices, graphics drivers,
-or visual aesthetics. Existing full UI, settings, clipboard, and word-dragging suites remain separate;
-passing this panel suite does not claim they passed.
+multiple monitors, fractional scaling, or visual aesthetics.

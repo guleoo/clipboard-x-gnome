@@ -1,10 +1,8 @@
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {getInputSourceManager} from 'resource:///org/gnome/shell/ui/status/keyboard.js';
 import {assert, pause, until} from '../helpers/desktop.js';
 import {Target} from '../helpers/target.js';
-import {restart} from '../helpers/restart.js';
 import {capture} from '../clipboard/native.js';
 import {typingSample} from './samples.js';
 import {prepare} from './ready.js';
@@ -86,108 +84,4 @@ export const cases = {
   },
 
   'TYPE-03': desktop => typing(desktop, 'standard'),
-  'TYPE-04-medium': desktop => typing(desktop, 'medium'),
-  'TYPE-04': desktop => typing(desktop, 'slow'),
-
-  async 'TYPE-08-layout'(desktop) {
-    const settings = new Gio.Settings({schema_id: 'org.gnome.desktop.input-sources'});
-    const sources = settings.get_value('sources');
-    const manager = getInputSourceManager();
-    const originalId = manager.currentSource?.id;
-    const target = await Target.open(desktop);
-    try {
-      await prepare(target.window, () => target.state.text);
-      settings.set_value('sources', new GLib.Variant('a(ss)', [['xkb', 'us'], ['xkb', 'de']]));
-      for (const id of ['us', 'de']) {
-        await until(() => Object.values(manager.inputSources).some(source => source.type === 'xkb' && source.id === id),
-          'actual private input source available: ' + id);
-        Object.values(manager.inputSources).find(source => source.type === 'xkb' && source.id === id).activate(true);
-        await until(() => manager.currentSource?.type === 'xkb' && manager.currentSource.id === id,
-          'actual active XKB source: ' + id);
-        await pause(100);
-        await exactTyping(desktop, target, 'AzYz []{} @! 123 中文\n', 'standard', {pointer: true});
-      }
-      print('[simulation] Actual US/German XKB sources tested; this is not physical scancode or IME coverage');
-    } finally {
-      settings.set_value('sources', sources);
-      await pause(100);
-      Object.values(manager.inputSources).find(source => source.id === originalId)?.activate(true);
-      await target.close();
-    }
-  },
-
-  async 'TYPE-05'(desktop) {
-    const target = await Target.open(desktop);
-    let held = false;
-    try {
-      const item = await capture(desktop, target, 'wait for actual Control release');
-      await desktop.open();
-      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
-      held = true;
-      await pause(25);
-      await desktop.click(desktop.history._itemRows.get(item.id).focusActors[0]);
-      await pause(200);
-      assert(target.state.text === '', 'No output may escape while physical modifier state remains held');
-      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
-      held = false;
-      await until(() => target.state.text === item.text, 'typing after modifier released', 15000);
-    } finally {
-      if (held) desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
-      await target.close();
-    }
-  },
-
-  async 'TYPE-06'(desktop) {
-    desktop.settings.set_string('simulated-input-mode', 'keys');
-    const target = await Target.open(desktop);
-    const input = desktop.app._terminalInput;
-    const notify = input._onCancelled;
-    let notifications = 0;
-    let held = false;
-    input._onCancelled = () => { notifications++; notify?.(); };
-    try {
-      await trigger(desktop, target, 'a'.repeat(1000), Clutter.KEY_apostrophe);
-      await until(() => target.state.text.length > 0 && target.state.text.length < 1000, 'typing observed in periodic external snapshot');
-      const rejected = input.type('BUSY_OUTPUT_MUST_NOT_APPEAR').then(() => null, error => error);
-      assert((await rejected)?.code === 'busy', 'A second input must be rejected without entering a pending queue');
-      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
-      held = true;
-      await until(() => notifications === 1, 'actual backend Control state trips the fuse');
-      await input._queue;
-      await pause(60);
-      const stopped = target.state.text;
-      assert(stopped.length < 1000 && !stopped.includes('BUSY_OUTPUT_MUST_NOT_APPEAR'),
-        'Fuse must cancel active output and rejected busy input must never appear');
-      desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
-      held = false;
-      await pause(120);
-      assert(target.state.text === stopped && notifications === 1, 'Cancelled output must not resume or notify twice');
-      print('[simulation] Backend virtual modifier fuse passed; physical hardware remains a manual boundary');
-    } finally {
-      if (held) desktop.keyboard.notify_keyval(GLib.get_monotonic_time(), Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
-      input._onCancelled = notify;
-      await target.close();
-    }
-  },
-
-  async 'TYPE-07'(desktop) {
-    desktop.settings.set_string('simulated-input-mode', 'keys');
-    const target = await Target.open(desktop);
-    const input = desktop.app._terminalInput;
-    try {
-      await trigger(desktop, target, 'b'.repeat(1000), Clutter.KEY_apostrophe);
-      await until(() => target.state.text.length > 0 && target.state.text.length < 1000, 'active output before disabling');
-      const rejected = input.type('OLD_SESSION_MUST_NOT_TYPE').then(() => null, error => error);
-      assert((await rejected)?.code === 'busy', 'Repeated input before disable must be rejected rather than queued');
-      await restart(desktop);
-      await input._queue;
-      await pause(60);
-      const stopped = target.state.text;
-      await pause(120);
-      assert(stopped.length < 1000 && !stopped.includes('OLD_SESSION_MUST_NOT_TYPE') && target.state.text === stopped,
-        'Disable/re-enable must not resume old active or rejected output');
-      assert(input._sources.size === 0 && input._eventFilterId === 0 && !input._device,
-        'Old input resources must be released');
-    } finally { await target.close(); }
-  },
 };

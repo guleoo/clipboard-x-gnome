@@ -14,6 +14,7 @@ import {InputMode} from './navigation/input-mode.js';
 import {HistoryPanel} from './panels/history/panel.js';
 import {QuickPhrasesPanel} from './panels/quick-phrases/panel.js';
 import {TokenizerPanel} from './panels/tokenizer/panel.js';
+import {loadWords} from './panels/tokenizer/request.js';
 import {matches as matchesShortcut} from './shortcut.js';
 import {checkInput} from '../clipboard/tokenizer/processors.js';
 
@@ -336,45 +337,36 @@ class Indicator extends PanelMenu.Button {
     this._panelManager?.refresh();
   }
 
-  async _openTokenizer(item) {
-    let request = ++this._tokenizerRequest;
-    let state = null;
-    const current = () => request === this._tokenizerRequest && this.menu.isOpen
-      && (!state || (this._panelManager.is('tokenizer') && this._panelManager.state === state));
-    try {
-      if (!item.isText)
-        return;
-      if ((item.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
-        throw new Error(_('This text is too large for interactive processing'));
-      checkInput(item.text);
-      state = this._tokenizer.createLoadingState(item, item.text);
-      this._panelManager.show('tokenizer', state);
-      request = this._tokenizerRequest;
-      this._tokenizer.focusStart();
-      await this._tokenizer.waitForPaint();
-      if (!current())
-        return;
-      await this._actions.readItem(item);
-      if (!current())
-        return;
-      const source = item.text;
-      checkInput(source);
-      const completed = await this._tokenizer.createState(item, source);
-      if (!current())
-        return;
-      Object.assign(state, completed);
-      this._panelManager.refresh('tokenizer');
-    } catch (error) {
-      if (current()) {
-        if (state)
-          this._panelManager.reset();
+  _openTokenizer(item) {
+    return loadWords(item, {
+      nextRequest: () => ++this._tokenizerRequest,
+      latestRequest: () => this._tokenizerRequest,
+      isOpen: () => this.menu.isOpen,
+      shownState: () => this._panelManager.is('tokenizer') ? this._panelManager.state : null,
+      validate: value => {
+        if ((value.primary?.size ?? 0) > TEXT_PROCESSING_LIMIT_BYTES)
+          throw new Error(_('This text is too large for interactive processing'));
+        checkInput(value.text);
+      },
+      showLoading: value => {
+        const state = this._tokenizer.createLoadingState(value, value.text);
+        this._panelManager.show('tokenizer', state);
+        this._tokenizer.focusStart();
+        return state;
+      },
+      waitForPaint: () => this._tokenizer.waitForPaint(),
+      readItem: value => this._actions.readItem(value),
+      createState: (value, source) => this._tokenizer.createState(value, source),
+      refresh: () => this._panelManager.refresh('tokenizer'),
+      reset: () => this._panelManager.reset(),
+      reportError: error => {
         if (error.code === 'word_limit_exceeded')
           error = new Error(_('Too many words. Use less text or increase the limit in Preferences.'));
         else if (error.code === 'text_limit_exceeded')
           error = new Error(_('This text is too large for interactive processing'));
         this._actions.reportError(error);
-      }
-    }
+      },
+    });
   }
 
   _openPhrases() {

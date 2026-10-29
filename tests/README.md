@@ -1,407 +1,75 @@
-# Test organization
+# Test layout
 
 > English · [简体中文](README_CN.md)
 
-Tests are grouped by the environment they require, then by domain:
-
-The [functional inventory](functional-inventory.md) owns acceptance scope, entry points, gaps and
-the duplicate-test review. It is not a pass report.
-
-Observed results and retained failures are recorded separately in the
-[desktop acceptance snapshot](acceptance-status.md).
+Tests are mainly **logic checks**: the extension keeps its decisions in modules that do not need
+GNOME Shell, and those modules are verified with real storage, files, a private D-Bus and local HTTP.
+The **desktop simulation** keeps only the few core wiring checks that must go through a real Shell,
+as a smoke check before a release.
 
 ```text
 tests/
-  environments/   # Independent GNOME 50/51 container definitions
-  logic/          # No graphical desktop required
-    clipboard/    # History, word selection, dictionaries, terminal sequences
-    color-picker/
-    common/       # Infrastructure, package and command safeguards
-    i18n/
-    screenshot/   # Editor argv/stdin and portal protocol checks
-    sync/         # Policy, state, HTTP, storage, lifecycle and optional stress
-    ui/           # Panel models, focus matrix, layouts and settings logic
-  simulation/
-    lifecycle/    # Installation/startup/enable/disable compatibility subset
-    panels/       # PANEL-01…10, navigation, restoration, search and Escape
-      cases/      # Panel suite cases and private-session driver
-      fixtures/   # Display/background fixtures
-    clipboard/    # Capture, entries, images, history and privacy
-    phrases/      # Native forms, shortcuts and save races
-    word-selection/
-    terminal/     # Target typing, modifier/event guards and lifecycle
-    sync/         # Toggle, progress/session recovery and received persistence
-    screenshot/
-    color-picker/
-    settings/     # Separate GTK processes, Shell preferences and foreground
-    helpers/      # Shared assertions and Shell setup, not feature cases
-    shell.smoke.js # Aggregate of domain checks, not all simulation files
-  fixtures/       # Shared external clipboard, typing and process helpers
+  logic/        # headless; registered in Meson and run by CI
+  simulation/   # real Shell/GTK; run locally and explicitly, never in CI
+    helpers/    # shared isolated-desktop driver
+    panels/     # PANEL-01…10 panel navigation
+  fixtures/     # standalone GTK source/receiver, preferences process, session wrapper
 ```
 
-## Independent GNOME 50 / 51 environments
-
-Prefer the local Docker baseline instead of the host's GNOME installation. The host only needs
-Python 3, Git and a running Linux Docker engine. No host extension installation, input-method
-change or new GitHub workflow is involved.
+## Logic checks (daily)
 
 ```sh
-# Default: both versions, non-stress logic regression and local headless acceptance
-bun run test:environment
-# Equivalent entry; explicitly select Docker Desktop when it is not the default context
-python3 tools/test-environment.py --context desktop-linux
-# Build/reuse the two environment images without running tests
-python3 tools/test-environment.py --build-only
-# Select desktop cases only when actual Shell behavior is required; builds the ZIP inside
-python3 tools/test-environment.py --suite simulation --case TYPE-02-vte,TYPE-03
-# Explicit language/display profiles and single-version selection
-python3 tools/test-environment.py --shell 51 --suite simulation --case DICT-02 --language zh_CN
-# Explicitly update dependency layers, never during ordinary image reuse
-python3 tools/test-environment.py --rebuild --build-only
+dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs   # bun run test:logic
+bash tools/test-logic-acceptance.sh                                            # bun run test:logic:acceptance
 ```
 
-GNOME 50 uses `tests/environments/gnome50/Dockerfile`; GNOME 51 uses
-`tests/environments/gnome51/Dockerfile`. Each pins its own Fedora base digest and Shell version,
-so dependencies can evolve separately. Only the session bootstrap is shared. The build context is
-`tests/environments/`; the runner selects the matching Dockerfile automatically. Image definition
-hashes are independent: editing one Dockerfile does not invalidate the other version's image.
-Before package installation, both images remove Fedora's English-only catalog filter and retain
-GNOME/GTK translations, with Arabic and German locales available. Plugin catalogs alone do not
-provide a real RTL desktop. `LANG-03 --language ar/de` observes actual Shell/GTK direction and
-operates narrow panels containing long text; it never forces widget direction to obtain a pass.
-`LANG-07-dictionary --language zh_CN` checks actual dictionary error bodies; an untranslated
-diagnostic must remain a failure.
-The runner prefers an installed matching UTF-8 locale, never an ISO-8859/EUC candidate sharing
-the same language prefix. Reports record `messageLocale`; fallback to a non-C UTF-8 base permits
-catalog checks, but does not certify actual RTL behavior when the requested locale is unavailable.
-Every run creates a fresh container; test processes run as ordinary UID 1000. The system bus runs
-only inside that container. The host supplies a read-only source snapshot, not HOME, display/input
-devices, D-Bus/Docker sockets or credentials. Host environment variables are not forwarded.
-The snapshot excludes `.git`, `.codex`, build directories and the user's typing sample. GTK's input
-module is explicitly Wayland. The standard IBus daemon is included because Shell's Unicode/text-input
-path needs it; the default baseline adds no Fcitx or Pinyin engine. Framework availability is not real-IME coverage.
+The first is the ordinary regression suite; it takes a few seconds and CI runs it on GNOME 50/51.
+The second is headless acceptance for capture state, the history controller, input guards, screenshot
+orchestration, phrase drafts and network dictionaries, each on a private session bus.
+`--suite stress` holds the optional stress tests; see [sync performance testing](../docs/sync-performance-testing.md).
 
-For actual editor/IME acceptance, explicitly select the optional `applications` target in each
-version's Dockerfile. It installs pinned-source native Gradia, a pinned Flathub app/runtime,
-Fedora's libpinyin and the genuine Mutter Devkit helper **inside the image only**:
+Headless integration against a real sync server (Docker plus the sibling `clipboard-x-server`
+source or an image):
 
 ```sh
-python3 tools/test-environment.py --profile applications --build-only
-python3 tools/test-environment.py --profile applications --suite simulation --case EDIT-07-native,EDIT-07-flatpak,TYPE-08-ime
+python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip [--image IMAGE] [--case SEND-04]
 ```
 
-These images use `:50-applications` / `:51-applications`; baseline images stay unchanged.
-Reports include app revisions/checksums, runtime commits and actual RPM versions. The real IME
-case observes Gtk preedit and compares ordinary virtual keys with plugin output in Chinese/ASCII
-modes, not merely an engine name or an IME-bypass claim. Only Flatpak cases also unmask the
-container's system paths for its own nested bubblewrap sandbox (`systempaths=unconfined`);
-no host paths/devices are mounted and the app sandbox is retained. Fedora's Devkit path is bridged
-to the path currently probed by the development script inside this optional fixture only.
-
-The actual developer-shell chain has a separate acceptance entry:
+## Desktop simulation (before a release)
 
 ```sh
-python3 tools/test-environment.py --profile applications --suite simulation --case OPS-07-devkit --language zh_CN
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip                   # 13 core scenarios in one Shell
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases   # one Shell per scenario
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip                          # PANEL-01…10
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip             # enable/disable/re-enable
 ```
 
-Only this case starts a real persistent journald inside its disposable container and grants the test
-user access to that container's journal. Real private PipeWire/WirePlumber drive the nested Devkit
-window. The unmodified developer script must build/package, use separate XDG/bus/device identity,
-honor the requested language, close normally with exit 0 and forward key logs to terminal and user
-journal once. Existing logic tests retain argument, failure and interruption coverage; they are not
-duplicated into a GUI matrix. No host journal or system service is used.
+Runs use a private `/tmp/clipboard-x-simulation-*` directory with isolated XDG, session bus, clipboard
+source and input target; the host desktop is never modified. Reports are written to
+`build/simulation-tests/`. `PASS`, `FAIL`, `NOT_RUN` and `BLOCKED` mean passed, failed, not run and
+missing dependency.
 
-For a two-hour resource run, use the owned-backend runner explicitly (repeat with `:51`):
+## Scenario → test
 
-```sh
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image clipboard-x-server:verify-doc-copy --shell-container clipboard-x-gnome-test:50 --case OPS-03-soak --timeout 7500
-```
-
-Use a locally built server image or omit `--image` to build from the sibling server source; set
-`DOCKER_CONTEXT` when needed. This case is excluded from default/group selection and never added
-to GitHub CI. It reuses the short resource verifier, keeps the live data set fixed, runs real sync
-and refresh cycles every 30 seconds and restarts the plugin every ten measured cycles. The duration
-and release assertions are gates; RSS/FD samples and window medians are exported for trend review,
-not an invented absolute memory threshold or proof of leak freedom. Allow 7,500 seconds including
-startup/cleanup; ordinary case timeouts stay unchanged.
-
-Runtime networking is `none`: only the container's loopback is available, including HTTP/TLS
-logic fixtures. Real sync servers retain their owned-server runner; the optional profile adds IME
-and editor dependencies, not orchestration of the full desktop matrix. Missing optional
-Gradia/Flatpak dependencies block their cases, not pass them. Browser cases set
-`seccomp=unconfined` for that container to permit the browser's own namespace sandbox; they never
-use privileged mode, host networking or browser `--no-sandbox`. A kernel denying user namespaces
-is an environment blockage, not a plugin input failure. Containers share the engine's kernel;
-they do not promise identical hardware or performance.
-
-`build/environments-*/` holds status, base digest, actual image ID, definition/source hashes, full
-RPM versions and test logs. Results are exported before deleting only the run's container; images
-remain for reuse. Changed definitions require explicit rebuild. Distribution repositories can
-change: **a pinned base does not make future dependency rebuilds byte-identical**. For strict
-cross-machine reproduction, share the built images with Docker image save/load and compare image
-IDs and package lists. Different images must not be treated as a GNOME-major-version-only comparison.
-
-## Logic verification
-
-`logic` means **headless verification**, not exclusively pure unit tests. It includes filesystem
-operations, private D-Bus services, loopback HTTP servers and subprocesses, as well as disk-free
-model tests. These checks must not require `Gtk.init()`, an active display or a running Shell.
-Importing GTK utility APIs without initializing a display does not make a test graphical;
-`logic/ui/shortcut-match.integration.js` additionally needs Shell's private typelibs, but no desktop.
-Supporting fixtures stay with their owning domain unless shared across domains.
-
-After configuring and building with Meson:
-
-```sh
-dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs
-# Equivalent package script:
-bun run test:logic
-```
-
-Meson registers this category only. The existing test names and the optional `stress` suite remain
-unchanged. `meson test -C build` still includes stress tests; ordinary CI still excludes them.
-This reorganization does not add checks to CI. See the [transfer stress guide](../docs/sync-performance-testing.md)
-for optional stress runs.
-
-Capture state, history-controller, draft, input-guard, screenshot-pipeline and network-dictionary
-acceptance extracted from desktop tests has an explicit local entry point:
-
-```sh
-bash tools/test-logic-acceptance.sh
-# Or bun run test:logic:acceptance
-```
-
-It clears display variables and uses private session buses without starting Shell or GTK. It
-complements rather than reruns the default Meson suite and is not automatically added to CI.
-Existing algorithm matrices continue to reuse Meson's word, color, storage and sync tests.
-Filesystem/HTTP integration is logic verification too; data rules do not require a desktop.
-Network dictionaries need a GVfs HTTP(S) backend; TLS rejection also needs `openssl`. Missing
-dependencies are BLOCKED, not passes.
-
-Run logic acceptance against the real sync backend separately:
-
-```sh
-python3 tools/test-sync-http.py --list
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --headless
-```
-
-This reuses the owned Docker backend and cleanup boundaries, exercising production clients,
-storage, queues and a real HTTP gate without a graphical desktop or a GNOME version dependency.
-Select publishing idempotence, device revocation, pagination, destinations or verification with
-`--case`. Results go to `build/sync-http-tests/`. Known failures move with their cases rather than
-being rewritten as expected successes.
-
-## Simulated desktop verification
-
-`simulation` runs the real Shell/GTK implementation in a prepared graphical or isolated headless
-desktop. It is not a fake widget model. Native input tests inject Mutter virtual-device events;
-other integration checks inspect actual actors/windows or use controlled signals and callbacks.
-GTK always runs outside the Shell process.
-
-Use the existing isolated entry points after building the release ZIP:
-
-```sh
-bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
-bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 2
-# Native acceptance (implemented registry cases, not a claim of complete coverage):
-python3 tools/test-simulation.py --list
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --group clipboard --isolate-cases
-# The panel suite is also available as:
-bun run test:simulation:panels
-```
-
-`test:simulation:panels` runs the local panel acceptance suite, not every simulation file. Additional
-focused checks and GTK invocations are described in [Contributing](../CONTRIBUTING.md).
-The Shell and panel runners automatically use the new directory; the UI check matrix and
-the lifecycle subset already used by CI are unchanged. Detailed isolation and coverage boundaries:
-[Shell compatibility](../docs/shell-compatibility.md), [panel tests](../docs/panel-testing.md).
-
-Each domain's `.smoke.js` can run through the isolated `run_shell_check` helper documented in
-Contributing. `shell.smoke.js` imports its checks from those owners instead of duplicating them.
-`CBX_SIMULATION_CASES=phrases,wordSelection` selects named checks from that aggregate; unknown names
-fail. Focused native form/search/picker suites and GTK integrations still run separately.
-
-Do not routinely run the aggregate plus every component and count that as extra coverage. Select
-the relevant entry and layer from the inventory. Viewport dragging uses fixed stage coordinates and
-live picking, not stale actor coordinates after focus scrolling. An entry point is not proof that
-the entire aggregate passes.
-
-### Native functional runner
-
-`tools/test-simulation.py` selects functional IDs from `simulation/manifest.json`. It accepts
-`--case CLIP-01,CLIP-09`, `--group clipboard`, `--shell 50` / `51`, and `--language zh_CN`.
-By default each module gets a fresh Shell; `--isolate-cases` starts one per case and continues after
-failures, without automatic retries. The original ZIP is unchanged; metadata is amended only in a
-private test copy if required for 51.
-
-XDG directories, Session Bus, clipboard sources and input targets are isolated under a private
-`/tmp/clipboard-x-simulation-*`. Never run the automation script directly in a host or development
-desktop: fixtures clear their own history and phrases. `fixtures/desktop-app.js` is an independent
-GTK Wayland source/receiver that reads actual MIME bytes and hashes. Delayed-owner races suspend,
-resume or terminate that owned source process instead of replacing the extension's read function.
-Virtual input does not establish physical-keyboard interruption guarantees.
-
-Logs, `summary.txt` and `report.json` are saved under `build/simulation-tests/`, including ZIP hash,
-Shell, language and outcomes. `PASS`, `FAIL`, `NOT_RUN`, `BLOCKED` distinguish success, failed
-assertions/runs, unexecuted cases and missing dependencies. Exit codes are 0 for all selected cases
-passing, 1 for failures/unexecuted cases, and 2 for dependency blocks only. Unregistered gaps remain
-in the [functional inventory](functional-inventory.md); a green subset is not complete acceptance.
-This entry point is not added to CI.
-
-Reports record the original and prepared ZIP hashes plus a test-source fingerprint fixed at start.
-Changing test sources during a run invalidates that run; documentation edits do not. An abnormal
-Shell exit fails its active case, and later unstarted cases remain NOT_RUN. Assertion failures also
-try to save a screenshot of the isolated desktop; a crashed compositor cannot supply one.
-
-Locale-specific cases require a generated non-C UTF-8 base locale (for example `en_US.UTF-8`),
-because gettext ignores `LANGUAGE` under C.UTF-8. DICT cases additionally require `--language zh_CN`;
-missing locale/application/GVfs dependencies are BLOCKED, not passed. Examples:
-
-```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case DICT-02,DICT-06,DICT-08 --language zh_CN
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case LANG-02 --language ja
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case EDIT-07-native,EDIT-07-flatpak
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case CLIP-02-chromium
-```
-
-CLIP-02 uses a private Chromium profile and local HTML/images. It copies real rich text and a
-standalone image, with independent original-byte readback rather than an HTML image reference.
-
-Real server acceptance:
-
-```sh
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --isolate-cases
-# Builds the adjacent clipboard-x-server source by default; an existing image also works:
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --image SERVER_IMAGE --case RECV-04
-# Prepare the independent GNOME images, then select 50 or 51 by image:
-python3 tools/test-environment.py --build-only
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:50 --case SEND-06,RECV-06
-# Headless backend checks use the same ordinary-user environment without starting Shell:
-python3 tools/test-sync-server.py build/clipboard-x-gnome_1.x.x.zip --shell-container clipboard-x-gnome-test:51 --headless --case SEND-05-destinations
-```
-
-This requires running Docker. It creates owned containers, one temporary volume and a random
-loopback port with synthetic credentials. An optional Shell container shares only that server's
-network namespace. Cleanup removes only this run's resources, never Docker-prunes or edits server
-sources. Use `DOCKER_CONTEXT=desktop-linux` before the server command if required by your setup.
-Only images from `tests/environments/gnome50` / `gnome51` are accepted by `--shell-container`.
-The common bootstrap drops to UID 1000, copies an immutable source snapshot and tests the supplied
-ZIP. No host paths are mounted. Server scenarios share the owned backend's network instead of the
-baseline's `network=none`; native cases default to a separate Shell per case. Reports include the
-actual image, source/definition hashes and package list in `build/simulation-tests/` or
-`build/sync-http-tests/`. Source and environment definitions are frozen together at snapshot time.
-The independent `sync-peer.js` uses production SyncClient/protocol/storage to supply originals;
-it is not a second GNOME Shell and does not establish two-desktop automatic-activation races.
-
-Full preferences run in an independent GTK process. IPC observes widget positions/state only;
-clicks, scrolling, combination recording and reset confirmation use Mutter input. Actual gettext
-is retained, not replaced with English. Successful screenshot tests require runner-owned special
-XDG directories, never the host Pictures directory. Long cases periodically renew GNOME PerfHelper
-to prevent its 30-second idle exit from being mistaken for a product failure.
-
-The session wrapper updates only the private bus activation environment so portals/default editors
-use the same private XDG as Shell. Search-indexer crawl roots are also limited to the fixture directory.
-An HTTP gate streams to the real server, controlling timing/one lost response without fabricating
-protocol results or logging credentials/bodies. Helpers watch their owning Shell to avoid orphan
-pollers after a crash. `--isolate-cases` is useful for collecting independent failures; it is not a
-hidden requirement for otherwise independent cases.
-
-### Cold replacement and recovery
-
-```sh
-python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --shell 51
-# Actual version upgrade, if an earlier release ZIP is available:
-python3 tools/test-lifecycle.py CURRENT.zip --previous PREVIOUS.zip
-```
-
-This installs only into a private XDG, checks installed file bytes, closes one real Shell process and
-opens another over the same data. ENV-02/06 restore history/pins, phrases, DeviceId and an offline
-destination-bound upload queue. Without `--previous`, the same artifact is reinstalled; do not call
-that a version-migration test. Logs and `report.json` are written to `build/lifecycle-tests/`.
-
-### Extended local coverage
-
-Use `--list` for the current native registry, not as a count of certified features. Checks reuse existing
-owners for malformed-image recovery, missing originals, phrase IO failure, selection gestures,
-settings persistence/layout, actual editor processes and destination-bound sync recovery.
-See the [observed snapshot](acceptance-status.md) for retained failures.
-
-```sh
-# Real virtual displays, not mocked monitor objects:
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display dual
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-05-displays --display fractional
-# DICT-09: actual 120,002-entry import/index/cache and main-loop measurement, no desktop (opt-in stress):
-dbus-run-session -- meson test -C build tokenizer-dictionary-performance --print-errorlogs
-# Real two-Shell dictionary persistence, with a local HTTP request counter:
-python3 tools/test-lifecycle.py build/clipboard-x-gnome_1.x.x.zip --dictionary-cold
-# Independent browser textarea / GTK3-VTE PTY targets:
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case TYPE-09-firefox,TYPE-09-chromium,TYPE-02-vte --isolate-cases
-```
-
-Display cases are BLOCKED without the requested profile. Fractional testing applies a backend-advertised
-125% mode through Mutter DisplayConfig. VTE requires Python GI for Gtk 3/VTE 2.91; Chromium accepts
-the `chromium` or `chromium-browser` executable. Browser targets use private profiles and an owned
-loopback receiver, not external sites. The VTE fixture first verifies native ASCII and real clipboard
-paste independently, then tests the plugin's natural-paste path; raw PTYs are not universal terminal apps.
-
-Run all three keystroke profiles in both independent environments:
-
-```sh
-python3 tools/test-environment.py --suite simulation --case TYPE-03,TYPE-04-medium,TYPE-04
-```
-
-These profile cases, the layout case and `typing.smoke.js` measure an initialized session, not first
-input after Shell startup. Their shared `terminal/ready.js` waits for IBus and the target text-input
-connection, verifies a normally paced Unicode key sequence using an independent virtual keyboard,
-then clears the receiver before the plugin sample. Preparation does not call or retry plugin input,
-override its intervals, or count as a profile pass. Setup failures are labelled `typing setup`; a
-sample mismatch still fails immediately without retry. A fresh Shell per case remains supported.
-
-Typing checks explicitly select the delivery mode so the default text-submission path cannot silently
-replace keystroke coverage. The shared short sample covers ASCII, mixed CJK, emoji, multiple lines and
-Tab. Text submission sends textual newlines/Tab; keystrokes press Return/Tab. Logical tests own the
-chunk limits (256 code points / 1024 UTF-8 bytes), 20 ms block interval, busy rejection, no automatic
-fallback and exact keystroke profiles: standard `75 / 4 / 30`, medium `75 / 6 / 40`, slow `75 / 8 / 50`
-ms (initial / ASCII / Unicode composition). Speed applies only to keystrokes. Native targets verify
-received text and cancellation on observable target changes; active IME preedit must be rejected without
-clearing or confirming it. Text submission tracks window and text-focus identities. Keystrokes can only
-track field changes when the client exposes a supported text-input focus; physical Tab may switch that
-focus and stop the remainder. A returned `commit()` is not a receiver acknowledgement.
-
-Mismatch diagnostics record lengths, first differing code points and hashes, not the complete sample.
-The old long-sample and user-sample automated entries are removed;
-`tools/simulate-input-sample.txt` is not read or modified. Long-text reliability remains a known
-limitation rather than an acceptance gate for this case.
-
-Dictionary GUI tests need a normal desktop user and installed file manager/editor; Nautilus refuses
-root sessions. The headless dictionary TLS case additionally needs `openssl` and checks rejection of an owned self-signed
-certificate—not trusted HTTPS success. Cold dictionary checks need a generated non-C UTF-8 locale.
-No test changes host certificate stores or disables certificate verification.
-
-Headless real HTTP owns `RECV-05` single-GET/shared-consumer behavior and `SEND-04/08` frozen
-manifests/deletion cancellation. `RECV-05-automatic-manual` retains only clipboard wiring: automatic
-receive preserves the clipboard, explicit activation copies the original. `CLIP-08-remote-loop` and
-`CONN-03-refresh` retain real feedback boundaries, busy controls and natural preferences-process exit.
-The destination matrix belongs to HTTP `SEND-05-destinations`; `PHRASE-08` retains local-phrase wiring.
-
-`logic/clipboard/capture.test.js` uses actual decoding, thumbnails and staged files to verify cleanup
-after privacy/exclusion changes. Native `PRIV-05` only retains the real-owner in-flight switch;
-neither proves cancellation inside the decoder. `WORD-08-close/disable/newer` delay the
-real computed result and await the entire native request handler before checking stale-result guards;
-they do not simulate aborting the computation itself. `SHOT-05-unsupported` reads actual portal
-capabilities, verifies the unsupported-target error and retries a supported capture. It is BLOCKED
-if that backend supports every target, not a substitute for every backend's denial/timeout behavior.
-
-The Docker wrapper changes only its disposable server config to 20,000 requests/60 seconds so real
-205-item publication/pagination does not exhaust the default 600-request budget. It neither changes
-production defaults nor hides rate-limit errors with retries. Custom server images with conflicting
-root HTTP configuration are rejected instead of silently merged.
+| Scenario | Logic test | Desktop simulation |
+|---|---|---|
+| Capture text/images, write back to the clipboard | `clipboard/capture`, `content`, `history/controller` | CLIP-01, CLIP-04, CLIP-09 |
+| History order, pins, limits, search, corruption recovery | `clipboard/history/*` | — |
+| Privacy mode, excluded applications | `clipboard/capture` | PRIV-01 |
+| Quick phrases | `clipboard/phrases/store`, `ui/phrase-draft` | PHRASE-01 (with Escape), PHRASE-04 |
+| Tokenizing, dictionaries, input limits | `clipboard/tokenizer/*` | — |
+| Word selection, late results | `ui/word-selection` | SELECT-01, WORD-05 |
+| Simulated input (sequences, speeds, interruption) | `clipboard/terminal/*` | TYPE-01, TYPE-03 |
+| Screenshots, editor | `screenshot/*` | SHOT-03 |
+| Color picker | `color-picker/color` | COLOR-01 |
+| Preferences | `ui/settings-defaults`, `shortcut-capture`, `string-choice`, … | SET-01 |
+| Panel navigation and focus | `ui/focus-grid`, `panel-manager`, `panel-actions`, `entry-actions` | `test-panels.sh` |
+| Sync (policy, protocol, transfers, queue) | `sync/*`, `ui/sync-*` | — (`test-sync-server.py`) |
+| Enable/disable lifecycle | — | `test-shell-compatibility.sh` |
 
 ## Adding tests
 
-- Choose the category by runtime requirements, not `.test.js`, `.smoke.js` or `.integration.js` alone.
-- Keep the domain structure within each category. Keep test-only helpers local to their owner;
-  shared external programs belong in `fixtures/` and are not independent test suites.
-- Register new logic checks in Meson only when appropriate. Keep graphical checks in explicit
-  simulation entry points; do not add them to ordinary CI implicitly.
-- Use behavior assertions for lasting risks, not source-string, document wording or style snapshots.
+- Put the behavior in a module `gjs` can import directly, then add a logic test and register it in `meson.build`.
+- Add a simulation case only for wiring that cannot be proven outside the Shell: register its ID in
+  `simulation/manifest.json`, implement it in the domain's `native.js`, and restore any state it changes.
+- Assert behavior and error codes, not translated error text, document wording or styling details.

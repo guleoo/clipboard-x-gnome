@@ -21,71 +21,23 @@ meson install -C build
 不为文档措辞、CSS 细节、固定图标名称或控件的常规属性编写断言。CI/Release 配置应使用
 现有校验、临时脚本或隔离 dry-run 验证，不增加锁定配置格式的测试。
 
-测试已分为[无需图形桌面的逻辑验证与桌面模拟验证](tests/README_CN.md)。
-不依赖宿主 GNOME 的 50/51 基线使用 `bun run test:environment`（需要 Docker），默认运行逻辑验证；
-只有必要时按测试说明显式选择真实桌面用例。
-对应入口、覆盖缺口和重复测试处理见[功能测试清单](tests/functional-inventory_CN.md)，不要把重复执行
-当作新增功能覆盖。普通逻辑验证使用
-`bun run test:logic`，或在 `dbus-run-session` 中执行带 `--no-suite stress` 的 Meson 命令。
-下沉的本地无图形验收使用 `bun run test:logic:acceptance`；真实后端无图形集成使用
-`tools/test-sync-server.py ZIP --headless`（需要 Docker）。两者显式选跑，依赖见测试说明。
-Shell 交互和设置窗口检查仍在隔离测试桌面中单独运行。
-
-面板入口、焦点导航、现场恢复、关闭动画以及真实多屏和缩放，使用[本地面板测试](docs/panel-testing_CN.md)。
-支持单独运行 PANEL-01～10 及全新会话重复执行，不自动加入 CI：
+测试以逻辑验证为主，分层说明见[测试目录说明](tests/README_CN.md)：
 
 ```sh
-bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip --repeat 3
+bun run test:logic              # 日常与 CI：Meson 逻辑测试，几秒完成
+bun run test:logic:acceptance   # 无图形验收：私有 D-Bus、真实文件与本地 HTTP
 ```
 
-其他 Shell 专项仍可分别运行：
+新功能优先把决策逻辑放进不依赖 Shell 的模块，再写逻辑测试。只有必须经过真实 Shell 才能证明的
+核心接线才进入模拟层；发版前在隔离桌面中运行：
 
 ```sh
-run_shell_check() (
-  test_runtime=$(mktemp -d /tmp/clipboard-x-gnome-check-XXXXXX)
-  trap 'rm -rf -- "$test_runtime"' EXIT
-  export XDG_RUNTIME_DIR="$test_runtime" LIBGL_ALWAYS_SOFTWARE=1 GTK_A11Y=none NO_AT_BRIDGE=1
-  unset DISPLAY WAYLAND_DISPLAY GDK_BACKEND GSETTINGS_SCHEMA_DIR
-  dbus-run-session -- gnome-shell-test-tool --headless \
-    --extension build/clipboard-x-gnome_<version>.zip "$1"
-)
-run_shell_check tests/simulation/shell.smoke.js
-run_shell_check tests/simulation/settings/window.smoke.js
+python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip   # 13 个核心场景，共用一个 Shell
+bash tools/test-panels.sh build/clipboard-x-gnome_1.x.x.zip          # PANEL-01～10
+bash tools/test-shell-compatibility.sh build/clipboard-x-gnome_1.x.x.zip
 ```
 
-隐私边界、输入框键盘导航/提交、取色采样、同步开关、截图取消、按住鼠标拖动选择分词可以复用上述函数分别运行专项测试：
-
-```sh
-run_shell_check tests/simulation/panels/search.smoke.js
-run_shell_check tests/simulation/panels/escape.smoke.js
-run_shell_check tests/simulation/phrases/form.smoke.js
-run_shell_check tests/simulation/color-picker/sampling.smoke.js
-run_shell_check tests/simulation/settings/foreground.smoke.js
-run_shell_check tests/simulation/sync/toggle.smoke.js
-run_shell_check tests/simulation/screenshot/cancel.smoke.js
-run_shell_check tests/simulation/word-selection/drag.smoke.js
-```
-
-隐私统一使用原生 `PRIV-01,PRIV-02,PRIV-05`，像素移动使用 `COLOR-03`。
-策略取消规则及缩放/舍入矩阵由无桌面逻辑测试负责：
-
-```sh
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case COLOR-03
-python3 tools/test-simulation.py build/clipboard-x-gnome_1.x.x.zip --case PRIV-01,PRIV-02,PRIV-05
-```
-
-设备图标选择器另有 GTK 集成测试，需要图形显示环境和已经配置的打包构建目录。
-它使用内存设置后端，不修改宿主插件设置：
-
-```sh
-shell_libdir=/usr/lib/gnome-shell
-dbus-run-session -- env GSETTINGS_BACKEND=memory GTK_A11Y=none NO_AT_BRIDGE=1 \
-  GI_TYPELIB_PATH="$shell_libdir/girepository-1.0" LD_LIBRARY_PATH="$shell_libdir" \
-  CBX_TEST_BUILD_DIR="$PWD/build" gjs -m tests/simulation/settings/icon.integration.js
-```
-
-`shell_libdir` 需按 GNOME Shell 的实际安装目录调整，Fedora 通常为
-`/usr/lib64/gnome-shell`。设置 API 需要加载该目录中的私有 typelib。
+模拟入口不加入 CI。需要真实同步服务端的无图形集成使用 `tools/test-sync-server.py ZIP`（需要 Docker）。
 
 词库吞吐与内存测量使用可选 benchmark，不在普通 CI 回归中卡耗时门槛。
 传入本地词库文件即可，benchmark 不会自动下载词库：

@@ -1,5 +1,5 @@
 import Clutter from 'gi://Clutter';
-import {assert} from '../helpers/checks.js';
+import {assert} from '../helpers/desktop.js';
 import {runNative, until} from '../helpers/native.js';
 
 export function run() {

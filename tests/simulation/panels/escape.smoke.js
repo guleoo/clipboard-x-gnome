@@ -1,6 +1,6 @@
 import Clutter from 'gi://Clutter';
 import * as Scripting from 'resource:///org/gnome/shell/ui/scripting.js';
-import {assert} from '../helpers/checks.js';
+import {assert} from '../helpers/desktop.js';
 import {runNative} from '../helpers/native.js';
 
 export function run() {

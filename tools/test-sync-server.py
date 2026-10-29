@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run desktop or headless sync acceptance against an owned, disposable backend."""
+"""Run headless sync HTTP acceptance against an owned, disposable backend."""
 import argparse
 import json
 import os
@@ -13,7 +13,6 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
-from simulation_runtime import snapshot
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,8 +22,8 @@ def main():
     parser.add_argument('archive', type=Path)
     parser.add_argument('--source', type=Path, default=ROOT.parent / 'clipboard-x-server')
     parser.add_argument('--image', help='Use an already-built server image instead of building')
-    parser.add_argument('--shell-container', help='Run the Shell in this GNOME test image, sharing only the owned server network')
-    parser.add_argument('--headless', action='store_true', help='Run GJS HTTP integration only; no Shell, GTK or session bus')
+    # Accepted for compatibility: the HTTP integration never starts a Shell, GTK or session bus.
+    parser.add_argument('--headless', action='store_true', help=argparse.SUPPRESS)
     args, options = parser.parse_known_args()
     if not args.archive.is_file() or not args.image and not (args.source / 'docker/Dockerfile').is_file():
         parser.error('An extension ZIP and server source/image are required')
@@ -35,8 +34,6 @@ def main():
     created_image = False
     created_volume = False
     created_container = False
-    created_shell = False
-    shell_name = f'{name}-shell'
     env = dict(os.environ, CBX_ADMIN_USERNAME='simulation', CBX_ADMIN_PASSWORD=secrets.token_urlsafe(24))
     run = lambda command, **kwargs: subprocess.run(command, check=True, **kwargs)
     try:
@@ -87,52 +84,10 @@ def main():
         env['CBX_SIMULATION_TEST_REVISION'] = (subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
           text=True, capture_output=True).stdout.strip() if shutil.which('git') else '')
         print(f'Isolated server ready: {address}; container={name}; fixture request limit=20000/60s', flush=True)
-        if args.shell_container:
-            shell_image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', args.shell_container]))[0]
-            if (shell_image['Config'].get('Labels') or {}).get('io.github.guleoo.clipboard-x-gnome.test-environment') != '1':
-                parser.error('--shell-container requires an image built from tests/environments/gnome50 or gnome51')
-            env['CBX_SIMULATION_SERVER'] = 'http://127.0.0.1:28787'
-            command = ['docker', 'create', '--name', shell_name, '--init', '--network', f'container:{name}',
-                       '--shm-size', '512m', '--pids-limit', '2048', '--ulimit', 'core=0']
-            for key in ['CBX_SIMULATION_SERVER', 'CBX_SIMULATION_ADMIN', 'CBX_SIMULATION_PASSWORD', 'CBX_SIMULATION_SERVER_IMAGE', 'CBX_SIMULATION_TEST_REVISION']:
-                command += ['-e', key]
-            if any(option == '--output' or option.startswith('--output=') for option in options):
-                parser.error('--output is managed by the container runner')
-            request = {'suite': 'sync-http' if args.headless else 'simulation',
-                       'archive': '/input.zip', 'options': options}
-            command += [shell_image['Id'], json.dumps(request)]
-            run(command, env=env, stdout=subprocess.DEVNULL)
-            created_shell = True
-            with tempfile.TemporaryDirectory(prefix='cbx-sync-source-') as temporary:
-                source = Path(temporary)
-                source.chmod(0o755)
-                source_hash = snapshot(ROOT, source)
-                run(['docker', 'cp', str(source), f'{shell_name}:/workspace'])
-            run(['docker', 'cp', str(args.archive.resolve()), f'{shell_name}:/input.zip'])
-            subprocess.run(['docker', 'start', '-a', shell_name])
-            status = int(json.loads(subprocess.check_output(['docker', 'inspect', shell_name]))[0]['State']['ExitCode'])
-            reports = ROOT / 'build' / ('sync-http-tests' if args.headless else 'simulation-tests') / shell_name
-            reports.mkdir(parents=True)
-            copied = subprocess.run(['docker', 'cp', f'{shell_name}:/home/tester/results/.', str(reports)])
-            (reports / 'environment-source.json').write_text(json.dumps({
-                'image': shell_image['Id'], 'sourceSha256': source_hash,
-                'definitionSha256': shell_image['Config']['Labels'].get(
-                    'io.github.guleoo.clipboard-x-gnome.test-environment.definition'),
-            }, indent=2) + '\n')
-            with (reports / 'server.log').open('w') as output:
-                subprocess.run(['docker', 'logs', name], stdout=output, stderr=subprocess.STDOUT)
-            print(f'Container reports: {reports}', flush=True)
-            if copied.returncode or not list(reports.rglob('report.json')):
-                print('Container report export failed; the run cannot be accepted', file=sys.stderr)
-                return status or 1
-            return status
-        runner = ROOT / 'tools' / ('test-sync-http.py' if args.headless else 'test-simulation.py')
-        return subprocess.run([sys.executable, str(runner), str(args.archive),
-                               *([] if args.headless else ['--group', 'sync']), *options], env=env).returncode
+        return subprocess.run([sys.executable, str(ROOT / 'tools/test-sync-http.py'), str(args.archive), *options],
+                              env=env).returncode
     finally:
         # Exact resources created by this invocation only; never prune Docker.
-        if created_shell:
-            subprocess.run(['docker', 'rm', '-f', shell_name], stdout=subprocess.DEVNULL)
         if created_container:
             subprocess.run(['docker', 'rm', '-f', name], stdout=subprocess.DEVNULL)
         if created_volume:

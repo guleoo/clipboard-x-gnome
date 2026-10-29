@@ -13,11 +13,8 @@
     "test": "meson test -C build --print-errorlogs",
     "test:logic": "dbus-run-session -- meson test -C build --no-suite stress --print-errorlogs",
     "test:logic:acceptance": "bash tools/test-logic-acceptance.sh",
-    "test:environment": "python3 tools/test-environment.py",
     "test:simulation:panels": "bash tools/test-panels.sh build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip",
     "build": "meson compile -C build",
-    "test:shell": "gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip tests/simulation/shell.smoke.js",
-    "test:terminal": "dbus-run-session -- env GTK_A11Y=none NO_AT_BRIDGE=1 gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip tests/simulation/terminal/typing.smoke.js",
-    "test:word-selection": "dbus-run-session -- env GTK_A11Y=none NO_AT_BRIDGE=1 gnome-shell-test-tool --headless --extension build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip tests/simulation/word-selection/drag.smoke.js"
+    "test:simulation": "python3 tools/test-simulation.py build/clipboard-x-gnome_$(node -p \"require('./package.json').version\").zip"
   }
 }

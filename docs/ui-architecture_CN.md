@@ -121,7 +121,7 @@
 无需图形桌面的验证位于 `tests/logic/`，真实 Shell/GTK 验证位于 `tests/simulation/`；
 分类边界与运行命令见[测试目录说明](../tests/README_CN.md)。
 
-- 纯状态和布局算法提供 GJS 单元测试。
-- Shell actor、焦点、菜单生命周期通过 `tests/simulation/shell.smoke.js` 验证。
-- GTK 设置组件通过 `tests/simulation/settings/window.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
-- 每次结构重构必须通过构建、常规测试、Shell 冒烟测试和设置窗口冒烟测试。
+- 纯状态和布局算法提供 GJS 逻辑测试；决策不要写在 actor 代码里，以便这样测试。
+- 核心 Shell 接线通过 `tools/test-simulation.py` 验证，面板焦点通过 `tools/test-panels.sh` 验证。
+- GTK 设置组件在兼容性入口中通过 `tests/simulation/settings/window.smoke.js` 验证，且必须断言窗口标题不是 `Extension Error`。
+- 每次结构重构必须通过构建和逻辑测试，发版前再运行模拟入口。

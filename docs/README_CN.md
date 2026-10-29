@@ -32,7 +32,6 @@ GitHub Release 默认展示英文，并提供中文入口。
 ## 扩展开发
 
 - [测试目录说明](../tests/README_CN.md)：区分无需图形桌面的逻辑验证与真实桌面模拟验证。
-- [功能测试清单](../tests/functional-inventory_CN.md)：功能归属、验证边界、缺口及重复测试审查。
 - [GNOME Shell 兼容性](shell-compatibility_CN.md)：50+ 共用接口、CI 矩阵和隔离生命周期检查。
 
 - [日志与问题排查](diagnostics_CN.md)：系统 journal、Devkit 输出、初始化阶段与隐私边界。
